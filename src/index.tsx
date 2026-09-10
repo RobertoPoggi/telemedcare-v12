@@ -1523,6 +1523,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Analytics endpoints: riservati agli admin (session cookie richiesta, gestiti dai propri handler)
+  if (path.startsWith('/api/analytics/')) {
+    return next()
+  }
+
   // Endpoint sensibili: richiedono autenticazione
   const isSensitive = 
     path.startsWith('/api/leads') ||
@@ -34504,6 +34509,404 @@ app.post('/api/oneshot-set-intestatario-lead-4vr2k', async (c) => {
     return c.json({ success: false, error: e.message }, 500)
   }
 })
+
+// ============================================================
+// GET /api/analytics/report
+// Recupera dati live da GA4 + Search Console tramite OAuth2
+// Parametri query: startDate, endDate (default: ultimi 30 giorni)
+// Richiede: GOOGLE_REFRESH_TOKEN, GOOGLE_OAUTH_CLIENT_ID,
+//           GOOGLE_OAUTH_CLIENT_SECRET, GA4_PROPERTY_ID, SC_SITE_URL
+// ============================================================
+app.get('/api/analytics/report', async (c) => {
+  try {
+    const { fetchFullAnalyticsReport } = await import('./modules/google-analytics')
+
+    const refreshToken = c.env?.GOOGLE_REFRESH_TOKEN
+    const clientId = c.env?.GOOGLE_OAUTH_CLIENT_ID
+    const clientSecret = c.env?.GOOGLE_OAUTH_CLIENT_SECRET
+    const ga4PropertyId = c.env?.GA4_PROPERTY_ID || '549216845'
+    const scSiteUrl = c.env?.SC_SITE_URL || 'https://www.ecura.it/'
+
+    if (!refreshToken || !clientId || !clientSecret) {
+      return c.json({
+        error: 'Credenziali Google non configurate',
+        missing: [
+          !refreshToken ? 'GOOGLE_REFRESH_TOKEN' : null,
+          !clientId ? 'GOOGLE_OAUTH_CLIENT_ID' : null,
+          !clientSecret ? 'GOOGLE_OAUTH_CLIENT_SECRET' : null
+        ].filter(Boolean)
+      }, 500)
+    }
+
+    // Date default: ultimi 30 giorni
+    const today = new Date()
+    const defaultEnd = today.toISOString().slice(0, 10)
+    const defaultStart = new Date(today.getTime() - 30 * 24 * 3600 * 1000).toISOString().slice(0, 10)
+
+    const startDate = c.req.query('startDate') || defaultStart
+    const endDate = c.req.query('endDate') || defaultEnd
+
+    const report = await fetchFullAnalyticsReport(
+      { refreshToken, oauthClientId: clientId, oauthClientSecret: clientSecret, ga4PropertyId, searchConsoleSiteUrl: scSiteUrl },
+      startDate,
+      endDate
+    )
+
+    return c.json(report)
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500)
+  }
+})
+
+// ============================================================
+// GET /api/analytics/live-seo-report
+// Genera l'HTML del report SEO live (equivalente a report-ecura-seo-2026.html)
+// con dati in tempo reale da GA4 + CRM D1
+// ============================================================
+app.get('/api/analytics/live-seo-report', async (c) => {
+  try {
+    const { fetchFullAnalyticsReport } = await import('./modules/google-analytics')
+
+    const refreshToken = c.env?.GOOGLE_REFRESH_TOKEN
+    const clientId = c.env?.GOOGLE_OAUTH_CLIENT_ID
+    const clientSecret = c.env?.GOOGLE_OAUTH_CLIENT_SECRET
+    const ga4PropertyId = c.env?.GA4_PROPERTY_ID || '549216845'
+    const scSiteUrl = c.env?.SC_SITE_URL || 'https://www.ecura.it/'
+
+    if (!refreshToken || !clientId || !clientSecret) {
+      return c.html(`<html><body><h1>Credenziali Google mancanti</h1><p>Configura GOOGLE_REFRESH_TOKEN, GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET nei secrets Cloudflare.</p></body></html>`, 500)
+    }
+
+    const today = new Date()
+    const defaultEnd = today.toISOString().slice(0, 10)
+    const defaultStart = new Date(today.getTime() - 30 * 24 * 3600 * 1000).toISOString().slice(0, 10)
+    const startDate = c.req.query('startDate') || defaultStart
+    const endDate = c.req.query('endDate') || defaultEnd
+
+    // Fetch GA4 data
+    const ga4 = await fetchFullAnalyticsReport(
+      { refreshToken, oauthClientId: clientId, oauthClientSecret: clientSecret, ga4PropertyId, searchConsoleSiteUrl: scSiteUrl },
+      startDate,
+      endDate
+    )
+
+    // Fetch CRM leads dallo stesso periodo
+    let crmLeads: any[] = []
+    let crmFonti: Record<string, number> = {}
+    if (c.env?.DB) {
+      try {
+        const crmResult = await c.env.DB.prepare(`
+          SELECT fonte, dettaglio_fonte, stato, created_at
+          FROM leads
+          WHERE created_at >= ? AND created_at <= ?
+          ORDER BY created_at DESC
+        `).bind(`${startDate}T00:00:00.000Z`, `${endDate}T23:59:59.999Z`).all()
+        crmLeads = (crmResult.results as any[]) || []
+        for (const l of crmLeads) {
+          const f = l.fonte || 'non_specificata'
+          crmFonti[f] = (crmFonti[f] || 0) + 1
+        }
+      } catch (e) { /* ignora errori CRM */ }
+    }
+
+    // Genera l'HTML del report
+    const generatedAt = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' })
+    const totalSessions = ga4.overview.sessions
+    const totalUsers = ga4.overview.users
+    const bounceRate = (ga4.overview.bounceRate * 100).toFixed(1)
+    const avgDuration = formatDuration(ga4.overview.avgSessionDuration)
+    const pageviews = ga4.overview.pageviews
+
+    // Channel chart data
+    const channelLabels = ga4.channelBreakdown.map(c => `'${c.channel} (${c.sessions})'`).join(',')
+    const channelData = ga4.channelBreakdown.map(c => c.sessions).join(',')
+    const channelColors = [
+      "'#4285F4'","'#34A853'","'#FBBC05'","'#EA4335'","'#5F6368'",
+      "'#00BCD4'","'#9C27B0'","'#FF5722'","'#607D8B'","'#795548'"
+    ].join(',')
+
+    // Device chart data
+    const deviceLabels = ga4.deviceBreakdown.map(d => `'${d.device}'`).join(',')
+    const deviceData = ga4.deviceBreakdown.map(d => d.sessions).join(',')
+
+    // Daily trend
+    const dailyLabels = ga4.dailyTrend.map(d => `'${d.date.slice(5)}'`).join(',') // MM-DD
+    const dailySessions = ga4.dailyTrend.map(d => d.sessions).join(',')
+
+    // CRM fonti
+    const crmFontiLabels = Object.keys(crmFonti).map(k => `'${k} (${crmFonti[k]})'`).join(',')
+    const crmFontiData = Object.values(crmFonti).join(',')
+
+    // Search Console table rows
+    const scTableRows = ga4.searchConsole?.topQueries.slice(0, 10).map(q => `
+      <tr>
+        <td>${escHtml(q.query)}</td>
+        <td style="text-align:center">${q.clicks}</td>
+        <td style="text-align:center">${q.impressions}</td>
+        <td style="text-align:center">${(q.ctr * 100).toFixed(1)}%</td>
+        <td style="text-align:center">${q.position.toFixed(1)}</td>
+      </tr>`).join('') || '<tr><td colspan="5">Search Console non configurata o dati non disponibili</td></tr>'
+
+    const scPagesRows = ga4.searchConsole?.topPages.slice(0, 8).map(p => `
+      <tr>
+        <td style="font-size:.82rem">${escHtml(p.page)}</td>
+        <td style="text-align:center">${p.clicks}</td>
+        <td style="text-align:center">${p.impressions}</td>
+        <td style="text-align:center">${(p.ctr * 100).toFixed(1)}%</td>
+        <td style="text-align:center">${p.position.toFixed(1)}</td>
+      </tr>`).join('') || ''
+
+    const topPagesRows = ga4.topPages.slice(0, 10).map(p => `
+      <tr>
+        <td style="font-size:.82rem">${escHtml(p.page)}</td>
+        <td style="text-align:center">${p.pageviews}</td>
+        <td style="text-align:center">${p.sessions}</td>
+      </tr>`).join('')
+
+    const errorsBlock = ga4.errors.length > 0
+      ? `<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:.85rem">
+          ⚠️ <strong>Avvisi:</strong> ${ga4.errors.map(e => escHtml(e)).join(' | ')}
+         </div>`
+      : ''
+
+    const html = `<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Report Analytics Live — eCura · ${generatedAt}</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<style>
+:root{--teal:#068D86;--navy:#080E49;--grey:#3D3C3B;--light:#f7f4ef;--border:#e3dfdd;--white:#fff}
+*{box-sizing:border-box}
+body{font-family:'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.7;color:var(--grey);background:var(--white);margin:0;padding:0}
+.cover{background:linear-gradient(135deg,var(--navy) 0%,#0f1a7a 50%,var(--teal) 100%);color:#fff;padding:60px 40px 48px;display:flex;flex-direction:column;justify-content:center}
+.cover-inner{max-width:1000px;margin:0 auto}
+.cover h1{font-size:clamp(1.8rem,4vw,2.6rem);margin:0 0 12px;font-weight:700}
+.cover .subtitle{font-size:1rem;color:rgba(255,255,255,.85);max-width:700px}
+.cover .meta{margin-top:28px;display:flex;flex-wrap:wrap;gap:20px;font-size:.83rem;color:rgba(255,255,255,.6)}
+.cover .pill{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:4px 16px;font-size:.82rem}
+.container{max-width:1060px;margin:0 auto;padding:0 28px}
+.section{padding:44px 0}
+.section+.section{border-top:2px solid var(--border)}
+h2{font-size:1.5rem;color:var(--navy);margin-bottom:20px}
+h3{font-size:1.05rem;color:var(--navy);margin:1.6rem 0 .5rem}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:20px 0}
+.kpi{background:var(--light);border-radius:10px;padding:16px 14px;text-align:center;border:1px solid var(--border)}
+.kpi .num{font-size:2rem;font-weight:700;color:var(--teal);display:block;line-height:1}
+.kpi .lbl{font-size:.75rem;color:#666;margin-top:4px}
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin:24px 0}
+.chart-box{background:var(--light);border-radius:12px;padding:20px;border:1px solid var(--border)}
+.chart-box h3{margin-top:0;font-size:.93rem}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th{background:var(--navy);color:#fff;padding:9px 12px;text-align:left;font-size:.8rem}
+td{padding:8px 12px;border-bottom:1px solid var(--border)}
+tr:nth-child(even) td{background:var(--light)}
+.tag{display:inline-block;padding:2px 9px;border-radius:14px;font-size:.73rem;font-weight:600}
+.tag-ga4{background:#dbeafe;color:#1d4ed8}
+.tag-crm{background:#dcfce7;color:#166534}
+.tag-gsc{background:#fef3c7;color:#92400e}
+.errors-block{background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:.85rem}
+footer{background:var(--navy);color:rgba(255,255,255,.6);text-align:center;padding:24px;font-size:.8rem;margin-top:48px}
+@media(max-width:600px){.charts-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cover-inner">
+    <span class="pill">LIVE · Generato ${generatedAt}</span>
+    <h1 style="margin-top:16px">Report Analytics Live — eCura</h1>
+    <p class="subtitle">Dati in tempo reale da GA4, Search Console e CRM D1.<br>
+    Periodo: <strong>${startDate}</strong> → <strong>${endDate}</strong></p>
+    <div class="meta">
+      <span>GA4: ${ga4PropertyId} · G-5DY4TY34WK</span>
+      <span>Search Console: ${scSiteUrl}</span>
+      <span>Lead CRM: ${crmLeads.length}</span>
+      ${ga4.errors.length > 0 ? `<span style="color:#fbbf24">⚠️ ${ga4.errors.length} avvisi</span>` : ''}
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+${errorsBlock}
+
+<!-- KPI OVERVIEW -->
+<div class="section">
+<h2>📊 Overview GA4 <span class="tag tag-ga4">GA4</span></h2>
+<div class="kpi-grid">
+  <div class="kpi"><span class="num">${totalSessions.toLocaleString('it-IT')}</span><div class="lbl">Sessioni</div></div>
+  <div class="kpi"><span class="num">${totalUsers.toLocaleString('it-IT')}</span><div class="lbl">Utenti attivi</div></div>
+  <div class="kpi"><span class="num">${ga4.overview.newUsers.toLocaleString('it-IT')}</span><div class="lbl">Nuovi utenti</div></div>
+  <div class="kpi"><span class="num">${pageviews.toLocaleString('it-IT')}</span><div class="lbl">Pageviews</div></div>
+  <div class="kpi"><span class="num">${bounceRate}%</span><div class="lbl">Bounce rate</div></div>
+  <div class="kpi"><span class="num">${avgDuration}</span><div class="lbl">Durata media</div></div>
+  <div class="kpi"><span class="num">${crmLeads.length}</span><div class="lbl">Lead CRM <span class="tag tag-crm" style="font-size:.65rem">D1</span></div></div>
+</div>
+</div>
+
+<!-- CHARTS ROW 1 -->
+<div class="section">
+<h2>📈 Andamento e Canali <span class="tag tag-ga4">GA4</span></h2>
+<div class="charts-grid">
+  <div class="chart-box" style="grid-column:span 2">
+    <h3>Trend sessioni giornaliero</h3>
+    <canvas id="dailyChart" height="100"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3>Canali di acquisizione</h3>
+    <canvas id="channelChart"></canvas>
+  </div>
+  <div class="chart-box">
+    <h3>Device</h3>
+    <canvas id="deviceChart"></canvas>
+  </div>
+</div>
+</div>
+
+<!-- CRM LEADS + TOP PAGES -->
+<div class="section">
+<h2>🎯 Lead CRM per fonte <span class="tag tag-crm">CRM D1</span></h2>
+${crmLeads.length > 0 ? `
+<div class="charts-grid">
+  <div class="chart-box">
+    <h3>Distribuzione fonte (${crmLeads.length} lead)</h3>
+    <canvas id="crmFontiChart"></canvas>
+  </div>
+  <div class="chart-box" style="overflow:auto">
+    <h3>Top 10 pagine GA4 <span class="tag tag-ga4" style="font-size:.65rem">GA4</span></h3>
+    <table>
+      <thead><tr><th>Pagina</th><th>Pageviews</th><th>Sessioni</th></tr></thead>
+      <tbody>${topPagesRows}</tbody>
+    </table>
+  </div>
+</div>
+` : '<p style="color:#888">Nessun lead nel periodo selezionato.</p>'}
+</div>
+
+<!-- SEARCH CONSOLE -->
+<div class="section">
+<h2>🔍 Google Search Console <span class="tag tag-gsc">GSC</span></h2>
+${ga4.searchConsole ? `
+<div class="kpi-grid">
+  <div class="kpi"><span class="num">${ga4.searchConsole.totalClicks.toLocaleString('it-IT')}</span><div class="lbl">Click totali</div></div>
+  <div class="kpi"><span class="num">${ga4.searchConsole.totalImpressions.toLocaleString('it-IT')}</span><div class="lbl">Impressioni</div></div>
+  <div class="kpi"><span class="num">${(ga4.searchConsole.avgCtr * 100).toFixed(2)}%</span><div class="lbl">CTR medio</div></div>
+  <div class="kpi"><span class="num">${ga4.searchConsole.avgPosition.toFixed(1)}</span><div class="lbl">Posizione media</div></div>
+</div>
+<div class="charts-grid">
+  <div class="chart-box" style="overflow:auto">
+    <h3>Top query per click</h3>
+    <table>
+      <thead><tr><th>Query</th><th>Click</th><th>Impr.</th><th>CTR</th><th>Pos.</th></tr></thead>
+      <tbody>${scTableRows}</tbody>
+    </table>
+  </div>
+  <div class="chart-box" style="overflow:auto">
+    <h3>Top pagine per click</h3>
+    <table>
+      <thead><tr><th>Pagina</th><th>Click</th><th>Impr.</th><th>CTR</th><th>Pos.</th></tr></thead>
+      <tbody>${scPagesRows}</tbody>
+    </table>
+  </div>
+</div>
+` : '<p style="color:#888">⚠️ Search Console non configurata o token senza permesso <code>webmasters.readonly</code>.</p>'}
+</div>
+
+<!-- GEO -->
+<div class="section">
+<h2>🌍 Geografico <span class="tag tag-ga4">GA4</span></h2>
+<div class="charts-grid">
+  <div class="chart-box">
+    <h3>Top paesi per sessioni</h3>
+    <table>
+      <thead><tr><th>Paese</th><th>Sessioni</th></tr></thead>
+      <tbody>
+        ${ga4.countryBreakdown.map(c => `<tr><td>${escHtml(c.country)}</td><td style="text-align:center">${c.sessions}</td></tr>`).join('')}
+      </tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+</div><!-- /container -->
+
+<footer>
+  <strong>eCura — Medica GB Srl</strong> · Report Analytics Live · ${generatedAt}<br>
+  Dati GA4: proprietà G-5DY4TY34WK (${ga4PropertyId}) · Dati CRM: D1 SQLite · Solo uso interno
+</footer>
+
+<script>
+// Daily trend
+new Chart(document.getElementById('dailyChart'), {
+  type: 'line',
+  data: {
+    labels: [${dailyLabels}],
+    datasets: [{
+      label: 'Sessioni',
+      data: [${dailySessions}],
+      borderColor: '#068D86',
+      backgroundColor: 'rgba(6,141,134,.1)',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 3
+    }]
+  },
+  options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+})
+
+// Channel
+new Chart(document.getElementById('channelChart'), {
+  type: 'doughnut',
+  data: {
+    labels: [${channelLabels}],
+    datasets: [{ data: [${channelData}], backgroundColor: [${channelColors}] }]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+})
+
+// Device
+new Chart(document.getElementById('deviceChart'), {
+  type: 'doughnut',
+  data: {
+    labels: [${deviceLabels}],
+    datasets: [{ data: [${deviceData}], backgroundColor: ['#4285F4','#34A853','#FBBC05'] }]
+  },
+  options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+})
+
+${crmLeads.length > 0 ? `
+// CRM fonti
+new Chart(document.getElementById('crmFontiChart'), {
+  type: 'bar',
+  data: {
+    labels: [${crmFontiLabels}],
+    datasets: [{ label: 'Lead', data: [${crmFontiData}], backgroundColor: '#068D84' }]
+  },
+  options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+})
+` : ''}
+</script>
+</body>
+</html>`
+
+    return c.html(html)
+  } catch (e: any) {
+    return c.html(`<html><body><h1>Errore</h1><pre>${e.message}</pre></body></html>`, 500)
+  }
+})
+
+// Helpers
+function formatDuration(secs: number): string {
+  if (!secs || secs < 0) return '0:00'
+  const m = Math.floor(secs / 60)
+  const s = Math.floor(secs % 60)
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+function escHtml(s: string): string {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
 
 // Export diretto dell'app Hono (richiesto da @hono/vite-build)
 export default {
