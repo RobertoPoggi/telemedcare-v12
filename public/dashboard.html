@@ -143,6 +143,52 @@
                 </button>
             </div>
 
+            <!-- Riga SEO Report -->
+            <div class="border-t border-gray-200 pt-4 mt-4">
+                <h4 class="text-sm font-semibold text-gray-700 mb-3">
+                    <i class="fas fa-chart-line mr-2 text-indigo-600"></i>Report SEO / Analytics
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Pulsante 1: Genera Report Statico -->
+                    <button onclick="generaReportSEO()" id="btnGeneraReport"
+                        class="flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-6 py-4 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md">
+                        <i class="fas fa-file-chart-column text-xl" id="reportBtnIcon"></i>
+                        <div class="text-left">
+                            <div class="font-bold">📊 Genera Report SEO</div>
+                            <div class="text-xs text-indigo-200 mt-0.5">Chiama GA4 + CRM e aggiorna il report live</div>
+                        </div>
+                    </button>
+                    <!-- Pulsante 2: Apri Report Online -->
+                    <button onclick="apriReportOnline()"
+                        class="flex items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white px-6 py-4 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md">
+                        <i class="fas fa-external-link-alt text-xl"></i>
+                        <div class="text-left">
+                            <div class="font-bold">🌐 Apri Report Live</div>
+                            <div class="text-xs text-emerald-200 mt-0.5">Visualizza sintesi online su Cloudflare Pages</div>
+                        </div>
+                    </button>
+                </div>
+                <!-- Area risultato generazione report -->
+                <div id="reportGeneratoBox" class="hidden mt-3 p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-check-circle text-indigo-600 text-lg mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="font-semibold text-indigo-800 text-sm" id="reportGeneratoMsg">Report generato con successo!</p>
+                            <div class="flex gap-3 mt-2">
+                                <a id="reportGeneratoLink" href="#" target="_blank"
+                                    class="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition">
+                                    <i class="fas fa-external-link-alt mr-1"></i>Apri Report
+                                </a>
+                                <button onclick="document.getElementById('reportGeneratoBox').classList.add('hidden')"
+                                    class="text-xs text-indigo-600 hover:text-indigo-800 underline">
+                                    Chiudi
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Riga 3: Automazioni (Switch ON/OFF Sistema) -->
             <div class="border-t border-gray-200 pt-4">
                 <h4 class="text-sm font-semibold text-gray-700 mb-3">
@@ -1498,6 +1544,67 @@
 
         // Carica stati toggle all'avvio
         loadToggleStates();
+
+        // ── REPORT SEO ────────────────────────────────────────────────────
+        const ADMIN_TOKEN = '10296fac4ec63fe96ef12abdff4b7861790e4e4da7ba7ca41d3918eaf9cce1c2';
+        const LIVE_REPORT_URL = 'https://telemedcare-v12.pages.dev/api/analytics/live-seo-report';
+        const STATIC_REPORT_URL = '/report-ecura-seo-2026.html';
+
+        async function generaReportSEO() {
+            const btn = document.getElementById('btnGeneraReport');
+            const icon = document.getElementById('reportBtnIcon');
+            const box  = document.getElementById('reportGeneratoBox');
+            const msg  = document.getElementById('reportGeneratoMsg');
+            const link = document.getElementById('reportGeneratoLink');
+
+            // Stato loading
+            btn.disabled = true;
+            btn.classList.add('opacity-75');
+            icon.className = 'fas fa-spinner fa-spin text-xl';
+            msg.textContent = 'Connessione a GA4 + CRM in corso…';
+            box.classList.remove('hidden');
+            link.href = '#';
+
+            try {
+                const res = await fetch(LIVE_REPORT_URL, {
+                    headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
+                });
+
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+                const html = await res.text();
+
+                // Crea un blob e apri in nuova tab
+                const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+                const blobUrl = URL.createObjectURL(blob);
+
+                msg.textContent = '✅ Report live generato con dati GA4 + CRM aggiornati!';
+                link.href = blobUrl;
+                link.textContent = '📊 Apri Report Live';
+                link.onclick = () => setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+
+                icon.className = 'fas fa-check text-xl';
+                btn.classList.remove('opacity-75');
+
+                // Apri direttamente
+                window.open(blobUrl, '_blank');
+
+            } catch(err) {
+                console.error('❌ Errore generazione report:', err);
+                msg.textContent = `❌ Errore: ${err.message}. Prova ad aprire il report direttamente.`;
+                icon.className = 'fas fa-exclamation-triangle text-xl';
+                link.href = LIVE_REPORT_URL;
+                link.textContent = '🔗 Apri endpoint diretto';
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-75');
+                setTimeout(() => { icon.className = 'fas fa-file-chart-column text-xl'; }, 3000);
+            }
+        }
+
+        function apriReportOnline() {
+            window.open(LIVE_REPORT_URL, '_blank');
+        }
 
         // 🗑️ CLEAN IMPORT: Cancella e reimporta i 129 lead dall'Excel
     </script>
