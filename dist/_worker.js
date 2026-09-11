@@ -3886,6 +3886,46 @@ ${370+t.length}
             </div>
         </div>
 
+        <!-- ══════════ SEO REPORT CARD ══════════ -->
+        <div class="bg-gradient-to-r from-indigo-600 to-emerald-600 p-1 rounded-xl shadow-md mb-8">
+          <div class="bg-white rounded-xl p-5">
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="text-lg font-bold text-gray-800">
+                <i class="fas fa-chart-line mr-2 text-indigo-600"></i>Analytics &amp; Report SEO
+              </h3>
+              <span class="text-xs text-gray-500" id="reportPeriodoLabel"></span>
+            </div>
+            <p class="text-xs text-gray-500 mb-4">Entrambi i report coprono il periodo <strong>09/08/2026 → oggi</strong> con dati GA4 + CRM live.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Pulsante A: genera report dal 9/8 ad oggi (periodo fisso campagna) -->
+              <button onclick="generaReportPeriodo()"
+                 id="btnReportPeriodo"
+                 class="flex items-center gap-4 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-4 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md">
+                <span class="text-3xl" id="reportPeriodoIcon">📊</span>
+                <div class="text-left">
+                  <div class="font-bold text-base">Report SEO 9/8 → Oggi</div>
+                  <div class="text-xs text-indigo-200 mt-0.5">Genera live con GA4 + CRM · periodo campagna</div>
+                </div>
+              </button>
+              <!-- Pulsante B: report rolling 30 giorni -->
+              <button onclick="generaEApriReportLive()"
+                 id="btnReportLive"
+                 class="flex items-center gap-4 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-4 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md">
+                <span class="text-3xl" id="reportLiveIcon">🌐</span>
+                <div class="text-left">
+                  <div class="font-bold text-base">Report Live 30 gg rolling</div>
+                  <div class="text-xs text-emerald-200 mt-0.5">Genera live · finestra mobile ultimi 30 giorni</div>
+                </div>
+              </button>
+            </div>
+            <!-- feedback generazione -->
+            <div id="reportLiveResult" class="hidden mt-3 p-3 bg-indigo-50 border border-indigo-200 rounded-lg text-sm text-indigo-800">
+              <i class="fas fa-spinner fa-spin mr-1" id="reportLiveSpinner"></i>
+              <span id="reportLiveMsg">Connessione in corso…</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Import API Buttons per Canale -->
         <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
             <h3 class="text-lg font-bold text-gray-800 mb-4">
@@ -6523,6 +6563,73 @@ ${370+t.length}
             }
         }
         window.saveNewAssistito = saveNewAssistito;
+
+        // ── REPORT SEO ──────────────────────────────────────────────────────
+        const ADMIN_TOKEN_RPT = '10296fac4ec63fe96ef12abdff4b7861790e4e4da7ba7ca41d3918eaf9cce1c2';
+        const LIVE_REPORT_URL = 'https://telemedcare-v12.pages.dev/api/analytics/live-seo-report';
+
+        // Mostra il periodo nell'etichetta
+        (function() {
+          const today = new Date();
+          const dd = String(today.getDate()).padStart(2,'0');
+          const mm = String(today.getMonth()+1).padStart(2,'0');
+          const yyyy = today.getFullYear();
+          const el = document.getElementById('reportPeriodoLabel');
+          if (el) el.textContent = 'Periodo: 09/08/2026 → ' + dd + '/' + mm + '/' + yyyy;
+        })();
+
+        // Genera report dal 9/8/2026 ad oggi
+        async function generaReportPeriodo() {
+            const today = new Date().toISOString().slice(0,10);
+            const url = LIVE_REPORT_URL + '?startDate=2026-08-09&endDate=' + today;
+            await _fetchEApriReport('btnReportPeriodo', 'reportPeriodoIcon', '📊', url,
+                'Report 09/08/2026 → ' + today.split('-').reverse().join('/') + ' aperto in nuova scheda!');
+        }
+        window.generaReportPeriodo = generaReportPeriodo;
+
+        // Report rolling 30gg
+        async function generaEApriReportLive() {
+            await _fetchEApriReport('btnReportLive', 'reportLiveIcon', '🌐', LIVE_REPORT_URL,
+                'Report live (ultimi 30 gg) aperto in nuova scheda!');
+        }
+        window.generaEApriReportLive = generaEApriReportLive;
+
+        // Helper condiviso fetch + apri blob
+        async function _fetchEApriReport(btnId, iconId, iconDefault, url, successMsg) {
+            const btn  = document.getElementById(btnId);
+            const icon = document.getElementById(iconId);
+            const resEl = document.getElementById('reportLiveResult');
+            const msg  = document.getElementById('reportLiveMsg');
+            const spin = document.getElementById('reportLiveSpinner');
+            if (!btn) return;
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
+            if (icon) icon.textContent = '⏳';
+            if (resEl)  resEl.classList.remove('hidden');
+            if (msg)  msg.textContent  = 'Connessione a GA4 + CRM in corso…';
+            if (spin) spin.style.display = 'inline-block';
+            try {
+                const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + ADMIN_TOKEN_RPT } });
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                const html = await r.text();
+                const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+                const blobUrl = URL.createObjectURL(blob);
+                window.open(blobUrl, '_blank');
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+                if (msg)  msg.textContent  = '✅ ' + successMsg;
+                if (icon) icon.textContent = iconDefault;
+                if (spin) spin.style.display = 'none';
+                setTimeout(() => { if (resEl) resEl.classList.add('hidden'); }, 4000);
+            } catch(err) {
+                if (msg)  msg.textContent  = '❌ Errore: ' + err.message;
+                if (icon) icon.textContent = '❌';
+                if (spin) spin.style.display = 'none';
+                console.error('Report SEO error:', err);
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        }
     <\/script>
 
     <!-- MODAL: EDIT ASSISTITO -->
