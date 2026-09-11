@@ -5303,60 +5303,94 @@ app.post('/api/lead', async (c) => {
       const { servizio, piano, prezzoAnno, prezzoRinnovo } = calculatePricingFromPackage(normalizedLead.pacchetto)
       console.log(`💰 [PRICING] ${normalizedLead.pacchetto} → ${servizio} ${piano} = €${prezzoAnno} (rinnovo: €${prezzoRinnovo})`)
       
-      // Mappa i dati al nuovo schema
-      await c.env.DB.prepare(`
-        INSERT INTO leads (
-          id, nomeRichiedente, cognomeRichiedente, email, telefono,
-          nomeAssistito, cognomeAssistito, dataNascitaAssistito, etaAssistito, parentelaAssistito,
-          tipoServizio, pacchetto, condizioniSalute, preferenzaContatto,
-          vuoleContratto, intestatarioContratto, cfIntestatario, indirizzoIntestatario,
-          cfAssistito, indirizzoAssistito, vuoleBrochure, vuoleManuale,
-          note, gdprConsent, timestamp, fonte, versione, status,
-          prezzo_anno, prezzo_rinnovo,
-          cittaIntestatario, capIntestatario, provinciaIntestatario,
-          cittaAssistito, capAssistito, provinciaAssistito,
-          canale, temperatura
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).bind(
-        normalizedLead.id,
-        normalizedLead.nomeRichiedente,
-        normalizedLead.cognomeRichiedente,
-        normalizedLead.email,
-        normalizedLead.telefono,
-        normalizedLead.nomeAssistito,
-        normalizedLead.cognomeAssistito,
-        normalizedLead.dataNascitaAssistito,
-        normalizedLead.etaAssistito || null,
-        normalizedLead.parentelaAssistito,
-        normalizedLead.tipoServizio || 'PRO',  // NOT NULL - default PRO
-        normalizedLead.pacchetto,
-        normalizedLead.condizioniSalute,
-        normalizedLead.preferenzaContatto,
-        normalizedLead.vuoleContratto ? 1 : 0,
-        normalizedLead.intestatarioContratto || 'richiedente',
-        normalizedLead.cfIntestatario,
-        normalizedLead.indirizzoIntestatario,
-        normalizedLead.cfAssistito,
-        normalizedLead.indirizzoAssistito,
-        normalizedLead.vuoleBrochure ? 1 : 0,
-        normalizedLead.vuoleManuale ? 1 : 0,
-        normalizedLead.note,
-        normalizedLead.gdprConsent ? 1 : 0,
-        normalizedLead.timestamp,
-        normalizedLead.fonte,
-        normalizedLead.versione,
-        normalizedLead.status,
-        prezzoAnno,
-        prezzoRinnovo,
-        normalizedLead.cittaIntestatario || '',
-        normalizedLead.capIntestatario || '',
-        normalizedLead.provinciaIntestatario || '',
-        normalizedLead.cittaAssistito || '',
-        normalizedLead.capAssistito || '',
-        normalizedLead.provinciaAssistito || '',
-        leadData.canale || leadData.utm_medium || null,
-        leadData.temperatura || null
-      ).run()
+      // ══════════════════════════════════════════════════════
+      // INSERT con self-healing: se una colonna manca nel DB
+      // → ALTER TABLE automatico + retry (max 1 volta)
+      // ══════════════════════════════════════════════════════
+      const doInsert = async () => {
+        await c.env.DB.prepare(`
+          INSERT INTO leads (
+            id, nomeRichiedente, cognomeRichiedente, email, telefono,
+            nomeAssistito, cognomeAssistito, dataNascitaAssistito, etaAssistito, parentelaAssistito,
+            tipoServizio, pacchetto, condizioniSalute, preferenzaContatto,
+            vuoleContratto, intestatarioContratto, cfIntestatario, indirizzoIntestatario,
+            cfAssistito, indirizzoAssistito, vuoleBrochure, vuoleManuale,
+            note, gdprConsent, timestamp, fonte, versione, status,
+            prezzo_anno, prezzo_rinnovo,
+            cittaIntestatario, capIntestatario, provinciaIntestatario,
+            cittaAssistito, capAssistito, provinciaAssistito,
+            canale, temperatura
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          normalizedLead.id,
+          normalizedLead.nomeRichiedente,
+          normalizedLead.cognomeRichiedente,
+          normalizedLead.email,
+          normalizedLead.telefono,
+          normalizedLead.nomeAssistito,
+          normalizedLead.cognomeAssistito,
+          normalizedLead.dataNascitaAssistito,
+          normalizedLead.etaAssistito || null,
+          normalizedLead.parentelaAssistito,
+          normalizedLead.tipoServizio || 'PRO',
+          normalizedLead.pacchetto,
+          normalizedLead.condizioniSalute,
+          normalizedLead.preferenzaContatto,
+          normalizedLead.vuoleContratto ? 1 : 0,
+          normalizedLead.intestatarioContratto || 'richiedente',
+          normalizedLead.cfIntestatario,
+          normalizedLead.indirizzoIntestatario,
+          normalizedLead.cfAssistito,
+          normalizedLead.indirizzoAssistito,
+          normalizedLead.vuoleBrochure ? 1 : 0,
+          normalizedLead.vuoleManuale ? 1 : 0,
+          normalizedLead.note,
+          normalizedLead.gdprConsent ? 1 : 0,
+          normalizedLead.timestamp,
+          normalizedLead.fonte,
+          normalizedLead.versione,
+          normalizedLead.status,
+          prezzoAnno,
+          prezzoRinnovo,
+          normalizedLead.cittaIntestatario || '',
+          normalizedLead.capIntestatario || '',
+          normalizedLead.provinciaIntestatario || '',
+          normalizedLead.cittaAssistito || '',
+          normalizedLead.capAssistito || '',
+          normalizedLead.provinciaAssistito || '',
+          leadData.canale || leadData.utm_medium || null,
+          leadData.temperatura || null
+        ).run()
+      }
+
+      try {
+        await doInsert()
+      } catch (insertErr: any) {
+        const msg = String(insertErr?.message || insertErr)
+        // ── Self-healing: colonna mancante → ALTER + retry ──
+        const missingColMatch = msg.match(/table leads has no column named (\w+)/i)
+        const notNullMatch    = msg.match(/NOT NULL constraint failed: leads\.(\w+)/i)
+        const colToFix = missingColMatch?.[1] || null
+        const colNotNull = notNullMatch?.[1] || null
+
+        if (colToFix) {
+          console.warn(`⚠️ [SELF-HEAL] Colonna mancante: ${colToFix} — eseguo ALTER TABLE e riprovo`)
+          try {
+            await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN ${colToFix} TEXT DEFAULT NULL`).run()
+            console.log(`✅ [SELF-HEAL] Colonna ${colToFix} aggiunta, retry INSERT`)
+            await doInsert()
+          } catch (healErr) {
+            throw new Error(`SELF-HEAL FAILED per ${colToFix}: ${healErr}`)
+          }
+        } else if (colNotNull) {
+          // colonna NOT NULL senza default — logga e rilancia per analisi
+          console.error(`🔴 [SCHEMA] NOT NULL senza default su colonna: ${colNotNull}`)
+          console.error(`🔴 [SCHEMA] Esegui: ALTER TABLE leads ALTER COLUMN ${colNotNull} SET DEFAULT ''`)
+          throw insertErr
+        } else {
+          throw insertErr
+        }
+      }
 
       console.log('✅ Lead salvato nel database con nuovo schema')
       
@@ -5428,6 +5462,55 @@ app.post('/api/lead', async (c) => {
 
   } catch (error) {
     console.error('❌ TeleMedCare V12.0-Cloudflare: Errore elaborazione lead:', error)
+
+    // ═══════════════════════════════════════════════════════════════
+    // FALLBACK EMERGENZA: invia email con dati lead a info@ecura.it
+    // così il lead non viene mai perso silenziosamente
+    // ═══════════════════════════════════════════════════════════════
+    try {
+      const contentType2 = c.req.header('content-type') || ''
+      let fallbackData: any = {}
+      try {
+        if (contentType2.includes('application/json')) {
+          fallbackData = await c.req.json().catch(() => ({}))
+        } else {
+          const fd = await c.req.formData().catch(() => null)
+          if (fd) for (const [k,v] of fd.entries()) fallbackData[k] = v
+        }
+      } catch (_) {}
+
+      const nome    = fallbackData.nomeRichiedente || fallbackData.nome || '(sconosciuto)'
+      const email   = fallbackData.email || '(nessuna)'
+      const tel     = fallbackData.telefono || '(nessuno)'
+      const errMsg  = error instanceof Error ? error.message : String(error)
+      const ts      = new Date().toISOString()
+
+      if (c.env?.RESEND_API_KEY || c.env?.BREVO_API_KEY) {
+        const EmailServiceMod = (await import('./modules/email-service').catch(() => null))?.default
+        if (EmailServiceMod) {
+          const emailService = new EmailServiceMod(c.env)
+          await emailService.sendEmail({
+            to: 'info@ecura.it',
+            subject: `🚨 LEAD NON SALVATO — ${nome} — ${ts.slice(0,10)}`,
+            html: `<h2>⚠️ Lead non salvato nel DB — RECUPERA MANUALMENTE</h2>
+<p><strong>Timestamp:</strong> ${ts}</p>
+<p><strong>Errore:</strong> ${errMsg}</p>
+<hr>
+<p><strong>Nome:</strong> ${nome} ${fallbackData.cognomeRichiedente||''}</p>
+<p><strong>Email:</strong> ${email}</p>
+<p><strong>Telefono:</strong> ${tel}</p>
+<p><strong>Note:</strong> ${fallbackData.note||''}</p>
+<p><strong>Payload completo:</strong></p>
+<pre style="background:#f5f5f5;padding:12px;font-size:12px">${JSON.stringify(fallbackData,null,2)}</pre>
+<p style="color:red"><strong>AZIONE RICHIESTA: inserire manualmente questo lead nel CRM.</strong></p>`
+          }).catch(e => console.error('⚠️ Fallback email fallita:', e))
+          console.warn(`⚠️ [FALLBACK] Email emergenza inviata per lead ${nome} (${email})`)
+        }
+      }
+    } catch (fallbackErr) {
+      console.error('⚠️ [FALLBACK] Impossibile inviare email emergenza:', fallbackErr)
+    }
+
     return c.json({
       success: false,
       error: 'Errore interno del server'
