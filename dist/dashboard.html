@@ -121,6 +121,42 @@
             </div>
         </div>
 
+        <!-- ══════════ SEO REPORT CARD ══════════ -->
+        <div class="bg-gradient-to-r from-indigo-600 to-emerald-600 p-1 rounded-xl shadow-md mb-8">
+          <div class="bg-white rounded-xl p-5">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">
+              <i class="fas fa-chart-line mr-2 text-indigo-600"></i>Analytics &amp; Report SEO
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Pulsante A: report statico sandbox -->
+              <a href="https://8080-ivn1grrkyo8ojy5qmnfz3-dfc00ec5.sandbox.novita.ai/report-ecura-seo-2026.html"
+                 target="_blank"
+                 class="flex items-center gap-4 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-4 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md no-underline">
+                <span class="text-3xl">📊</span>
+                <div>
+                  <div class="font-bold text-base">Report SEO Statico</div>
+                  <div class="text-xs text-indigo-200 mt-0.5">Apri report completo (sandbox)</div>
+                </div>
+              </a>
+              <!-- Pulsante B: live-seo-report online -->
+              <button onclick="generaEApriReportLive()"
+                 id="btnReportLive"
+                 class="flex items-center gap-4 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-4 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md">
+                <span class="text-3xl" id="reportLiveIcon">🌐</span>
+                <div class="text-left">
+                  <div class="font-bold text-base">Report Live Online</div>
+                  <div class="text-xs text-emerald-200 mt-0.5">Genera &amp; apri su Cloudflare Pages</div>
+                </div>
+              </button>
+            </div>
+            <!-- risultato generazione -->
+            <div id="reportLiveResult" class="hidden mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-800">
+              <i class="fas fa-check-circle mr-1"></i>
+              <span id="reportLiveMsg">Report aperto in nuova scheda.</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Import API Buttons per Canale + Automazioni -->
         <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
             <h3 class="text-lg font-bold text-gray-800 mb-4">
@@ -143,51 +179,7 @@
                 </button>
             </div>
 
-            <!-- Riga SEO Report -->
-            <div class="border-t border-gray-200 pt-4 mt-4">
-                <h4 class="text-sm font-semibold text-gray-700 mb-3">
-                    <i class="fas fa-chart-line mr-2 text-indigo-600"></i>Report SEO / Analytics
-                </h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Pulsante 1: Genera Report Statico -->
-                    <button onclick="generaReportSEO()" id="btnGeneraReport"
-                        class="flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-6 py-4 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md">
-                        <i class="fas fa-file-chart-column text-xl" id="reportBtnIcon"></i>
-                        <div class="text-left">
-                            <div class="font-bold">📊 Genera Report SEO</div>
-                            <div class="text-xs text-indigo-200 mt-0.5">Chiama GA4 + CRM e aggiorna il report live</div>
-                        </div>
-                    </button>
-                    <!-- Pulsante 2: Apri Report Online -->
-                    <button onclick="apriReportOnline()"
-                        class="flex items-center justify-center gap-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white px-6 py-4 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md">
-                        <i class="fas fa-external-link-alt text-xl"></i>
-                        <div class="text-left">
-                            <div class="font-bold">🌐 Apri Report Live</div>
-                            <div class="text-xs text-emerald-200 mt-0.5">Visualizza sintesi online su Cloudflare Pages</div>
-                        </div>
-                    </button>
-                </div>
-                <!-- Area risultato generazione report -->
-                <div id="reportGeneratoBox" class="hidden mt-3 p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
-                    <div class="flex items-start gap-3">
-                        <i class="fas fa-check-circle text-indigo-600 text-lg mt-0.5"></i>
-                        <div class="flex-1">
-                            <p class="font-semibold text-indigo-800 text-sm" id="reportGeneratoMsg">Report generato con successo!</p>
-                            <div class="flex gap-3 mt-2">
-                                <a id="reportGeneratoLink" href="#" target="_blank"
-                                    class="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition">
-                                    <i class="fas fa-external-link-alt mr-1"></i>Apri Report
-                                </a>
-                                <button onclick="document.getElementById('reportGeneratoBox').classList.add('hidden')"
-                                    class="text-xs text-indigo-600 hover:text-indigo-800 underline">
-                                    Chiudi
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- vecchio blocco SEO rimosso - spostato sopra come card dedicata -->
 
             <!-- Riga 3: Automazioni (Switch ON/OFF Sistema) -->
             <div class="border-t border-gray-200 pt-4">
@@ -1604,6 +1596,39 @@
 
         function apriReportOnline() {
             window.open(LIVE_REPORT_URL, '_blank');
+        }
+
+        // ── NUOVA funzione per la card SEO in cima ─────────────────────────
+        async function generaEApriReportLive() {
+            const btn  = document.getElementById('btnReportLive');
+            const icon = document.getElementById('reportLiveIcon');
+            const res  = document.getElementById('reportLiveResult');
+            const msg  = document.getElementById('reportLiveMsg');
+
+            btn.disabled = true;
+            icon.textContent = '⏳';
+            msg.textContent  = 'Connessione a GA4 + CRM in corso…';
+            res.classList.remove('hidden');
+
+            try {
+                const r = await fetch(LIVE_REPORT_URL, {
+                    headers: { 'Authorization': `Bearer ${ADMIN_TOKEN}` }
+                });
+                if (!r.ok) throw new Error(`HTTP ${r.status}`);
+                const html = await r.text();
+                const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+                const blobUrl = URL.createObjectURL(blob);
+                window.open(blobUrl, '_blank');
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+                icon.textContent = '✅';
+                msg.textContent  = 'Report live aperto in nuova scheda!';
+            } catch(err) {
+                icon.textContent = '❌';
+                msg.textContent  = `Errore: ${err.message} — <a href="${LIVE_REPORT_URL}" target="_blank" class="underline font-bold">apri endpoint diretto</a>`;
+            } finally {
+                btn.disabled = false;
+                setTimeout(() => { icon.textContent = '🌐'; res.classList.add('hidden'); }, 8000);
+            }
         }
 
         // 🗑️ CLEAN IMPORT: Cancella e reimporta i 129 lead dall'Excel

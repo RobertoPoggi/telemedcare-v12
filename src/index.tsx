@@ -5308,14 +5308,15 @@ app.post('/api/lead', async (c) => {
         INSERT INTO leads (
           id, nomeRichiedente, cognomeRichiedente, email, telefono,
           nomeAssistito, cognomeAssistito, dataNascitaAssistito, etaAssistito, parentelaAssistito,
-          pacchetto, condizioniSalute, preferenzaContatto,
+          tipoServizio, pacchetto, condizioniSalute, preferenzaContatto,
           vuoleContratto, intestatarioContratto, cfIntestatario, indirizzoIntestatario,
           cfAssistito, indirizzoAssistito, vuoleBrochure, vuoleManuale,
           note, gdprConsent, timestamp, fonte, versione, status,
           prezzo_anno, prezzo_rinnovo,
           cittaIntestatario, capIntestatario, provinciaIntestatario,
-          cittaAssistito, capAssistito, provinciaAssistito
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          cittaAssistito, capAssistito, provinciaAssistito,
+          canale, temperatura
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         normalizedLead.id,
         normalizedLead.nomeRichiedente,
@@ -5325,8 +5326,9 @@ app.post('/api/lead', async (c) => {
         normalizedLead.nomeAssistito,
         normalizedLead.cognomeAssistito,
         normalizedLead.dataNascitaAssistito,
-        normalizedLead.etaAssistito,
+        normalizedLead.etaAssistito || null,
         normalizedLead.parentelaAssistito,
+        normalizedLead.tipoServizio || 'PRO',  // NOT NULL - default PRO
         normalizedLead.pacchetto,
         normalizedLead.condizioniSalute,
         normalizedLead.preferenzaContatto,
@@ -5351,7 +5353,9 @@ app.post('/api/lead', async (c) => {
         normalizedLead.provinciaIntestatario || '',
         normalizedLead.cittaAssistito || '',
         normalizedLead.capAssistito || '',
-        normalizedLead.provinciaAssistito || ''
+        normalizedLead.provinciaAssistito || '',
+        leadData.canale || leadData.utm_medium || null,
+        leadData.temperatura || null
       ).run()
 
       console.log('✅ Lead salvato nel database con nuovo schema')
