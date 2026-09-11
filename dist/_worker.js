@@ -23994,7 +23994,7 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await fe.sendEmail({to:((r=e.env)==nul
           canale_acquisizione = CASE WHEN canale_acquisizione IS NULL OR canale_acquisizione = '' THEN ? ELSE canale_acquisizione END,
           updated_at = ?
         WHERE id = ?
-      `).bind(n,r||"",p||"eCura PRO",m||"BASE",u||null,x||null,new Date().toISOString(),C.id).run(),e.json({success:!0,id:C.id,duplicate:!0});const M=await e.env.DB.prepare("SELECT id FROM leads WHERE id LIKE 'LEAD-LANDING-%' ORDER BY id DESC LIMIT 1").first();let P=1;if(M!=null&&M.id){const H=M.id.match(/LEAD-LANDING-(\d+)/);H&&(P=parseInt(H[1])+1)}const $=`LEAD-LANDING-${P.toString().padStart(5,"0")}`;await e.env.DB.prepare(`
+      `).bind(n,r||"",p||"eCura PRO",m||"BASE",u||null,x||null,new Date().toISOString(),C.id).run(),e.json({success:!0,id:C.id,duplicate:!0});const M=await e.env.DB.prepare("SELECT id FROM leads WHERE id LIKE 'LEAD-eCura-%' ORDER BY id DESC LIMIT 1").first();let P=1;if(M!=null&&M.id){const H=M.id.match(/LEAD-eCura-(\d+)/);H&&(P=parseInt(H[1])+1)}const $=`LEAD-eCura-${P.toString().padStart(5,"0")}`;await e.env.DB.prepare(`
       INSERT INTO leads (
         id, nomeRichiedente, cognomeRichiedente, email, telefono,
         servizio, piano, tipoServizio,
