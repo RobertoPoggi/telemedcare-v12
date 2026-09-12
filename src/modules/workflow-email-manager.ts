@@ -148,10 +148,12 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
   const importoPrimoAnno = contractData.prezzoBase // IVA esclusa
   
   // Estrai tipo servizio per calcolare rinnovo corretto
+  // ✅ FIX: case-insensitive per gestire 'eCura Family', 'eCura PRO', 'FAMILY', 'PRO', ecc.
+  const servizioNomeUpper = servizioNome.toUpperCase()
   let servizioTipo: 'FAMILY' | 'PRO' | 'PREMIUM' = 'PRO'
-  if (servizioNome.includes('FAMILY')) servizioTipo = 'FAMILY'
-  else if (servizioNome.includes('PREMIUM')) servizioTipo = 'PREMIUM'
-  else if (servizioNome.includes('PRO')) servizioTipo = 'PRO'
+  if (servizioNomeUpper.includes('FAMILY')) servizioTipo = 'FAMILY'
+  else if (servizioNomeUpper.includes('PREMIUM')) servizioTipo = 'PREMIUM'
+  else if (servizioNomeUpper.includes('PRO')) servizioTipo = 'PRO'
   
   // Calcola prezzo rinnovo dalla pricing matrix
   const { getPricing } = await import('./ecura-pricing')
@@ -1243,7 +1245,7 @@ export async function inviaEmailContratto(
     // Prepara i dati per il template
     const servizioNome = contractData.servizio || leadData.servizio || 'eCura PRO' // eCura PRO, eCura FAMILY, eCura PREMIUM
     const pianoNome = contractData.tipoServizio || 'BASE' // BASE o AVANZATO
-    const dispositivo = (servizioNome.includes('PREMIUM') || servizioNome.includes('premium')) ? 'SiDLY Vital Care' : 'SiDLY Care PRO'
+    const dispositivo = servizioNome.toUpperCase().includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'
     
     // Determina URL brochure per il link diretto
     const baseUrl = getBaseUrl(env)
@@ -1263,7 +1265,7 @@ export async function inviaEmailContratto(
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
-      PIANO_SERVIZIO: formatServiceName(servizioNome.replace('eCura ', ''), pianoNome),
+      PIANO_SERVIZIO: formatServiceName(servizioNormalized as 'FAMILY' | 'PRO' | 'PREMIUM', pianoNome as 'BASE' | 'AVANZATO'),
       SERVIZIO: servizioNome,
       PIANO: pianoNome,
       DISPOSITIVO: dispositivo,

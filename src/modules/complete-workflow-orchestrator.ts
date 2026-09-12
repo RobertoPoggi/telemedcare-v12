@@ -769,8 +769,10 @@ async function generateContractForLead(ctx: WorkflowContext): Promise<WorkflowSt
   console.log(`📄 [HELPER] Generazione contratto ${ctx.leadData.pacchetto} per lead ${ctx.leadData.id}`)
   
   // ✅ USA PRICING MATRIX INVECE DI HARD-CODED
-  const servizio = (ctx.leadData.servizio || 'PRO') as 'FAMILY' | 'PRO' | 'PREMIUM'
-  const piano = ctx.leadData.pacchetto as 'BASE' | 'AVANZATO'
+  // ✅ FIX: normalizza 'eCura Family' → 'FAMILY', 'eCura PRO' → 'PRO', ecc.
+  const servizioRaw = (ctx.leadData.servizio || 'PRO').toUpperCase()
+  const servizio: 'FAMILY' | 'PRO' | 'PREMIUM' = servizioRaw.includes('FAMILY') ? 'FAMILY' : servizioRaw.includes('PREMIUM') ? 'PREMIUM' : 'PRO'
+  const piano = (ctx.leadData.pacchetto || ctx.leadData.piano || 'BASE').toUpperCase() as 'BASE' | 'AVANZATO'
   const pricing = getPricing(servizio, piano)
   
   if (!pricing) {
@@ -847,8 +849,10 @@ async function generateProformaForContract(ctx: WorkflowContext & { contractId: 
   console.log(`💰 [HELPER] Generazione proforma per contratto ${ctx.contractId}`)
   
   // ✅ USA PRICING MATRIX INVECE DI HARD-CODED
-  const servizio = (ctx.leadData.servizio || 'PRO') as 'FAMILY' | 'PRO' | 'PREMIUM'
-  const piano = ctx.leadData.pacchetto as 'BASE' | 'AVANZATO'
+  // ✅ FIX: normalizza 'eCura Family' → 'FAMILY', 'eCura PRO' → 'PRO', ecc.
+  const servizioRaw = (ctx.leadData.servizio || 'PRO').toUpperCase()
+  const servizio: 'FAMILY' | 'PRO' | 'PREMIUM' = servizioRaw.includes('FAMILY') ? 'FAMILY' : servizioRaw.includes('PREMIUM') ? 'PREMIUM' : 'PRO'
+  const piano = (ctx.leadData.pacchetto || ctx.leadData.piano || 'BASE').toUpperCase() as 'BASE' | 'AVANZATO'
   const pricing = getPricing(servizio, piano)
   
   if (!pricing) {
