@@ -14,6 +14,10 @@
   
   // Force rebuild timestamp: 2026-03-06 21:06
   // Environment: Development (local)
+  // NOTE: Cron triggers per Cloudflare Pages NON si configurano qui.
+  // Vanno impostati via Cloudflare Dashboard → telemedcare-v12 → Settings → Functions → Cron Triggers
+  // oppure via API (vedi script setup-cron.sh).
+  // Trigger configurati: "0 6 * * *", "0 10 * * *", "0 18 * * *"
   "d1_databases": [
     {
       "binding": "DB",
