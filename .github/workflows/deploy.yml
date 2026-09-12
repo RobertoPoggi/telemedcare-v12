@@ -66,13 +66,19 @@ jobs:
         run: npm install -g wrangler@3
 
       - name: "Configura CRON_SECRET su Cloudflare Pages"
-        if: ${{ secrets.CRON_SECRET != '' }}
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CRON_SECRET_VALUE: ${{ secrets.CRON_SECRET }}
         run: |
-          echo "${{ secrets.CRON_SECRET }}" | wrangler pages secret put CRON_SECRET \
-            --project-name telemedcare-v12 || echo "⚠️ CRON_SECRET già configurato o errore (non critico)"
+          if [ -n "$CRON_SECRET_VALUE" ]; then
+            echo "$CRON_SECRET_VALUE" | wrangler pages secret put CRON_SECRET \
+              --project-name telemedcare-v12 \
+              && echo "✅ CRON_SECRET configurato su Cloudflare Pages" \
+              || echo "⚠️ CRON_SECRET: errore (non critico, deploy continua)"
+          else
+            echo "⚠️ CRON_SECRET non configurato in GitHub Secrets — skip"
+          fi
 
       - name: "Deploy su Cloudflare Pages"
         env:
