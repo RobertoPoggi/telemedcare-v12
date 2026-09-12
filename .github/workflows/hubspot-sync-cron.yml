@@ -1,18 +1,9 @@
 name: HubSpot Auto Import (Form eCura)
-# 🔒 IMPORT AUTOMATICO QUOTIDIANO - SOLO LEAD DA FORM ECURA
-# ⏰ Esecuzione: Ogni giorno alle 05:00 IT (03:00 UTC)
-# ℹ️  GitHub Actions può slittare di 2-3h → arrivo reale ~07:00-08:00 IT
-# 📅 Periodo: Ultimi 7 giorni — stessa logica dell'autorefresh dashboard
-# 🔍 Filtro: hs_object_source_detail_1 CONTAINS_TOKEN 'Form eCura' (IMMUTABILE)
-#
-# ℹ️  NOTA: imported=0 con skipped>0 è NORMALE — i lead erano già nel DB.
-#    Il CRON è un safety net: se l'autorefresh dashboard li ha già caricati, skipped>0.
-#    Se hubspotContacts=0: o non ci sono nuovi lead eCura negli ultimi 7 giorni
-#    oppure il token è scaduto.
+# ⛔ DISABILITATO — Token HubSpot scaduto, integrazione non più in uso (2026-09-12)
+# Per riabilitare: ripristinare il trigger schedule e aggiornare HUBSPOT_ACCESS_TOKEN
+# su Cloudflare Pages → Settings → Environment Variables
 
 on:
-  schedule:
-    - cron: '0 3 * * *'   # 05:00 IT (03:00 UTC) — anticipo per slittamento GitHub
   workflow_dispatch:
     inputs:
       days:
@@ -34,7 +25,8 @@ permissions:
 
 jobs:
   import-hubspot-leads:
-    name: Import Lead da Form eCura
+    name: Import Lead da Form eCura [DISABILITATO]
+    if: false  # ⛔ Disabilitato — token HubSpot scaduto
     runs-on: ubuntu-latest
     steps:
       - name: 📋 Checkout repository
