@@ -5780,7 +5780,16 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('✅ ' + res.message);
                     loadLeadsData();
                 } else {
-                    alert('❌ Errore sconto: ' + (res.error || res.message || 'Codice non valido o non trovato'));
+                    // Messaggio specifico per ogni causa
+                    const reason = res.reason || '';
+                    let msg = res.error || res.message || 'Errore sconosciuto';
+                    if (reason === 'EXPIRED_CODE')   msg = '⏰ Codice scaduto: ' + msg;
+                    else if (reason === 'EXHAUSTED_CODE') msg = '🚫 Codice esaurito (utilizzi finiti): ' + msg;
+                    else if (reason === 'INVALID_CODE')   msg = '❌ Codice non trovato o non attivo: ' + msg;
+                    else if (reason === 'LEAD_NOT_FOUND') msg = '❌ Lead non trovato: ' + msg;
+                    else if (reason === 'NO_PRICE')       msg = '⚠️ Lead senza prezzo_anno: ' + msg;
+                    else msg = '❌ ' + msg;
+                    alert(msg);
                 }
             } catch (err) {
                 alert('❌ Errore di comunicazione: ' + err.message);

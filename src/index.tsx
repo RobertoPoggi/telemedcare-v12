@@ -24207,7 +24207,8 @@ app.post('/api/migrate-schema', async (c) => {
  * @param codiceSc    Codice sconto da applicare
  * @param sorgente    'CANALE' | 'MANUALE' | 'PROMOZIONE' | 'FORM'
  * @param applicatoDa Nome operatore / sistema (opzionale)
- * @returns { success, prezzo_finale, sconto_effettivo, message }
+ * @returns { success, prezzo_finale, sconto_effettivo, message, reason }
+ *   reason: 'INVALID_CODE' | 'EXPIRED_CODE' | 'EXHAUSTED_CODE' | 'LEAD_NOT_FOUND' | 'NO_PRICE' | 'DB_ERROR'
  */
 async function applyDiscountToLead(
   db: any,
@@ -24215,29 +24216,36 @@ async function applyDiscountToLead(
   codiceSc: string,
   sorgente: string,
   applicatoDa?: string
-): Promise<{ success: boolean; prezzo_finale?: number; sconto_effettivo?: number; message: string }> {
+): Promise<{ success: boolean; prezzo_finale?: number; sconto_effettivo?: number; message: string; reason?: string }> {
   try {
-    // 1. Recupera il codice sconto
-    const dc = await db.prepare(`
-      SELECT * FROM discount_codes
-      WHERE codice = ? AND attivo = 1
-        AND (data_scadenza IS NULL OR date(data_scadenza) >= date('now'))
-        AND (utilizzi_max IS NULL OR utilizzi_count < utilizzi_max)
-    `).bind(codiceSc).first() as any
+    // 1. Recupera il codice sconto — query diagnostica separata per reason preciso
+    const dcRaw = await db.prepare(
+      'SELECT * FROM discount_codes WHERE codice = ?'
+    ).bind(codiceSc).first() as any
 
-    if (!dc) {
-      return { success: false, message: `Codice sconto "${codiceSc}" non valido, scaduto o esaurito` }
+    if (!dcRaw) {
+      return { success: false, reason: 'INVALID_CODE', message: `Codice sconto "${codiceSc}" non trovato` }
     }
+    if (!dcRaw.attivo) {
+      return { success: false, reason: 'INVALID_CODE', message: `Codice sconto "${codiceSc}" non attivo` }
+    }
+    if (dcRaw.data_scadenza && new Date(dcRaw.data_scadenza) < new Date()) {
+      return { success: false, reason: 'EXPIRED_CODE', message: `Codice sconto "${codiceSc}" scaduto il ${dcRaw.data_scadenza}` }
+    }
+    if (dcRaw.utilizzi_max !== null && dcRaw.utilizzi_max !== undefined && Number(dcRaw.utilizzi_count) >= Number(dcRaw.utilizzi_max)) {
+      return { success: false, reason: 'EXHAUSTED_CODE', message: `Codice sconto "${codiceSc}" esaurito (${dcRaw.utilizzi_count}/${dcRaw.utilizzi_max} utilizzi)` }
+    }
+    const dc = dcRaw
 
     // 2. Recupera prezzo originale lead
     const lead = await db.prepare('SELECT prezzo_anno, codice_sconto FROM leads WHERE id = ?').bind(leadId).first() as any
     if (!lead) {
-      return { success: false, message: `Lead ${leadId} non trovato` }
+      return { success: false, reason: 'LEAD_NOT_FOUND', message: `Lead ${leadId} non trovato` }
     }
 
     const prezzoOriginale = Number(lead.prezzo_anno) || 0
     if (prezzoOriginale <= 0) {
-      return { success: false, message: `Lead ${leadId} non ha un prezzo_anno valido` }
+      return { success: false, reason: 'NO_PRICE', message: `Lead ${leadId} non ha un prezzo_anno valido` }
     }
 
     // 3. Calcola sconto effettivo rispettando CAP
@@ -24506,7 +24514,14 @@ app.post('/api/leads/:id/apply-discount', requireAuth, async (c) => {
     const result = await applyDiscountToLead(
       c.env.DB, leadId, codice.toUpperCase(), 'MANUALE', applicato_da || 'operatore'
     )
-    if (!result.success) return c.json({ success: false, error: result.message }, 400)
+    if (!result.success) {
+      // HTTP status semanticamente corretto in base alla causa:
+      // 404 → lead non trovato | 422 → codice scaduto/esaurito/no-price | 400 → codice non trovato/non valido
+      const status = result.reason === 'LEAD_NOT_FOUND' ? 404
+                   : result.reason === 'EXPIRED_CODE' || result.reason === 'EXHAUSTED_CODE' || result.reason === 'NO_PRICE' ? 422
+                   : 400
+      return c.json({ success: false, error: result.message, reason: result.reason }, status)
+    }
     return c.json({ success: true, ...result })
   } catch (error: any) {
     return c.json({ success: false, error: error?.message }, 500)
