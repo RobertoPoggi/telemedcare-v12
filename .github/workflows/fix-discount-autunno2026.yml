@@ -1,0 +1,62 @@
+name: Fix Codice Sconto AUTUNNO2026
+
+# Workflow one-shot: riattiva AUTUNNO2026 con valore 5%
+# Eseguito manualmente una volta sola, poi si può disabilitare
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Scrivi "FIX" per confermare'
+        required: true
+        default: ''
+
+jobs:
+  fix-discount:
+    name: Riattiva AUTUNNO2026 al 5%
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.confirm == 'FIX' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install wrangler
+        run: npm install -g wrangler@4
+
+      - name: Verifica stato attuale AUTUNNO2026
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "=== Stato attuale codici AUTUNNO ==="
+          wrangler d1 execute telemedcare-leads \
+            --command "SELECT id, codice, tipo, valore, attivo, data_scadenza, utilizzi_count FROM discount_codes WHERE codice LIKE '%AUTUNNO%' ORDER BY id DESC;" \
+            --remote
+
+      - name: Riattiva AUTUNNO2026 con sconto 5%
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "=== Fix: riattiva AUTUNNO2026 con valore=5, attivo=1 ==="
+          wrangler d1 execute telemedcare-leads \
+            --command "UPDATE discount_codes SET valore = 5, attivo = 1, descrizione = 'Campagna eCura Autunno 2026 — sconto 5%', data_scadenza = '2026-12-21', updated_at = datetime('now') WHERE codice = 'AUTUNNO2026';" \
+            --remote
+          echo "✅ AUTUNNO2026 aggiornato"
+
+      - name: Verifica post-fix
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          echo "=== Verifica finale ==="
+          wrangler d1 execute telemedcare-leads \
+            --command "SELECT id, codice, tipo, valore, attivo, data_scadenza, cap_percentuale FROM discount_codes WHERE codice IN ('AUTUNNO2026','ECURAAUTUNNO25') ORDER BY id DESC;" \
+            --remote
+          echo "✅ Fix completato — AUTUNNO2026 ora attivo al 5%"
