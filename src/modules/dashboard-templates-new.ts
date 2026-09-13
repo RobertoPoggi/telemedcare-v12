@@ -1274,7 +1274,7 @@ export const dashboard = `<!DOCTYPE html>
             // ─── Carica tabella codici sconto ─────────────────────────────
             async function loadDiscountCodes() {
                 try {
-                    const r = await fetch('/api/discount-codes');
+                    const r = await fetch('/api/discount-codes', { credentials: 'include' });
                     const d = await r.json();
                     const tbody = document.getElementById('discountCodesTableBody');
                     if (!d.success || !d.codes || d.codes.length === 0) {
@@ -1347,7 +1347,7 @@ export const dashboard = `<!DOCTYPE html>
             // ─── Apri modal modifica codice ───────────────────────────────
             function modificaCodice(codice) {
                 // Trova il codice nei dati già caricati
-                fetch('/api/discount-codes')
+                fetch('/api/discount-codes', { credentials: 'include' })
                     .then(r => r.json())
                     .then(d => {
                         const c = d.codes.find(x => x.codice === codice);
@@ -1397,6 +1397,7 @@ export const dashboard = `<!DOCTYPE html>
                         r = await fetch('/api/discount-codes', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
                             body: JSON.stringify(payload)
                         });
                     } else {
@@ -1404,6 +1405,7 @@ export const dashboard = `<!DOCTYPE html>
                         r = await fetch('/api/discount-codes/' + codiceOrig, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
                             body: JSON.stringify(payload)
                         });
                     }
@@ -1429,6 +1431,7 @@ export const dashboard = `<!DOCTYPE html>
                     const r = await fetch('/api/discount-codes/' + codice, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
                         body: JSON.stringify({ attivo: nuovoAttivo })
                     });
                     const res = await r.json();

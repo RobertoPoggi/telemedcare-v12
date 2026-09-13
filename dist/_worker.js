@@ -4135,7 +4135,7 @@ ${370+t.length}
             // ─── Carica tabella codici sconto ─────────────────────────────
             async function loadDiscountCodes() {
                 try {
-                    const r = await fetch('/api/discount-codes');
+                    const r = await fetch('/api/discount-codes', { credentials: 'include' });
                     const d = await r.json();
                     const tbody = document.getElementById('discountCodesTableBody');
                     if (!d.success || !d.codes || d.codes.length === 0) {
@@ -4208,7 +4208,7 @@ ${370+t.length}
             // ─── Apri modal modifica codice ───────────────────────────────
             function modificaCodice(codice) {
                 // Trova il codice nei dati già caricati
-                fetch('/api/discount-codes')
+                fetch('/api/discount-codes', { credentials: 'include' })
                     .then(r => r.json())
                     .then(d => {
                         const c = d.codes.find(x => x.codice === codice);
@@ -4258,6 +4258,7 @@ ${370+t.length}
                         r = await fetch('/api/discount-codes', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
                             body: JSON.stringify(payload)
                         });
                     } else {
@@ -4265,6 +4266,7 @@ ${370+t.length}
                         r = await fetch('/api/discount-codes/' + codiceOrig, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
                             body: JSON.stringify(payload)
                         });
                     }
@@ -4290,6 +4292,7 @@ ${370+t.length}
                     const r = await fetch('/api/discount-codes/' + codice, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
                         body: JSON.stringify({ attivo: nuovoAttivo })
                     });
                     const res = await r.json();
