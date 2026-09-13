@@ -24381,7 +24381,7 @@ app.post('/api/admin/upsert-discount-codes', async (c) => {
 })
 
 // ─── GET /api/discount-codes — lista tutti i codici ────────────────────────
-app.get('/api/discount-codes', requireAuth, async (c) => {
+app.get('/api/discount-codes', requireAuthOrAdmin, async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
     const rows = await c.env.DB.prepare(
@@ -24394,7 +24394,7 @@ app.get('/api/discount-codes', requireAuth, async (c) => {
 })
 
 // ─── POST /api/discount-codes — crea nuovo codice ─────────────────────────
-app.post('/api/discount-codes', requireAuth, async (c) => {
+app.post('/api/discount-codes', requireAuthOrAdmin, async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
     const body = await c.req.json() as any
@@ -24430,7 +24430,7 @@ app.post('/api/discount-codes', requireAuth, async (c) => {
 })
 
 // ─── PUT /api/discount-codes/:codice — aggiorna codice ────────────────────
-app.put('/api/discount-codes/:codice', requireAuth, async (c) => {
+app.put('/api/discount-codes/:codice', requireAuthOrAdmin, async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
     const codice = c.req.param('codice').toUpperCase()
@@ -24481,7 +24481,7 @@ app.put('/api/discount-codes/:codice', requireAuth, async (c) => {
 })
 
 // ─── DELETE /api/discount-codes/:codice — disattiva (soft-delete) ─────────
-app.delete('/api/discount-codes/:codice', requireAuth, async (c) => {
+app.delete('/api/discount-codes/:codice', requireAuthOrAdmin, async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
     const codice = c.req.param('codice').toUpperCase()
@@ -29042,6 +29042,20 @@ app.post('/api/auth/logout', (c) => {
   c.header('Set-Cookie', 'session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0')
   return c.json({ success: true })
 })
+
+// Middleware: Verifica autenticazione (session cookie OPPURE Bearer ADMIN_SECRET_TOKEN)
+// Usato per endpoint che devono essere accessibili sia da UI che da script admin.
+async function requireAuthOrAdmin(c: any, next: any) {
+  const authHeader = c.req.header('Authorization')
+  const adminToken = c.env?.ADMIN_SECRET_TOKEN
+  // Accetta Bearer ADMIN_SECRET_TOKEN come alternativa alla sessione
+  if (adminToken && authHeader === `Bearer ${adminToken}`) {
+    c.set('user', { username: 'admin', role: 'ADMIN', full_name: 'Admin API' })
+    return next()
+  }
+  // Fallback: autenticazione standard via session cookie
+  return requireAuth(c, next)
+}
 
 // Middleware: Verifica autenticazione
 async function requireAuth(c: any, next: any) {
