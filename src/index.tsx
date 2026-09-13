@@ -18012,12 +18012,13 @@ app.post('/api/leads', async (c) => {
         indirizzoAssistito, capAssistito, cittaAssistito, provinciaAssistito,
         cfAssistito, condizioniSalute,
         tipoServizio, servizio, piano,
+        prezzo_anno, prezzo_rinnovo,
         vuoleBrochure, vuoleContratto, vuoleManuale,
         gdprConsent,
         intestatarioContratto,
         note, fonte, status, timestamp, updated_at,
         hs_object_source, hs_object_source_detail_1, dettaglio_fonte
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       leadId,
       data.nomeRichiedente,
@@ -18037,6 +18038,38 @@ app.post('/api/leads', async (c) => {
       data.tipoServizio || data.servizio || 'eCura PRO',
       data.servizio || 'eCura PRO',
       data.piano || 'BASE',
+      // Calcola prezzo: usa valore dal frontend, altrimenti calcola da tabella prezzi
+      (function() {
+        if (data.prezzo_anno && Number(data.prezzo_anno) > 0) return Number(data.prezzo_anno)
+        const srvRaw = (data.servizio || 'eCura PRO').toUpperCase()
+        const pln = (data.piano || 'BASE').toUpperCase()
+        const table: Record<string,Record<string,number>> = {
+          'ECURA FAMILY':   { BASE: 390,  AVANZATO: 690  },
+          'ECURA PRO':      { BASE: 480,  AVANZATO: 840  },
+          'ECURA PREMIUM':  { BASE: 590,  AVANZATO: 990  },
+          // alias senza spazio
+          'FAMILY':         { BASE: 390,  AVANZATO: 690  },
+          'PRO':            { BASE: 480,  AVANZATO: 840  },
+          'PREMIUM':        { BASE: 590,  AVANZATO: 990  },
+        }
+        const key = Object.keys(table).find(k => srvRaw.includes(k.replace('ECURA ', '').replace('ECURA', '').trim()) || srvRaw === k)
+        return (key && table[key][pln]) ? table[key][pln] : 480
+      })(),
+      (function() {
+        if (data.prezzo_rinnovo && Number(data.prezzo_rinnovo) > 0) return Number(data.prezzo_rinnovo)
+        const srvRaw = (data.servizio || 'eCura PRO').toUpperCase()
+        const pln = (data.piano || 'BASE').toUpperCase()
+        const table: Record<string,Record<string,number>> = {
+          'ECURA FAMILY':   { BASE: 200,  AVANZATO: 500  },
+          'ECURA PRO':      { BASE: 240,  AVANZATO: 600  },
+          'ECURA PREMIUM':  { BASE: 300,  AVANZATO: 750  },
+          'FAMILY':         { BASE: 200,  AVANZATO: 500  },
+          'PRO':            { BASE: 240,  AVANZATO: 600  },
+          'PREMIUM':        { BASE: 300,  AVANZATO: 750  },
+        }
+        const key = Object.keys(table).find(k => srvRaw.includes(k.replace('ECURA ', '').replace('ECURA', '').trim()) || srvRaw === k)
+        return (key && table[key][pln]) ? table[key][pln] : 240
+      })(),
       data.vuoleBrochure || 'No',
       data.vuoleContratto || 'No',
       data.vuoleManuale || 'No',

@@ -6967,11 +6967,32 @@ export const leads_dashboard = `<!DOCTYPE html>
                 // Condizioni di salute
                 condizioniSalute: document.getElementById('newCondizioniSalute').value,
                 
-                // Servizio e Piano
+                // Servizio e Piano + Prezzo calcolato
                 servizio: document.getElementById('newServizio').value,
                 piano: document.getElementById('newPiano').value,
                 canale: document.getElementById('newCanale').value,
                 fonte: document.getElementById('newCanale').value,
+                prezzo_anno: (function() {
+                    // Legge il prezzo direttamente dalla tabella prezzi (stessa usata in updatePrices)
+                    const srv = document.getElementById('newServizio').value;
+                    const pln = document.getElementById('newPiano').value;
+                    const prices = {
+                        'eCura FAMILY':  { BASE: 390,  AVANZATO: 690  },
+                        'eCura PRO':     { BASE: 480,  AVANZATO: 840  },
+                        'eCura PREMIUM': { BASE: 590,  AVANZATO: 990  }
+                    };
+                    return (prices[srv] && prices[srv][pln]) ? prices[srv][pln] : 0;
+                })(),
+                prezzo_rinnovo: (function() {
+                    const srv = document.getElementById('newServizio').value;
+                    const pln = document.getElementById('newPiano').value;
+                    const rinnovi = {
+                        'eCura FAMILY':  { BASE: 200,  AVANZATO: 500  },
+                        'eCura PRO':     { BASE: 240,  AVANZATO: 600  },
+                        'eCura PREMIUM': { BASE: 300,  AVANZATO: 750  }
+                    };
+                    return (rinnovi[srv] && rinnovi[srv][pln]) ? rinnovi[srv][pln] : 0;
+                })(),
                 
                 // Preferenze
                 vuoleBrochure: document.getElementById('newVuoleBrochure').checked ? 'Si' : 'No',
@@ -7450,13 +7471,33 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <select id="newCanale" required 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition bg-white">
                                     <option value="">Seleziona fonte...</option>
-                                    <option value="Sito www.eCura.it">Sito www.eCura.it</option>
-                                    <option value="Privati IRBEMA">Privati IRBEMA</option>
-                                    <option value="Form eCura">Form eCura</option>
-                                    <option value="Form eCura x Test">Form eCura x Test</option>
-                                    <option value="B2B IRBEMA">B2B IRBEMA</option>
-                                    <option value="Sito web Medica GB">Sito web Medica GB</option>
-                                    <option value="NETWORKING">NETWORKING</option>
+                                    <optgroup label="— Form eCura (web) —">
+                                        <option value="Form eCura">Form eCura (organico)</option>
+                                        <option value="eCura — Meta (FB/IG)">eCura — Meta (FB/IG)</option>
+                                        <option value="eCura — Google">eCura — Google</option>
+                                        <option value="eCura — Diretto">eCura — Diretto</option>
+                                        <option value="eCura — Altro">eCura — Altro</option>
+                                    </optgroup>
+                                    <optgroup label="— Partner / B2B —">
+                                        <option value="Privati IRBEMA">Privati IRBEMA</option>
+                                        <option value="B2B IRBEMA">B2B IRBEMA</option>
+                                        <option value="AON">AON</option>
+                                        <option value="NETWORKING">NETWORKING</option>
+                                    </optgroup>
+                                    <optgroup label="— Referral / Passaparola —">
+                                        <option value="Passaparola">Passaparola (cliente/familiare)</option>
+                                        <option value="Medico di base">Medico di base</option>
+                                        <option value="Farmacia">Farmacia</option>
+                                        <option value="Assistente sociale">Assistente sociale</option>
+                                    </optgroup>
+                                    <optgroup label="— Altro —">
+                                        <option value="Sito www.eCura.it">Sito www.eCura.it</option>
+                                        <option value="Sito web Medica GB">Sito web Medica GB</option>
+                                        <option value="Fiera / Evento">Fiera / Evento</option>
+                                        <option value="Form Contattaci">Form Contattaci</option>
+                                        <option value="Telefonata diretta">Telefonata diretta</option>
+                                        <option value="MANUAL_ENTRY">Inserimento manuale operatore</option>
+                                    </optgroup>
                                 </select>
                             </div>
                         </div>
