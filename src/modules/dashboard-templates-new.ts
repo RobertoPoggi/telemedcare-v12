@@ -5605,7 +5605,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     if (result.email_configurazione_inviata === true) {
                         msg += '\\n\\n📧 Email con form di configurazione inviata al cliente!';
                     } else if (result.email_configurazione_inviata === false) {
-                        msg += '\\n\\n⚠️ Attenzione: errore nell\'invio email configurazione. Usa il pulsante ⚙️ per rinviarla manualmente.';
+                        msg += "\\n\\n⚠️ Attenzione: errore nell'invio email configurazione. Usa il pulsante ⚙️ per rinviarla manualmente.";
                     }
                     alert(msg);
                     loadLeadsData();
