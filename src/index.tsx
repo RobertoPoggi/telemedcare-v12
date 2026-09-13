@@ -24317,6 +24317,69 @@ async function applyDiscountToLead(
   }
 }
 
+// ─── POST /api/admin/upsert-discount-codes — crea/aggiorna codici sconto ────
+// Protetto da ADMIN_SECRET_TOKEN (Bearer). Usato per fix operativi senza sessione.
+app.post('/api/admin/upsert-discount-codes', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const authHeader = c.req.header('Authorization')
+    if (!c.env.ADMIN_SECRET_TOKEN || authHeader !== `Bearer ${c.env.ADMIN_SECRET_TOKEN}`) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401)
+    }
+    const body = await c.req.json() as any[]
+    if (!Array.isArray(body)) return c.json({ success: false, error: 'Body deve essere un array di codici' }, 400)
+    const results: any[] = []
+    for (const item of body) {
+      const { codice, descrizione, tipo, valore, attivo, data_scadenza, utilizzi_max, cap_percentuale, sorgente } = item
+      if (!codice || valore === undefined) { results.push({ codice, error: 'codice e valore obbligatori' }); continue }
+      const existing = await c.env.DB.prepare('SELECT id FROM discount_codes WHERE codice = ?').bind(codice.toUpperCase()).first()
+      if (existing) {
+        await c.env.DB.prepare(`
+          UPDATE discount_codes SET
+            descrizione    = COALESCE(?, descrizione),
+            tipo           = COALESCE(?, tipo),
+            valore         = ?,
+            attivo         = ?,
+            data_scadenza  = COALESCE(?, data_scadenza),
+            utilizzi_max   = ?,
+            cap_percentuale= COALESCE(?, cap_percentuale),
+            updated_at     = datetime('now')
+          WHERE codice = ?
+        `).bind(
+          descrizione || null, tipo || null, Number(valore),
+          attivo !== undefined ? (attivo ? 1 : 0) : 1,
+          data_scadenza || null,
+          utilizzi_max !== undefined ? Number(utilizzi_max) : null,
+          cap_percentuale !== undefined ? Number(cap_percentuale) : null,
+          codice.toUpperCase()
+        ).run()
+        results.push({ codice: codice.toUpperCase(), action: 'updated', valore, attivo })
+      } else {
+        const r = await c.env.DB.prepare(`
+          INSERT INTO discount_codes
+            (codice, descrizione, tipo, valore, sorgente, attivo, data_scadenza, utilizzi_max, cap_percentuale)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          codice.toUpperCase(), descrizione || null, tipo || 'PERCENTUALE', Number(valore),
+          sorgente || 'MANUALE', attivo !== undefined ? (attivo ? 1 : 0) : 1,
+          data_scadenza || null,
+          utilizzi_max !== undefined ? Number(utilizzi_max) : null,
+          cap_percentuale !== undefined ? Number(cap_percentuale) : 20
+        ).run()
+        results.push({ codice: codice.toUpperCase(), action: 'created', id: r.meta?.last_row_id })
+      }
+    }
+    // Ritorna stato finale di tutti i codici toccati
+    const codici = body.map((b: any) => `'${b.codice?.toUpperCase()}'`).join(',')
+    const final = await c.env.DB.prepare(
+      `SELECT id, codice, tipo, valore, attivo, data_scadenza, utilizzi_count, cap_percentuale FROM discount_codes WHERE codice IN (${codici})`
+    ).all()
+    return c.json({ success: true, results, final: final.results })
+  } catch (err: any) {
+    return c.json({ success: false, error: err?.message }, 500)
+  }
+})
+
 // ─── GET /api/discount-codes — lista tutti i codici ────────────────────────
 app.get('/api/discount-codes', requireAuth, async (c) => {
   try {
