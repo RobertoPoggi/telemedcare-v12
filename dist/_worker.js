@@ -5589,34 +5589,8 @@ ${370+t.length}
         window.loadEcuraChannelStats = loadEcuraChannelStats;
 
         async function syncEcuraChannels() {
-            const btn = document.getElementById('btnSyncChannels');
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sincronizzazione...';
-            }
-            try {
-                const res = await fetch('/api/leads/sync-ecura-channels', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({}) // server calcola giorni da inizio campagna 30/01/2026
-                });
-                const data = await res.json();
-                if (data.success) {
-                    await loadEcuraChannelStats();
-                    const fromDate = data.from ? new Date(data.from).toLocaleDateString('it-IT') : '30/01/2026';
-                    const msg = \`✅ Sincronizzazione completata!\\n\\nFinestra: dal \${fromDate} ad oggi (\${data.days} giorni)\\nContatti HubSpot trovati: \${data.hubspotContacts}\\nNuovi importati: \${data.imported}\\nAggiornati con canale: \${data.updated}\\nGià aggiornati / skip: \${data.skipped}\`;
-                    alert(msg);
-                } else {
-                    alert('❌ Errore: ' + (data.error || 'Errore sconosciuto'));
-                }
-            } catch (err) {
-                alert('❌ Errore di comunicazione: ' + err.message);
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-sync-alt"></i> Sincronizza canali';
-                }
-            }
+            alert('ℹ️ Sincronizzazione HubSpot disabilitata.
+I lead arrivano ora solo dalla landing eCura.');
         }
         window.syncEcuraChannels = syncEcuraChannels;
 
@@ -6745,7 +6719,7 @@ ${370+t.length}
                     Form eCura — Fonti di Provenienza
                 </h3>
                 <div class="flex items-center gap-3">
-                    <button id="btnLeadsSyncChannels" onclick="leadssSyncEcuraChannels()" class="text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1">
+                    <button id="btnLeadsSyncChannels" onclick="leadssSyncEcuraChannels()" class="text-xs bg-gray-300 text-gray-500 px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 cursor-not-allowed" title="HubSpot disabilitato — lead solo da landing eCura">
                         <i class="fas fa-sync-alt"></i> Sincronizza canali
                     </button>
                     <span class="text-xs text-gray-400" id="leadsEcuraChannelUpdated">Caricamento...</span>
@@ -7412,34 +7386,8 @@ ${370+t.length}
         window.loadLeadsEcuraChannelStats = loadLeadsEcuraChannelStats;
 
         async function leadssSyncEcuraChannels() {
-            const btn = document.getElementById('btnLeadsSyncChannels');
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sincronizzazione...';
-            }
-            try {
-                const res = await fetch('/api/leads/sync-ecura-channels', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({}) // server calcola giorni da inizio campagna 30/01/2026
-                });
-                const data = await res.json();
-                if (data.success) {
-                    await loadLeadsEcuraChannelStats();
-                    const fromDate = data.from ? new Date(data.from).toLocaleDateString('it-IT') : '30/01/2026';
-                    const msg = \`✅ Sincronizzazione completata!\\n\\nFinestra: dal \${fromDate} ad oggi (\${data.days} giorni)\\nContatti HubSpot trovati: \${data.hubspotContacts}\\nNuovi importati: \${data.imported}\\nAggiornati con canale: \${data.updated}\\nGià aggiornati / skip: \${data.skipped}\`;
-                    alert(msg);
-                } else {
-                    alert('❌ Errore: ' + (data.error || 'Errore sconosciuto'));
-                }
-            } catch (err) {
-                alert('❌ Errore di comunicazione: ' + err.message);
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-sync-alt"></i> Sincronizza canali';
-                }
-            }
+            alert('ℹ️ Sincronizzazione HubSpot disabilitata.
+I lead arrivano ora solo dalla landing eCura.');
         }
         window.leadssSyncEcuraChannels = leadssSyncEcuraChannels;
 
