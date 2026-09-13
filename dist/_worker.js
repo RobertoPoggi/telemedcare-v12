@@ -28093,7 +28093,12 @@ new Chart(document.getElementById('tempPieChart'), {
                 
                 // Aggiorna greeting
                 const greeting = document.getElementById('greeting');
-                greeting.textContent = \`Gentile \${lead.nomeRichiedente || ''} \${lead.cognomeRichiedente || ''},\`;
+                const nomeDisplay = lead.nomeRichiedente || lead.nomeIntestatario || '';
+                const cognomeDisplay = lead.cognomeRichiedente || lead.cognomeIntestatario || '';
+                greeting.textContent = \`Gentile \${nomeDisplay} \${cognomeDisplay},\`;
+                
+                // Mostra riepilogo dati già in nostro possesso
+                showKnownData(lead);
                 
                 // Genera campi form
                 generateFormFields(lead);
@@ -28107,10 +28112,52 @@ new Chart(document.getElementById('tempPieChart'), {
             }
         }
         
+        function showKnownData(lead) {
+            // Raccoglie i dati che già abbiamo e li mostra in un box verde
+            const items = [];
+            if (lead.nomeRichiedente || lead.cognomeRichiedente)
+                items.push({ label: 'Richiedente', value: [lead.nomeRichiedente, lead.cognomeRichiedente].filter(Boolean).join(' ') });
+            if (lead.emailRichiedente)
+                items.push({ label: 'Email', value: lead.emailRichiedente });
+            if (lead.telefonoRichiedente)
+                items.push({ label: 'Telefono', value: lead.telefonoRichiedente });
+            if (lead.nomeAssistito || lead.cognomeAssistito)
+                items.push({ label: 'Assistito', value: [lead.nomeAssistito, lead.cognomeAssistito].filter(Boolean).join(' ') });
+            if (lead.cittaAssistito)
+                items.push({ label: 'Città assistito', value: lead.cittaAssistito });
+            if (lead.tipoServizio || lead.servizio)
+                items.push({ label: 'Servizio richiesto', value: lead.tipoServizio || lead.servizio });
+
+            if (items.length === 0) return;
+
+            let boxHtml = \`
+                <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:16px;margin-bottom:24px;">
+                    <h4 style="margin:0 0 10px 0;color:#166534;font-size:14px;">✅ Dati già in nostro possesso</h4>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">
+            \`;
+            items.forEach(function(item) {
+                boxHtml += \`<div style="font-size:13px;"><span style="color:#6b7280;">\${item.label}:</span> <strong style="color:#1e293b;">\${item.value}</strong></div>\`;
+            });
+            boxHtml += \`</div><p style="margin:10px 0 0 0;font-size:12px;color:#4b7a59;">👇 Completa solo i dati mancanti qui sotto.</p></div>\`;
+
+            const greetingEl = document.getElementById('greeting');
+            greetingEl.insertAdjacentHTML('afterend', boxHtml);
+        }
+
         function generateFormFields(lead) {
             const container = document.getElementById('formFieldsContainer');
             let html = '';
             
+            // ── Prefill intelligente: usa dati richiedente come default per intestatario ──
+            // Per lead inseriti manualmente o da landing, intestatario = richiedente di default
+            const prefNome     = lead.nomeIntestatario     || lead.nomeRichiedente     || '';
+            const prefCognome  = lead.cognomeIntestatario  || lead.cognomeRichiedente  || '';
+            const prefCF       = lead.cfIntestatario       || '';
+            const prefInd      = lead.indirizzoIntestatario || '';
+            const prefCAP      = lead.capIntestatario      || '';
+            const prefCitta    = lead.cittaIntestatario    || '';
+            const prefProv     = lead.provinciaIntestatario || '';
+
             // SEZIONE 1: Dati Intestatario (per il contratto)
             const needsIntestatario = !lead.nomeIntestatario || !lead.cognomeIntestatario ||
                                      !lead.cfIntestatario || !lead.indirizzoIntestatario || 
@@ -28129,6 +28176,7 @@ new Chart(document.getElementById('tempPieChart'), {
                             <div class="form-group">
                                 <label for="nomeIntestatario">Nome <span class="required">*</span></label>
                                 <input type="text" id="nomeIntestatario" name="nomeIntestatario" 
+                                       value="\${prefNome}"
                                        placeholder="Nome" required>
                             </div>
                         \`;
@@ -28139,6 +28187,7 @@ new Chart(document.getElementById('tempPieChart'), {
                             <div class="form-group">
                                 <label for="cognomeIntestatario">Cognome <span class="required">*</span></label>
                                 <input type="text" id="cognomeIntestatario" name="cognomeIntestatario" 
+                                       value="\${prefCognome}"
                                        placeholder="Cognome" required>
                             </div>
                         \`;
@@ -28152,6 +28201,7 @@ new Chart(document.getElementById('tempPieChart'), {
                         <div class="form-group">
                             <label for="cfIntestatario">Codice Fiscale <span class="required">*</span></label>
                             <input type="text" id="cfIntestatario" name="cfIntestatario" 
+                                   value="\${prefCF}"
                                    placeholder="Es. RSSMRA80A01F205K" required 
                                    maxlength="16" style="text-transform: uppercase;"
                                    oninput="this.value=this.value.toUpperCase()"
@@ -28170,6 +28220,7 @@ new Chart(document.getElementById('tempPieChart'), {
                             <div class="form-group">
                                 <label for="indirizzoIntestatario">Indirizzo <span class="required">*</span></label>
                                 <input type="text" id="indirizzoIntestatario" name="indirizzoIntestatario" 
+                                       value="\${prefInd}"
                                        placeholder="Via/Piazza Nome, N." required>
                             </div>
                         \`;
@@ -28180,6 +28231,7 @@ new Chart(document.getElementById('tempPieChart'), {
                             <div class="form-group">
                                 <label for="capIntestatario">CAP <span class="required">*</span></label>
                                 <input type="text" id="capIntestatario" name="capIntestatario" 
+                                       value="\${prefCAP}"
                                        placeholder="00000" required maxlength="5" 
                                        pattern="[0-9]*" inputmode="numeric">
                             </div>
@@ -28191,6 +28243,7 @@ new Chart(document.getElementById('tempPieChart'), {
                             <div class="form-group">
                                 <label for="cittaIntestatario">Città <span class="required">*</span></label>
                                 <input type="text" id="cittaIntestatario" name="cittaIntestatario" 
+                                       value="\${prefCitta}"
                                        placeholder="Es. Milano" required>
                             </div>
                         \`;
@@ -28205,6 +28258,7 @@ new Chart(document.getElementById('tempPieChart'), {
                         <div class="form-group">
                             <label for="provinciaIntestatario">Provincia <span class="required">*</span></label>
                             <input type="text" id="provinciaIntestatario" name="provinciaIntestatario" 
+                                   value="\${prefProv}"
                                    placeholder="Es. MI" required maxlength="2" 
                                    pattern="[A-Za-z]{2}" style="text-transform: uppercase;"
                                    oninput="this.value=this.value.toUpperCase()"
