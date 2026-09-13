@@ -4286,7 +4286,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 // Carica lead
                 // ✅ Aggiungi timestamp per evitare cache del browser
                 const cacheBuster = Date.now();
-                const leadsResponse = await fetch(\`/api/leads?limit=99999&_=\${cacheBuster}\`);
+                const leadsResponse = await fetch(\`/api/leads?limit=500&_=\${cacheBuster}\`);  // ✅ FIX: 500 invece di 99999 — evita timeout D1
                 const leadsData = await leadsResponse.json();
                 allLeads = leadsData.leads || [];
                 
@@ -4397,6 +4397,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                         </td>
                     </tr>
                 \`;
+            } finally {
+                isLoadingLeads = false; // ✅ FIX: sblocca guard in ogni caso (evita loop infinito)
             }
         }
 
