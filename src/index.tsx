@@ -16839,7 +16839,7 @@ app.post('/api/contracts/sign', async (c) => {
           try {
             const rateRowsFirma = await c.env.DB.prepare(
               `SELECT numero_rata, importo, data_scadenza, status FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`
-            ).bind(leadId).all()
+            ).bind(lead.id).all()  // ✅ FIX: era leadId (undefined in questo scope) → lead.id
             rateFirmaProforma = (rateRowsFirma?.results || []) as any[]
             console.log(`📅 [FIRMA→PROFORMA] Rate trovate: ${rateFirmaProforma.length}`)
           } catch (e) {
@@ -17044,14 +17044,48 @@ app.post('/api/contracts/sign', async (c) => {
           // Continua comunque con l'invio email
         }
         
-        // ✅ FIX: Salva proforma_rinnovo_id sul contratto — NON inviare email (invio = manuale con anteprima)
+        // Collega la proforma al contratto e invia la mail proforma al cliente
         if (proformaIdGenerated) {
-          // Collega la proforma al contratto rinnovo
           await c.env.DB.prepare(
             `UPDATE contracts SET proforma_rinnovo_id = ?, updated_at = ? WHERE id = ?`
           ).bind(proformaIdGenerated, new Date().toISOString(), contractId).run()
-          console.log(`✅ [FIRMA→PROFORMA] Proforma ${numeroProforma} (ID ${proformaIdGenerated}) creata e collegata al contratto ${contractId}`)
-          console.log(`📤 [FIRMA→PROFORMA] Email NON inviata — l'operatore invierà dopo anteprima (pulsante 📤 step=5)`)
+          console.log(`✅ [FIRMA→PROFORMA] Proforma ${numeroProforma} (ID ${proformaIdGenerated}) collegata al contratto ${contractId}`)
+
+          // ✅ FIX: invia subito la mail con la proforma (come fa manual-sign)
+          // Prima era NON inviata — causava il blocco del flusso per i clienti rateizzati
+          try {
+            const proformaDataEmail = {
+              proformaId: String(proformaIdGenerated),
+              numeroProforma,
+              proformaPdfUrl: '',
+              tipoServizio: piano,
+              servizio,
+              prezzoBase,
+              prezzoIvaInclusa,
+              dataScadenza: new Date(Date.now() + scadenzaGiorni * 24 * 60 * 60 * 1000).toISOString(),
+              isRinnovo: isRinnovoContract,
+              annoRinnovo: annoRinnovoContract,
+              codiceOriginale,
+              riserva_dominio: Boolean(lead.riserva_dominio),
+              rateizzazione_attiva: Boolean(lead.rateizzazione_attiva),
+              rateizzazione_note: lead.rateizzazione_note || '',
+              rate: rateFirmaProforma
+            }
+            const { inviaEmailProforma } = await import('./modules/workflow-email-manager')
+            const emailProformaResult = await inviaEmailProforma(lead, proformaDataEmail, c.env, c.env.DB)
+            if (emailProformaResult.success) {
+              // Aggiorna status proforma → SENT e lead → PROFORMA_SENT
+              await c.env.DB.prepare(`UPDATE proforma SET status = 'SENT', email_sent = 1, updated_at = ? WHERE id = ?`)
+                .bind(new Date().toISOString(), proformaIdGenerated).run()
+              await c.env.DB.prepare(`UPDATE leads SET status = 'PROFORMA_SENT', updated_at = ? WHERE id = ?`)
+                .bind(new Date().toISOString(), lead.id).run()
+              console.log(`✅ [FIRMA→PROFORMA] Email proforma inviata a ${lead.email} — status PROFORMA_SENT`)
+            } else {
+              console.warn(`⚠️ [FIRMA→PROFORMA] Errore invio email proforma: ${emailProformaResult.errors?.join(', ')}`)
+            }
+          } catch (emailProformaErr) {
+            console.error(`⚠️ [FIRMA→PROFORMA] Eccezione invio email proforma (non bloccante):`, emailProformaErr)
+          }
         } else {
           console.error(`❌ [FIRMA→PROFORMA] Proforma non salvata (ID mancante)`)
         }
