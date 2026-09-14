@@ -3969,7 +3969,7 @@ ${370+t.length}
                             MANUALE: 'bg-yellow-100 text-yellow-700',
                             FORM: 'bg-teal-100 text-teal-700'
                         }[c.sorgente] || 'bg-gray-100 text-gray-700';
-                        return `<tr class="border-b border-gray-100 hover:bg-gray-50">
+                        return \`<tr class="border-b border-gray-100 hover:bg-gray-50">
                             <td class="px-3 py-2 font-mono font-bold text-gray-800">\${c.codice}</td>
                             <td class="px-3 py-2 text-gray-600 max-w-xs truncate">\${c.descrizione || '-'}</td>
                             <td class="px-3 py-2 text-gray-600">\${c.tipo}</td>
@@ -3987,7 +3987,7 @@ ${370+t.length}
                                             title="\${attivo ? 'Disattiva' : 'Attiva'}">\${attivo ? '⛔' : '✅'}</button>
                                 </div>
                             </td>
-                        </tr>`;
+                        </tr>\`;
                     }).join('');
                 } catch(e) {
                     document.getElementById('discountCodesTableBody').innerHTML =
@@ -5013,7 +5013,7 @@ ${370+t.length}
                 // Carica TUTTI i lead (limite massimo 999999)
                 // ✅ Aggiungi timestamp per evitare cache del browser
                 const cacheBuster = Date.now();
-                const allLeadsResponse = await fetch(`/api/leads?limit=999999&_=\${cacheBuster}`);
+                const allLeadsResponse = await fetch(\`/api/leads?limit=999999&_=\${cacheBuster}\`);
                 const allLeadsData = await allLeadsResponse.json();
                 const allLeads = allLeadsData.leads || [];
                 
@@ -5087,13 +5087,13 @@ ${370+t.length}
                 // Popola tabella lead
                 const tbody = document.getElementById('leadsTable');
                 if (leads.length === 0) {
-                    tbody.innerHTML = `
+                    tbody.innerHTML = \`
                         <tr>
                             <td colspan="9" class="py-8 text-center text-gray-400">
                                 Nessun lead trovato
                             </td>
                         </tr>
-                    `;
+                    \`;
                 } else {
                     tbody.innerHTML = leads.map(lead => {
                         // ✅ USA SERVIZIO E PREZZO DAL DATABASE
@@ -5125,7 +5125,7 @@ ${370+t.length}
                             minute: '2-digit'
                         });
 
-                        return `
+                        return \`
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
                                 <td class="py-3 px-2 text-sm whitespace-nowrap">
                                     <code class="bg-gray-100 px-2 py-1 rounded text-xs" title="\${escapeHtml(lead.id)}">\${formatLeadId(lead.id)}</code>
@@ -5144,7 +5144,7 @@ ${370+t.length}
                                 </td>
                                 <td class="py-3 px-2 text-xs text-gray-500" whitespace-nowrap>\${date}</td>
                             </tr>
-                        `;
+                        \`;
                     }).join('');
                 }
 
@@ -5164,13 +5164,13 @@ ${370+t.length}
                 renderAssistitiTable(assistiti);
 
                 // Aggiorna timestamp
-                document.getElementById('lastUpdate').textContent = `Aggiornato: \${new Date().toLocaleTimeString('it-IT')}`;
+                document.getElementById('lastUpdate').textContent = \`Aggiornato: \${new Date().toLocaleTimeString('it-IT')}\`;
 
             } catch (error) {
                 console.error('Errore caricamento dashboard:', error);
                 // Mostra dettagli errore per debugging
                 const errorMsg = error.message || 'Errore sconosciuto';
-                document.getElementById('leadsTable').innerHTML = `
+                document.getElementById('leadsTable').innerHTML = \`
                     <tr>
                         <td colspan="8" class="py-8 text-center text-red-500">
                             <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
@@ -5181,7 +5181,7 @@ ${370+t.length}
                             </button>
                         </td>
                     </tr>
-                `;
+                \`;
                 setTimeout(() => {
                     const retryBtn = document.getElementById('retryLoadDashboard');
                     if (retryBtn) retryBtn.addEventListener('click', loadDashboardData);
@@ -5193,17 +5193,17 @@ ${370+t.length}
 
         
         function importFromChannel(channel) {
-            if (confirm(`📥 Vuoi importare i lead dal canale \${channel}?\\n\\nQuesta operazione:
+            if (confirm(\`📥 Vuoi importare i lead dal canale \${channel}?\\n\\nQuesta operazione:
 - Scaricherà i nuovi lead da \${channel}
 - Aggiornerà il database
-- Sincronizzerà i dati\\n\\nProcedi?`)) {
+- Sincronizzerà i dati\\n\\nProcedi?\`)) {
                 // Mostra loading
                 const btn = event.target.closest('button');
                 const originalHTML = btn.innerHTML;
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Importazione...';
                 
-                fetch(`/api/leads/import/\${channel.toLowerCase()}`, {
+                fetch(\`/api/leads/import/\${channel.toLowerCase()}\`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 })
@@ -5309,7 +5309,7 @@ ${370+t.length}
                 const basePercentage = Math.round((planCounts.BASE / total) * 100);
                 const avanzatoPercentage = Math.round((planCounts.AVANZATO / total) * 100);
 
-                document.getElementById('plansChart').innerHTML = `
+                document.getElementById('plansChart').innerHTML = \`
                     <div>
                         <div class="flex items-center justify-between mb-1">
                             <span class="text-sm font-medium text-gray-700">BASE</span>
@@ -5328,7 +5328,7 @@ ${370+t.length}
                             <div class="bg-purple-500 h-2 rounded-full" style="width: \${avanzatoPercentage}%"></div>
                         </div>
                     </div>
-                `;
+                \`;
             });
         }
         
@@ -5365,7 +5365,7 @@ ${370+t.length}
                     assistito.emailrichiedente ||
                     ''
                 ).toLowerCase().trim();
-                const nomeCompleto = `\${escapeHtml(assistito.nomeRichiedente || assistito.nome_richiedente || assistito.nome || '')} \${escapeHtml(assistito.cognomeRichiedente || assistito.cognome_richiedente || assistito.cognome || '')}`.trim().toLowerCase();
+                const nomeCompleto = \`\${escapeHtml(assistito.nomeRichiedente || assistito.nome_richiedente || assistito.nome || '')} \${escapeHtml(assistito.cognomeRichiedente || assistito.cognome_richiedente || assistito.cognome || '')}\`.trim().toLowerCase();
                 const canaleField = (assistito.canale || assistito.origine || '').toLowerCase();
                 
                 // ⚡ MAPPATURA BASATA SU DATI REALI: Identifica canale da nome assistito
@@ -5426,7 +5426,7 @@ ${370+t.length}
                     const percentage = Math.round((count / total) * 100);
                     const color = channelColors[canale] || 'bg-gray-500';
                     
-                    html += `
+                    html += \`
                         <div>
                             <div class="flex items-center justify-between mb-1">
                                 <span class="text-sm font-medium text-gray-700">\${canale}</span>
@@ -5436,7 +5436,7 @@ ${370+t.length}
                                 <div class="\${color} h-2 rounded-full" style="width: \${percentage}%"></div>
                             </div>
                         </div>
-                    `;
+                    \`;
                 });
             }
             
@@ -5564,13 +5564,13 @@ ${370+t.length}
                     { label: 'Non tracciato',        value: nonTracciato,  color: 'bg-gray-100 text-gray-500',     border: 'border-gray-300',   icon: 'fa-minus-circle' },
                 ];
 
-                const html = boxes.map(b => `
+                const html = boxes.map(b => \`
                     <div class="flex flex-col items-center justify-center rounded-lg p-4 border-2 \${b.border} \${b.color}">
                         <i class="fas \${b.icon} text-2xl mb-2 opacity-70"></i>
                         <span class="text-3xl font-extrabold">\${b.value}</span>
                         <span class="text-xs font-semibold mt-1 text-center">\${b.label}</span>
                     </div>
-                `).join('');
+                \`).join('');
 
                 // Aggiorna griglia (6 colonne)
                 const grid = document.getElementById('ecuraChannelGrid');
@@ -5650,7 +5650,7 @@ I lead arrivano ora solo dalla landing eCura.");
                     const parentela = prompt('Parentela Caregiver:', assistito.parentela_caregiver || '');
                     
                     // Aggiorna
-                    const updateResponse = await fetch(`/api/assistiti/\${id}`, {
+                    const updateResponse = await fetch(\`/api/assistiti/\${id}\`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -5694,7 +5694,7 @@ I lead arrivano ora solo dalla landing eCura.");
             }
             
             try {
-                const response = await fetch(`/api/assistiti/\${id}`, {
+                const response = await fetch(\`/api/assistiti/\${id}\`, {
                     method: 'DELETE'
                 });
                 
@@ -5732,7 +5732,7 @@ I lead arrivano ora solo dalla landing eCura.");
                     const setValueSafe = (id, value) => {
                         const el = document.getElementById(id);
                         if (el) el.value = value || '';
-                        else console.warn(`Elemento \${id} non trovato`);
+                        else console.warn(\`Elemento \${id} non trovato\`);
                     };
                     
                     setValueSafe('editAssistitoId', id);
@@ -5811,7 +5811,7 @@ I lead arrivano ora solo dalla landing eCura.");
             console.log('📤 PAYLOAD INVIATO:', payload);
             
             try {
-                const response = await fetch(`/api/assistiti/\${id}`, {
+                const response = await fetch(\`/api/assistiti/\${id}\`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -6059,7 +6059,7 @@ I lead arrivano ora solo dalla landing eCura.");
                 .map(([channel, count], index) => {
                     const percentage = Math.round((count / total) * 100);
                     const color = colors[index % colors.length];
-                    return `
+                    return \`
                         <div class="p-4 border-2 border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-sm font-bold text-gray-800">\${channel}</span>
@@ -6071,7 +6071,7 @@ I lead arrivano ora solo dalla landing eCura.");
                                 <div class="\${color} h-2 rounded-full" style="width: \${percentage}%"></div>
                             </div>
                         </div>
-                    `;
+                    \`;
                 }).join('');
 
             document.getElementById('channelsChart').innerHTML = html || '<p class="text-gray-400 text-sm col-span-3 text-center">Nessun dato disponibile</p>';
@@ -6929,7 +6929,7 @@ I lead arrivano ora solo dalla landing eCura.");
                 // Carica lead
                 // ✅ Aggiungi timestamp per evitare cache del browser
                 const cacheBuster = Date.now();
-                const leadsResponse = await fetch(`/api/leads?limit=500&_=\${cacheBuster}`);  // ✅ FIX: 500 invece di 99999 — evita timeout D1
+                const leadsResponse = await fetch(\`/api/leads?limit=500&_=\${cacheBuster}\`);  // ✅ FIX: 500 invece di 99999 — evita timeout D1
                 const leadsData = await leadsResponse.json();
                 allLeads = leadsData.leads || [];
                 
@@ -7032,14 +7032,14 @@ I lead arrivano ora solo dalla landing eCura.");
 
             } catch (error) {
                 console.error('Errore caricamento leads:', error);
-                document.getElementById('leadsTableBody').innerHTML = `
+                document.getElementById('leadsTableBody').innerHTML = \`
                     <tr>
                         <td colspan="9" class="py-8 text-center text-red-500">
                             <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
                             <p>Errore nel caricamento dei lead</p>
                         </td>
                     </tr>
-                `;
+                \`;
             } finally {
                 isLoadingLeads = false; // ✅ FIX: sblocca guard in ogni caso (evita loop infinito)
             }
@@ -7084,7 +7084,7 @@ I lead arrivano ora solo dalla landing eCura.");
                 .map(([service, count]) => {
                     const percentage = Math.round((count / total) * 100);
                     const color = colors[service] || 'bg-gray-500';
-                    return `
+                    return \`
                         <div>
                             <div class="flex items-center justify-between mb-1">
                                 <span class="text-sm font-medium">\${service}</span>
@@ -7094,7 +7094,7 @@ I lead arrivano ora solo dalla landing eCura.");
                                 <div class="\${color} h-2 rounded-full" style="width: \${percentage}%"></div>
                             </div>
                         </div>
-                    `;
+                    \`;
                 }).join('');
 
             document.getElementById('servicesBreakdown').innerHTML = html || '<p class="text-gray-400 text-sm">Nessun servizio disponibile</p>';
@@ -7123,7 +7123,7 @@ I lead arrivano ora solo dalla landing eCura.");
 
             const html = Object.entries(counts).map(([plan, count]) => {
                 const percentage = Math.round((count / total) * 100);
-                return `
+                return \`
                     <div>
                         <div class="flex items-center justify-between mb-1">
                             <span class="text-sm font-medium">\${plan}</span>
@@ -7133,7 +7133,7 @@ I lead arrivano ora solo dalla landing eCura.");
                             <div class="\${colors[plan]} h-2 rounded-full" style="width: \${percentage}%"></div>
                         </div>
                     </div>
-                `;
+                \`;
             }).join('');
 
             document.getElementById('plansBreakdown').innerHTML = html;
@@ -7208,7 +7208,7 @@ I lead arrivano ora solo dalla landing eCura.");
                 .map(([fonte, count]) => {
                     const percentage = Math.round((count / total) * 100);
                     const color = fonteColors[fonte] || 'bg-gray-500';
-                    return `
+                    return \`
                         <div>
                             <div class="flex items-center justify-between mb-1">
                                 <span class="text-sm font-medium">\${fonte}</span>
@@ -7218,7 +7218,7 @@ I lead arrivano ora solo dalla landing eCura.");
                                 <div class="\${color} h-2 rounded-full" style="width: \${percentage}%"></div>
                             </div>
                         </div>
-                    `;
+                    \`;
                 }).join('');
 
             const el = document.getElementById('channelsBreakdown');
@@ -7244,14 +7244,14 @@ I lead arrivano ora solo dalla landing eCura.");
                     { label: 'Non tracciato',      value: nonTracciato, colorBg: '#F9FAFB', colorBorder: '#D1D5DB', colorText: '#6B7280', icon: 'fa-minus-circle' },
                 ];
 
-                const html = canaleMap.map(b => `
+                const html = canaleMap.map(b => \`
                     <div style="background:\${b.colorBg};border:2px solid \${b.colorBorder};color:\${b.colorText}"
                          class="flex flex-col items-center justify-center rounded-lg p-4 text-center">
                         <i class="fas \${b.icon} text-2xl mb-2 opacity-70"></i>
                         <span class="text-3xl font-extrabold">\${b.value}</span>
                         <span class="text-xs font-semibold mt-1">\${b.label}</span>
                     </div>
-                `).join('');
+                \`).join('');
 
                 const grid = document.getElementById('leadsEcuraChannelGrid');
                 if (grid) {
@@ -7266,7 +7266,7 @@ I lead arrivano ora solo dalla landing eCura.");
                     const totRisp     = (discountGlobal.risparmio || 0).toFixed(2);
                     const pctMedia    = (discountGlobal.pct_media || 0).toFixed(1);
                     kpiGrid.className = 'grid grid-cols-3 gap-4 mb-6';
-                    kpiGrid.innerHTML = `
+                    kpiGrid.innerHTML = \`
                         <div style="background:#FFF7ED;border:2px solid #FED7AA;border-radius:12px;padding:16px;text-align:center;">
                             <div style="font-size:28px;font-weight:800;color:#c2410c;">\${totScontati}</div>
                             <div style="font-size:12px;font-weight:600;color:#9a3412;margin-top:4px;">Lead con sconto applicato</div>
@@ -7279,18 +7279,18 @@ I lead arrivano ora solo dalla landing eCura.");
                             <div style="font-size:28px;font-weight:800;color:#1d4ed8;">\${pctMedia}%</div>
                             <div style="font-size:12px;font-weight:600;color:#1e40af;margin-top:4px;">Sconto % medio applicato</div>
                         </div>
-                    `;
+                    \`;
                 }
 
                 // ── Tabella per codice ─────────────────────────────────────
                 const codeTableEl = document.getElementById('discountByCodeTable');
                 if (codeTableEl) {
                     if (!discountByCode.length) {
-                        codeTableEl.innerHTML = `
+                        codeTableEl.innerHTML = \`
                             <div style="padding:20px;text-align:center;color:#9ca3af;font-size:13px;">
                                 <i class="fas fa-tag mr-2"></i>
                                 Nessun codice sconto nel sistema — aggiungili dalla Dashboard principale → sezione "Codici Sconto"
-                            </div>`;
+                            </div>\`;
                     } else {
                         // Colori badge sorgente codice
                         const sorgenteBadge = (s) => ({
@@ -7298,7 +7298,7 @@ I lead arrivano ora solo dalla landing eCura.");
                             'FORM':      '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">📋 FORM</span>',
                             'MANUALE':   '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">✏️ MANUALE</span>',
                             'PROMOZIONE':'<span style="background:#fce7f3;color:#9d174d;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">🎁 PROMO</span>',
-                        }[s] || `<span style="background:#f3f4f6;color:#374151;padding:2px 8px;border-radius:9999px;font-size:11px;">\${s||'—'}</span>`);
+                        }[s] || \`<span style="background:#f3f4f6;color:#374151;padding:2px 8px;border-radius:9999px;font-size:11px;">\${s||'—'}</span>\`);
 
                         // Calcola totali per riga totale
                         const totLeads    = discountByCode.reduce((s, r) => s + (Number(r.leads)||0), 0);
@@ -7310,13 +7310,13 @@ I lead arrivano ora solo dalla landing eCura.");
                             const nRisp     = Number(dc.risparmio)|| 0;
                             const nPct      = Number(dc.pct_media)|| 0;
                             const valNom    = dc.tipo === 'PERCENTUALE'
-                                ? `\${dc.valore_nominale}%`
-                                : `€\${Number(dc.valore_nominale||0).toFixed(2)}`;
+                                ? \`\${dc.valore_nominale}%\`
+                                : \`€\${Number(dc.valore_nominale||0).toFixed(2)}\`;
                             const attivoTag = dc.attivo
                                 ? '<span style="background:#dcfce7;color:#166534;padding:1px 6px;border-radius:9999px;font-size:10px;font-weight:700;">✓ attivo</span>'
                                 : '<span style="background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:9999px;font-size:10px;font-weight:700;">✗ inattivo</span>';
                             const rowBg = nLeads > 0 ? '' : 'background:#fafafa;';
-                            return `<tr style="\${rowBg}border-bottom:1px solid #f3f4f6;" onmouseover="this.style.background='#fff7ed'" onmouseout="this.style.background='\${nLeads>0?'':'#fafafa'}'">
+                            return \`<tr style="\${rowBg}border-bottom:1px solid #f3f4f6;" onmouseover="this.style.background='#fff7ed'" onmouseout="this.style.background='\${nLeads>0?'':'#fafafa'}'">
                                 <td style="padding:10px 12px;font-weight:700;color:#c2410c;font-family:monospace;font-size:13px;">\${dc.codice}</td>
                                 <td style="padding:10px 12px;font-size:12px;color:#6b7280;">\${dc.descrizione||'—'}</td>
                                 <td style="padding:10px 12px;text-align:center;">\${sorgenteBadge(dc.sorgente_codice)}</td>
@@ -7334,11 +7334,11 @@ I lead arrivano ora solo dalla landing eCura.");
                                     \${nPct > 0 ? nPct.toFixed(1)+'%' : '<span style="color:#d1d5db;">—</span>'}
                                 </td>
                                 <td style="padding:10px 12px;text-align:center;">\${attivoTag}</td>
-                            </tr>`;
+                            </tr>\`;
                         }).join('');
 
                         // Riga totale
-                        const rigaTotale = `
+                        const rigaTotale = \`
                             <tr style="background:#f8fafc;border-top:2px solid #e2e8f0;">
                                 <td colspan="4" style="padding:10px 12px;font-weight:700;color:#374151;font-size:13px;">
                                     📊 TOTALE — \${discountByCode.length} codici (\${codiciUsati} con utilizzi)
@@ -7351,9 +7351,9 @@ I lead arrivano ora solo dalla landing eCura.");
                                     \${totLeads > 0 ? (totRisp / totLeads).toFixed(2) + ' €/lead medio' : '—'}
                                 </td>
                                 <td></td>
-                            </tr>`;
+                            </tr>\`;
 
-                        codeTableEl.innerHTML = `
+                        codeTableEl.innerHTML = \`
                             <table style="width:100%;border-collapse:collapse;font-size:13px;">
                                 <thead>
                                     <tr style="background:#f9fafb;border-bottom:2px solid #e5e7eb;">
@@ -7370,7 +7370,7 @@ I lead arrivano ora solo dalla landing eCura.");
                                 <tbody>\${righe}</tbody>
                                 <tfoot>\${rigaTotale}</tfoot>
                             </table>
-                        `;
+                        \`;
                     }
                 }
 
@@ -7397,11 +7397,11 @@ I lead arrivano ora solo dalla landing eCura.");
             const tbody = document.getElementById('leadsTableBody');
             
             if (leads.length === 0) {
-                tbody.innerHTML = `
+                tbody.innerHTML = \`
                     <tr>
                         <td colspan="13" class="py-8 text-center text-gray-400">Nessun lead trovato</td>
                     </tr>
-                `;
+                \`;
                 return;
             }
 
@@ -7437,8 +7437,8 @@ I lead arrivano ora solo dalla landing eCura.");
                 const scontoPerc = lead.sconto_percentuale || 0;
                 const scontoFisso = lead.sconto_fisso || 0;
                 const scontoLabel = scontoPerc > 0
-                    ? `-\${scontoPerc}%`
-                    : (scontoFisso > 0 ? `-€\${scontoFisso}` : '');
+                    ? \`-\${scontoPerc}%\`
+                    : (scontoFisso > 0 ? \`-€\${scontoFisso}\` : '');
 
                 // ─── RATEIZZAZIONE ─────────────────────────────────────────
                 const isRateizzato  = Boolean(lead.rateizzazione_attiva);
@@ -7446,17 +7446,17 @@ I lead arrivano ora solo dalla landing eCura.");
                 const hasRiserva    = Boolean(lead.riserva_dominio);
                 const rateBadge     = isRateizzato
                     ? (isSaldato
-                        ? `<span style="display:inline-block;margin-top:3px;font-size:10px;background:#dcfce7;color:#166534;padding:1px 5px;border-radius:9999px;font-weight:600;">✅ Saldato</span>`
-                        : `<span style="display:inline-block;margin-top:3px;font-size:10px;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:9999px;font-weight:600;">📅 Rateizzato\${hasRiserva ? ' 🔒' : ''}</span>`)
+                        ? \`<span style="display:inline-block;margin-top:3px;font-size:10px;background:#dcfce7;color:#166534;padding:1px 5px;border-radius:9999px;font-weight:600;">✅ Saldato</span>\`
+                        : \`<span style="display:inline-block;margin-top:3px;font-size:10px;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:9999px;font-weight:600;">📅 Rateizzato\${hasRiserva ? ' 🔒' : ''}</span>\`)
                     : '';
 
                 const prezzoCellHtml = hasSconto
-                    ? `<div class="line-through text-gray-400 text-xs">€\${prezzo}</div>
+                    ? \`<div class="line-through text-gray-400 text-xs">€\${prezzo}</div>
                        <div class="font-bold text-orange-600">€\${prezzoScontato}</div>
-                       <span class="px-1 py-0.5 bg-orange-100 text-orange-700 text-xs rounded font-semibold">\${scontoLabel} \${escapeHtml(lead.codice_sconto || '')}</span>\${rateBadge}`
-                    : `<span class="font-bold text-green-600">€\${prezzo}</span>\${rateBadge}`;
+                       <span class="px-1 py-0.5 bg-orange-100 text-orange-700 text-xs rounded font-semibold">\${scontoLabel} \${escapeHtml(lead.codice_sconto || '')}</span>\${rateBadge}\`
+                    : \`<span class="font-bold text-green-600">€\${prezzo}</span>\${rateBadge}\`;
                 
-                return `
+                return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50" title="ID: \${escapeHtml(lead.id)}">
                         <td class="py-2 text-xs text-gray-600 font-medium">\${leads.length - index}</td>
                         <td class="py-2 text-xs truncate" title="\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || '')}">
@@ -7659,7 +7659,7 @@ I lead arrivano ora solo dalla landing eCura.");
                             </div>
                         </td>
                     </tr>
-                `;
+                \`;
             }).join('');
             
             // Attach event listeners to dynamically created buttons
@@ -7911,7 +7911,7 @@ I lead arrivano ora solo dalla landing eCura.");
             }
             
             try {
-                const response = await fetch(`/api/leads/\${leadId}/send-brochure`, {
+                const response = await fetch(\`/api/leads/\${leadId}/send-brochure\`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -7935,7 +7935,7 @@ I lead arrivano ora solo dalla landing eCura.");
             }
             
             try {
-                const response = await fetch(`/api/leads/\${leadId}/request-completion?sendEmail=true`, {
+                const response = await fetch(\`/api/leads/\${leadId}/request-completion?sendEmail=true\`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include'
@@ -7969,7 +7969,7 @@ I lead arrivano ora solo dalla landing eCura.");
             }
             
             try {
-                const response = await fetch(`/api/leads/\${leadId}/manual-sign`, {
+                const response = await fetch(\`/api/leads/\${leadId}/manual-sign\`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include'
@@ -7994,7 +7994,7 @@ I lead arrivano ora solo dalla landing eCura.");
             }
             
             try {
-                const response = await fetch(`/api/leads/\${leadId}/send-proforma`, {
+                const response = await fetch(\`/api/leads/\${leadId}/send-proforma\`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include'
@@ -8023,7 +8023,7 @@ I lead arrivano ora solo dalla landing eCura.");
                     m.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;align-items:center;justify-content:center;padding:16px;';
                     // Click fuori chiude
                     m.addEventListener('click', function(e){ if(e.target===m) m.style.display='none'; });
-                    m.innerHTML = `
+                    m.innerHTML = \`
                         <div style="background:#fff;border-radius:16px;width:min(560px,96vw);max-height:88vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.25);overflow:hidden;">
                             <!-- Header fisso -->
                             <div style="padding:20px 24px 16px;border-bottom:1px solid #e5e7eb;flex-shrink:0;">
@@ -8045,7 +8045,7 @@ I lead arrivano ora solo dalla landing eCura.");
                                     Chiudi
                                 </button>
                             </div>
-                        </div>`;
+                        </div>\`;
                     document.body.appendChild(m);
                 }
 
@@ -8062,7 +8062,7 @@ I lead arrivano ora solo dalla landing eCura.");
 
                 // Carica rate dal server
                 try {
-                    const res = await fetch(`/api/leads/\${leadId}/rateizzazione`, { credentials: 'include' });
+                    const res = await fetch(\`/api/leads/\${leadId}/rateizzazione\`, { credentials: 'include' });
                     const data = await res.json();
                     if (!data.success || !data.rate || data.rate.length === 0) {
                         document.getElementById('rataPaymentList').innerHTML =
@@ -8071,7 +8071,7 @@ I lead arrivano ora solo dalla landing eCura.");
                     }
 
                     document.getElementById('rataPaymentSubtitle').textContent =
-                        `\${data.rate_pagate}/\${data.rate_totali} rate pagate · €\${data.totale_pagato.toFixed(2)} di €\${data.totale_rate.toFixed(2)} incassati`;
+                        \`\${data.rate_pagate}/\${data.rate_totali} rate pagate · €\${data.totale_pagato.toFixed(2)} di €\${data.totale_rate.toFixed(2)} incassati\`;
 
                     const statusColors = { PAGATA:'#16a34a', ATTESA:'#d97706', SCADUTA:'#dc2626', ANNULLATA:'#6b7280' };
                     const statusLabels = { PAGATA:'✅ Pagata', ATTESA:'⏳ In attesa', SCADUTA:'⚠️ Scaduta', ANNULLATA:'🚫 Annullata' };
@@ -8084,7 +8084,7 @@ I lead arrivano ora solo dalla landing eCura.");
                         const rowBg  = r.status === 'PAGATA' ? '#f0fdf4' : r.status === 'SCADUTA' ? '#fff5f5' : '#fff';
                         const border = r.status === 'PAGATA' ? '#bbf7d0' : r.status === 'SCADUTA' ? '#fecaca' : '#e5e7eb';
 
-                        const formHtml = canPay ? `
+                        const formHtml = canPay ? \`
                             <div id="rataForm_\${r.id}" style="display:none;margin-top:12px;padding:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">
                                 <p style="font-size:.82rem;font-weight:600;color:#374151;margin:0 0 10px;">
                                     Segna come <span style="color:#16a34a;">PAGATA</span>: Rata \${r.numero_rata} — €\${Number(r.importo).toFixed(2)}
@@ -8123,9 +8123,9 @@ I lead arrivano ora solo dalla landing eCura.");
                                         ✅ Conferma pagamento
                                     </button>
                                 </div>
-                            </div>` : '';
+                            </div>\` : '';
 
-                        return `
+                        return \`
                             <div style="border:1px solid \${border};border-radius:10px;padding:14px 16px;margin-bottom:10px;background:\${rowBg};">
                                 <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                                     <div style="flex:1;min-width:160px;">
@@ -8142,7 +8142,7 @@ I lead arrivano ora solo dalla landing eCura.");
                                     </div>
                                 </div>
                                 \${formHtml}
-                            </div>`;
+                            </div>\`;
                     }).join('');
 
                     document.getElementById('rataPaymentList').innerHTML = cards;
@@ -8158,7 +8158,7 @@ I lead arrivano ora solo dalla landing eCura.");
                 return;
             }
             try {
-                const response = await fetch(`/api/leads/\${leadId}/manual-payment`, {
+                const response = await fetch(\`/api/leads/\${leadId}/manual-payment\`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include'
@@ -8200,7 +8200,7 @@ I lead arrivano ora solo dalla landing eCura.");
             if (btn) { btn.disabled = true; btn.textContent = 'Salvataggio...'; }
 
             try {
-                const res = await fetch(`/api/leads/\${leadId}/rate/\${rataId}`, {
+                const res = await fetch(\`/api/leads/\${leadId}/rate/\${rataId}\`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -8238,7 +8238,7 @@ I lead arrivano ora solo dalla landing eCura.");
             }
             
             try {
-                const response = await fetch(`/api/leads/\${leadId}/send-configuration`, {
+                const response = await fetch(\`/api/leads/\${leadId}/send-configuration\`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include'
@@ -8427,7 +8427,7 @@ I lead arrivano ora solo dalla landing eCura.");
         // Inietta il modal nel DOM (una volta sola)
         (function injectRateizzazioneModal() {
             if (document.getElementById('rateizzazioneModal')) return;
-            const html = `
+            const html = \`
             <div id="rateizzazioneModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;">
               <div style="background:#fff;border-radius:16px;padding:28px 32px;max-width:640px;width:94%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.18);">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
@@ -8513,7 +8513,7 @@ I lead arrivano ora solo dalla landing eCura.");
                   </button>
                 </div>
               </div>
-            </div>`;
+            </div>\`;
             document.body.insertAdjacentHTML('beforeend', html);
         })();
 
@@ -8526,7 +8526,7 @@ I lead arrivano ora solo dalla landing eCura.");
 
             // Info lead
             document.getElementById('rateizzazioneLeadInfo').innerHTML =
-                `<strong>Lead:</strong> \${escapeHtml(nome || leadId)} &nbsp;|&nbsp; <strong>Importo totale:</strong> <span style="color:#6366f1;font-weight:700;">€\${_rateizzazionePrezzo}</span>`;
+                \`<strong>Lead:</strong> \${escapeHtml(nome || leadId)} &nbsp;|&nbsp; <strong>Importo totale:</strong> <span style="color:#6366f1;font-weight:700;">€\${_rateizzazionePrezzo}</span>\`;
 
             const modal = document.getElementById('rateizzazioneModal');
             modal.style.display = 'flex';
@@ -8549,8 +8549,8 @@ I lead arrivano ora solo dalla landing eCura.");
                         const righe = data.rate.map(r => {
                             const sc  = statusColors[r.status] || '#6b7280';
                             const sel = ['ATTESA','PAGATA','SCADUTA','ANNULLATA'].map(s =>
-                                `<option value="\${s}" \${r.status===s?'selected':''}> \${s}</option>`).join('');
-                            return `<tr style="border-bottom:1px solid #f3f4f6;">
+                                \`<option value="\${s}" \${r.status===s?'selected':''}> \${s}</option>\`).join('');
+                            return \`<tr style="border-bottom:1px solid #f3f4f6;">
                                 <td style="padding:6px 10px;font-weight:600;">Rata \${r.numero_rata}</td>
                                 <td style="padding:6px 10px;">€\${Number(r.importo).toFixed(2)}</td>
                                 <td style="padding:6px 10px;">\${r.data_scadenza ? r.data_scadenza.substring(0,10) : '—'}</td>
@@ -8561,9 +8561,9 @@ I lead arrivano ora solo dalla landing eCura.");
                                     </select>
                                 </td>
                                 <td style="padding:6px 10px;font-size:11px;color:#6b7280;">\${r.riferimento||r.note||''}</td>
-                            </tr>`;
+                            </tr>\`;
                         }).join('');
-                        existingEl.innerHTML = `
+                        existingEl.innerHTML = \`
                             <div style="background:#eef2ff;border:1px solid #a5b4fc;border-radius:10px;padding:12px;margin-bottom:12px;">
                               <div style="font-size:13px;font-weight:700;color:#4338ca;margin-bottom:8px;">
                                 📋 Piano attuale &nbsp;·&nbsp; Pagate: \${data.rate_pagate}/\${data.rate_totali} &nbsp;·&nbsp; Saldo: €\${data.totale_pagato.toFixed(2)}/€\${data.totale_rate.toFixed(2)}
@@ -8581,7 +8581,7 @@ I lead arrivano ora solo dalla landing eCura.");
                                 <tbody>\${righe}</tbody>
                               </table>
                             </div>
-                            <p style="font-size:12px;color:#6b7280;margin:0 0 4px;">Modifica il piano qui sotto per sostituirlo:</p>`;
+                            <p style="font-size:12px;color:#6b7280;margin:0 0 4px;">Modifica il piano qui sotto per sostituirlo:</p>\`;
                         existingEl.style.display = 'block';
                     }
                 } catch(e) { /* ignora */ }
@@ -8607,7 +8607,7 @@ I lead arrivano ora solo dalla landing eCura.");
                 const scad    = new Date(oggi);
                 scad.setMonth(scad.getMonth() + (i - 1) * intervallo);
                 const scadStr = scad.toISOString().substring(0, 10);
-                html += `<tr style="border-bottom:1px solid #f3f4f6;">
+                html += \`<tr style="border-bottom:1px solid #f3f4f6;">
                     <td style="padding:6px 8px;font-weight:600;color:#4338ca;">Rata \${i}</td>
                     <td style="padding:6px 8px;">
                         <input type="number" step="0.01" min="0" id="rataImporto_\${i}" value="\${importo}"
@@ -8621,12 +8621,12 @@ I lead arrivano ora solo dalla landing eCura.");
                         <input type="text" id="rataNote_\${i}" placeholder="facoltativo"
                                style="width:120px;padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
                     </td>
-                </tr>`;
+                </tr>\`;
             }
             tbody.innerHTML = html;
-            const somma = totale > 0 ? `— totale: €\${totale}` : '';
+            const somma = totale > 0 ? \`— totale: €\${totale}\` : '';
             document.getElementById('rateTotaleInfo').textContent =
-                `\${n} rate da €\${base.toFixed(2)} (ultima €\${(base+resto).toFixed(2)}) \${somma}`;
+                \`\${n} rate da €\${base.toFixed(2)} (ultima €\${(base+resto).toFixed(2)}) \${somma}\`;
         }
 
         async function aggiornaStato(rataId, leadId, newStatus) {
@@ -8755,7 +8755,7 @@ I lead arrivano ora solo dalla landing eCura.");
 
         async function toggleIvaAgevolata(leadId, attiva) {
             try {
-                const response = await fetch(`/api/leads/\${leadId}/iva-agevolata`, {
+                const response = await fetch(\`/api/leads/\${leadId}/iva-agevolata\`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ iva_agevolata: attiva ? 1 : 0 })
@@ -8778,7 +8778,7 @@ I lead arrivano ora solo dalla landing eCura.");
 
         async function loadInteractions(leadId) {
             try {
-                const response = await fetch(`/api/leads/\${leadId}/interactions`);
+                const response = await fetch(\`/api/leads/\${leadId}/interactions\`);
                 const data = await response.json();
                 
                 const container = document.getElementById('interactionsList');
@@ -8817,7 +8817,7 @@ I lead arrivano ora solo dalla landing eCura.");
                         'follow-up': 'bg-orange-100 text-orange-700'
                     }[int.tipo] || 'bg-gray-100 text-gray-700';
                     
-                    return `
+                    return \`
                         <div class="border-l-4 border-blue-500 bg-gray-50 p-3 rounded-r mb-3">
                             <div class="flex items-start justify-between mb-2">
                                 <div class="flex items-center space-x-2">
@@ -8831,7 +8831,7 @@ I lead arrivano ora solo dalla landing eCura.");
                             <p class="text-sm text-gray-700 mb-1"><strong>Nota:</strong> \${int.nota || '-'}</p>
                             \${int.azione ? '<p class="text-sm text-gray-700"><strong>Azione:</strong> ' + int.azione + '</p>' : ''}
                         </div>
-                    `;
+                    \`;
                 }).join('');
             } catch (error) {
                 console.error('Errore caricamento interazioni:', error);
@@ -8853,7 +8853,7 @@ I lead arrivano ora solo dalla landing eCura.");
             }
             
             try {
-                const response = await fetch(`/api/leads/\${leadId}/interactions`, {
+                const response = await fetch(\`/api/leads/\${leadId}/interactions\`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ tipo, nota, azione, operatore })
@@ -8962,7 +8962,7 @@ I lead arrivano ora solo dalla landing eCura.");
         
         async function loadEditInteractions(leadId) {
             try {
-                const response = await fetch(`/api/leads/\${leadId}/interactions`);
+                const response = await fetch(\`/api/leads/\${leadId}/interactions\`);
                 const data = await response.json();
                 
                 const container = document.getElementById('editInteractionsList');
@@ -9001,7 +9001,7 @@ I lead arrivano ora solo dalla landing eCura.");
                         'follow-up': 'bg-orange-100 text-orange-700'
                     }[int.tipo] || 'bg-gray-100 text-gray-700';
                     
-                    return `
+                    return \`
                         <div class="border-l-4 border-blue-500 bg-white p-2 rounded-r mb-2 text-xs">
                             <div class="flex items-start justify-between mb-1">
                                 <div class="flex items-center space-x-2">
@@ -9015,7 +9015,7 @@ I lead arrivano ora solo dalla landing eCura.");
                             <p class="text-xs text-gray-700 mb-1"><strong>Nota:</strong> \${int.nota || '-'}</p>
                             \${int.azione ? '<p class="text-xs text-gray-700"><strong>Azione:</strong> ' + int.azione + '</p>' : ''}
                         </div>
-                    `;
+                    \`;
                 }).join('');
             } catch (error) {
                 console.error('Errore caricamento interazioni:', error);
@@ -9042,7 +9042,7 @@ I lead arrivano ora solo dalla landing eCura.");
             }
             
             try {
-                const response = await fetch(`/api/leads/\${leadId}/interactions`, {
+                const response = await fetch(\`/api/leads/\${leadId}/interactions\`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ tipo, nota, azione, operatore })
@@ -9076,7 +9076,7 @@ I lead arrivano ora solo dalla landing eCura.");
             }
             
             try {
-                const response = await fetch(`/api/leads/\${leadId}`, {
+                const response = await fetch(\`/api/leads/\${leadId}\`, {
                     method: 'DELETE'
                 });
                 
@@ -9095,7 +9095,7 @@ I lead arrivano ora solo dalla landing eCura.");
         
         async function updateContactManager(leadId, cm) {
             try {
-                const response = await fetch(`/api/leads/\${leadId}/cm`, {
+                const response = await fetch(\`/api/leads/\${leadId}/cm\`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -9111,7 +9111,7 @@ I lead arrivano ora solo dalla landing eCura.");
                     if (lead) {
                         lead.cm = cm || null;
                     }
-                    console.log(`✅ Contact Manager aggiornato: \${leadId} → \${cm || 'nessuno'}`);
+                    console.log(\`✅ Contact Manager aggiornato: \${leadId} → \${cm || 'nessuno'}\`);
                 } else {
                     alert('❌ Errore aggiornamento CM: ' + result.error);
                     loadLeadsData(); // Ricarica per ripristinare il valore precedente
@@ -9125,7 +9125,7 @@ I lead arrivano ora solo dalla landing eCura.");
 
         async function updateTemperatura(leadId, temperatura) {
             try {
-                const response = await fetch(`/api/leads/\${leadId}/temperatura`, {
+                const response = await fetch(\`/api/leads/\${leadId}/temperatura\`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -9135,7 +9135,7 @@ I lead arrivano ora solo dalla landing eCura.");
                 if (result.success) {
                     const lead = allLeads.find(l => l.id === leadId);
                     if (lead) lead.temperatura = temperatura || null;
-                    console.log(`✅ Temperatura aggiornata: \${leadId} → \${temperatura || '—'}`);
+                    console.log(\`✅ Temperatura aggiornata: \${leadId} → \${temperatura || '—'}\`);
                 } else {
                     alert('❌ Errore aggiornamento temperatura: ' + result.error);
                     loadLeadsData();
@@ -9171,7 +9171,7 @@ I lead arrivano ora solo dalla landing eCura.");
 
         async function updateLeadStatus(leadId, stato) {
             try {
-                const response = await fetch(`/api/leads/\${leadId}`, {
+                const response = await fetch(\`/api/leads/\${leadId}\`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -9189,7 +9189,7 @@ I lead arrivano ora solo dalla landing eCura.");
                     }
                     
                     // Aggiorna il colore dello sfondo del select
-                    const select = document.getElementById(`statusSelect-\${leadId}`);
+                    const select = document.getElementById(\`statusSelect-\${leadId}\`);
                     if (select) {
                         const colors = {
                             'nuovo': '#dbeafe',
@@ -9204,7 +9204,7 @@ I lead arrivano ora solo dalla landing eCura.");
                         select.style.background = colors[stato] || '#fff';
                     }
                     
-                    console.log(`✅ Stato aggiornato: \${leadId} → \${stato || 'nessuno'}`);
+                    console.log(\`✅ Stato aggiornato: \${leadId} → \${stato || 'nessuno'}\`);
                 } else {
                     alert('❌ Errore aggiornamento stato: ' + result.error);
                     loadLeadsData();
@@ -9546,10 +9546,10 @@ I lead arrivano ora solo dalla landing eCura.");
             const servicePrices = prices[servizio];
             const dispositivo = servizio.includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO';
             
-            pianoSelect.innerHTML = `
+            pianoSelect.innerHTML = \`
                 <option value="BASE">Piano BASE - €\${servicePrices.BASE.primo}/anno (rinnovo €\${servicePrices.BASE.rinnovo}/anno)</option>
                 <option value="AVANZATO">Piano AVANZATO - €\${servicePrices.AVANZATO.primo}/anno (rinnovo €\${servicePrices.AVANZATO.rinnovo}/anno)</option>
-            `;
+            \`;
             
             // ✅ FIX CRITICO: Ripristina il valore selezionato dall'utente dopo la ricostruzione HTML
             // Questo permette di cambiare BASE→AVANZATO (e viceversa) tramite CRUD penna
@@ -9557,7 +9557,7 @@ I lead arrivano ora solo dalla landing eCura.");
                 pianoSelect.value = pianoCorrente;
             }
             
-            priceNote.textContent = `I prezzi mostrati sono per il servizio \${servizio}. Include dispositivo \${dispositivo}.`;
+            priceNote.textContent = \`I prezzi mostrati sono per il servizio \${servizio}. Include dispositivo \${dispositivo}.\`;
         }
         
         async function saveNewLead() {
@@ -9762,7 +9762,7 @@ I lead arrivano ora solo dalla landing eCura.");
                     const parentela = prompt('Parentela Caregiver:', assistito.parentela_caregiver || '');
                     
                     // Aggiorna
-                    const updateResponse = await fetch(`/api/assistiti/\${id}`, {
+                    const updateResponse = await fetch(\`/api/assistiti/\${id}\`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -9795,12 +9795,12 @@ I lead arrivano ora solo dalla landing eCura.");
         window.editAssistito = editAssistito;  // Esponi globalmente
         
         async function deleteAssistito(id, nome) {
-            if (!confirm(`⚠️ Sei sicuro di voler eliminare l'assistito \${nome}?\\n\\nQuesta azione non può essere annullata!`)) {
+            if (!confirm(\`⚠️ Sei sicuro di voler eliminare l'assistito \${nome}?\\n\\nQuesta azione non può essere annullata!\`)) {
                 return;
             }
             
             try {
-                const response = await fetch(`/api/assistiti/\${id}`, {
+                const response = await fetch(\`/api/assistiti/\${id}\`, {
                     method: 'DELETE'
                 });
                 
@@ -10831,9 +10831,9 @@ I lead arrivano ora solo dalla landing eCura.");
                 // Aggiorna KPI
                 document.getElementById('kpiLeads').textContent = totalLeads;
                 document.getElementById('kpiContracts').textContent = totalContracts;
-                document.getElementById('kpiRevenue').textContent = `€\${totalRevenue.toFixed(0)}`;
+                document.getElementById('kpiRevenue').textContent = \`€\${totalRevenue.toFixed(0)}\`;
                 document.getElementById('kpiConversion').textContent = conversionRate;
-                document.getElementById('kpiAov').textContent = `€\${averageOrderValue}`;
+                document.getElementById('kpiAov').textContent = \`€\${averageOrderValue}\`;
 
                 // Analizza per servizio (LEADS + CONTRATTI SIGNED)
                 const serviceData = analyzeByServiceWithContracts(leads, signedContracts);
@@ -10874,7 +10874,7 @@ I lead arrivano ora solo dalla landing eCura.");
                 filtered = filtered.filter(c => {
                     const cognome = (c.cliente_cognome || c.cognomeRichiedente || c.cognome_richiedente || '').toLowerCase();
                     const nome = (c.cliente_nome || c.nomeRichiedente || c.nome_richiedente || '').toLowerCase();
-                    const fullName = `\${nome} \${cognome}`.toLowerCase();
+                    const fullName = \`\${nome} \${cognome}\`.toLowerCase();
                     return cognome.includes(filters.cognome) || nome.includes(filters.cognome) || fullName.includes(filters.cognome);
                 });
                 console.log('🔍 [FILTER] Dopo filtro cognome:', filtered.length);
@@ -10911,7 +10911,7 @@ I lead arrivano ora solo dalla landing eCura.");
                 // Log TUTTE le date prima di filtrare
                 console.log('📅 [FILTER SCADENZA] Date disponibili:');
                 filtered.forEach((c, idx) => {
-                    console.log(`  [\${idx}] \${c.codice_contratto || c.id}: data_scadenza = "\${c.data_scadenza}" (tipo: \${typeof c.data_scadenza})`);
+                    console.log(\`  [\${idx}] \${c.codice_contratto || c.id}: data_scadenza = "\${c.data_scadenza}" (tipo: \${typeof c.data_scadenza})\`);
                 });
                 
                 filtered = filtered.filter(c => {
@@ -10935,7 +10935,7 @@ I lead arrivano ora solo dalla landing eCura.");
                                 const month = parseInt(parts[1]) - 1;  // Month is 0-indexed
                                 const year = parseInt(parts[2]);
                                 scadenza = new Date(year, month, day);
-                                console.log(`🔄 [FILTER SCADENZA] Parsed manualmente: "\${c.data_scadenza}" → \${scadenza.toISOString().split('T')[0]}`);
+                                console.log(\`🔄 [FILTER SCADENZA] Parsed manualmente: "\${c.data_scadenza}" → \${scadenza.toISOString().split('T')[0]}\`);
                             }
                         }
                     } else if (c.data_scadenza instanceof Date) {
@@ -10962,7 +10962,7 @@ I lead arrivano ora solo dalla landing eCura.");
                         match = diffDays >= 0 && diffDays <= days;
                     }
 
-                    console.log(`\${match ? '✅' : '❌'} [FILTER SCADENZA] \${c.codice_contratto}: scadenza=\${scadenza.toISOString().split('T')[0]}, giorni=\${diffDays}, match=\${match}`);
+                    console.log(\`\${match ? '✅' : '❌'} [FILTER SCADENZA] \${c.codice_contratto}: scadenza=\${scadenza.toISOString().split('T')[0]}, giorni=\${diffDays}, match=\${match}\`);
                     return match;
                 });
                 
@@ -11069,21 +11069,21 @@ I lead arrivano ora solo dalla landing eCura.");
             // FAMILY
             document.getElementById('familyLeads').textContent = data.FAMILY.leads;
             document.getElementById('familyContracts').textContent = data.FAMILY.contracts || (data.FAMILY.base + data.FAMILY.avanzato);
-            document.getElementById('familyRevenue').textContent = `€\${data.FAMILY.revenue.toFixed(0)}`;
+            document.getElementById('familyRevenue').textContent = \`€\${data.FAMILY.revenue.toFixed(0)}\`;
             document.getElementById('familyBase').textContent = data.FAMILY.base;
             document.getElementById('familyAvanzato').textContent = data.FAMILY.avanzato;
 
             // PRO
             document.getElementById('proLeads').textContent = data.PRO.leads;
             document.getElementById('proContracts').textContent = data.PRO.contracts || (data.PRO.base + data.PRO.avanzato);
-            document.getElementById('proRevenue').textContent = `€\${data.PRO.revenue.toFixed(0)}`;
+            document.getElementById('proRevenue').textContent = \`€\${data.PRO.revenue.toFixed(0)}\`;
             document.getElementById('proBase').textContent = data.PRO.base;
             document.getElementById('proAvanzato').textContent = data.PRO.avanzato;
 
             // PREMIUM
             document.getElementById('premiumLeads').textContent = data.PREMIUM.leads;
             document.getElementById('premiumContracts').textContent = data.PREMIUM.contracts || (data.PREMIUM.base + data.PREMIUM.avanzato);
-            document.getElementById('premiumRevenue').textContent = `€\${data.PREMIUM.revenue.toFixed(0)}`;
+            document.getElementById('premiumRevenue').textContent = \`€\${data.PREMIUM.revenue.toFixed(0)}\`;
             document.getElementById('premiumBase').textContent = data.PREMIUM.base;
             document.getElementById('premiumAvanzato').textContent = data.PREMIUM.avanzato;
         }
@@ -11093,9 +11093,9 @@ I lead arrivano ora solo dalla landing eCura.");
         async function inviaRinnovo(leadId, codiceContrattoOriginale, clienteNome, ivaAgevolata, annoRinnovo) {
             if (!leadId) { alert('❌ Lead ID mancante — impossibile inviare il rinnovo.'); return; }
             const ivaInfo = ivaAgevolata ? 'IVA 4% (Legge 104)' : 'IVA 22%';
-            if (!confirm(`🔄 Generare contratto RINNOVO per:\\n\\n📋 \${codiceContrattoOriginale}\\n👤 \${clienteNome}\\n📅 Anno \${annoRinnovo}\\n\\nIl contratto verrà creato ma l"email NON sarà ancora inviata.\\nPotrai verificare il link e poi inviare l"email manualmente.\\nAliquota IVA applicata: \${ivaInfo}.`)) return;
+            if (!confirm(\`🔄 Generare contratto RINNOVO per:\\n\\n📋 \${codiceContrattoOriginale}\\n👤 \${clienteNome}\\n📅 Anno \${annoRinnovo}\\n\\nIl contratto verrà creato ma l"email NON sarà ancora inviata.\\nPotrai verificare il link e poi inviare l"email manualmente.\\nAliquota IVA applicata: \${ivaInfo}.\`)) return;
             try {
-                const resp = await fetch(`/api/leads/\${leadId}/send-contract`, {
+                const resp = await fetch(\`/api/leads/\${leadId}/send-contract\`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -11109,15 +11109,15 @@ I lead arrivano ora solo dalla landing eCura.");
                 if (result.success && result.dryRun) {
                     // dryRun: mostra link per verifica prima di inviare email
                     const apri = confirm(
-                        `✅ Contratto creato: \${result.codiceRinnovo}\\n\\n` +
-                        `🔗 Link firma:\\n\${result.firmaUrl}\\n\\n` +
-                        `Premi OK per APRIRE il link e verificarlo.\\n` +
-                        `Poi usa il pulsante "📧 Invia Email" in dashboard per inviarlo al cliente.`
+                        \`✅ Contratto creato: \${result.codiceRinnovo}\\n\\n\` +
+                        \`🔗 Link firma:\\n\${result.firmaUrl}\\n\\n\` +
+                        \`Premi OK per APRIRE il link e verificarlo.\\n\` +
+                        \`Poi usa il pulsante "📧 Invia Email" in dashboard per inviarlo al cliente.\`
                     );
                     if (apri) window.open(result.firmaUrl, '_blank');
                     if (typeof loadContractsData === 'function') loadContractsData();
                 } else if (result.success) {
-                    alert(`✅ Contratto di rinnovo inviato!\\n\\nCodice: \${result.codiceRinnovo}\\n\\n📧 Email con link di firma inviata al cliente.`);
+                    alert(\`✅ Contratto di rinnovo inviato!\\n\\nCodice: \${result.codiceRinnovo}\\n\\n📧 Email con link di firma inviata al cliente.\`);
                     if (typeof loadContractsData === 'function') loadContractsData();
                 } else {
                     alert('❌ Errore: ' + (result.error || result.details || 'Riprovare'));
@@ -11128,16 +11128,16 @@ I lead arrivano ora solo dalla landing eCura.");
         }
 
         async function inviaEmailRinnovo(rinnovoId, codiceRinnovo, emailCliente) {
-            if (!confirm(`📧 Inviare l"email di rinnovo a \${emailCliente}?\\n\\nContratto: \${codiceRinnovo}\\n\\nL"email con il link di firma sarà inviata al cliente.`)) return;
+            if (!confirm(\`📧 Inviare l"email di rinnovo a \${emailCliente}?\\n\\nContratto: \${codiceRinnovo}\\n\\nL"email con il link di firma sarà inviata al cliente.\`)) return;
             try {
-                const resp = await fetch(`/api/contracts/\${rinnovoId}/send-rinnovo-email`, {
+                const resp = await fetch(\`/api/contracts/\${rinnovoId}/send-rinnovo-email\`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include'
                 });
                 const result = await resp.json();
                 if (result.success) {
-                    alert(`✅ Email inviata a \${result.emailInviataA}!`);
+                    alert(\`✅ Email inviata a \${result.emailInviataA}!\`);
                     if (typeof loadContractsData === 'function') loadContractsData();
                 } else {
                     alert('❌ Errore: ' + (result.error || result.details || 'Riprovare'));
@@ -11148,9 +11148,9 @@ I lead arrivano ora solo dalla landing eCura.");
         }
 
         async function segnaRinnovoCompletato(contractId, codiceContratto) {
-            if (!confirm(`✅ Segnare il rinnovo \${codiceContratto} come COMPLETATO?\\n\\nQuesta azione conferma che il contratto di rinnovo è stato firmato e la proforma pagata.`)) return;
+            if (!confirm(\`✅ Segnare il rinnovo \${codiceContratto} come COMPLETATO?\\n\\nQuesta azione conferma che il contratto di rinnovo è stato firmato e la proforma pagata.\`)) return;
             try {
-                const resp = await fetch(`/api/contracts/\${contractId}/rinnovo-completato`, {
+                const resp = await fetch(\`/api/contracts/\${contractId}/rinnovo-completato\`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -11169,9 +11169,9 @@ I lead arrivano ora solo dalla landing eCura.");
         }
 
         async function segnaRinnovoFirmato(rinnovoId, codiceRinnovo) {
-            if (!confirm(`✅ Segnare il rinnovo \${codiceRinnovo} come FIRMATO manualmente?\\n\\nUsa questa opzione se il cliente ha firmato fuori dal portale digitale.`)) return;
+            if (!confirm(\`✅ Segnare il rinnovo \${codiceRinnovo} come FIRMATO manualmente?\\n\\nUsa questa opzione se il cliente ha firmato fuori dal portale digitale.\`)) return;
             try {
-                const resp = await fetch(`/api/contracts/\${rinnovoId}/segna-firmato`, {
+                const resp = await fetch(\`/api/contracts/\${rinnovoId}/segna-firmato\`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -11190,14 +11190,14 @@ I lead arrivano ora solo dalla landing eCura.");
         }
 
         async function creaProformaRinnovo(rinnovoId, codiceRinnovo) {
-            if (!confirm(`📋 Creare la PROFORMA per il rinnovo \${codiceRinnovo}?\\n\\nLa proforma verrà creata ma l'email NON sarà ancora inviata.\\nPotrai inviarla nel passo successivo.`)) return;
+            if (!confirm(\`📋 Creare la PROFORMA per il rinnovo \${codiceRinnovo}?\\n\\nLa proforma verrà creata ma l'email NON sarà ancora inviata.\\nPotrai inviarla nel passo successivo.\`)) return;
             try {
-                const resp = await fetch(`/api/contracts/\${rinnovoId}/crea-proforma-rinnovo`, {
+                const resp = await fetch(\`/api/contracts/\${rinnovoId}/crea-proforma-rinnovo\`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include'
                 });
                 const result = await resp.json();
                 if (result.success) {
-                    alert(`✅ Proforma creata: \${result.numeroProforma}\\nImporto: €\${result.prezzoTotale}\\n\\nOra usa il pulsante "📤 INVIA PROFORMA" per inviarla al cliente.`);
+                    alert(\`✅ Proforma creata: \${result.numeroProforma}\\nImporto: €\${result.prezzoTotale}\\n\\nOra usa il pulsante "📤 INVIA PROFORMA" per inviarla al cliente.\`);
                     if (typeof loadContractsData === 'function') loadContractsData();
                 } else {
                     alert('❌ Errore: ' + (result.error || 'Riprovare'));
@@ -11206,14 +11206,14 @@ I lead arrivano ora solo dalla landing eCura.");
         }
 
         async function inviaProformaRinnovo(rinnovoId, codiceRinnovo) {
-            if (!confirm(`📤 Inviare l'email con la PROFORMA per il rinnovo \${codiceRinnovo}?`)) return;
+            if (!confirm(\`📤 Inviare l'email con la PROFORMA per il rinnovo \${codiceRinnovo}?\`)) return;
             try {
-                const resp = await fetch(`/api/contracts/\${rinnovoId}/invia-proforma-rinnovo`, {
+                const resp = await fetch(\`/api/contracts/\${rinnovoId}/invia-proforma-rinnovo\`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include'
                 });
                 const result = await resp.json();
                 if (result.success) {
-                    alert(`✅ Proforma inviata a \${result.emailInviataA}!`);
+                    alert(\`✅ Proforma inviata a \${result.emailInviataA}!\`);
                     if (typeof loadContractsData === 'function') loadContractsData();
                 } else {
                     alert('❌ Errore: ' + (result.error || result.message || 'Riprovare'));
@@ -11239,7 +11239,7 @@ I lead arrivano ora solo dalla landing eCura.");
 
         async function vediAnteprimaProforma(rinnovoId, codiceRinnovo) {
             try {
-                const resp = await fetch(`/api/contracts/\${rinnovoId}/preview-proforma-email`, {
+                const resp = await fetch(\`/api/contracts/\${rinnovoId}/preview-proforma-email\`, {
                     method: 'GET', credentials: 'include'
                 });
                 const result = await resp.json();
@@ -11854,14 +11854,14 @@ I lead arrivano ora solo dalla landing eCura.");
                 renderWorkflowTable(allLeads);
             } catch (error) {
                 console.error('Errore caricamento workflow:', error);
-                document.getElementById('workflowTable').innerHTML = `
+                document.getElementById('workflowTable').innerHTML = \`
                     <tr>
                         <td colspan="8" class="py-8 text-center text-red-500">
                             <i class="fas fa-exclamation-triangle text-3xl mb-2"></i>
                             <p>Errore nel caricamento dei workflow</p>
                         </td>
                     </tr>
-                `;
+                \`;
             } finally {
                 isLoading = false;
             }
@@ -11871,11 +11871,11 @@ I lead arrivano ora solo dalla landing eCura.");
             const tbody = document.getElementById('workflowTable');
             
             if (leads.length === 0) {
-                tbody.innerHTML = `
+                tbody.innerHTML = \`
                     <tr>
                         <td colspan="8" class="py-8 text-center text-gray-400">Nessun workflow in corso</td>
                     </tr>
-                `;
+                \`;
                 return;
             }
 
@@ -11887,7 +11887,7 @@ I lead arrivano ora solo dalla landing eCura.");
                 // Mostra servizio così com'è dal DB
                 const servizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
                 
-                return `
+                return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
                         <td class="py-3 text-xs">
                             <code class="bg-gray-100 px-2 py-1 rounded">\${(lead.id || '').substring(0, 25)}</code>
@@ -11938,7 +11938,7 @@ I lead arrivano ora solo dalla landing eCura.");
                             </div>
                         </td>
                     </tr>
-                `;
+                \`;
             }).join('');
         }
 
@@ -12046,7 +12046,7 @@ I lead arrivano ora solo dalla landing eCura.");
                 else if (type === 'attivi') items = data.leads || [];
                 
                 // Crea messaggio riepilogo
-                let message = `\${title}\\n\\nTotale: \${items.length} record\\n\\n`;
+                let message = \`\${title}\\n\\nTotale: \${items.length} record\\n\\n\`;
                 
                 if (items.length === 0) {
                     message += 'Nessun record trovato.';
@@ -12054,17 +12054,17 @@ I lead arrivano ora solo dalla landing eCura.");
                     // Mostra tutti i record se <= 10
                     items.forEach((item, idx) => {
                         if (type === 'leads') {
-                            message += `\${idx+1}. \${escapeHtml(item.nomeRichiedente)} \${escapeHtml(item.cognomeRichiedente)} - \${item.email || 'N/A'}\\n`;
+                            message += \`\${idx+1}. \${escapeHtml(item.nomeRichiedente)} \${escapeHtml(item.cognomeRichiedente)} - \${item.email || 'N/A'}\\n\`;
                         } else if (type === 'contratti') {
-                            message += `\${idx+1}. \${item.codice_contratto || item.id} - \${escapeHtml(item.cliente_nome)} \${escapeHtml(item.cliente_cognome)}\\n`;
+                            message += \`\${idx+1}. \${item.codice_contratto || item.id} - \${escapeHtml(item.cliente_nome)} \${escapeHtml(item.cliente_cognome)}\\n\`;
                         } else if (type === 'firme') {
-                            message += `\${idx+1}. Firma \${item.id} - Contratto: \${item.contract_id}\\n`;
+                            message += \`\${idx+1}. Firma \${item.id} - Contratto: \${item.contract_id}\\n\`;
                         } else if (type === 'proforma') {
-                            message += `\${idx+1}. Proforma \${item.numero || item.id} - €\${item.importo || '0'}\\n`;
+                            message += \`\${idx+1}. Proforma \${item.numero || item.id} - €\${item.importo || '0'}\\n\`;
                         } else if (type === 'pagamenti') {
-                            message += `\${idx+1}. Pagamento \${item.id} - €\${item.importo || '0'} - \${item.metodo_pagamento || 'N/A'}\\n`;
+                            message += \`\${idx+1}. Pagamento \${item.id} - €\${item.importo || '0'} - \${item.metodo_pagamento || 'N/A'}\\n\`;
                         } else {
-                            message += `\${idx+1}. \${escapeHtml(item.nomeRichiedente)} \${escapeHtml(item.cognomeRichiedente)} - ATTIVO\\n`;
+                            message += \`\${idx+1}. \${escapeHtml(item.nomeRichiedente)} \${escapeHtml(item.cognomeRichiedente)} - ATTIVO\\n\`;
                         }
                     });
                 } else {
@@ -12076,15 +12076,15 @@ I lead arrivano ora solo dalla landing eCura.");
                             const statusText = status === 'ACTIVE' ? '✅ ATTIVO' : 
                                              status === 'CONVERTED' ? '✓ CONVERTITO' :
                                              status === 'CONTRACT_SIGNED' ? '✍️ FIRMATO' : '🆕 NUOVO';
-                            message += `\${idx+1}. \${escapeHtml(item.nomeRichiedente)} \${escapeHtml(item.cognomeRichiedente)} - \${statusText}\\n`;
+                            message += \`\${idx+1}. \${escapeHtml(item.nomeRichiedente)} \${escapeHtml(item.cognomeRichiedente)} - \${statusText}\\n\`;
                         } else if (type === 'contratti') {
-                            message += `\${idx+1}. \${escapeHtml(item.cliente_nome)} \${escapeHtml(item.cliente_cognome)}\\n`;
+                            message += \`\${idx+1}. \${escapeHtml(item.cliente_nome)} \${escapeHtml(item.cliente_cognome)}\\n\`;
                         } else {
-                            message += `\${idx+1}. ID: \${item.id}\\n`;
+                            message += \`\${idx+1}. ID: \${item.id}\\n\`;
                         }
                     });
-                    message += `\\n... e altri \${items.length - 10} record.\\n`;
-                    message += `\\n💡 Per visualizzare tutti i dati, vai alla dashboard specifica o usa l'API.`;
+                    message += \`\\n... e altri \${items.length - 10} record.\\n\`;
+                    message += \`\\n💡 Per visualizzare tutti i dati, vai alla dashboard specifica o usa l'API.\`;
                 }
                 
                 alert(message);
@@ -12128,7 +12128,7 @@ I lead arrivano ora solo dalla landing eCura.");
                     // Pre-compila modale firma contratto
                     const nomeCompleto = escapeQuotes((lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || ''));
                     const emailSafe = escapeQuotes(lead.email || '');
-                    if (confirm(`📝 Vuoi registrare la firma del contratto per:\\n\\n👤 \${nomeCompleto}\\n📧 \${emailSafe}\\n\\n✅ Procedi?`)) {
+                    if (confirm(\`📝 Vuoi registrare la firma del contratto per:\\n\\n👤 \${nomeCompleto}\\n📧 \${emailSafe}\\n\\n✅ Procedi?\`)) {
                         document.getElementById('signContractId').value = lead.id;
                         document.getElementById('signDigital').value = nomeCompleto;
                         openSignModal();
@@ -12139,7 +12139,7 @@ I lead arrivano ora solo dalla landing eCura.");
                     // Pre-compila modale pagamento
                     const nomeCompletoPayment = escapeQuotes((lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || ''));
                     const emailSafePayment = escapeQuotes(lead.email || '');
-                    if (confirm(`💰 Vuoi registrare il pagamento per:\\n\\n👤 \${nomeCompletoPayment}\\n📧 \${emailSafePayment}\\n\\n✅ Procedi?`)) {
+                    if (confirm(\`💰 Vuoi registrare il pagamento per:\\n\\n👤 \${nomeCompletoPayment}\\n📧 \${emailSafePayment}\\n\\n✅ Procedi?\`)) {
                         // Cerca proforma associata al lead
                         fetch('/api/proforma?lead_id=' + lead.id)
                             .then(res => res.json())
@@ -12202,7 +12202,7 @@ I lead arrivano ora solo dalla landing eCura.");
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             contractId,
-                            firmaDigitale: firmaDigitale + (notes ? ` - \${notes}` : ''),
+                            firmaDigitale: firmaDigitale + (notes ? \` - \${notes}\` : ''),
                             ipAddress: 'MANUAL_SIGNATURE',
                             userAgent: 'Workflow Manager Dashboard'
                         })
@@ -12242,7 +12242,7 @@ I lead arrivano ora solo dalla landing eCura.");
                         proformaId,
                         importo,
                         metodoPagamento: 'bonifico_bancario',
-                        transactionId: transactionId + (notes ? ` - \${notes}` : ''),
+                        transactionId: transactionId + (notes ? \` - \${notes}\` : ''),
                         manual: true
                     })
                 });
@@ -13574,7 +13574,7 @@ function generateAds() {
   headlines.forEach((h, i) => {
     const len = h.length;
     const cls = charClass(len, 30);
-    hl.innerHTML += `
+    hl.innerHTML += \`
       <div class="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
         <span class="text-xs text-gray-400 w-4 text-right">\${i+1}</span>
         <span class="flex-1 text-sm">\${h}</span>
@@ -13583,7 +13583,7 @@ function generateAds() {
           <i class="fas fa-copy"></i>
         </button>
       </div>
-    `;
+    \`;
     hlCopyText += h + '\\n';
   });
   document.getElementById('headlinesCopy').value = hlCopyText;
@@ -13595,7 +13595,7 @@ function generateAds() {
   ads.descriptions.forEach((d, i) => {
     const len = d.length;
     const cls = charClass(len, 90);
-    dl.innerHTML += `
+    dl.innerHTML += \`
       <div class="flex items-start gap-2 bg-gray-50 rounded-lg px-3 py-2">
         <span class="text-xs text-gray-400 w-4 text-right mt-0.5">\${i+1}</span>
         <span class="flex-1 text-sm leading-relaxed">\${d}</span>
@@ -13604,7 +13604,7 @@ function generateAds() {
           <i class="fas fa-copy"></i>
         </button>
       </div>
-    `;
+    \`;
     dlCopyText += d + '\\n';
   });
   document.getElementById('descriptionsCopy').value = dlCopyText;
@@ -13620,7 +13620,7 @@ function generateAds() {
   const sl = document.getElementById('sitelinkList');
   sl.innerHTML = '';
   ads.sitelinks.forEach(s => {
-    sl.innerHTML += `
+    sl.innerHTML += \`
       <div class="flex items-center gap-2 bg-blue-50 rounded-lg px-3 py-2">
         <i class="fas fa-link text-blue-400 text-xs"></i>
         <div class="flex-1">
@@ -13628,7 +13628,7 @@ function generateAds() {
           <div class="text-xs text-blue-500">ecura-landing.pages.dev/\${s.url} · \${s.desc}</div>
         </div>
       </div>
-    `;
+    \`;
   });
 
   // Render full matrix
@@ -13639,7 +13639,7 @@ function generateAds() {
 
 function renderFullMatrix(headlines, descriptions) {
   const m = document.getElementById('fullMatrix');
-  let html = `<div class="overflow-x-auto"><table class="w-full text-xs border-collapse">
+  let html = \`<div class="overflow-x-auto"><table class="w-full text-xs border-collapse">
     <thead><tr class="bg-gray-100">
       <th class="px-3 py-2 text-left font-bold text-gray-600 w-8">#</th>
       <th class="px-3 py-2 text-left font-bold text-gray-600">Testo</th>
@@ -13647,32 +13647,32 @@ function renderFullMatrix(headlines, descriptions) {
       <th class="px-3 py-2 text-center font-bold text-gray-600 w-16">Tipo</th>
       <th class="px-3 py-2 text-center font-bold text-gray-600 w-10">Copia</th>
     </tr></thead>
-    <tbody>`;
+    <tbody>\`;
 
   headlines.forEach((h, i) => {
     const len = h.length;
     const cls = len > 30 ? 'bg-red-50' : i % 2 === 0 ? 'bg-white' : 'bg-gray-50';
     const charCls = charClass(len, 30);
-    html += `<tr class="\${cls} border-b border-gray-100">
+    html += \`<tr class="\${cls} border-b border-gray-100">
       <td class="px-3 py-2 text-gray-400">\${i+1}</td>
       <td class="px-3 py-2 font-medium text-gray-800">\${h}</td>
       <td class="px-3 py-2 text-center \${charCls}">\${len}/30</td>
       <td class="px-3 py-2 text-center"><span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs font-bold">H</span></td>
       <td class="px-3 py-2 text-center"><button onclick="copyText(this.dataset.v,this)" data-v="\${h}" class="copy-btn px-1.5 py-1 rounded text-gray-400 hover:text-blue-500"><i class="fas fa-copy"></i></button></td>
-    </tr>`;
+    </tr>\`;
   });
 
   descriptions.forEach((d, i) => {
     const len = d.length;
     const cls = len > 90 ? 'bg-red-50' : i % 2 === 0 ? 'bg-blue-50' : 'bg-white';
     const charCls = charClass(len, 90);
-    html += `<tr class="\${cls} border-b border-gray-100">
+    html += \`<tr class="\${cls} border-b border-gray-100">
       <td class="px-3 py-2 text-gray-400">D\${i+1}</td>
       <td class="px-3 py-2 text-gray-700">\${d}</td>
       <td class="px-3 py-2 text-center \${charCls}">\${len}/90</td>
       <td class="px-3 py-2 text-center"><span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold">D</span></td>
       <td class="px-3 py-2 text-center"><button onclick="copyText(this.dataset.txt,this)" data-txt="" class="copy-btn desc-copy-btn px-1.5 py-1 rounded text-gray-400 hover:text-blue-500"><i class="fas fa-copy"></i></button></td>
-    </tr>`;
+    </tr>\`;
   });
 
   html += '</tbody></table></div>';
@@ -13716,17 +13716,17 @@ function renderKeywords() {
     const el = document.getElementById('kw' + type.charAt(0).toUpperCase() + type.slice(1));
     if (!el) return;
     el.innerHTML = KW_DATA[type].map(k =>
-      `<span class="kw-chip \${matchClass[k.match]}" title="CPC ~€\${k.cpc}">
+      \`<span class="kw-chip \${matchClass[k.match]}" title="CPC ~€\${k.cpc}">
         \${matchLabel[k.match]} \${k.kw}
         <span class="opacity-60 text-xs">€\${k.cpc}</span>
-       </span>`
+       </span>\`
     ).join('');
   });
 
   const negEl = document.getElementById('kwNegative');
   if (negEl) {
     negEl.innerHTML = KW_DATA.negative.map(k =>
-      `<span class="kw-chip kw-neg">-\${k}</span>`
+      \`<span class="kw-chip kw-neg">-\${k}</span>\`
     ).join('');
   }
 }
@@ -13822,7 +13822,7 @@ function renderUtmTableFallback(data) {
     return;
   }
 
-  tbody.innerHTML = rows.map(r => `
+  tbody.innerHTML = rows.map(r => \`
     <tr class="border-b border-gray-100 hover:bg-gray-50">
       <td class="px-4 py-3 font-medium text-gray-800">\${r.campaign}</td>
       <td class="px-4 py-3"><span class="utm-badge bg-blue-100 text-blue-700">\${r.medium}</span></td>
@@ -13830,14 +13830,14 @@ function renderUtmTableFallback(data) {
       <td class="px-4 py-3 text-center text-xs text-gray-500">\${r.plan}</td>
       <td class="px-4 py-3 text-right font-bold text-green-600">€\${r.value}</td>
     </tr>
-  `).join('');
+  \`).join('');
 }
 
 function renderUtmTable(data) {
   const tbody = document.getElementById('utmTableBody');
   const campaigns = data.campaigns || [];
   if (!campaigns.length) { renderUtmTableFallback({}); return; }
-  tbody.innerHTML = campaigns.map(c => `
+  tbody.innerHTML = campaigns.map(c => \`
     <tr class="border-b border-gray-100 hover:bg-gray-50">
       <td class="px-4 py-3 font-medium text-gray-800">\${c.campaign || '(non tracciato)'}</td>
       <td class="px-4 py-3"><span class="utm-badge bg-blue-100 text-blue-700">\${c.medium || '—'}</span></td>
@@ -13845,7 +13845,7 @@ function renderUtmTable(data) {
       <td class="px-4 py-3 text-center text-xs text-gray-500">\${c.top_plan || '—'}</td>
       <td class="px-4 py-3 text-right font-bold text-green-600">€\${c.count * 480}</td>
     </tr>
-  `).join('');
+  \`).join('');
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -13859,10 +13859,10 @@ function buildUtmUrl() {
   const content  = document.getElementById('utmContent').value.trim();
   const term     = document.getElementById('utmTerm').value.trim();
 
-  let params = `utm_source=\${encodeURIComponent(source)}&utm_medium=\${encodeURIComponent(medium)}`;
-  if (campaign) params += `&utm_campaign=\${encodeURIComponent(campaign)}`;
-  if (content)  params += `&utm_content=\${encodeURIComponent(content)}`;
-  if (term)     params += `&utm_term=\${encodeURIComponent(term)}`;
+  let params = \`utm_source=\${encodeURIComponent(source)}&utm_medium=\${encodeURIComponent(medium)}\`;
+  if (campaign) params += \`&utm_campaign=\${encodeURIComponent(campaign)}\`;
+  if (content)  params += \`&utm_content=\${encodeURIComponent(content)}\`;
+  if (term)     params += \`&utm_term=\${encodeURIComponent(term)}\`;
 
   document.getElementById('utmOutput').textContent = base + '?' + params;
 }
@@ -13888,9 +13888,9 @@ function generateTrackingCode() {
 
   const valCode = valEl === 'dynamic'
     ? "value: selectedPlanPrice || 480,"
-    : `value: \${valEl},`;
+    : \`value: \${valEl},\`;
 
-  const convCode = `<!-- Google Ads Conversion Tracking — eCura Landing -->
+  const convCode = \`<!-- Google Ads Conversion Tracking — eCura Landing -->
 <script>
 // Attiva la conversione quando il form viene inviato con successo
 (function() {
@@ -13942,9 +13942,9 @@ function generateTrackingCode() {
     }
   });
 })();
-<\\/script>`;
+<\\/script>\`;
 
-  const gtagCode = `<!-- Google tag (gtag.js) — metti in <head> -->
+  const gtagCode = \`<!-- Google tag (gtag.js) — metti in <head> -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=\${id}"><\\/script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -13953,7 +13953,7 @@ function generateTrackingCode() {
   gtag('config', '\${id}', {
     'linker': { 'domains': ['ecura-landing.pages.dev'] }
   });
-<\\/script>`;
+<\\/script>\`;
 
   document.getElementById('trackingCodeOutput').textContent = convCode;
   document.getElementById('gtagSnippet').textContent        = gtagCode;
@@ -13984,13 +13984,13 @@ function generateCsv(mode) {
       const groupName = { intent: 'Intento Diretto', competitor: 'Competitor', problem: 'Problema Bisogno' }[type];
       KW_DATA[type].forEach(k => {
         const matchLabel = { exact: 'Exact', phrase: 'Phrase', broad: 'Broad' }[k.match];
-        csv += `"\${campName}","\${groupName}","\${k.kw}","\${matchLabel}","",Enabled\\n`;
+        csv += \`"\${campName}","\${groupName}","\${k.kw}","\${matchLabel}","",Enabled\\n\`;
       });
     });
     // Negative keywords
     csv += '\\n# Negative Keywords\\nCampaign,Ad Group,Keyword,Match Type\\n';
     KW_DATA.negative.forEach(k => {
-      csv += `"\${campName}","","- \${k}","Exact"\\n`;
+      csv += \`"\${campName}","","- \${k}","Exact"\\n\`;
     });
     csv += '\\n';
   }
@@ -14002,13 +14002,13 @@ function generateCsv(mode) {
       const groupName = { intent: 'Intento Diretto', competitor: 'Competitor', problem: 'Problema Bisogno' }[type];
       const h = ads.headlines;
       const d = ads.descriptions;
-      csv += `"\${campName}","\${groupName}","\${h[0]}","\${h[1]}","\${h[2]}","\${h[3]}","\${h[4]}","\${d[0]}","\${d[1]}","\${finalUrl}","Responsive Search Ad"\\n`;
+      csv += \`"\${campName}","\${groupName}","\${h[0]}","\${h[1]}","\${h[2]}","\${h[3]}","\${h[4]}","\${d[0]}","\${d[1]}","\${finalUrl}","Responsive Search Ad"\\n\`;
     });
   }
 
   if (mode === 'full') {
     csv += '\\n# Campaign Settings\\nCampaign,Daily Budget,Bidding Strategy,Network,Status\\n';
-    csv += `"\${campName}","\${budget}","Maximize Clicks","Search","Enabled"\\n`;
+    csv += \`"\${campName}","\${budget}","Maximize Clicks","Search","Enabled"\\n\`;
   }
 
   document.getElementById('csvOutput').value = csv;
@@ -18309,7 +18309,7 @@ function copyAeoJSON() {
             const grid = document.getElementById('templatesGrid');
             
             if (!templates || templates.length === 0) {
-                grid.innerHTML = `
+                grid.innerHTML = \`
                     <div class="col-span-full text-center py-12">
                         <i class="fas fa-folder-open text-6xl text-gray-300 mb-4"></i>
                         <h3 class="text-xl text-gray-600 mb-2">Nessun template trovato</h3>
@@ -18318,11 +18318,11 @@ function copyAeoJSON() {
                             <i class="fas fa-plus mr-2"></i>Crea Template
                         </button>
                     </div>
-                `;
+                \`;
                 return;
             }
 
-            grid.innerHTML = templates.map(template => `
+            grid.innerHTML = templates.map(template => \`
                 <div class="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
                     <div class="flex justify-between items-start mb-4">
                         <div class="flex items-center">
@@ -18372,7 +18372,7 @@ function copyAeoJSON() {
                         </button>
                     </div>
                 </div>
-            `).join('');
+            \`).join('');
         }
 
         // Utility functions
@@ -18435,7 +18435,7 @@ function copyAeoJSON() {
             if (!template) return;
 
             document.getElementById('modalTitle').textContent = template.nome_template;
-            document.getElementById('modalContent').innerHTML = `
+            document.getElementById('modalContent').innerHTML = \`
                 <div class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-4">
@@ -18489,7 +18489,7 @@ function copyAeoJSON() {
                         </button>
                     </div>
                 </div>
-            `;
+            \`;
             document.getElementById('templateModal').classList.remove('hidden');
         }
 
@@ -18565,7 +18565,7 @@ function copyAeoJSON() {
             }
 
             const previewWindow = window.open('', '_blank');
-            previewWindow.document.write(`
+            previewWindow.document.write(\`
                 <!DOCTYPE html>
                 <html>
                 <head>
@@ -18576,7 +18576,7 @@ function copyAeoJSON() {
                     \${html}
                 </body>
                 </html>
-            `);
+            \`);
             previewWindow.document.close();
         }
 
@@ -23160,12 +23160,12 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await fe.sendEmail({to:((r=e.env)==nul
           resultDiv.className = 'result success';
           resultDiv.textContent = '✅ ' + data.message + '\\n\\nDettagli:\\n' + 
             data.results.map((r, i) => 
-              `- \${r.cliente}: \${r.success ? '✅ OK' : '❌ ' + r.error}\\n  ID: \${r.contractId || 'N/A'}\\n  Code: \${r.contractCode || 'N/A'}\\n  Data firma: \${r.dataFirma || 'N/A'} → Scadenza: \${r.dataScadenza || 'N/A'}\\n  PDF: \${r.pdfUrl || 'N/A'}`
+              \`- \${r.cliente}: \${r.success ? '✅ OK' : '❌ ' + r.error}\\n  ID: \${r.contractId || 'N/A'}\\n  Code: \${r.contractCode || 'N/A'}\\n  Data firma: \${r.dataFirma || 'N/A'} → Scadenza: \${r.dataScadenza || 'N/A'}\\n  PDF: \${r.pdfUrl || 'N/A'}\`
             ).join('\\n\\n');
         } else {
           resultDiv.className = 'result error';
           resultDiv.textContent = '❌ ' + data.message + '\\n\\nDettagli:\\n' + 
-            data.results.map((r, i) => `- \${r.cliente}: \${r.error || 'Unknown error'}`).join('\\n');
+            data.results.map((r, i) => \`- \${r.cliente}: \${r.error || 'Unknown error'}\`).join('\\n');
         }
       } catch (error) {
         resultDiv.className = 'result error';
@@ -25735,15 +25735,15 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await fe.sendEmail({to:((r=e.env)==nul
           headers: { 'Content-Type': 'application/json' }
         });
         
-        log(`📡 Response: \${response.status} \${response.statusText}`, 'text-blue-400');
+        log(\`📡 Response: \${response.status} \${response.statusText}\`, 'text-blue-400');
         
         if (!response.ok) {
-          throw new Error(`HTTP \${response.status}: \${response.statusText}`);
+          throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
         }
         
         const result = await response.json();
         log('✅ DELETE completato!', 'text-green-400');
-        log(`   Contratti rimossi: \${result.removed || 0}`, 'text-green-400');
+        log(\`   Contratti rimossi: \${result.removed || 0}\`, 'text-green-400');
         log(JSON.stringify(result, null, 2), 'text-gray-400');
         
       } catch (error) {
@@ -25762,12 +25762,12 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await fe.sendEmail({to:((r=e.env)==nul
         const response = await fetch('/api/debug/leads-emails');
         
         if (!response.ok) {
-          throw new Error(`HTTP \${response.status}: \${response.statusText}`);
+          throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
         }
         
         const result = await response.json();
         
-        log(`✅ Trovati \${result.total} leads nel database`, 'text-green-400');
+        log(\`✅ Trovati \${result.total} leads nel database\`, 'text-green-400');
         log('', '');
         log('═══════════════════════════════════════', 'text-cyan-400');
         log('📧 EMAIL LEADS NEL DATABASE:', 'text-cyan-400');
@@ -25775,9 +25775,9 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await fe.sendEmail({to:((r=e.env)==nul
         
         if (result.leads && result.leads.length > 0) {
           result.leads.forEach((lead, i) => {
-            log(`\${i + 1}. \${lead.email}`, 'text-white');
-            log(`   Nome: \${lead.nome_completo}`, 'text-gray-400');
-            log(`   ID: \${lead.id}`, 'text-gray-400');
+            log(\`\${i + 1}. \${lead.email}\`, 'text-white');
+            log(\`   Nome: \${lead.nome_completo}\`, 'text-gray-400');
+            log(\`   ID: \${lead.id}\`, 'text-gray-400');
             log('', '');
           });
           
@@ -25797,9 +25797,9 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await fe.sendEmail({to:((r=e.env)==nul
           emailRichieste.forEach((email, i) => {
             const found = result.leads.find(l => l.email.toLowerCase() === email.toLowerCase());
             if (found) {
-              log(`\${i + 1}. ✅ \${email} → TROVATO (\${found.nome_completo})`, 'text-green-400');
+              log(\`\${i + 1}. ✅ \${email} → TROVATO (\${found.nome_completo})\`, 'text-green-400');
             } else {
-              log(`\${i + 1}. ❌ \${email} → NON TROVATO`, 'text-red-400');
+              log(\`\${i + 1}. ❌ \${email} → NON TROVATO\`, 'text-red-400');
             }
           });
           
@@ -25824,10 +25824,10 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await fe.sendEmail({to:((r=e.env)==nul
           headers: { 'Content-Type': 'application/json' }
         });
         
-        log(`📡 Response: \${response.status} \${response.statusText}`, 'text-blue-400');
+        log(\`📡 Response: \${response.status} \${response.statusText}\`, 'text-blue-400');
         
         if (!response.ok) {
-          throw new Error(`HTTP \${response.status}: \${response.statusText}`);
+          throw new Error(\`HTTP \${response.status}: \${response.statusText}\`);
         }
         
         const result = await response.json();
@@ -25836,13 +25836,13 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await fe.sendEmail({to:((r=e.env)==nul
         log('═══════════════════════════════════════', 'text-cyan-400');
         log('📊 RIEPILOGO STATISTICHE', 'text-cyan-400');
         log('═══════════════════════════════════════', 'text-cyan-400');
-        log(`✓ Contratti creati:      \${result.creati}`, 'text-green-400');
-        log(`✗ Errori:                \${result.errori}`, 'text-red-400');
-        log(`📝 Contratti FIRMATI:    \${result.firmati}`, 'text-green-400');
-        log(`📝 Contratti INVIATI:    \${result.creati - result.firmati}`, 'text-yellow-400');
-        log(`💰 REVENUE ANNUALE:      €\${result.revenue}`, 'text-green-400');
-        log(`📈 Conversion Rate:      \${result.conversionRate}`, 'text-blue-400');
-        log(`💵 AOV (valore medio):   €\${result.aov}`, 'text-blue-400');
+        log(\`✓ Contratti creati:      \${result.creati}\`, 'text-green-400');
+        log(\`✗ Errori:                \${result.errori}\`, 'text-red-400');
+        log(\`📝 Contratti FIRMATI:    \${result.firmati}\`, 'text-green-400');
+        log(\`📝 Contratti INVIATI:    \${result.creati - result.firmati}\`, 'text-yellow-400');
+        log(\`💰 REVENUE ANNUALE:      €\${result.revenue}\`, 'text-green-400');
+        log(\`📈 Conversion Rate:      \${result.conversionRate}\`, 'text-blue-400');
+        log(\`💵 AOV (valore medio):   €\${result.aov}\`, 'text-blue-400');
         log('═══════════════════════════════════════', 'text-cyan-400');
         log('', '');
         
@@ -25851,11 +25851,11 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await fe.sendEmail({to:((r=e.env)==nul
           log('', '');
           result.contratti.forEach((c, i) => {
             const status = c.status === 'SIGNED' ? '✅ Firmato' : '📤 Inviato';
-            log(`\${i + 1}. \${c.codice}`, 'text-white');
-            log(`   Intestatario: \${c.intestatario}`, 'text-gray-400');
-            log(`   Piano: \${c.piano} | Prezzo: €\${c.prezzo}`, 'text-gray-400');
-            log(`   Status: \${status}`, c.status === 'SIGNED' ? 'text-green-400' : 'text-yellow-400');
-            log(`   Data firma: \${c.data_firma || '-'}`, 'text-gray-400');
+            log(\`\${i + 1}. \${c.codice}\`, 'text-white');
+            log(\`   Intestatario: \${c.intestatario}\`, 'text-gray-400');
+            log(\`   Piano: \${c.piano} | Prezzo: €\${c.prezzo}\`, 'text-gray-400');
+            log(\`   Status: \${status}\`, c.status === 'SIGNED' ? 'text-green-400' : 'text-yellow-400');
+            log(\`   Data firma: \${c.data_firma || '-'}\`, 'text-gray-400');
             log('', '');
           });
         }
@@ -25877,9 +25877,9 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await fe.sendEmail({to:((r=e.env)==nul
           const found = result.contratti.find(c => c.codice === v.codice);
           if (found) {
             const ok = found.intestatario === v.intestatario && found.prezzo === v.prezzo;
-            log(`\${ok ? '✅' : '❌'} \${v.codice}: \${found.intestatario} (€\${found.prezzo})`, ok ? 'text-green-400' : 'text-red-400');
+            log(\`\${ok ? '✅' : '❌'} \${v.codice}: \${found.intestatario} (€\${found.prezzo})\`, ok ? 'text-green-400' : 'text-red-400');
           } else {
-            log(`❌ \${v.codice}: NON TROVATO`, 'text-red-400');
+            log(\`❌ \${v.codice}: NON TROVATO\`, 'text-red-400');
           }
         });
         
@@ -25908,11 +25908,11 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await fe.sendEmail({to:((r=e.env)==nul
         });
         
         if (!deleteResponse.ok) {
-          throw new Error(`DELETE failed: \${deleteResponse.status} \${deleteResponse.statusText}`);
+          throw new Error(\`DELETE failed: \${deleteResponse.status} \${deleteResponse.statusText}\`);
         }
         
         const deleteResult = await deleteResponse.json();
-        log(`✅ DELETE completato - Rimossi: \${deleteResult.removed || 0}`, 'text-green-400');
+        log(\`✅ DELETE completato - Rimossi: \${deleteResult.removed || 0}\`, 'text-green-400');
         log('', '');
         log('⏳ Attesa 2 secondi...', 'text-gray-400');
         log('', '');
@@ -25928,7 +25928,7 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await fe.sendEmail({to:((r=e.env)==nul
             });
             
             if (!createResponse.ok) {
-              throw new Error(`POST failed: \${createResponse.status} \${createResponse.statusText}`);
+              throw new Error(\`POST failed: \${createResponse.status} \${createResponse.statusText}\`);
             }
             
             const result = await createResponse.json();
@@ -25937,19 +25937,19 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await fe.sendEmail({to:((r=e.env)==nul
             log('═══════════════════════════════════════', 'text-cyan-400');
             log('📊 RIEPILOGO FINALE', 'text-cyan-400');
             log('═══════════════════════════════════════', 'text-cyan-400');
-            log(`✓ Contratti creati:      \${result.creati}`, 'text-green-400');
-            log(`✗ Errori:                \${result.errori}`, 'text-red-400');
-            log(`📝 Contratti FIRMATI:    \${result.firmati}`, 'text-green-400');
-            log(`💰 REVENUE ANNUALE:      €\${result.revenue}`, 'text-green-400');
-            log(`📈 Conversion Rate:      \${result.conversionRate}`, 'text-blue-400');
-            log(`💵 AOV:                  €\${result.aov}`, 'text-blue-400');
+            log(\`✓ Contratti creati:      \${result.creati}\`, 'text-green-400');
+            log(\`✗ Errori:                \${result.errori}\`, 'text-red-400');
+            log(\`📝 Contratti FIRMATI:    \${result.firmati}\`, 'text-green-400');
+            log(\`💰 REVENUE ANNUALE:      €\${result.revenue}\`, 'text-green-400');
+            log(\`📈 Conversion Rate:      \${result.conversionRate}\`, 'text-blue-400');
+            log(\`💵 AOV:                  €\${result.aov}\`, 'text-blue-400');
             log('═══════════════════════════════════════', 'text-cyan-400');
             
             if (result.contratti) {
               log('', '');
               log('📋 CONTRATTI:', 'text-cyan-400');
               result.contratti.forEach((c, i) => {
-                log(`\${i + 1}. \${c.codice} - \${c.intestatario} - \${c.status === 'SIGNED' ? '✅' : '📤'} €\${c.prezzo}`, 
+                log(\`\${i + 1}. \${c.codice} - \${c.intestatario} - \${c.status === 'SIGNED' ? '✅' : '📤'} €\${c.prezzo}\`, 
                     c.status === 'SIGNED' ? 'text-green-400' : 'text-yellow-400');
               });
             }
@@ -28027,7 +28027,7 @@ new Chart(document.getElementById('tempPieChart'), {
             loadingDiv.style.display = 'block';
             
             try {
-                const response = await fetch(`/api/leads/\${leadId}`);
+                const response = await fetch(\`/api/leads/\${leadId}\`);
                 
                 if (!response.ok) {
                     throw new Error('Lead non trovato');
@@ -28040,7 +28040,7 @@ new Chart(document.getElementById('tempPieChart'), {
                 const greeting = document.getElementById('greeting');
                 const nomeDisplay = lead.nomeRichiedente || lead.nomeIntestatario || '';
                 const cognomeDisplay = lead.cognomeRichiedente || lead.cognomeIntestatario || '';
-                greeting.textContent = `Gentile \${nomeDisplay} \${cognomeDisplay},`;
+                greeting.textContent = \`Gentile \${nomeDisplay} \${cognomeDisplay},\`;
                 
                 // Mostra riepilogo dati già in nostro possesso
                 showKnownData(lead);
@@ -28075,15 +28075,15 @@ new Chart(document.getElementById('tempPieChart'), {
 
             if (items.length === 0) return;
 
-            let boxHtml = `
+            let boxHtml = \`
                 <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:16px;margin-bottom:24px;">
                     <h4 style="margin:0 0 10px 0;color:#166534;font-size:14px;">✅ Dati già in nostro possesso</h4>
                     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">
-            `;
+            \`;
             items.forEach(function(item) {
-                boxHtml += `<div style="font-size:13px;"><span style="color:#6b7280;">\${item.label}:</span> <strong style="color:#1e293b;">\${item.value}</strong></div>`;
+                boxHtml += \`<div style="font-size:13px;"><span style="color:#6b7280;">\${item.label}:</span> <strong style="color:#1e293b;">\${item.value}</strong></div>\`;
             });
-            boxHtml += `</div><p style="margin:10px 0 0 0;font-size:12px;color:#4b7a59;">👇 Completa solo i dati mancanti qui sotto.</p></div>`;
+            boxHtml += \`</div><p style="margin:10px 0 0 0;font-size:12px;color:#4b7a59;">👇 Completa solo i dati mancanti qui sotto.</p></div>\`;
 
             const greetingEl = document.getElementById('greeting');
             greetingEl.insertAdjacentHTML('afterend', boxHtml);
@@ -28117,32 +28117,32 @@ new Chart(document.getElementById('tempPieChart'), {
                     html += '<div class="form-row cols-2">';
                     
                     if (!lead.nomeIntestatario) {
-                        html += `
+                        html += \`
                             <div class="form-group">
                                 <label for="nomeIntestatario">Nome <span class="required">*</span></label>
                                 <input type="text" id="nomeIntestatario" name="nomeIntestatario" 
                                        value="\${prefNome}"
                                        placeholder="Nome" required>
                             </div>
-                        `;
+                        \`;
                     }
                     
                     if (!lead.cognomeIntestatario) {
-                        html += `
+                        html += \`
                             <div class="form-group">
                                 <label for="cognomeIntestatario">Cognome <span class="required">*</span></label>
                                 <input type="text" id="cognomeIntestatario" name="cognomeIntestatario" 
                                        value="\${prefCognome}"
                                        placeholder="Cognome" required>
                             </div>
-                        `;
+                        \`;
                     }
                     
                     html += '</div>';
                 }
                 
                 if (!lead.cfIntestatario) {
-                    html += `
+                    html += \`
                         <div class="form-group">
                             <label for="cfIntestatario">Codice Fiscale <span class="required">*</span></label>
                             <input type="text" id="cfIntestatario" name="cfIntestatario" 
@@ -28152,7 +28152,7 @@ new Chart(document.getElementById('tempPieChart'), {
                                    oninput="this.value=this.value.toUpperCase()"
                                    autocorrect="off" autocapitalize="characters" spellcheck="false">
                         </div>
-                    `;
+                    \`;
                 }
                 
                 // Indirizzo, CAP, Città sulla stessa riga
@@ -28161,18 +28161,18 @@ new Chart(document.getElementById('tempPieChart'), {
                     html += '<div class="form-row cols-3">';
                     
                     if (!lead.indirizzoIntestatario) {
-                        html += `
+                        html += \`
                             <div class="form-group">
                                 <label for="indirizzoIntestatario">Indirizzo <span class="required">*</span></label>
                                 <input type="text" id="indirizzoIntestatario" name="indirizzoIntestatario" 
                                        value="\${prefInd}"
                                        placeholder="Via/Piazza Nome, N." required>
                             </div>
-                        `;
+                        \`;
                     }
                     
                     if (!lead.capIntestatario) {
-                        html += `
+                        html += \`
                             <div class="form-group">
                                 <label for="capIntestatario">CAP <span class="required">*</span></label>
                                 <input type="text" id="capIntestatario" name="capIntestatario" 
@@ -28180,18 +28180,18 @@ new Chart(document.getElementById('tempPieChart'), {
                                        placeholder="00000" required maxlength="5" 
                                        pattern="[0-9]*" inputmode="numeric">
                             </div>
-                        `;
+                        \`;
                     }
                     
                     if (!lead.cittaIntestatario) {
-                        html += `
+                        html += \`
                             <div class="form-group">
                                 <label for="cittaIntestatario">Città <span class="required">*</span></label>
                                 <input type="text" id="cittaIntestatario" name="cittaIntestatario" 
                                        value="\${prefCitta}"
                                        placeholder="Es. Milano" required>
                             </div>
-                        `;
+                        \`;
                     }
                     
                     html += '</div>';
@@ -28199,7 +28199,7 @@ new Chart(document.getElementById('tempPieChart'), {
                 
                 // ✅ PROVINCIA INTESTATARIO (sigla 2 caratteri)
                 if (!lead.provinciaIntestatario) {
-                    html += `
+                    html += \`
                         <div class="form-group">
                             <label for="provinciaIntestatario">Provincia <span class="required">*</span></label>
                             <input type="text" id="provinciaIntestatario" name="provinciaIntestatario" 
@@ -28209,7 +28209,7 @@ new Chart(document.getElementById('tempPieChart'), {
                                    oninput="this.value=this.value.toUpperCase()"
                                    autocomplete="address-level1" autocorrect="off" autocapitalize="characters">
                         </div>
-                    `;
+                    \`;
                 }
             }
             
@@ -28228,23 +28228,23 @@ new Chart(document.getElementById('tempPieChart'), {
                     html += '<div class="form-row cols-2">';
                     
                     if (!lead.nomeAssistito) {
-                        html += `
+                        html += \`
                             <div class="form-group">
                                 <label for="nomeAssistito">Nome <span class="required">*</span></label>
                                 <input type="text" id="nomeAssistito" name="nomeAssistito" 
                                        placeholder="Nome" required>
                             </div>
-                        `;
+                        \`;
                     }
                     
                     if (!lead.cognomeAssistito) {
-                        html += `
+                        html += \`
                             <div class="form-group">
                                 <label for="cognomeAssistito">Cognome <span class="required">*</span></label>
                                 <input type="text" id="cognomeAssistito" name="cognomeAssistito" 
                                        placeholder="Cognome" required>
                             </div>
-                        `;
+                        \`;
                     }
                     
                     html += '</div>';
@@ -28256,7 +28256,7 @@ new Chart(document.getElementById('tempPieChart'), {
                     html += '<div class="form-row date-location">';
                     
                     if (!lead.dataNascitaAssistito) {
-                        html += `
+                        html += \`
                             <div class="form-group">
                                 <label for="dataNascitaAssistito">Data di Nascita <span class="required">*</span></label>
                                 <div class="date-input-group">
@@ -28275,17 +28275,17 @@ new Chart(document.getElementById('tempPieChart'), {
                                 </div>
                                 <input type="hidden" id="dataNascitaAssistito" name="dataNascitaAssistito">
                             </div>
-                        `;
+                        \`;
                     }
                     
                     if (!lead.luogoNascitaAssistito) {
-                        html += `
+                        html += \`
                             <div class="form-group">
                                 <label for="luogoNascitaAssistito">Luogo di Nascita <span class="required">*</span></label>
                                 <input type="text" id="luogoNascitaAssistito" name="luogoNascitaAssistito" 
                                        placeholder="Es. Milano" required>
                             </div>
-                        `;
+                        \`;
                     }
                     
                     html += '</div>';
@@ -28293,7 +28293,7 @@ new Chart(document.getElementById('tempPieChart'), {
                 
                 // Codice Fiscale
                 if (!lead.cfAssistito) {
-                    html += `
+                    html += \`
                         <div class="form-group">
                             <label for="cfAssistito">Codice Fiscale <span class="required">*</span></label>
                             <input type="text" id="cfAssistito" name="cfAssistito" 
@@ -28302,7 +28302,7 @@ new Chart(document.getElementById('tempPieChart'), {
                                    oninput="this.value=this.value.toUpperCase()"
                                    autocorrect="off" autocapitalize="characters" spellcheck="false">
                         </div>
-                    `;
+                    \`;
                 }
                 
                 // Indirizzo, CAP, Città sulla stessa riga
@@ -28311,17 +28311,17 @@ new Chart(document.getElementById('tempPieChart'), {
                     html += '<div class="form-row cols-3">';
                     
                     // ✅ SEMPRE mostra indirizzo (anche se già compilato) per correggere errori import
-                    html += `
+                    html += \`
                         <div class="form-group">
                             <label for="indirizzoAssistito">Indirizzo <span class="required">*</span></label>
                             <input type="text" id="indirizzoAssistito" name="indirizzoAssistito" 
                                    value="\${lead.indirizzoAssistito || ''}"
                                    placeholder="Via/Piazza Nome, N." required>
                         </div>
-                    `;
+                    \`;
                     
                     // ✅ SEMPRE mostra CAP
-                    html += `
+                    html += \`
                         <div class="form-group">
                             <label for="capAssistito">CAP <span class="required">*</span></label>
                             <input type="text" id="capAssistito" name="capAssistito" 
@@ -28329,20 +28329,20 @@ new Chart(document.getElementById('tempPieChart'), {
                                    placeholder="00000" required maxlength="5" 
                                    pattern="[0-9]*" inputmode="numeric">
                         </div>
-                    `;
+                    \`;
                     
                     // ✅ SEMPRE mostra città (per correggere Milano→Genova in IRBEMA)
-                    html += `
+                    html += \`
                         <div class="form-group">
                             <label for="cittaAssistito">Città <span class="required">*</span></label>
                             <input type="text" id="cittaAssistito" name="cittaAssistito" 
                                    value="\${lead.cittaAssistito || ''}"
                                    placeholder="Es. Roma" required>
                         </div>
-                    `;
+                    \`;
                     
                     // ✅ PROVINCIA ASSISTITO (sigla 2 caratteri)
-                    html += `
+                    html += \`
                         <div class="form-group">
                             <label for="provinciaAssistito">Provincia <span class="required">*</span></label>
                             <input type="text" id="provinciaAssistito" name="provinciaAssistito" 
@@ -28352,21 +28352,21 @@ new Chart(document.getElementById('tempPieChart'), {
                                    oninput="this.value=this.value.toUpperCase()"
                                    autocomplete="address-level1" autocorrect="off" autocapitalize="characters">
                         </div>
-                    `;
+                    \`;
                     
                     html += '</div>';
                 }
                 
                 // Condizioni di Salute
                 if (!lead.condizioniSalute) {
-                    html += `
+                    html += \`
                         <div class="form-group">
                             <label for="condizioniSalute">Condizioni di Salute <span class="required">*</span></label>
                             <textarea id="condizioniSalute" name="condizioniSalute" 
                                       placeholder="Descrivi brevemente le condizioni di salute dell'assistito..." 
                                       rows="4" required></textarea>
                         </div>
-                    `;
+                    \`;
                 }
             }
             
@@ -28389,7 +28389,7 @@ new Chart(document.getElementById('tempPieChart'), {
             submitBtn.disabled = true;
             
             try {
-                const response = await fetch(`/api/leads/\${leadId}/complete`, {
+                const response = await fetch(\`/api/leads/\${leadId}/complete\`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -28421,7 +28421,7 @@ new Chart(document.getElementById('tempPieChart'), {
         
         function showSuccess() {
             const content = document.getElementById('mainContent');
-            content.innerHTML = `
+            content.innerHTML = \`
                 <div class="success">
                     <div class="success-icon">✅</div>
                     <h2 style="color: #10b981; margin: 0 0 10px 0;">Dati salvati con successo!</h2>
@@ -28431,7 +28431,7 @@ new Chart(document.getElementById('tempPieChart'), {
                         ✓ Conferma
                     </button>
                 </div>
-            `;
+            \`;
         }
         
         // Auto-focus tra campi data (giorno → mese → anno)
@@ -28458,7 +28458,7 @@ new Chart(document.getElementById('tempPieChart'), {
             const anno = document.getElementById(fieldName + '_anno')?.value || '';
             
             if (giorno && mese && anno && anno.length === 4) {
-                const dataISO = `\${anno}-\${mese}-\${giorno}`;
+                const dataISO = \`\${anno}-\${mese}-\${giorno}\`;
                 const hiddenField = document.getElementById(fieldName);
                 if (hiddenField) {
                     hiddenField.value = dataISO;
