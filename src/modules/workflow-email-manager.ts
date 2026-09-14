@@ -1446,8 +1446,15 @@ export async function inviaEmailProforma(
     const ivaRate = ivaAgevolata ? 0.04 : 0.22
     const ivaLabel = ivaAgevolata ? '4%' : '22%'
 
+    // 🏷️ Sconto applicato (passato da send-proforma endpoint)
+    const codiceSconto = proformaData.codiceSconto || ''
+    const scontoPerc   = Number(proformaData.scontoPercentuale) || 0
+    const impSconto    = Number(proformaData.importoSconto) || 0
+    const prezzoListino = Number(proformaData.prezzoListino) || 0
+    const hasScontoEmail = !isRinnovo && codiceSconto && impSconto > 0
+
     // Calcola imponibile, IVA e totale con aliquota corretta
-    const imponibile = proformaData.prezzoBase
+    const imponibile = proformaData.prezzoBase  // già scontato se hasScontoEmail
     const importoIva = Math.round(imponibile * ivaRate * 100) / 100
     const totaleConIva = Math.round((imponibile + importoIva) * 100) / 100
 
@@ -1492,12 +1499,22 @@ export async function inviaEmailProforma(
 <p style="margin:6px 0; font-size:14px;">3️⃣ Riceverà le <strong>istruzioni per la configurazione</strong> del dispositivo</p>
 <p style="margin:6px 0; font-size:14px;">4️⃣ Il nostro team La contatterà per <strong>programmare l'attivazione</strong></p>`
 
+    // 🏷️ Banner sconto: iniettato in IMPORTO_BASE (campo HTML inline — funziona senza modificare il template DB)
+    const bannerScontoHtml = hasScontoEmail
+      ? `<span style="display:block; background:#fff8e1; border-left:3px solid #f59e0b; padding:6px 10px; margin-bottom:8px; border-radius:0 4px 4px 0; font-size:13px; color:#78350f;">` +
+        `🏷️ <strong>Sconto ${codiceSconto}${scontoPerc > 0 ? ' -' + scontoPerc + '%' : ''}</strong> applicato: ` +
+        `<span style="text-decoration:line-through; color:#9ca3af;">€${prezzoListino.toFixed(2).replace('.', ',')}</span> ` +
+        `→ <strong style="color:#15803d;">€${imponibile.toFixed(2).replace('.', ',')} </strong>` +
+        `(<span style="color:#b91c1c;">-€${impSconto.toFixed(2).replace('.', ',')}</span>)` +
+        `</span>`
+      : ''
+
     const templateData = {
       NOME_CLIENTE: leadData.nomeRichiedente,
       COGNOME_CLIENTE: leadData.cognomeRichiedente,
       PIANO_SERVIZIO: titoloProforma,
       NUMERO_PROFORMA: proformaData.numeroProforma,
-      IMPORTO_BASE: `€${imponibileEmail.toFixed(2).replace('.', ',')}`,
+      IMPORTO_BASE: `${bannerScontoHtml}€${imponibileEmail.toFixed(2).replace('.', ',')}`,
       IMPORTO_IVA: `€${importoIvaEmail.toFixed(2).replace('.', ',')}`,
       IMPORTO_CON_IVA: labelTotale,
       IMPORTO_TOTALE: labelTotale,
