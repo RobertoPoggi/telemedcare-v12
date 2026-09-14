@@ -5590,8 +5590,7 @@ ${370+t.length}
         window.loadEcuraChannelStats = loadEcuraChannelStats;
 
         async function syncEcuraChannels() {
-            alert("ℹ️ Sincronizzazione HubSpot disabilitata.
-I lead arrivano ora solo dalla landing eCura.");
+            alert("ℹ️ Sincronizzazione HubSpot disabilitata.\\nI lead arrivano ora solo dalla landing eCura.");
         }
         window.syncEcuraChannels = syncEcuraChannels;
 
@@ -7387,8 +7386,7 @@ I lead arrivano ora solo dalla landing eCura.");
         window.loadLeadsEcuraChannelStats = loadLeadsEcuraChannelStats;
 
         async function leadssSyncEcuraChannels() {
-            alert("ℹ️ Sincronizzazione HubSpot disabilitata.
-I lead arrivano ora solo dalla landing eCura.");
+            alert("ℹ️ Sincronizzazione HubSpot disabilitata.\\nI lead arrivano ora solo dalla landing eCura.");
         }
         window.leadssSyncEcuraChannels = leadssSyncEcuraChannels;
 
