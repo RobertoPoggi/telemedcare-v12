@@ -4143,7 +4143,7 @@ ${370+t.length}
                     console.log('🔄 [SETTINGS] Response:', result);
                     
                     if (result.success) {
-                        alert('✅ Impostazione aggiornata con successo!\\n\\n' + key + ' = ' + value);
+                        alert("✅ Impostazione aggiornata con successo!\\n\\n" + key + ' = ' + value);
                         console.log('✅ [SETTINGS] Setting aggiornato:', key, '=', value);
                     } else {
                         alert('❌ Errore: ' + result.error);
@@ -5213,16 +5213,16 @@ ${370+t.length}
                     btn.innerHTML = originalHTML;
                     
                     if (data.success) {
-                        alert('✅ Import completato!\\n\\nCanale: ' + channel + '\\nLead importati: ' + (data.count || 0) + '\\nTotale lead: ' + (data.total || 0));
+                        alert("✅ Import completato!\\n\\nCanale: " + channel + "\\nLead importati: " + (data.count || 0) + "\\nTotale lead: " + (data.total || 0));
                         loadDashboardData(); // Ricarica dashboard
                     } else {
-                        alert('❌ Errore import:\\n\\n' + (data.error || 'Errore sconosciuto'));
+                        alert("❌ Errore import:\\n\\n" + (data.error || 'Errore sconosciuto'));
                     }
                 })
                 .catch(error => {
                     btn.disabled = false;
                     btn.innerHTML = originalHTML;
-                    alert('❌ Errore di comunicazione:\\n\\n' + error.message);
+                    alert("❌ Errore di comunicazione:\\n\\n" + error.message);
                 });
             }
         }
@@ -5590,8 +5590,8 @@ ${370+t.length}
         window.loadEcuraChannelStats = loadEcuraChannelStats;
 
         async function syncEcuraChannels() {
-            alert('ℹ️ Sincronizzazione HubSpot disabilitata.
-I lead arrivano ora solo dalla landing eCura.');
+            alert("ℹ️ Sincronizzazione HubSpot disabilitata.
+I lead arrivano ora solo dalla landing eCura.");
         }
         window.syncEcuraChannels = syncEcuraChannels;
 
@@ -5606,15 +5606,15 @@ I lead arrivano ora solo dalla landing eCura.');
                     const assistito = data.assistiti[0];
                     
                     // Mostra modal dettagli assistito
-                    alert('📋 Dettagli Assistito\\n\\n' +
-                        'Nome: ' + (assistito.nome_assistito || '') + ' ' + (assistito.cognome_assistito || '') + '\\n' +
-                        'Caregiver: ' + (assistito.nome_caregiver || 'N/A') + ' ' + (assistito.cognome_caregiver || '') + '\\n' +
-                        'Parentela: ' + (assistito.parentela_caregiver || 'N/A') + '\\n' +
-                        'IMEI: ' + (assistito.imei || 'N/A') + '\\n' +
-                        'Email: ' + (assistito.email || 'N/A') + '\\n' +
-                        'Telefono: ' + (assistito.telefono || 'N/A') + '\\n' +
-                        'Piano: ' + (assistito.piano || 'BASE') + '\\n' +
-                        'Contratto: ' + (assistito.codice_contratto || 'Nessuno') + '\\n' +
+                    alert("📋 Dettagli Assistito\\n\\n" +
+                        'Nome: ' + (assistito.nome_assistito || '') + ' ' + (assistito.cognome_assistito || '') + "\\n" +
+                        'Caregiver: ' + (assistito.nome_caregiver || 'N/A') + ' ' + (assistito.cognome_caregiver || '') + "\\n" +
+                        'Parentela: ' + (assistito.parentela_caregiver || 'N/A') + "\\n" +
+                        'IMEI: ' + (assistito.imei || 'N/A') + "\\n" +
+                        'Email: ' + (assistito.email || 'N/A') + "\\n" +
+                        'Telefono: ' + (assistito.telefono || 'N/A') + "\\n" +
+                        'Piano: ' + (assistito.piano || 'BASE') + "\\n" +
+                        'Contratto: ' + (assistito.codice_contratto || 'Nessuno') + "\\n" +
                         'Status: ' + (assistito.contratto_status || assistito.status || 'N/A')
                     );
                 } else {
@@ -5689,7 +5689,7 @@ I lead arrivano ora solo dalla landing eCura.');
                 (assistito.nome || ((assistito.nome_assistito || '') + ' ' + (assistito.cognome_assistito || '')).trim() || 'questo assistito') 
                 : 'questo assistito';
             
-            if (!confirm('⚠️ Sei sicuro di voler eliminare l\\'assistito ' + nome + '?\\n\\nQuesta azione non può essere annullata!')) {
+            if (!confirm('⚠️ Sei sicuro di voler eliminare l\\'assistito ' + nome + "?\\n\\nQuesta azione non può essere annullata!")) {
                 return;
             }
             
@@ -6161,7 +6161,7 @@ I lead arrivano ora solo dalla landing eCura.');
         window.gsheetRunDry = gsheetRunDry;
 
         async function gsheetRunImport() {
-            if (!confirm('Importare i lead dal foglio Google Sheets eCura?\\n\\nI lead già presenti nel DB saranno aggiornati solo nei campi vuoti.\\nNessun lead esistente sarà cancellato.')) return;
+            if (!confirm("Importare i lead dal foglio Google Sheets eCura?\\n\\nI lead già presenti nel DB saranno aggiornati solo nei campi vuoti.\\nNessun lead esistente sarà cancellato.")) return;
             var statusEl = document.getElementById('gsheet-status');
             if (statusEl) statusEl.innerHTML = '<p style="color:#374151;font-size:14px;">⏳ Import in corso...</p>';
             document.getElementById('gsheet-import-btn').disabled = true;
@@ -6199,7 +6199,7 @@ I lead arrivano ora solo dalla landing eCura.');
         window.gsheetRunImport = gsheetRunImport;
 
         async function importFromIrbema() {
-            if (!confirm('Vuoi importare i lead da Irbema (HubSpot)?\\n\\nQuesta operazione:\\n- Scaricherà i nuovi lead da HubSpot\\n- Filtrerà solo i lead da ecura.it\\n- Aggiornerà il database\\n\\nProcedi?')) {
+            if (!confirm("Vuoi importare i lead da Irbema (HubSpot)?\\n\\nQuesta operazione:\\n- Scaricherà i nuovi lead da HubSpot\\n- Filtrerà solo i lead da ecura.it\\n- Aggiornerà il database\\n\\nProcedi?")) {
                 return;
             }
             
@@ -6212,10 +6212,10 @@ I lead arrivano ora solo dalla landing eCura.');
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Import Irbema completato!\\n\\n' +
-                          'Lead importati: ' + result.imported + '\\n' +
-                          'Lead skippati: ' + result.skipped + '\\n' +
-                          'Totale contatti: ' + result.total + '\\n' +
+                    alert("✅ Import Irbema completato!\\n\\n" +
+                          'Lead importati: ' + result.imported + "\\n" +
+                          'Lead skippati: ' + result.skipped + "\\n" +
+                          'Totale contatti: ' + result.total + "\\n" +
                           'Pagine processate: ' + result.pages);
                     
                     // Ricarica la tabella assistiti
@@ -6231,7 +6231,7 @@ I lead arrivano ora solo dalla landing eCura.');
                         setTimeout(() => loadEcuraChannelStats(), 1500);
                     }
                 } else {
-                    const errMsg = result.error + (result.details ? '\\n\\nDettagli: ' + result.details : '');
+                    const errMsg = result.error + (result.details ? "\\n\\nDettagli: " + result.details : '');
                     alert('Errore import: ' + errMsg);
                 }
             } catch (error) {
@@ -6241,12 +6241,12 @@ I lead arrivano ora solo dalla landing eCura.');
         window.importFromIrbema = importFromIrbema;
 
         function importFromAON() {
-            alert('🔄 Import da AON\\n\\nFunzionalità in sviluppo.\\n\\nEndpoint: POST /api/import/aon\\n\\nQuesta funzionalità permetterà di importare lead dal partner AON.');
+            alert("🔄 Import da AON\\n\\nFunzionalità in sviluppo.\\n\\nEndpoint: POST /api/import/aon\\n\\nQuesta funzionalità permetterà di importare lead dal partner AON.");
         }
         window.importFromAON = importFromAON;
 
         function importFromDoubleYou() {
-            alert('🔄 Import da DoubleYou\\n\\nFunzionalità in sviluppo.\\n\\nEndpoint: POST /api/import/doubleyou\\n\\nQuesta funzionalità permetterà di importare lead dal partner DoubleYou.');
+            alert("🔄 Import da DoubleYou\\n\\nFunzionalità in sviluppo.\\n\\nEndpoint: POST /api/import/doubleyou\\n\\nQuesta funzionalità permetterà di importare lead dal partner DoubleYou.");
         }
         window.importFromDoubleYou = importFromDoubleYou;
 
@@ -7387,8 +7387,8 @@ I lead arrivano ora solo dalla landing eCura.');
         window.loadLeadsEcuraChannelStats = loadLeadsEcuraChannelStats;
 
         async function leadssSyncEcuraChannels() {
-            alert('ℹ️ Sincronizzazione HubSpot disabilitata.
-I lead arrivano ora solo dalla landing eCura.');
+            alert("ℹ️ Sincronizzazione HubSpot disabilitata.
+I lead arrivano ora solo dalla landing eCura.");
         }
         window.leadssSyncEcuraChannels = leadssSyncEcuraChannels;
 
@@ -7875,10 +7875,10 @@ I lead arrivano ora solo dalla landing eCura.');
                 console.log('📄 Risposta invio contratto:', result);
                 
                 if (result.success) {
-                    alert('✅ Contratto inviato con successo!\\n\\nCodice: ' + (result.contractCode || 'N/A') + '\\nTemplate: email_invio_contratto');
+                    alert("✅ Contratto inviato con successo!\\n\\nCodice: " + (result.contractCode || 'N/A') + "\\nTemplate: email_invio_contratto");
                     loadLeadsData(); // Ricarica i dati
                 } else {
-                    alert('❌ Errore: ' + (result.error || 'Errore sconosciuto') + (result.details ? '\\n\\nDettagli: ' + result.details : ''));
+                    alert('❌ Errore: ' + (result.error || 'Errore sconosciuto') + (result.details ? "\\n\\nDettagli: " + result.details : ''));
                 }
             } catch (error) {
                 console.error('❌ Errore invio contratto:', error);
@@ -7919,7 +7919,7 @@ I lead arrivano ora solo dalla landing eCura.');
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Brochure inviata con successo!\\nTemplate: email_invio_brochure');
+                    alert("✅ Brochure inviata con successo!\\nTemplate: email_invio_brochure");
                     loadLeadsData(); // Ricarica i dati
                 } else {
                     alert('❌ Errore: ' + result.error);
@@ -7944,12 +7944,12 @@ I lead arrivano ora solo dalla landing eCura.');
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Email di completamento inviata con successo!\\nLink: ' + (result.token?.completionUrl || result.completionUrl) + '\\nScadenza: ' + (result.token?.expiresAt || result.expiresAt));
+                    alert("✅ Email di completamento inviata con successo!\\nLink: " + (result.token?.completionUrl || result.completionUrl) + "\\nScadenza: " + (result.token?.expiresAt || result.expiresAt));
                     loadLeadsData(); // Ricarica i dati
                 } else {
                     // Gestisci caso lead già completo
                     if (result.error && result.error.includes('già completo')) {
-                        alert('ℹ️ Tutti i dati del lead sono già completi.\\n\\nNon è necessario inviare una email di richiesta completamento.');
+                        alert("ℹ️ Tutti i dati del lead sono già completi.\\n\\nNon è necessario inviare una email di richiesta completamento.");
                     } else {
                         alert('❌ Errore: ' + result.error);
                     }
@@ -7964,7 +7964,7 @@ I lead arrivano ora solo dalla landing eCura.');
         // ============================================
 
         async function manualSign(leadId) {
-            if (!confirm('🖊️ Firmare manualmente il contratto per questo lead?\\n\\nVerrà generata una proforma automaticamente.')) {
+            if (!confirm("🖊️ Firmare manualmente il contratto per questo lead?\\n\\nVerrà generata una proforma automaticamente.")) {
                 return;
             }
             
@@ -7978,7 +7978,7 @@ I lead arrivano ora solo dalla landing eCura.');
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Contratto firmato manualmente!\\n\\nCodice: ' + (result.contractId || 'N/A') + '\\nProforma: ' + (result.proformaId || 'N/A'));
+                    alert("✅ Contratto firmato manualmente!\\n\\nCodice: " + (result.contractId || 'N/A') + "\\nProforma: " + (result.proformaId || 'N/A'));
                     loadLeadsData();
                 } else {
                     alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
@@ -8003,7 +8003,7 @@ I lead arrivano ora solo dalla landing eCura.');
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Proforma inviata con successo!\\n\\nServizio: ' + (result.servizio || 'N/A') + '\\nPiano: ' + (result.piano || 'N/A') + '\\nNumero: ' + (result.proformaId || 'N/A') + '\\nImporto: €' + (result.importo || 'N/A'));
+                    alert("✅ Proforma inviata con successo!\\n\\nServizio: " + (result.servizio || 'N/A') + "\\nPiano: " + (result.piano || 'N/A') + "\\nNumero: " + (result.proformaId || 'N/A') + "\\nImporto: €" + (result.importo || 'N/A'));
                     loadLeadsData();
                 } else {
                     alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
@@ -8158,7 +8158,7 @@ I lead arrivano ora solo dalla landing eCura.');
             }
 
             // ── LEAD NON RATEIZZATO: comportamento originale ─────────────────────
-            if (!confirm('✅ Confermare pagamento per questo lead?\\n\\nVerrà inviata la email con il form di configurazione.')) {
+            if (!confirm("✅ Confermare pagamento per questo lead?\\n\\nVerrà inviata la email con il form di configurazione.")) {
                 return;
             }
             try {
@@ -8169,7 +8169,7 @@ I lead arrivano ora solo dalla landing eCura.');
                 });
                 const result = await response.json();
                 if (result.success) {
-                    alert('✅ Pagamento confermato!\\n\\nEmail di configurazione inviata al cliente: ' + (result.email || 'N/A'));
+                    alert("✅ Pagamento confermato!\\n\\nEmail di configurazione inviata al cliente: " + (result.email || 'N/A'));
                     loadLeadsData();
                 } else {
                     alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
@@ -8220,7 +8220,7 @@ I lead arrivano ora solo dalla landing eCura.');
                     document.getElementById('rataPaymentModal').style.display = 'none';
                     var msg = '✅ ' + (result.message || 'Rata segnata come PAGATA con successo!');
                     if (result.email_configurazione_inviata === true) {
-                        msg += '\\n\\n📧 Email con form di configurazione inviata al cliente!';
+                        msg += "\\n\\n📧 Email con form di configurazione inviata al cliente!";
                     } else if (result.email_configurazione_inviata === false) {
                         msg += "\\n\\n⚠️ Attenzione: errore nell'invio email configurazione. Usa il pulsante ⚙️ per rinviarla manualmente.";
                     }
@@ -8251,7 +8251,7 @@ I lead arrivano ora solo dalla landing eCura.');
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Email configurazione inviata!\\n\\nLink configurazione: ' + (result.configUrl || 'N/A'));
+                    alert("✅ Email configurazione inviata!\\n\\nLink configurazione: " + (result.configUrl || 'N/A'));
                     loadLeadsData();
                 } else {
                     alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
@@ -8306,17 +8306,17 @@ I lead arrivano ora solo dalla landing eCura.');
 
                 // DDT non esiste ancora: serve IMEI per crearlo
                 if (res1.needsImei) {
-                    const imei = prompt('Nessun DDT trovato per questo lead.\\nInserisci IMEI del dispositivo:');
+                    const imei = prompt("Nessun DDT trovato per questo lead.\\nInserisci IMEI del dispositivo:");
                     if (!imei || !imei.trim()) return;
                     const telefonoSim = prompt('Numero SIM (Invio per saltare):') || '';
                     const numeroDdt = prompt('Numero DDT (vuoto = auto-incremento):') || '';
                     const dataConsegna = prompt('Data consegna (YYYY-MM-DD, vuoto = oggi):') || '';
                     const note = prompt('Note (opzionale):') || '';
                     if (!confirm('Confermi creazione DDT + Dispositivo + Assistito?' +
-                        '\\nIMEI: ' + imei.trim() +
-                        '\\nSIM: ' + (telefonoSim||'-') +
-                        '\\nN.DDT: ' + (numeroDdt||'auto') +
-                        '\\nData: ' + (dataConsegna||'oggi'))) return;
+                        "\\nIMEI: " + imei.trim() +
+                        "\\nSIM: " + (telefonoSim||'-') +
+                        "\\nN.DDT: " + (numeroDdt||'auto') +
+                        "\\nData: " + (dataConsegna||'oggi'))) return;
 
                     const r2 = await fetch('/api/leads/' + leadId + '/genera-ddt', {
                         method: 'POST',
@@ -8353,10 +8353,10 @@ I lead arrivano ora solo dalla landing eCura.');
             // Se ha già uno sconto, chiedi se rimuovere o cambiare
             if (currentCodice && currentCodice.trim() !== '') {
                 const choice = prompt(
-                    '🏷️ Sconto attivo: ' + currentCodice + '\\n\\n' +
-                    'Opzioni:\\n' +
-                    '• Premi OK con campo vuoto per RIMUOVERE lo sconto\\n' +
-                    '• Inserisci un nuovo codice per SOSTITUIRE lo sconto\\n' +
+                    '🏷️ Sconto attivo: ' + currentCodice + "\\n\\n" +
+                    "Opzioni:\\n" +
+                    "• Premi OK con campo vuoto per RIMUOVERE lo sconto\\n" +
+                    "• Inserisci un nuovo codice per SOSTITUIRE lo sconto\\n" +
                     '• Annulla per non fare nulla',
                     currentCodice
                 );
@@ -8386,8 +8386,8 @@ I lead arrivano ora solo dalla landing eCura.');
             } else {
                 // Nessuno sconto attivo: chiedi codice
                 const codice = prompt(
-                    '🏷️ Inserisci codice sconto da applicare al lead:\\n' + leadId + '\\n\\n' +
-                    'Esempi: AON2026, DOUBLEYOU2026\\n' +
+                    "🏷️ Inserisci codice sconto da applicare al lead:\\n" + leadId + "\\n\\n" +
+                    "Esempi: AON2026, DOUBLEYOU2026\\n" +
                     '(oppure qualsiasi codice attivo nel sistema)'
                 );
                 if (!codice || !codice.trim()) return;
@@ -8676,7 +8676,7 @@ I lead arrivano ora solo dalla landing eCura.');
                 });
                 const data = await res.json();
                 if (data.success) {
-                    alert('✅ ' + data.message + (riserva ? '\\n🔒 Clausola Riserva di Dominio attiva' : ''));
+                    alert('✅ ' + data.message + (riserva ? "\\n🔒 Clausola Riserva di Dominio attiva" : ''));
                     closeRateizzazioneModal();
                     loadLeadsData();
                 } else {
@@ -9075,7 +9075,7 @@ I lead arrivano ora solo dalla landing eCura.');
         // saveEditLead() rimossa - ora usa saveNewLead() con modalità edit
         
         async function deleteLead(leadId) {
-            if (!confirm('⚠️ Sei sicuro di voler eliminare questo lead?\\n\\nQuesta operazione è irreversibile.')) {
+            if (!confirm("⚠️ Sei sicuro di voler eliminare questo lead?\\n\\nQuesta operazione è irreversibile.")) {
                 return;
             }
             
@@ -9722,15 +9722,15 @@ I lead arrivano ora solo dalla landing eCura.');
                     const assistito = data.assistiti[0];
                     
                     // Mostra modal dettagli assistito
-                    alert('📋 Dettagli Assistito\\n\\n' +
-                        'Nome: ' + (assistito.nome_assistito || '') + ' ' + (assistito.cognome_assistito || '') + '\\n' +
-                        'Caregiver: ' + (assistito.nome_caregiver || 'N/A') + ' ' + (assistito.cognome_caregiver || '') + '\\n' +
-                        'Parentela: ' + (assistito.parentela_caregiver || 'N/A') + '\\n' +
-                        'IMEI: ' + (assistito.imei || 'N/A') + '\\n' +
-                        'Email: ' + (assistito.email || 'N/A') + '\\n' +
-                        'Telefono: ' + (assistito.telefono || 'N/A') + '\\n' +
-                        'Piano: ' + (assistito.piano || 'BASE') + '\\n' +
-                        'Contratto: ' + (assistito.codice_contratto || 'Nessuno') + '\\n' +
+                    alert("📋 Dettagli Assistito\\n\\n" +
+                        'Nome: ' + (assistito.nome_assistito || '') + ' ' + (assistito.cognome_assistito || '') + "\\n" +
+                        'Caregiver: ' + (assistito.nome_caregiver || 'N/A') + ' ' + (assistito.cognome_caregiver || '') + "\\n" +
+                        'Parentela: ' + (assistito.parentela_caregiver || 'N/A') + "\\n" +
+                        'IMEI: ' + (assistito.imei || 'N/A') + "\\n" +
+                        'Email: ' + (assistito.email || 'N/A') + "\\n" +
+                        'Telefono: ' + (assistito.telefono || 'N/A') + "\\n" +
+                        'Piano: ' + (assistito.piano || 'BASE') + "\\n" +
+                        'Contratto: ' + (assistito.codice_contratto || 'Nessuno') + "\\n" +
                         'Status: ' + (assistito.contratto_status || assistito.status || 'N/A')
                     );
                 } else {
@@ -11097,7 +11097,7 @@ I lead arrivano ora solo dalla landing eCura.');
         async function inviaRinnovo(leadId, codiceContrattoOriginale, clienteNome, ivaAgevolata, annoRinnovo) {
             if (!leadId) { alert('❌ Lead ID mancante — impossibile inviare il rinnovo.'); return; }
             const ivaInfo = ivaAgevolata ? 'IVA 4% (Legge 104)' : 'IVA 22%';
-            if (!confirm(\`🔄 Generare contratto RINNOVO per:\\n\\n📋 \${codiceContrattoOriginale}\\n👤 \${clienteNome}\\n📅 Anno \${annoRinnovo}\\n\\nIl contratto verrà creato ma l'email NON sarà ancora inviata.\\nPotrai verificare il link e poi inviare l'email manualmente.\\nAliquota IVA applicata: \${ivaInfo}.\`)) return;
+            if (!confirm(\`🔄 Generare contratto RINNOVO per:\\n\\n📋 \${codiceContrattoOriginale}\\n👤 \${clienteNome}\\n📅 Anno \${annoRinnovo}\\n\\nIl contratto verrà creato ma l"email NON sarà ancora inviata.\\nPotrai verificare il link e poi inviare l"email manualmente.\\nAliquota IVA applicata: \${ivaInfo}.\`)) return;
             try {
                 const resp = await fetch(\`/api/leads/\${leadId}/send-contract\`, {
                     method: 'POST',
@@ -11132,7 +11132,7 @@ I lead arrivano ora solo dalla landing eCura.');
         }
 
         async function inviaEmailRinnovo(rinnovoId, codiceRinnovo, emailCliente) {
-            if (!confirm(\`📧 Inviare l'email di rinnovo a \${emailCliente}?\\n\\nContratto: \${codiceRinnovo}\\n\\nL'email con il link di firma sarà inviata al cliente.\`)) return;
+            if (!confirm(\`📧 Inviare l"email di rinnovo a \${emailCliente}?\\n\\nContratto: \${codiceRinnovo}\\n\\nL"email con il link di firma sarà inviata al cliente.\`)) return;
             try {
                 const resp = await fetch(\`/api/contracts/\${rinnovoId}/send-rinnovo-email\`, {
                     method: 'POST',
@@ -11226,14 +11226,14 @@ I lead arrivano ora solo dalla landing eCura.');
         }
 
         async function fixRinnovoEmailSent() {
-            if (!confirm('🔧 Correggere il DB?\\n\\nImposta email_sent=1 su tutti i contratti rinnovo già inviati (status SENT o SIGNED) che hanno ancora email_sent=0.\\n\\nUsare se il bottone ✍️ non si attiva dopo aver inviato l\\'email.')) return;
+            if (!confirm("🔧 Correggere il DB?\\n\\nImposta email_sent=1 su tutti i contratti rinnovo già inviati (status SENT o SIGNED) che hanno ancora email_sent=0.\\n\\nUsare se il bottone ✍️ non si attiva dopo aver inviato l\\"email.')) return;
             try {
                 const resp = await fetch('/api/contracts/fix-email-sent', {
                     method: 'POST', credentials: 'include'
                 });
                 const result = await resp.json();
                 if (result.success) {
-                    alert('✅ ' + result.message + '\\n\\nRicarico la tabella...');
+                    alert('✅ ' + result.message + "\\n\\nRicarico la tabella...");
                     if (typeof loadContractsData === 'function') loadContractsData();
                 } else {
                     alert('❌ Errore: ' + (result.error || 'Riprovare'));
@@ -11998,7 +11998,7 @@ I lead arrivano ora solo dalla landing eCura.');
         }
 
         function viewWorkflowDetails(leadId) {
-            alert('Dettagli workflow per Lead: ' + leadId + '\\n\\nFunzionalità in sviluppo...');
+            alert('Dettagli workflow per Lead: ' + leadId + "\\n\\nFunzionalità in sviluppo...");
         }
 
         // Open Archive - Click sui box workflow per aprire archivi completi
@@ -12073,7 +12073,7 @@ I lead arrivano ora solo dalla landing eCura.');
                     });
                 } else {
                     // Mostra solo primi 10 + conteggio
-                    message += 'Primi 10 record:\\n\\n';
+                    message += "Primi 10 record:\\n\\n";
                     items.slice(0, 10).forEach((item, idx) => {
                         if (type === 'leads' || type === 'attivi') {
                             const status = item.status || 'NUOVO';
@@ -12095,7 +12095,7 @@ I lead arrivano ora solo dalla landing eCura.');
                 
             } catch (error) {
                 console.error('Errore apertura archivio:', error);
-                alert('❌ Errore nel caricamento archivio.\\n\\n' + error.message);
+                alert("❌ Errore nel caricamento archivio.\\n\\n" + error.message);
             }
         }
         window.openArchive = openArchive;  // Esponi globalmente
@@ -12117,14 +12117,14 @@ I lead arrivano ora solo dalla landing eCura.');
                     // Mostra servizio cosi come dal DB
                     const servizio = lead.servizio || lead.tipoServizio || 'eCura PRO';
                     
-                    alert('👤 LEAD: ' + (lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || '') + '\\n\\n' +
-                    '📧 Email: ' + (lead.email || 'N/A') + '\\n' +
-                    '📞 Telefono: ' + (lead.telefono || 'N/A') + '\\n' +
-                    '🏥 Servizio: ' + servizio + '\\n' +
-                    '📋 Piano: ' + piano + ' (' + prezzo + '/anno)' + '\\n' +
-                    '📅 Creato: ' + new Date(lead.created_at).toLocaleDateString('it-IT') + '\\n' +
-                    '📍 Stato: ' + getWorkflowStatus(lead).text + '\\n' +
-                    '🔄 Step: ' + getWorkflowStep(lead).text + '\\n\\n' +
+                    alert('👤 LEAD: ' + (lead.nomeRichiedente || '') + ' ' + (lead.cognomeRichiedente || '') + "\\n\\n" +
+                    '📧 Email: ' + (lead.email || 'N/A') + "\\n" +
+                    '📞 Telefono: ' + (lead.telefono || 'N/A') + "\\n" +
+                    '🏥 Servizio: ' + servizio + "\\n" +
+                    '📋 Piano: ' + piano + ' (' + prezzo + '/anno)' + "\\n" +
+                    '📅 Creato: ' + new Date(lead.created_at).toLocaleDateString('it-IT') + "\\n" +
+                    '📍 Stato: ' + getWorkflowStatus(lead).text + "\\n" +
+                    '🔄 Step: ' + getWorkflowStep(lead).text + "\\n\\n" +
                     '📝 Note: ' + (lead.note || 'Nessuna nota'));
                     break;
                     
@@ -12154,12 +12154,12 @@ I lead arrivano ora solo dalla landing eCura.');
                                     document.getElementById('paymentAmount').value = proforma.importo;
                                     openPaymentModal();
                                 } else {
-                                    alert('⚠️ Nessuna proforma trovata per questo lead.\\n\\nCrea prima una proforma tramite la dashboard contratti.');
+                                    alert("⚠️ Nessuna proforma trovata per questo lead.\\n\\nCrea prima una proforma tramite la dashboard contratti.");
                                 }
                             })
                             .catch(err => {
                                 console.error('Errore caricamento proforma:', err);
-                                alert('❌ Errore nel caricamento della proforma.\\n\\nInserisci manualmente i dati.');
+                                alert("❌ Errore nel caricamento della proforma.\\n\\nInserisci manualmente i dati.");
                                 openPaymentModal();
                             });
                     }
@@ -12215,7 +12215,7 @@ I lead arrivano ora solo dalla landing eCura.');
                     const result = await response.json();
                     
                     if (result.success) {
-                        alert('✅ Firma registrata con successo!\\n\\nProforma generata e inviata.');
+                        alert("✅ Firma registrata con successo!\\n\\nProforma generata e inviata.");
                         closeSignModal();
                         refreshWorkflows();
                     } else {
@@ -12254,7 +12254,7 @@ I lead arrivano ora solo dalla landing eCura.');
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('✅ Pagamento registrato con successo!\\n\\nProcedura di attivazione avviata.');
+                    alert("✅ Pagamento registrato con successo!\\n\\nProcedura di attivazione avviata.");
                     closePaymentModal();
                     refreshWorkflows();
                 } else {
