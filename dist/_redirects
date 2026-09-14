@@ -8,8 +8,11 @@
 # CONTRACT SIGNATURE (alias)
 /contract-signature /contract-signature.html 200
 
-# CONFIGURAZIONE - Solo base path
-/configurazione /configurazione.html 200
+# CONFIGURAZIONE - Alias verso form-configurazione.html (pagina corretta)
+/configurazione /form-configurazione.html 200
+
+# FORM CONFIGURAZIONE - Base path
+/form-configurazione /form-configurazione.html 200
 
 
 # PAGAMENTO - RIMOSSO REDIRECT (servire direttamente .html)
