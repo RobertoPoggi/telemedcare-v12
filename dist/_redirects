@@ -9,10 +9,12 @@
 /contract-signature /contract-signature.html 200
 
 # CONFIGURAZIONE - Alias verso form-configurazione.html (pagina corretta)
+# NOTA: CF Pages serve /form-configurazione natively come pretty URL da form-configurazione.html
+# Il rewrite 200 qui fa sì che /configurazione venga servito come se fosse form-configurazione.html
 /configurazione /form-configurazione.html 200
 
-# FORM CONFIGURAZIONE - Base path
-/form-configurazione /form-configurazione.html 200
+# FORM CONFIGURAZIONE - NON serve regola: CF Pages già gestisce pretty URL automaticamente
+# (rimuovere la regola evita il loop 308)
 
 
 # PAGAMENTO - RIMOSSO REDIRECT (servire direttamente .html)
