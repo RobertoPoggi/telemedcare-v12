@@ -144,8 +144,15 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
 
   // ✅ FIX: Calcola prezzi da pricing matrix (non hardcoded!)
   // Per rinnovo: prezzoBase è già rinnovoBase (passato da chi chiama)
-  // Per primo anno: prezzoBase è setupBase
-  const importoPrimoAnno = contractData.prezzoBase // IVA esclusa
+  // Per primo anno: prezzoBase è setupBase (eventualmente scontato)
+  const importoPrimoAnno = contractData.prezzoBase // IVA esclusa (già scontato se applicato)
+
+  // 🏷️ Dati sconto (passati da send-contract endpoint)
+  const codiceSconto = contractData.codiceSconto || ''
+  const scontoPercentuale = Number(contractData.scontoPercentuale) || 0
+  const importoSconto = Number(contractData.importoSconto) || 0
+  const prezzoListino = Number(contractData.prezzoListino) || 0
+  const hasScontoContratto = !isRinnovo && codiceSconto && importoSconto > 0
   
   // Estrai tipo servizio per calcolare rinnovo corretto
   // ✅ FIX: case-insensitive per gestire 'eCura Family', 'eCura PRO', 'FAMILY', 'PRO', ecc.
@@ -524,6 +531,16 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
     <p>${isRinnovo ? `Il Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'} — Anno ${annoRinnovo} — ha una durata di 12 mesi a partire da <span class="highlight">${dataInizioServizio}</span> fino al <span class="highlight">${dataScadenza}</span>. Il Contratto sarà prorogabile su richiesta scritta del Cliente e su accettazione di Medica GB.` : `Il Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'} ha una durata di 12 mesi a partire da <span class="highlight">${dataInizioServizio}</span> fino al <span class="highlight">${dataScadenza}</span>. Il Contratto sarà prorogabile su richiesta scritta del Cliente e su accettazione di Medica GB.`}</p>
     
     <h2>Tariffa del Servizio</h2>
+    ${hasScontoContratto ? `
+    <div style="background:#fff8e1; border-left:4px solid #f59e0b; padding:12px 16px; margin:16px 0; border-radius:0 4px 4px 0;">
+      <strong style="color:#92400e;">🏷️ SCONTO APPLICATO — Codice ${codiceSconto}</strong><br>
+      <span style="color:#78350f; font-size:13px;">
+        Prezzo di listino: <span style="text-decoration:line-through;">${prezzoListino.toFixed(2).replace('.', ',')} €</span> &nbsp;|&nbsp;
+        Sconto${scontoPercentuale > 0 ? ' -' + scontoPercentuale + '%' : ''}: <strong style="color:#b91c1c;">-${importoSconto.toFixed(2).replace('.', ',')} €</strong> &nbsp;|&nbsp;
+        Prezzo scontato: <strong style="color:#15803d;">${importoPrimoAnno.toFixed ? importoPrimoAnno.toFixed(2).replace('.', ',') : importoPrimoAnno} €</strong>
+      </span>
+    </div>
+    ` : ''}
     ${isRinnovo ? `
     <div style="background:#e8f5e9; border-left:4px solid #2e7d32; padding:12px 16px; margin:16px 0; border-radius:0 4px 4px 0;">
       <strong style="color:#1b5e20;">🔄 CONTRATTO DI RINNOVO — Anno ${annoRinnovo}</strong><br>

@@ -11843,12 +11843,29 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     // pricing.setupTotale usa sempre 22% — dobbiamo ricalcolarlo se iva_agevolata
     const ivaRateContratto = lead.iva_agevolata ? 0.04 : 0.22
     // Per rinnovo usa rinnovoBase; per primo anno usa setupBase
-    const prezzoBaseContratto = isRinnovoReq
+    const prezzoBaseCalcolato = isRinnovoReq
       ? (pricing.rinnovoBase ?? pricing.setupBase)
       : pricing.setupBase
+
+    // ✅ FIX SCONTO: se il lead ha un codice sconto applicato (prezzo_scontato > 0),
+    // usa il prezzo scontato al posto del prezzo di listino (SOLO per primo anno)
+    const hasScontoApplicato = !isRinnovoReq
+      && lead.prezzo_scontato
+      && Number(lead.prezzo_scontato) > 0
+    const prezzoBaseContratto = hasScontoApplicato
+      ? Number(lead.prezzo_scontato)
+      : prezzoBaseCalcolato
     const prezzoIvaInclusa = Math.round(prezzoBaseContratto * (1 + ivaRateContratto) * 100) / 100
 
-    console.log(`💰 [CONTRATTO] ${isRinnovoReq ? '🔄 RINNOVO' : 'PRIMO ANNO'}: base €${prezzoBaseContratto}, IVA ${ivaRateContratto * 100}%, totale €${prezzoIvaInclusa} (iva_agevolata=${lead.iva_agevolata})`)
+    // Dati sconto da passare al contratto
+    const codiceSconto = hasScontoApplicato ? (lead.codice_sconto || '') : ''
+    const scontoPercentuale = hasScontoApplicato ? (Number(lead.sconto_percentuale) || 0) : 0
+    const scontoFisso = hasScontoApplicato ? (Number(lead.sconto_fisso) || 0) : 0
+    const importoSconto = hasScontoApplicato
+      ? Math.round((prezzoBaseCalcolato - prezzoBaseContratto) * 100) / 100
+      : 0
+
+    console.log(`💰 [CONTRATTO] ${isRinnovoReq ? '🔄 RINNOVO' : 'PRIMO ANNO'}: listino €${prezzoBaseCalcolato}, ${hasScontoApplicato ? `sconto ${codiceSconto} -${importoSconto}€ → ` : ''}base €${prezzoBaseContratto}, IVA ${ivaRateContratto * 100}%, totale €${prezzoIvaInclusa} (iva_agevolata=${lead.iva_agevolata})`)
     
     // Fetch rate di pagamento (se rateizzazione attiva)
     let rateContratto: Array<{ numero_rata: number; importo: number; data_scadenza: string; status: string }> = []
@@ -11884,7 +11901,13 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       rateizzazione_note: lead.rateizzazione_note || '',
       rate: rateContratto,
       // 📅 Data inizio servizio: priorità DB field → today (usata da generateContractHtml)
-      dataInizio: lead.data_inizio_servizio || lead.data_attivazione || null
+      dataInizio: lead.data_inizio_servizio || lead.data_attivazione || null,
+      // 🏷️ Sconto applicato (se presente)
+      codiceSconto: codiceSconto,
+      scontoPercentuale: scontoPercentuale,
+      scontoFisso: scontoFisso,
+      importoSconto: importoSconto,
+      prezzoListino: hasScontoApplicato ? prezzoBaseCalcolato : 0
     }
     
     // Usa workflow per inviare email contratto
