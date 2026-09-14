@@ -3716,11 +3716,12 @@ ${370+t.length}
               <!-- Pulsante B: report rolling 30 giorni -->
               <button onclick="generaEApriReportLive()"
                  id="btnReportLive"
-                 class="flex items-center gap-4 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-4 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md">
+                 class="flex items-center gap-4 text-white px-5 py-4 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md"
+                 style="background-color: #059669 !important; color: #ffffff !important;">
                 <span class="text-3xl" id="reportLiveIcon">🌐</span>
                 <div class="text-left">
-                  <div class="font-bold text-base">Report Live 30 gg rolling</div>
-                  <div class="text-xs text-emerald-200 mt-0.5">Genera live · finestra mobile ultimi 30 giorni</div>
+                  <div class="font-bold text-base" style="color: #ffffff !important;">Report Live 30 gg rolling</div>
+                  <div class="text-xs mt-0.5" style="color: #a7f3d0 !important;">Genera live · finestra mobile ultimi 30 giorni</div>
                 </div>
               </button>
             </div>
