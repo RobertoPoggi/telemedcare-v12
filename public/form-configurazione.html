@@ -407,9 +407,13 @@
             const leadId = urlParams.get('leadId');
             const token = urlParams.get('token');
             
-            if (!leadId || !token) {
-                console.warn('⚠️ [FORM CONFIG] leadId o token mancanti nell\'URL');
+            if (!leadId) {
+                console.warn('⚠️ [FORM CONFIG] leadId mancante nell\'URL — form in modalità manuale');
                 return;
+            }
+            // token è opzionale: il caricamento dati funziona anche senza
+            if (!token) {
+                console.info('ℹ️ [FORM CONFIG] token non presente nell\'URL — dati caricati senza validazione token');
             }
             
             console.log(`📥 [FORM CONFIG] Caricamento dati lead: ${leadId}`);
