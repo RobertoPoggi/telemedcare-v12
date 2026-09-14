@@ -1426,6 +1426,10 @@ app.use('/api/*', async (c, next) => {
     return next() // Form landing eCura pubblico
   }
 
+  if (path === '/api/configurations/submit' && method === 'POST') {
+    return next() // Form configurazione dispositivo (inviato dal cliente via link email)
+  }
+
   // CRON GitHub Actions: endpoint auto-import non richiede auth utente
   // (è già protetto da HUBSPOT_ACCESS_TOKEN lato server + filtro eCura hardcoded)
   if (path === '/api/hubspot/auto-import' && method === 'POST') {
