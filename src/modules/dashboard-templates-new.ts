@@ -3018,7 +3018,7 @@ export const dashboard = `<!DOCTYPE html>
                 (assistito.nome || ((assistito.nome_assistito || '') + ' ' + (assistito.cognome_assistito || '')).trim() || 'questo assistito') 
                 : 'questo assistito';
             
-            if (!confirm('⚠️ Sei sicuro di voler eliminare l\\'assistito ' + nome + "?\\n\\nQuesta azione non può essere annullata!")) {
+            if (!confirm("⚠️ Sei sicuro di voler eliminare l'assistito " + nome + "?\\n\\nQuesta azione non può essere annullata!")) {
                 return;
             }
             
@@ -4654,12 +4654,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <td style="padding:10px 12px;text-align:center;font-size:12px;color:#374151;">\${dc.tipo||'—'} &nbsp;<strong>\${valNom}</strong></td>
                                 <td style="padding:10px 12px;text-align:center;">
                                     \${nLeads > 0
-                                        ? \`<span style="background:#fff7ed;border:1px solid #fed7aa;color:#c2410c;padding:3px 10px;border-radius:9999px;font-weight:700;font-size:13px;">\${nLeads}</span>\`
-                                        : \`<span style="color:#d1d5db;font-size:12px;">0</span>\`
+                                        ? '<span style="background:#fff7ed;border:1px solid #fed7aa;color:#c2410c;padding:3px 10px;border-radius:9999px;font-weight:700;font-size:13px;">' + nLeads + '</span>'
+                                        : '<span style="color:#d1d5db;font-size:12px;">0</span>'
                                     }
                                 </td>
                                 <td style="padding:10px 12px;text-align:center;font-weight:600;color:\${nRisp>0?'#065f46':'#9ca3af'};font-size:13px;">
-                                    \${nRisp > 0 ? \`€\${nRisp.toFixed(2)}\` : '<span style="color:#d1d5db;">—</span>'}
+                                    \${nRisp > 0 ? '€' + nRisp.toFixed(2) : '<span style="color:#d1d5db;">—</span>'}
                                 </td>
                                 <td style="padding:10px 12px;text-align:center;font-size:13px;color:\${nPct>0?'#1d4ed8':'#9ca3af'};">
                                     \${nPct > 0 ? nPct.toFixed(1)+'%' : '<span style="color:#d1d5db;">—</span>'}
@@ -5468,11 +5468,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     </div>
                                     <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
                                         <span style="font-size:.85rem;font-weight:700;color:\${color};">\${label}</span>
-                                        \${canPay ? \`<button
-                                            onclick="openRataForm(\${r.id})"
-                                            style="padding:7px 16px;background:#2563eb;color:#fff;border:none;border-radius:7px;font-size:.84rem;font-weight:700;cursor:pointer;white-space:nowrap;">
-                                            Segna pagata
-                                        </button>\` : ''}
+                                        \${canPay ? '<button onclick="openRataForm(' + r.id + ')" style="padding:7px 16px;background:#2563eb;color:#fff;border:none;border-radius:7px;font-size:.84rem;font-weight:700;cursor:pointer;white-space:nowrap;">Segna pagata</button>' : ''}
                                     </div>
                                 </div>
                                 \${formHtml}
@@ -6163,7 +6159,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <span class="text-xs font-medium text-gray-600">\${int.operatore || 'N/A'}</span>
                             </div>
                             <p class="text-sm text-gray-700 mb-1"><strong>Nota:</strong> \${int.nota || '-'}</p>
-                            \${int.azione ? \`<p class="text-sm text-gray-700"><strong>Azione:</strong> \${int.azione}</p>\` : ''}
+                            \${int.azione ? '<p class="text-sm text-gray-700"><strong>Azione:</strong> ' + int.azione + '</p>' : ''}
                         </div>
                     \`;
                 }).join('');
@@ -6347,7 +6343,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <span class="text-xs font-medium text-gray-600">\${int.operatore || 'N/A'}</span>
                             </div>
                             <p class="text-xs text-gray-700 mb-1"><strong>Nota:</strong> \${int.nota || '-'}</p>
-                            \${int.azione ? \`<p class="text-xs text-gray-700"><strong>Azione:</strong> \${int.azione}</p>\` : ''}
+                            \${int.azione ? '<p class="text-xs text-gray-700"><strong>Azione:</strong> ' + int.azione + '</p>' : ''}
                         </div>
                     \`;
                 }).join('');
@@ -8558,7 +8554,7 @@ export const data_dashboard = `<!DOCTYPE html>
         }
 
         async function fixRinnovoEmailSent() {
-            if (!confirm("🔧 Correggere il DB?\\n\\nImposta email_sent=1 su tutti i contratti rinnovo già inviati (status SENT o SIGNED) che hanno ancora email_sent=0.\\n\\nUsare se il bottone ✍️ non si attiva dopo aver inviato l\\"email.')) return;
+            if (!confirm("🔧 Correggere il DB?\\n\\nImposta email_sent=1 su tutti i contratti rinnovo già inviati (status SENT o SIGNED) che hanno ancora email_sent=0.\\n\\nUsare se il bottone ✍️ non si attiva dopo aver inviato l'email.")) return;
             try {
                 const resp = await fetch('/api/contracts/fix-email-sent', {
                     method: 'POST', credentials: 'include'

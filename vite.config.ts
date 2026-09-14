@@ -123,6 +123,116 @@ function injectVersionPlugin() {
   }
 }
 
+// Plugin per correggere i backtick escapati nei template HTML dentro _worker.js
+// Problema: esbuild compila \` dentro template literal TS come \\` nel JS output,
+// ma le template literal HTML nel worker devono contenere \` (singolo) non \\`.
+// Fix: dentro le stringhe HTML (template literal del worker), \\` → \`
+function fixWorkerBackticksPlugin() {
+  return {
+    name: 'fix-worker-backticks',
+    closeBundle() {
+      const workerFile = join(process.cwd(), 'dist', '_worker.js')
+      if (!existsSync(workerFile)) return
+
+      let content = readFileSync(workerFile, 'utf8')
+      const originalLen = content.length
+
+      // Le template HTML nel worker sono contenute in template literal JS (backtick).
+      // Dentro di esse, esbuild ha trasformato \` (TS escape) in \\` (doppio).
+      // Ma il browser esegue il contenuto come JS e trova \\` = backslash letterale + backtick.
+      // Fix: replace \\` → \` SOLO dentro le sezioni HTML template (non nel codice worker).
+      // Strategia: il contenuto HTML è dentro grandi template literal del worker.
+      // I template literal HTML iniziano con <!DOCTYPE html> e sono delimitati da backtick.
+      // Facciamo un replace globale di \\\\` → \\` (che nel file = \\` → \`)
+      // ma solo nelle sezioni HTML identificate da <!DOCTYPE html>.
+      
+      // Approccio: trova ogni template literal HTML nel worker e fix i backtick interni
+      let fixed = content
+      let fixCount = 0
+
+      // Pattern: inside template literal (between ` chars), \\` should be \`
+      // We target specifically the HTML templates that contain <!DOCTYPE
+      // Strategy: split on the HTML template boundaries and fix each one
+      
+      // Simpler approach: replace all \\\\` that are inside HTML content
+      // The HTML templates are large strings containing HTML tags
+      // We can identify them by looking for \\\\` followed by common HTML patterns
+      // OR: simply replace \\\\` with \\` everywhere in the worker EXCEPT in actual JS code
+      
+      // Safest approach: find the template literal sections (large HTML blocks)
+      // They all start with `<!DOCTYPE html> and end with the matching backtick
+      
+      // Strategy: inside the HTML template literal sections (which start with `<!DOCTYPE html>),
+      // esbuild has encoded \` (escaped backtick in TS) as \\` (backslash + backtick in JS output).
+      // Inside a JS template literal, \` is a valid escape for a literal backtick.
+      // But \\` means: literal backslash char followed by start of a new template literal → WRONG.
+      // Fix: within the HTML template sections only, replace \\` with \`.
+      // (In the JS file as text: the sequence is \ + ` i.e. two chars 0x5c 0x60)
+
+      let searchFrom = 0
+      while (true) {
+        const htmlStart = fixed.indexOf('`<!DOCTYPE html>', searchFrom)
+        if (htmlStart < 0) break
+
+        // Find the matching closing backtick by scanning forward
+        // \` inside the template is an escaped backtick (not the end), so skip those
+        let pos = htmlStart + 1
+        let templateEnd = -1
+        while (pos < fixed.length) {
+          const ch = fixed[pos]
+          if (ch === '\\') {
+            pos += 2 // skip the escaped character (\\n, \\`, etc.)
+            continue
+          }
+          if (ch === '`') {
+            templateEnd = pos
+            break
+          }
+          pos++
+        }
+
+        if (templateEnd < 0) break
+
+        // Extract the HTML template section (between the backticks)
+        const htmlSection = fixed.slice(htmlStart + 1, templateEnd)
+
+        // In the HTML section, \` (0x5c 0x60) should be just ` (0x60)
+        // because inside HTML content (which is put into the DOM), a backslash before
+        // a backtick is meaningless and causes the JS parser to misinterpret the HTML script.
+        // The JS template literal that WRAPS the HTML uses ` as delimiter;
+        // inside it, \` means literal backtick character.
+        // When the HTML is set as innerHTML/document, the browser parses it as HTML+JS.
+        // In that JS context, \\` (the two chars: backslash + backtick) is INVALID
+        // because the browser sees a JS template literal with \\` = literal backslash + start of template.
+        // Solution: strip the backslash → just ` in the HTML output.
+        
+        // Replace: \\` → ` inside HTML section (strip the backslash escape)
+        const ESCAPED_BT = '\\\`'   // the two chars: \ + `
+        const PLAIN_BT = '\`'       // just: `
+        
+        const fixedSection = htmlSection.split(ESCAPED_BT).join(PLAIN_BT)
+        const changes = htmlSection.split(ESCAPED_BT).length - 1
+
+        if (changes > 0) {
+          fixed = fixed.slice(0, htmlStart + 1) + fixedSection + fixed.slice(templateEnd)
+          fixCount += changes
+          // Adjust next search position after replacement (section is shorter by `changes` chars)
+          templateEnd = htmlStart + 1 + fixedSection.length
+        }
+
+        searchFrom = templateEnd + 1
+      }
+
+      if (fixCount > 0) {
+        writeFileSync(workerFile, fixed)
+        console.log('✅ Fixed ' + fixCount + ' escaped backticks in _worker.js HTML templates')
+      } else {
+        console.log(`ℹ️  No escaped backtick issues found in _worker.js`)
+      }
+    }
+  }
+}
+
 export default defineConfig({
   plugins: [
     build(),
@@ -132,7 +242,8 @@ export default defineConfig({
     }),
     copyPublicHtmlPlugin(),
     injectVersionPlugin(),   // CRITICAL: Anti-cache V11 rollback
-    generateWorkerMetadataPlugin()  // Correct D1 binding per environment
+    generateWorkerMetadataPlugin(),  // Correct D1 binding per environment
+    fixWorkerBackticksPlugin()  // Fix \\` → \` in HTML template literals
   ],
   // Copia file statici da public/ nella build
   publicDir: 'public',
