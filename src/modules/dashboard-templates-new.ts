@@ -1907,7 +1907,7 @@ export const dashboard = `<!DOCTYPE html>
                     '<td class="px-2 py-3 whitespace-nowrap">' +
                         '<button onclick="openDDTDetail(' + idx + ')" class="text-blue-500 hover:text-blue-700 mr-2" title="Dettaglio"><i class="fas fa-eye"></i></button>' +
                         '<button onclick="openDDTEdit(' + idx + ')" class="text-green-500 hover:text-green-700 mr-2" title="Modifica"><i class="fas fa-edit"></i></button>' +
-                        '<button onclick="generaPrefatturaDash(\'' + escapeHtml(d.id || d.numero_ddt) + '\')" class="text-purple-600 hover:text-purple-800 mr-2" title="Genera Pre-Fattura"><i class="fas fa-file-invoice"></i></button>' +
+                        '<button onclick="generaPrefatturaDash(&quot;' + escapeHtml(d.id || d.numero_ddt) + '&quot;)" class="text-purple-600 hover:text-purple-800 mr-2" title="Genera Pre-Fattura"><i class="fas fa-file-invoice"></i></button>' +
                         '<button onclick="deleteDDT(' + idx + ')" class="text-red-400 hover:text-red-600" title="Elimina"><i class="fas fa-trash"></i></button>' +
                     '</td></tr>';
             }).join('');
