@@ -21249,7 +21249,12 @@ app.post('/api/leads/public', async (c) => {
             canale_acquisizione, hs_object_source_detail_1,
             dettaglio_fonte, utm_source, utm_medium, utm_campaign,
             landing_variant, page_url,
-            prezzo_anno, prezzo_rinnovo } = body
+            prezzo_anno, prezzo_rinnovo,
+            fonte: fonteBody } = body
+
+    // Fonte: whitelist di valori ammessi dall'esterno (default 'Form eCura')
+    const FONTE_WHITELIST = ['Form eCura', 'FORM PARTNER']
+    const fonteEffettiva = (fonteBody && FONTE_WHITELIST.includes(fonteBody)) ? fonteBody : 'Form eCura'
 
     // Validazione base
     if (!nomeRichiedente?.trim()) return c.json({ success: false, error: 'Nome obbligatorio' }, 422)
@@ -21329,12 +21334,12 @@ app.post('/api/leads/public', async (c) => {
       servizio || 'eCura PRO',
       piano || 'BASE',
       tipoServizio || (piano === 'AVANZATO' ? 'AVANZATO' : 'BASE'),
-      'Form eCura',
+      fonteEffettiva,
       status || 'NEW',
       note || null,
       'FORM',
-      hs_object_source_detail_1 || `Form eCura_ ${(utm_source || 'LANDING').toUpperCase()}`,
-      dettaglio_fonte || 'ecura_landing',
+      hs_object_source_detail_1 || `${fonteEffettiva}_ ${(utm_source || 'LANDING').toUpperCase()}`,
+      dettaglio_fonte || (fonteEffettiva === 'FORM PARTNER' ? 'ecura_partner_page' : 'ecura_landing'),
       canale_acquisizione || null,
       gdprConsent ? 1 : 0,
       consensoMarketing ? 1 : 0,
@@ -21345,7 +21350,7 @@ app.post('/api/leads/public', async (c) => {
       new Date().toISOString()
     ).run()
 
-    console.log(`✅ [LANDING] Nuovo lead salvato: ${leadId} (${email})`)
+    console.log(`✅ [LANDING] Nuovo lead salvato: ${leadId} (${email}) — fonte: ${fonteEffettiva}`)
 
     // ── RISPOSTA IMMEDIATA AL BROWSER ─────────────────────────────────────────
     // Il lead è già nel DB. Email e fix-prezzi vengono eseguiti in background
@@ -21362,6 +21367,7 @@ app.post('/api/leads/public', async (c) => {
     const _serv    = servizio || 'eCura PRO'
     const _piano   = piano || 'BASE'
     const _note    = note || undefined
+    const _fonte   = fonteEffettiva
 
     c.executionCtx.waitUntil((async () => {
       // ── A. Fix prezzi (fire-and-forget, <50ms) ──────────────────────────────
@@ -21379,7 +21385,7 @@ app.post('/api/leads/public', async (c) => {
           telefono: _tel,
           servizio: _serv,
           piano: _piano,
-          fonte: 'Form eCura',
+          fonte: _fonte,
           note: _note,
           created_at: new Date().toISOString()
         }, _env)
