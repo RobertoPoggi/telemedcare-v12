@@ -36658,6 +36658,36 @@ app.get('/api/partners', async (c) => {
   }
 })
 
+// ── STATISTICHE PARTNERS (admin dashboard) — DEVE essere PRIMA di /:id ──────
+app.get('/api/partners/stats', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+
+    const [totali, perStatus, perRuolo, topPartners] = await Promise.all([
+      c.env.DB.prepare(`SELECT COUNT(*) as total FROM partners`).first(),
+      c.env.DB.prepare(`SELECT status, COUNT(*) as cnt FROM partners GROUP BY status ORDER BY cnt DESC`).all(),
+      c.env.DB.prepare(`SELECT ruolo, COUNT(*) as cnt FROM partners GROUP BY ruolo ORDER BY cnt DESC`).all(),
+      c.env.DB.prepare(`
+        SELECT id, nome, cognome, ruolo, referral_code, referrals_count, referrals_attivi,
+               commissioni_maturate, commissioni_pagate, status
+        FROM partners WHERE status = 'active'
+        ORDER BY referrals_count DESC LIMIT 10
+      `).all(),
+    ])
+
+    return c.json({
+      success: true,
+      totale: (totali as any)?.total || 0,
+      per_status: perStatus.results,
+      per_ruolo: perRuolo.results,
+      top_partners: topPartners.results,
+    })
+  } catch (e: any) {
+    console.error('[PARTNERS] Errore statistiche:', e)
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
 // ── DETTAGLIO SINGOLO PARTNER (admin) ─────────────────────────────────────────
 app.get('/api/partners/:id', async (c) => {
   try {
@@ -36927,36 +36957,6 @@ app.post('/api/partners/referral/register', async (c) => {
     return c.json({ success: true, partner_id: (partner as any).id })
   } catch (e: any) {
     console.error('[PARTNERS] Errore registrazione referral:', e)
-    return c.json({ success: false, error: e.message }, 500)
-  }
-})
-
-// ── STATISTICHE PARTNERS (admin dashboard) ────────────────────────────────────
-app.get('/api/partners/stats', async (c) => {
-  try {
-    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
-
-    const [totali, perStatus, perRuolo, topPartners] = await Promise.all([
-      c.env.DB.prepare(`SELECT COUNT(*) as total FROM partners`).first(),
-      c.env.DB.prepare(`SELECT status, COUNT(*) as cnt FROM partners GROUP BY status ORDER BY cnt DESC`).all(),
-      c.env.DB.prepare(`SELECT ruolo, COUNT(*) as cnt FROM partners GROUP BY ruolo ORDER BY cnt DESC`).all(),
-      c.env.DB.prepare(`
-        SELECT id, nome, cognome, ruolo, referral_code, referrals_count, referrals_attivi,
-               commissioni_maturate, commissioni_pagate, status
-        FROM partners WHERE status = 'active'
-        ORDER BY referrals_count DESC LIMIT 10
-      `).all(),
-    ])
-
-    return c.json({
-      success: true,
-      totale: (totali as any)?.total || 0,
-      per_status: perStatus.results,
-      per_ruolo: perRuolo.results,
-      top_partners: topPartners.results,
-    })
-  } catch (e: any) {
-    console.error('[PARTNERS] Errore statistiche:', e)
     return c.json({ success: false, error: e.message }, 500)
   }
 })
