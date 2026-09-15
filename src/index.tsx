@@ -1655,6 +1655,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // ONE-SHOT: Crea tabelle dataset PARTNER (migration 0106) — solo POST, protetto da ADMIN_SECRET_TOKEN
+  if (path === '/api/oneshot-create-partners-table-9kx4m' && method === 'POST') {
+    return next()
+  }
+
   
   // Endpoint email-templates: accessibili con session cookie (gestiti dai propri handler)
   if (path.startsWith('/api/email-templates/') || path.startsWith('/api/discount-codes')) {
@@ -36286,6 +36291,158 @@ app.post('/api/oneshot-migrate-temperatura-8z4xk', async (c) => {
     })
   } catch (e: any) {
     console.error('Errore migrazione temperatura:', e)
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// ============================================================================
+// 🔧 ONE-SHOT: Crea tabelle dataset PARTNER (migration 0106)
+// POST /api/oneshot-create-partners-table-9kx4m
+// Protetto da Authorization: Bearer <ADMIN_SECRET_TOKEN>
+// ============================================================================
+app.post('/api/oneshot-create-partners-table-9kx4m', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+
+    // Verifica token admin
+    const authHeader = c.req.header('Authorization') || ''
+    const token = authHeader.replace('Bearer ', '').trim()
+    const adminToken = c.env?.ADMIN_SECRET_TOKEN || ''
+    if (!adminToken || token !== adminToken) {
+      return c.json({ success: false, error: 'Non autorizzato' }, 401)
+    }
+
+    const results: string[] = []
+    const errors: string[] = []
+
+    // Helper per eseguire ogni statement DDL
+    const exec = async (label: string, sql: string) => {
+      try {
+        await c.env.DB.prepare(sql).run()
+        results.push(`✅ ${label}`)
+      } catch (e: any) {
+        // IF NOT EXISTS → ignora duplicate
+        if (e.message?.includes('already exists')) {
+          results.push(`⏭️ ${label} (già esiste)`)
+        } else {
+          errors.push(`❌ ${label}: ${e.message}`)
+        }
+      }
+    }
+
+    // ── Tabella partners ──────────────────────────────────────────────────
+    await exec('CREATE TABLE partners', `
+      CREATE TABLE IF NOT EXISTS partners (
+        id TEXT PRIMARY KEY,
+        nome TEXT NOT NULL,
+        cognome TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        telefono TEXT NOT NULL,
+        ruolo TEXT NOT NULL,
+        specializzazione TEXT,
+        citta TEXT,
+        provincia TEXT,
+        cap TEXT,
+        referral_code TEXT UNIQUE,
+        referral_url TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        approvato_da TEXT,
+        note_interne TEXT,
+        motivo_rifiuto TEXT,
+        commission_pct REAL NOT NULL DEFAULT 5.0,
+        referrals_count INTEGER NOT NULL DEFAULT 0,
+        referrals_attivi INTEGER NOT NULL DEFAULT 0,
+        commissioni_maturate REAL NOT NULL DEFAULT 0.0,
+        commissioni_pagate REAL NOT NULL DEFAULT 0.0,
+        messaggio TEXT,
+        privacy_consent INTEGER NOT NULL DEFAULT 0,
+        utm_source TEXT,
+        utm_medium TEXT,
+        utm_campaign TEXT,
+        page_url TEXT,
+        referrer TEXT,
+        ip_address TEXT,
+        user_agent TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        approvato_at TEXT,
+        sospeso_at TEXT
+      )
+    `)
+
+    // ── Tabella partner_referrals ─────────────────────────────────────────
+    await exec('CREATE TABLE partner_referrals', `
+      CREATE TABLE IF NOT EXISTS partner_referrals (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        partner_id TEXT NOT NULL,
+        lead_id TEXT NOT NULL,
+        referral_code TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'nuovo',
+        commissione_pct REAL,
+        commissione_eur REAL,
+        commissione_pagata INTEGER DEFAULT 0,
+        note TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (partner_id) REFERENCES partners(id) ON DELETE CASCADE,
+        FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
+      )
+    `)
+
+    // ── Indici ────────────────────────────────────────────────────────────
+    const indexes = [
+      ['idx_partners_email', 'CREATE INDEX IF NOT EXISTS idx_partners_email ON partners(email)'],
+      ['idx_partners_referral_code', 'CREATE INDEX IF NOT EXISTS idx_partners_referral_code ON partners(referral_code)'],
+      ['idx_partners_status', 'CREATE INDEX IF NOT EXISTS idx_partners_status ON partners(status)'],
+      ['idx_partners_ruolo', 'CREATE INDEX IF NOT EXISTS idx_partners_ruolo ON partners(ruolo)'],
+      ['idx_partners_created_at', 'CREATE INDEX IF NOT EXISTS idx_partners_created_at ON partners(created_at)'],
+      ['idx_partner_referrals_partner_id', 'CREATE INDEX IF NOT EXISTS idx_partner_referrals_partner_id ON partner_referrals(partner_id)'],
+      ['idx_partner_referrals_lead_id', 'CREATE INDEX IF NOT EXISTS idx_partner_referrals_lead_id ON partner_referrals(lead_id)'],
+      ['idx_partner_referrals_status', 'CREATE INDEX IF NOT EXISTS idx_partner_referrals_status ON partner_referrals(status)'],
+      ['idx_partner_referrals_code', 'CREATE INDEX IF NOT EXISTS idx_partner_referrals_code ON partner_referrals(referral_code)'],
+    ]
+    for (const [label, sql] of indexes) await exec(label, sql)
+
+    // ── Trigger updated_at ─────────────────────────────────────────────────
+    await exec('TRIGGER partners_updated_at', `
+      CREATE TRIGGER IF NOT EXISTS partners_updated_at
+        AFTER UPDATE ON partners
+        FOR EACH ROW
+        WHEN NEW.updated_at = OLD.updated_at
+      BEGIN
+        UPDATE partners SET updated_at = datetime('now') WHERE id = NEW.id;
+      END
+    `)
+
+    await exec('TRIGGER partner_referrals_updated_at', `
+      CREATE TRIGGER IF NOT EXISTS partner_referrals_updated_at
+        AFTER UPDATE ON partner_referrals
+        FOR EACH ROW
+        WHEN NEW.updated_at = OLD.updated_at
+      BEGIN
+        UPDATE partner_referrals SET updated_at = datetime('now') WHERE id = NEW.id;
+      END
+    `)
+
+    // ── Verifica finale ────────────────────────────────────────────────────
+    const tablesCheck = await c.env.DB.prepare(
+      `SELECT name FROM sqlite_master WHERE type='table' AND name IN ('partners','partner_referrals') ORDER BY name`
+    ).all()
+
+    const success = errors.length === 0
+    console.log(`[ONE-SHOT 0106] ${success ? '✅' : '⚠️'} Migration partners: ${results.length} OK, ${errors.length} errori`)
+
+    return c.json({
+      success,
+      tables_found: tablesCheck.results.map((r: any) => r.name),
+      steps: results,
+      errors: errors.length ? errors : undefined,
+      message: success
+        ? '✅ Migration 0106 applicata: tabelle partners e partner_referrals create con successo'
+        : `⚠️ Completato con ${errors.length} errore/i`
+    })
+  } catch (e: any) {
+    console.error('[ONE-SHOT 0106] Errore:', e)
     return c.json({ success: false, error: e.message }, 500)
   }
 })
