@@ -1924,23 +1924,23 @@ export const dashboard = `<!DOCTYPE html>
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ note: note })
             })
-            .then(r => r.json())
-            .then(data => {
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
                 if (data.success) {
-                    let msg = '✅ Pre-fattura ' + data.numero_prefattura + ' creata.\n' +
-                        'Imponibile: €' + (data.imponibile || 0).toFixed(2) + '\n' +
-                        'IVA ' + data.iva_pct + '%: €' + (data.iva_amt || 0).toFixed(2) + '\n' +
-                        'Totale: €' + (data.totale || 0).toFixed(2) + '\n\n';
-                    if (data.email_inviata) msg += '📧 Email inviata a: ' + data.email_commercialista;
-                    else if (data.email_commercialista) msg += '⚠️ Email non inviata: ' + (data.email_error || 'errore');
-                    else msg += 'ℹ️ Nessun indirizzo email destinatario trovato.';
+                    var msg = ['Pre-fattura ' + data.numero_prefattura + ' creata.',
+                        'Imponibile: EUR ' + (data.imponibile || 0).toFixed(2),
+                        'IVA ' + data.iva_pct + '%: EUR ' + (data.iva_amt || 0).toFixed(2),
+                        'Totale: EUR ' + (data.totale || 0).toFixed(2)].join('\n');
+                    if (data.email_inviata) { msg += '\nEmail inviata a: ' + data.email_commercialista; }
+                    else if (data.email_commercialista) { msg += '\nEmail non inviata: ' + (data.email_error || 'errore'); }
+                    else { msg += '\nNessun indirizzo email destinatario trovato.'; }
                     alert(msg);
                     window.open('/api/ddts/' + encodeURIComponent(id) + '/prefattura-html', '_blank');
                 } else {
-                    alert('❌ Errore: ' + (data.error || 'Errore sconosciuto'));
+                    alert('Errore: ' + (data.error || 'Errore sconosciuto'));
                 }
             })
-            .catch(e => alert('❌ Errore di rete: ' + e.message));
+            .catch(function(e) { alert('Errore di rete: ' + e.message); });
         }
 
         function openDDTDetail(idx) {
