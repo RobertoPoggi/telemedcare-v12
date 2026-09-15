@@ -1907,9 +1907,37 @@ export const dashboard = `<!DOCTYPE html>
                     '<td class="px-2 py-3 whitespace-nowrap">' +
                         '<button onclick="openDDTDetail(' + idx + ')" class="text-blue-500 hover:text-blue-700 mr-2" title="Dettaglio"><i class="fas fa-eye"></i></button>' +
                         '<button onclick="openDDTEdit(' + idx + ')" class="text-green-500 hover:text-green-700 mr-2" title="Modifica"><i class="fas fa-edit"></i></button>' +
+                        '<button onclick="generaPrefatturaDash(\'' + escapeHtml(d.id || d.numero_ddt) + '\')" class="text-purple-600 hover:text-purple-800 mr-2" title="Genera Pre-Fattura"><i class="fas fa-file-invoice"></i></button>' +
                         '<button onclick="deleteDDT(' + idx + ')" class="text-red-400 hover:text-red-600" title="Elimina"><i class="fas fa-trash"></i></button>' +
                     '</td></tr>';
             }).join('');
+        }
+
+        function generaPrefatturaDash(id) {
+            const note = prompt('Note aggiuntive per la pre-fattura (opzionale):') || '';
+            if (!window.confirm('Generare la pre-fattura per il DDT ' + id + ' e inviarla al commercialista?')) return;
+            fetch('/api/ddts/' + encodeURIComponent(id) + '/prefattura', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ note: note })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    let msg = '✅ Pre-fattura ' + data.numero_prefattura + ' creata.\n' +
+                        'Imponibile: €' + (data.imponibile || 0).toFixed(2) + '\n' +
+                        'IVA ' + data.iva_pct + '%: €' + (data.iva_amt || 0).toFixed(2) + '\n' +
+                        'Totale: €' + (data.totale || 0).toFixed(2) + '\n\n';
+                    if (data.email_inviata) msg += '📧 Email inviata a: ' + data.email_commercialista;
+                    else if (data.email_commercialista) msg += '⚠️ Email non inviata: ' + (data.email_error || 'errore');
+                    else msg += 'ℹ️ Nessun indirizzo email destinatario trovato.';
+                    alert(msg);
+                    window.open('/api/ddts/' + encodeURIComponent(id) + '/prefattura-html', '_blank');
+                } else {
+                    alert('❌ Errore: ' + (data.error || 'Errore sconosciuto'));
+                }
+            })
+            .catch(e => alert('❌ Errore di rete: ' + e.message));
         }
 
         function openDDTDetail(idx) {
