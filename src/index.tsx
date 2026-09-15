@@ -4111,17 +4111,8 @@ function generaPrefattura(id) {
   .then(function(r) { return r.json(); })
   .then(function(data) {
     if (data.success) {
-      var msg = '✅ Pre-fattura ' + data.numero_prefattura + ' creata.\n' +
-        'Imponibile: €' + (data.imponibile || 0).toFixed(2) + '\n' +
-        'IVA ' + data.iva_pct + '%: €' + (data.iva_amt || 0).toFixed(2) + '\n' +
-        'Totale: €' + (data.totale || 0).toFixed(2) + '\n\n';
-      if (data.email_inviata) {
-        msg += '📧 Email inviata a: ' + data.email_commercialista;
-      } else if (data.email_commercialista) {
-        msg += '⚠️ Email non inviata: ' + (data.email_error || 'errore sconosciuto');
-      } else {
-        msg += 'ℹ️ Nessun indirizzo email destinatario trovato.';
-      }
+      var emailInfo = data.email_inviata ? ('Email inviata a: ' + data.email_commercialista) : (data.email_commercialista ? ('Email non inviata: ' + (data.email_error || 'errore')) : 'Nessun indirizzo email trovato.');
+      var msg = 'Pre-fattura ' + data.numero_prefattura + ' creata. Imponibile: EUR ' + (data.imponibile || 0).toFixed(2) + ' | IVA ' + data.iva_pct + '%: EUR ' + (data.iva_amt || 0).toFixed(2) + ' | Totale: EUR ' + (data.totale || 0).toFixed(2) + ' | ' + emailInfo;
       alert(msg);
       // Apri anteprima pre-fattura in una nuova tab
       window.open('/api/ddts/' + encodeURIComponent(id) + '/prefattura-html', '_blank');

@@ -4584,9 +4584,30 @@ ${370+t.length}
                     '<td class="px-2 py-3 whitespace-nowrap">' +
                         '<button onclick="openDDTDetail(' + idx + ')" class="text-blue-500 hover:text-blue-700 mr-2" title="Dettaglio"><i class="fas fa-eye"></i></button>' +
                         '<button onclick="openDDTEdit(' + idx + ')" class="text-green-500 hover:text-green-700 mr-2" title="Modifica"><i class="fas fa-edit"></i></button>' +
+                        '<button onclick="generaPrefatturaDash(' + idx + ')" class="text-purple-600 hover:text-purple-800 mr-2" title="Genera Pre-Fattura"><i class="fas fa-file-invoice"></i></button>' +
                         '<button onclick="deleteDDT(' + idx + ')" class="text-red-400 hover:text-red-600" title="Elimina"><i class="fas fa-trash"></i></button>' +
                     '</td></tr>';
             }).join('');
+        }
+
+        function generaPrefatturaDash(idx) {
+            var dObj = typeof idx === 'number' ? allDDTs[idx] : allDDTs.find(function(x) { return x.id === idx || x.numero_ddt === idx; });
+            var id = dObj ? (dObj.id || dObj.numero_ddt) : idx;
+            var label = dObj ? (dObj.numero_ddt || id) : id;
+            var note = prompt('Note aggiuntive (opzionale):') || '';
+            if (!window.confirm('Generare la pre-fattura per il DDT ' + label + '?')) return;
+            fetch('/api/ddts/' + encodeURIComponent(id) + '/prefattura', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: note }) })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success) {
+                    var emailInfo = data.email_inviata ? ('Email inviata a: ' + data.email_commercialista) : (data.email_commercialista ? ('Email non inviata: ' + (data.email_error || 'errore')) : 'Nessun indirizzo email trovato.');
+                    alert('Pre-fattura ' + data.numero_prefattura + ' creata. Imponibile: EUR ' + (data.imponibile || 0).toFixed(2) + ' | IVA ' + data.iva_pct + '%: EUR ' + (data.iva_amt || 0).toFixed(2) + ' | Totale: EUR ' + (data.totale || 0).toFixed(2) + ' | ' + emailInfo);
+                    window.open('/api/ddts/' + encodeURIComponent(id) + '/prefattura-html', '_blank');
+                } else {
+                    alert('Errore: ' + (data.error || 'Errore sconosciuto'));
+                }
+            })
+            .catch(function(e) { alert('Errore di rete: ' + e.message); });
         }
 
         function openDDTDetail(idx) {
@@ -19346,22 +19367,8 @@ function generaPrefattura(id) {
   .then(function(r) { return r.json(); })
   .then(function(data) {
     if (data.success) {
-      var msg = '✅ Pre-fattura ' + data.numero_prefattura + ' creata.
-' +
-        'Imponibile: €' + (data.imponibile || 0).toFixed(2) + '
-' +
-        'IVA ' + data.iva_pct + '%: €' + (data.iva_amt || 0).toFixed(2) + '
-' +
-        'Totale: €' + (data.totale || 0).toFixed(2) + '
-
-';
-      if (data.email_inviata) {
-        msg += '📧 Email inviata a: ' + data.email_commercialista;
-      } else if (data.email_commercialista) {
-        msg += '⚠️ Email non inviata: ' + (data.email_error || 'errore sconosciuto');
-      } else {
-        msg += 'ℹ️ Nessun indirizzo email destinatario trovato.';
-      }
+      var emailInfo = data.email_inviata ? ('Email inviata a: ' + data.email_commercialista) : (data.email_commercialista ? ('Email non inviata: ' + (data.email_error || 'errore')) : 'Nessun indirizzo email trovato.');
+      var msg = 'Pre-fattura ' + data.numero_prefattura + ' creata. Imponibile: EUR ' + (data.imponibile || 0).toFixed(2) + ' | IVA ' + data.iva_pct + '%: EUR ' + (data.iva_amt || 0).toFixed(2) + ' | Totale: EUR ' + (data.totale || 0).toFixed(2) + ' | ' + emailInfo;
       alert(msg);
       // Apri anteprima pre-fattura in una nuova tab
       window.open('/api/ddts/' + encodeURIComponent(id) + '/prefattura-html', '_blank');
@@ -19936,17 +19943,8 @@ function generaPrefattura(id) {
   .then(function(r) { return r.json(); })
   .then(function(data) {
     if (data.success) {
-      var msg = '✅ Pre-fattura ' + data.numero_prefattura + ' creata.\\n' +
-        'Imponibile: €' + (data.imponibile || 0).toFixed(2) + '\\n' +
-        'IVA ' + data.iva_pct + '%: €' + (data.iva_amt || 0).toFixed(2) + '\\n' +
-        'Totale: €' + (data.totale || 0).toFixed(2) + '\\n\\n';
-      if (data.email_inviata) {
-        msg += '📧 Email inviata a: ' + data.email_commercialista;
-      } else if (data.email_commercialista) {
-        msg += '⚠️ Email non inviata: ' + (data.email_error || 'errore sconosciuto');
-      } else {
-        msg += 'ℹ️ Nessun indirizzo email destinatario trovato.';
-      }
+      var emailInfo = data.email_inviata ? ('Email inviata a: ' + data.email_commercialista) : (data.email_commercialista ? ('Email non inviata: ' + (data.email_error || 'errore')) : 'Nessun indirizzo email trovato.');
+      var msg = 'Pre-fattura ' + data.numero_prefattura + ' creata. Imponibile: EUR ' + (data.imponibile || 0).toFixed(2) + ' | IVA ' + data.iva_pct + '%: EUR ' + (data.iva_amt || 0).toFixed(2) + ' | Totale: EUR ' + (data.totale || 0).toFixed(2) + ' | ' + emailInfo;
       alert(msg);
       // Apri anteprima pre-fattura in una nuova tab
       window.open('/api/ddts/' + encodeURIComponent(id) + '/prefattura-html', '_blank');
