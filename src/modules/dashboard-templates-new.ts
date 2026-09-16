@@ -848,9 +848,8 @@ export const home = `<!DOCTYPE html>
                 }
             }
             
-            // Check status ogni 30 secondi
+            // Check status solo al load — NON in polling (ogni call = row reads D1)
             checkSystemStatus();
-            setInterval(checkSystemStatus, 30000);
             
             // Load stats on page load (manteniamo per compatibilità)
             async function loadStats() {
@@ -2351,12 +2350,12 @@ export const dashboard = `<!DOCTYPE html>
             loadDashboardData();
         };
 
-        // Auto-refresh ogni 30 secondi (solo se non sta già caricando)
+        // Auto-refresh ogni 10 minuti (ridotto da 30s per preservare quota D1 free tier)
         refreshInterval = setInterval(() => {
             if (!isLoading) {
                 loadDashboardData();
             }
-        }, 30000);
+        }, 600000);
 
         async function loadDashboardData() {
             // Previeni chiamate sovrapposte
@@ -2364,10 +2363,9 @@ export const dashboard = `<!DOCTYPE html>
             
             isLoading = true;
             try {
-                // Carica TUTTI i lead (limite massimo 999999)
-                // ✅ Aggiungi timestamp per evitare cache del browser
+                // Carica lead con limite ragionevole — limit=999999 esauriva D1 free tier
                 const cacheBuster = Date.now();
-                const allLeadsResponse = await fetch(\`/api/leads?limit=999999&_=\${cacheBuster}\`);
+                const allLeadsResponse = await fetch(\`/api/leads?limit=500&_=\${cacheBuster}\`);
                 const allLeadsData = await allLeadsResponse.json();
                 const allLeads = allLeadsData.leads || [];
                 
@@ -8159,12 +8157,12 @@ export const data_dashboard = `<!DOCTYPE html>
         async function loadDataDashboard() {
             try {
                 // Carica lead per servizio
-                const leadsResponse = await fetch('/api/leads?limit=99999');
+                const leadsResponse = await fetch('/api/leads?limit=500');
                 const leadsData = await leadsResponse.json();
                 const leads = leadsData.leads || [];
 
                 // Carica contratti
-                const contractsResponse = await fetch('/api/contratti?limit=99999');
+                const contractsResponse = await fetch('/api/contratti?limit=200');
                 const contractsData = await contractsResponse.json();
                 const allContracts = contractsData.contratti || [];
                 
