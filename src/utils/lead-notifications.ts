@@ -26,19 +26,40 @@ export async function sendNewLeadNotification(
     console.log(`🔔 [NOTIFICATION] Lead data:`, JSON.stringify(leadData, null, 2))
     
     // Controlla se le notifiche admin sono abilitate
+    // LOGICA FALLBACK D1:
+    //   - setting = 'true'  → invia (normale)
+    //   - setting = 'false' → NON invia (disabilitato esplicitamente dall'admin)
+    //   - setting = null per errore D1 (quota/down) → invia comunque (fail-open)
+    //     I dati del lead arrivano già come parametri, Resend non ha bisogno del D1.
     if (env?.DB) {
       console.log(`🔔 [NOTIFICATION] Controllo switch admin_email_notifications_enabled...`)
-      const setting = await env.DB.prepare(
-        'SELECT value FROM settings WHERE key = ?'
-      ).bind('admin_email_notifications_enabled').first()
-      
-      console.log(`🔔 [NOTIFICATION] Switch value:`, setting?.value)
-      
-      if (setting?.value !== 'true') {
+      let settingValue: string | null = null
+      let dbError = false
+      try {
+        const setting = await env.DB.prepare(
+          'SELECT value FROM settings WHERE key = ?'
+        ).bind('admin_email_notifications_enabled').first()
+        settingValue = (setting as any)?.value ?? null
+        console.log(`🔔 [NOTIFICATION] Switch value:`, settingValue)
+      } catch (dbErr) {
+        dbError = true
+        console.warn(`⚠️ [NOTIFICATION] D1 non raggiungibile (quota/down), procedo comunque con email:`, dbErr)
+      }
+
+      if (!dbError && settingValue === 'false') {
+        // Disabilitato esplicitamente dall'admin → rispetta la scelta
         console.log(`⏭️ [NOTIFICATION] Notifiche admin disabilitate, skip email per lead ${leadId}`)
         return
       }
-      console.log(`✅ [NOTIFICATION] Switch attivo, procedo con invio email`)
+      if (!dbError && settingValue !== 'true' && settingValue !== null) {
+        // Valore inatteso (es. stringa vuota) → skip per sicurezza
+        console.log(`⏭️ [NOTIFICATION] Switch value inatteso (${settingValue}), skip email per lead ${leadId}`)
+        return
+      }
+      // settingValue === 'true'  → invia ✅
+      // settingValue === null && dbError === true → invia (fail-open) ✅
+      // settingValue === null && dbError === false → record non trovato → invia (default) ✅
+      console.log(`✅ [NOTIFICATION] Procedo con invio email (setting: ${settingValue}, dbError: ${dbError})`)
     } else {
       console.warn(`⚠️ [NOTIFICATION] Database non disponibile, procedo comunque con invio email`)
     }
