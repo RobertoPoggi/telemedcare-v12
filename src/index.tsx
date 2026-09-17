@@ -21545,7 +21545,7 @@ app.get('/api/import/gsheet-debug', async (c) => {
     }
   }
 
-  // Test 2: OAuth2 refresh token
+  // Test 2: OAuth2 refresh token + Sheets API v4
   if (refreshToken && oauthClientId && oauthClientSecret) {
     try {
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -21560,9 +21560,25 @@ app.get('/api/import/gsheet-debug', async (c) => {
       })
       info.oauthRefreshStatus = tokenRes.status
       const tokenJson = await tokenRes.json() as any
-      info.oauthRefreshResult = tokenRes.ok
-        ? { hasAccessToken: !!tokenJson.access_token, expiresIn: tokenJson.expires_in }
-        : { error: tokenJson.error, errorDescription: tokenJson.error_description }
+      if (tokenRes.ok && tokenJson.access_token) {
+        info.oauthRefreshResult = { hasAccessToken: true, expiresIn: tokenJson.expires_in }
+        // Test Sheets API v4 con il token ottenuto
+        const spreadsheetId = '1AZs2t0PpFxZYpxT6byX6uVpAE8VqZFPRuag-CAenKgo'
+        const sheetsRes = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/A:Z`,
+          { headers: { 'Authorization': `Bearer ${tokenJson.access_token}` } }
+        )
+        info.sheetsApiStatus = sheetsRes.status
+        const sheetsBody = await sheetsRes.json() as any
+        if (sheetsRes.ok) {
+          info.sheetsApiRows = sheetsBody.values?.length ?? 0
+          info.sheetsApiOk = true
+        } else {
+          info.sheetsApiError = sheetsBody.error?.message ?? JSON.stringify(sheetsBody).slice(0, 200)
+        }
+      } else {
+        info.oauthRefreshResult = { error: tokenJson.error, errorDescription: tokenJson.error_description }
+      }
     } catch (e: any) {
       info.oauthRefreshError = e.message
     }
