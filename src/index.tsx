@@ -14914,26 +14914,30 @@ app.put('/api/leads/:id/cm', async (c) => {
 
 // ============================================================================
 // PATCH /api/leads/:id/temperatura — Aggiorna temperatura (manuale o reset auto)
-// Body: { temperatura: 'caldo'|'tiepido'|'freddo'|'auto' }
+// Body: { temperatura: 'caldo'|'tiepido'|'freddo'|'auto'|null }
 // Se temperatura='auto', ricalcola dallo stato corrente del lead
+// NOTE: accetta sia PATCH che PUT (il frontend inviava PUT)
 // ============================================================================
-app.patch('/api/leads/:id/temperatura', async (c) => {
+const _handleTemperaturaUpdate = async (c: any) => {
   const id = c.req.param('id')
   try {
-    const body = await c.req.json() as { temperatura?: string }
+    const body = await c.req.json() as { temperatura?: string | null }
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non disponibile' }, 500)
 
-    let nuovaTemperatura: string
+    let nuovaTemperatura: string | null
 
     if (body.temperatura === 'auto') {
       // Ricalcola automaticamente dallo stato corrente
       const lead = await c.env.DB.prepare('SELECT stato FROM leads WHERE id = ?').bind(id).first() as any
       if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
       nuovaTemperatura = calcolaTemperatura(lead.stato)
+    } else if (body.temperatura === null || body.temperatura === '') {
+      // Permetti reset a null (nessuna temperatura)
+      nuovaTemperatura = null
     } else if (['caldo', 'tiepido', 'freddo'].includes(body.temperatura || '')) {
       nuovaTemperatura = body.temperatura!
     } else {
-      return c.json({ success: false, error: 'Valore temperatura non valido. Usare: caldo, tiepido, freddo, auto' }, 400)
+      return c.json({ success: false, error: 'Valore temperatura non valido. Usare: caldo, tiepido, freddo, auto, null' }, 400)
     }
 
     await c.env.DB.prepare(
@@ -14943,10 +14947,14 @@ app.patch('/api/leads/:id/temperatura', async (c) => {
     console.log(`🌡️ Temperatura lead ${id} aggiornata → ${nuovaTemperatura}`)
     return c.json({ success: true, id, temperatura: nuovaTemperatura })
   } catch (err: any) {
-    console.error('Errore PATCH temperatura:', err)
+    console.error('Errore temperatura:', err)
     return c.json({ success: false, error: err.message }, 500)
   }
-})
+}
+
+// Accetta sia PATCH che PUT (il frontend usava PUT, il backend definiva solo PATCH)
+app.patch('/api/leads/:id/temperatura', _handleTemperaturaUpdate)
+app.put('/api/leads/:id/temperatura', _handleTemperaturaUpdate)
 
 // PATCH /api/leads/:id/iva-agevolata — Toggle IVA agevolata 4% Legge 104 dalla dashboard
 app.patch('/api/leads/:id/iva-agevolata', async (c) => {

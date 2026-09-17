@@ -6480,18 +6480,22 @@ export const leads_dashboard = `<!DOCTYPE html>
                     credentials: 'include',
                     body: JSON.stringify({ temperatura: temperatura || null })
                 });
+                if (!response.ok) {
+                    console.error(\`❌ Errore HTTP \${response.status} aggiornamento temperatura: \${leadId}\`);
+                    return; // NON ricaricare: evita il loop infinito
+                }
                 const result = await response.json();
                 if (result.success) {
                     const lead = allLeads.find(l => l.id === leadId);
                     if (lead) lead.temperatura = temperatura || null;
                     console.log(\`✅ Temperatura aggiornata: \${leadId} → \${temperatura || '—'}\`);
                 } else {
-                    alert('❌ Errore aggiornamento temperatura: ' + result.error);
-                    loadLeadsData();
+                    console.error('❌ Errore aggiornamento temperatura: ' + result.error);
+                    // NON ricaricare: evita il loop infinito
                 }
             } catch (error) {
                 console.error('❌ Errore aggiornamento temperatura:', error);
-                loadLeadsData();
+                // NON ricaricare: evita il loop infinito
             }
         }
 
@@ -6512,6 +6516,11 @@ export const leads_dashboard = `<!DOCTYPE html>
                 // stato sconosciuto o vuoto → nessuna temperatura
                 temp = null;
             }
+            // Aggiorna ottimisticamente allLeads prima della chiamata API
+            // ⚠️ IMPORTANTE: questo evita che il re-render riattivi il loop
+            // (la condizione !lead.temperatura al render non scatterà di nuovo)
+            const lead = allLeads.find(l => l.id === leadId);
+            if (lead) lead.temperatura = temp;
             await updateTemperatura(leadId, temp);
             // Aggiorna visivamente il select senza ricaricare tutta la tabella
             const selects = document.querySelectorAll('.temp-select[data-lead-id="' + leadId + '"]');
