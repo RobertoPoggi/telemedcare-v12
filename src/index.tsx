@@ -21510,6 +21510,53 @@ app.post('/api/leads/public', async (c) => {
 })
 
 // ─────────────────────────────────────────────────────────────────────
+// GET /api/oauth/callback - Riceve il codice OAuth2 e scambia con refresh token (scope Sheets)
+app.get('/api/oauth/callback', async (c) => {
+  const code = c.req.query('code')
+  const error = c.req.query('error')
+
+  if (error) {
+    return c.html(`<h2>❌ Errore OAuth: ${error}</h2>`)
+  }
+
+  if (!code) {
+    return c.html(`<h2>❌ Nessun codice ricevuto</h2>`)
+  }
+
+  const clientId = c.env?.GOOGLE_OAUTH_CLIENT_ID
+  const clientSecret = c.env?.GOOGLE_OAUTH_CLIENT_SECRET
+
+  try {
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: 'https://telemedcare-v12.pages.dev/api/oauth/callback',
+        grant_type: 'authorization_code'
+      }).toString()
+    })
+    const json = await tokenRes.json() as any
+
+    if (!tokenRes.ok) {
+      return c.html(`<h2>❌ Errore scambio token: ${json.error_description || json.error}</h2>`)
+    }
+
+    // Mostra il nuovo refresh token — copialo su Cloudflare come GOOGLE_REFRESH_TOKEN
+    return c.html(`
+      <h2>✅ Autorizzazione completata!</h2>
+      <p><strong>Nuovo GOOGLE_REFRESH_TOKEN con scope Sheets:</strong></p>
+      <textarea rows="4" cols="80" onclick="this.select()">${json.refresh_token || '(nessun refresh token — riprova con prompt=consent)'}</textarea>
+      <p style="color:red"><strong>⚠️ Copia questo valore e aggiornalo su Cloudflare Pages → telemedcare-v12 → Settings → Variables → GOOGLE_REFRESH_TOKEN</strong></p>
+      <p>Scope: ${json.scope}</p>
+    `)
+  } catch (e: any) {
+    return c.html(`<h2>❌ Eccezione: ${e.message}</h2>`)
+  }
+})
+
 // GET /api/import/gsheet-debug - Diagnostica temporanea (NO AUTH)
 // ─────────────────────────────────────────────────────────────────────
 app.get('/api/import/gsheet-debug', async (c) => {
