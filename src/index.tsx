@@ -1620,6 +1620,11 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // Diagnostica temporanea GSheet (no auth — endpoint interno)
+  if (path === '/api/import/gsheet-debug' && method === 'GET') {
+    return next()
+  }
+
   // Diagnostica reminder recenti - lead ultimi 15gg, token, config (one-shot lettura)
   if (path === '/api/oneshot-diagnosi-reminder-recenti-7x2q9' && method === 'GET') {
     return next()
