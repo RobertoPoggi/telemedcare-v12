@@ -21524,7 +21524,8 @@ app.post('/api/import/gsheet', async (c) => {
       spreadsheetId: SPREADSHEET_ID,
       sheetGid: body.gid || '0',
       dryRun: body.dryRun === true,
-      appsScriptUrl: c.env?.GOOGLE_APPS_SCRIPT_URL,   // ✅ soluzione definitiva — Apps Script Web App
+      appsScriptUrl: c.env?.GOOGLE_APPS_SCRIPT_URL,         // ✅ soluzione definitiva — Apps Script Web App
+      appsScriptSecret: c.env?.GOOGLE_APPS_SCRIPT_SECRET,   // secret ?secret=xxx per autenticare lo script
       apiKey: c.env?.GOOGLE_SHEETS_API_KEY,
       accessToken: c.env?.GOOGLE_ACCESS_TOKEN,        // fallback: token diretto (scade ~1h)
       refreshToken: c.env?.GOOGLE_REFRESH_TOKEN,       // fallback: refresh automatico (richiede client_secret)

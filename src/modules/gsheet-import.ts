@@ -43,6 +43,7 @@ export interface GSheetImportConfig {
   oauthClientId?: string   // GOOGLE_OAUTH_CLIENT_ID
   oauthClientSecret?: string // GOOGLE_OAUTH_CLIENT_SECRET
   appsScriptUrl?: string   // GOOGLE_APPS_SCRIPT_URL — Web App Apps Script (soluzione definitiva, no OAuth)
+  appsScriptSecret?: string // GOOGLE_APPS_SCRIPT_SECRET — secret per autenticare la Web App (parametro ?secret=)
   skipFirstRow?: boolean   // true = prima riga è intestazione (default true)
 }
 
@@ -310,16 +311,24 @@ async function fetchSheetCsv(config: GSheetImportConfig): Promise<string> {
   // e lo espone come JSON via URL segreto. Funziona per sempre senza scadenza.
   if (config.appsScriptUrl) {
     try {
-      const res = await fetch(config.appsScriptUrl, { redirect: 'follow' })
+      // Aggiunge ?secret=xxx se configurato (compatibile con script TeleMedCare Sheets API)
+      const url = config.appsScriptSecret
+        ? `${config.appsScriptUrl}?secret=${encodeURIComponent(config.appsScriptSecret)}`
+        : config.appsScriptUrl
+      const res = await fetch(url, { redirect: 'follow' })
       if (res.ok) {
-        const json = await res.json() as { values?: string[][], error?: string }
+        // Supporta sia { values: [...] } che { data: [...] } (script esistente usa "data")
+        const json = await res.json() as { values?: string[][], data?: string[][], error?: string }
+        const rows = json.values || json.data
         if (json.error) {
           console.error('[GSHEET] Apps Script error:', json.error)
-        } else if (json.values && json.values.length > 0) {
-          console.log(`✅ [GSHEET] Accesso via Apps Script riuscito (${json.values.length} righe)`)
-          return json.values
+        } else if (rows && rows.length > 0) {
+          console.log(`✅ [GSHEET] Accesso via Apps Script riuscito (${rows.length} righe)`)
+          return rows
             .map(row => row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(','))
             .join('\n')
+        } else {
+          console.warn('[GSHEET] Apps Script: risposta OK ma nessun dato (values/data vuoti)')
         }
       } else {
         console.error(`[GSHEET] Apps Script HTTP error ${res.status}`)
