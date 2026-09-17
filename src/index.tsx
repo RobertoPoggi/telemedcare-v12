@@ -21505,35 +21505,64 @@ app.post('/api/leads/public', async (c) => {
 })
 
 // ─────────────────────────────────────────────────────────────────────
-// GET /api/import/gsheet-debug - Diagnostica temporanea Apps Script
+// GET /api/import/gsheet-debug - Diagnostica temporanea (NO AUTH)
 // ─────────────────────────────────────────────────────────────────────
 app.get('/api/import/gsheet-debug', async (c) => {
   const url = c.env?.GOOGLE_APPS_SCRIPT_URL
   const secret = c.env?.GOOGLE_APPS_SCRIPT_SECRET
   const refreshToken = c.env?.GOOGLE_REFRESH_TOKEN
   const oauthClientId = c.env?.GOOGLE_OAUTH_CLIENT_ID
+  const oauthClientSecret = c.env?.GOOGLE_OAUTH_CLIENT_SECRET
 
   const info: any = {
     hasAppsScriptUrl: !!url,
-    appsScriptUrlPrefix: url ? url.substring(0, 60) + '...' : null,
+    appsScriptUrlPrefix: url ? url.substring(0, 80) : null,
     hasAppsScriptSecret: !!secret,
     hasRefreshToken: !!refreshToken,
+    refreshTokenLength: refreshToken ? refreshToken.length : 0,
     hasOauthClientId: !!oauthClientId,
+    hasOauthClientSecret: !!oauthClientSecret,
   }
 
+  // Test 1: Apps Script URL
   if (url) {
     try {
       const fetchUrl = secret ? `${url}?secret=${encodeURIComponent(secret)}` : url
       const res = await fetch(fetchUrl, { redirect: 'follow' })
-      info.httpStatus = res.status
-      info.contentType = res.headers.get('content-type')
+      info.appsScriptStatus = res.status
+      info.appsScriptContentType = res.headers.get('content-type')
       const text = await res.text()
-      info.responsePreview = text.substring(0, 300)
-      info.isJson = text.trimStart().startsWith('{') || text.trimStart().startsWith('[')
-      info.isHtml = text.trimStart().startsWith('<!') || text.trimStart().startsWith('<html')
+      info.appsScriptResponsePreview = text.substring(0, 200)
+      info.appsScriptIsJson = text.trimStart().startsWith('{') || text.trimStart().startsWith('[')
+      info.appsScriptIsHtml = text.trimStart().startsWith('<!') || text.trimStart().startsWith('<html')
     } catch (e: any) {
-      info.fetchError = e.message
+      info.appsScriptFetchError = e.message
     }
+  }
+
+  // Test 2: OAuth2 refresh token
+  if (refreshToken && oauthClientId && oauthClientSecret) {
+    try {
+      const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+          client_id: oauthClientId,
+          client_secret: oauthClientSecret
+        }).toString()
+      })
+      info.oauthRefreshStatus = tokenRes.status
+      const tokenJson = await tokenRes.json() as any
+      info.oauthRefreshResult = tokenRes.ok
+        ? { hasAccessToken: !!tokenJson.access_token, expiresIn: tokenJson.expires_in }
+        : { error: tokenJson.error, errorDescription: tokenJson.error_description }
+    } catch (e: any) {
+      info.oauthRefreshError = e.message
+    }
+  } else {
+    info.oauthRefreshSkipped = 'missing refreshToken, clientId or clientSecret'
   }
 
   return c.json(info)
