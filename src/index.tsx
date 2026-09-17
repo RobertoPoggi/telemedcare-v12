@@ -21505,6 +21505,40 @@ app.post('/api/leads/public', async (c) => {
 })
 
 // ─────────────────────────────────────────────────────────────────────
+// GET /api/import/gsheet-debug - Diagnostica temporanea Apps Script
+// ─────────────────────────────────────────────────────────────────────
+app.get('/api/import/gsheet-debug', async (c) => {
+  const url = c.env?.GOOGLE_APPS_SCRIPT_URL
+  const secret = c.env?.GOOGLE_APPS_SCRIPT_SECRET
+  const refreshToken = c.env?.GOOGLE_REFRESH_TOKEN
+  const oauthClientId = c.env?.GOOGLE_OAUTH_CLIENT_ID
+
+  const info: any = {
+    hasAppsScriptUrl: !!url,
+    appsScriptUrlPrefix: url ? url.substring(0, 60) + '...' : null,
+    hasAppsScriptSecret: !!secret,
+    hasRefreshToken: !!refreshToken,
+    hasOauthClientId: !!oauthClientId,
+  }
+
+  if (url) {
+    try {
+      const fetchUrl = secret ? `${url}?secret=${encodeURIComponent(secret)}` : url
+      const res = await fetch(fetchUrl, { redirect: 'follow' })
+      info.httpStatus = res.status
+      info.contentType = res.headers.get('content-type')
+      const text = await res.text()
+      info.responsePreview = text.substring(0, 300)
+      info.isJson = text.trimStart().startsWith('{') || text.trimStart().startsWith('[')
+      info.isHtml = text.trimStart().startsWith('<!') || text.trimStart().startsWith('<html')
+    } catch (e: any) {
+      info.fetchError = e.message
+    }
+  }
+
+  return c.json(info)
+})
+
 // POST /api/import/gsheet - Import lead da Google Sheets (backup eCura)
 // ─────────────────────────────────────────────────────────────────────
 app.post('/api/import/gsheet', async (c) => {
