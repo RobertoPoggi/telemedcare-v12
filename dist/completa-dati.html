@@ -363,7 +363,8 @@
             }
         }
 
-        loadLeadData();
+        // ⚠️ NON chiamare loadLeadData() qui: viene già chiamata nei branch if/else sopra.
+        // La chiamata globale causava "errore caricamento dati" con ?token= perché leadId era null.
 
         function nextStep(step) {
             // Validate current step
