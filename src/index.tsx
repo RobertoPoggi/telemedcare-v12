@@ -21526,7 +21526,12 @@ app.get('/api/import/gsheet-debug', async (c) => {
     hasRefreshToken: !!refreshToken,
     refreshTokenLength: refreshToken ? refreshToken.length : 0,
     hasOauthClientId: !!oauthClientId,
+    oauthClientIdPrefix: oauthClientId ? oauthClientId.substring(0, 30) : null,
     hasOauthClientSecret: !!oauthClientSecret,
+    // URL per riautorizzare OAuth con scope Sheets
+    reauthorizeUrl: oauthClientId
+      ? `https://accounts.google.com/o/oauth2/v2/auth?client_id=${oauthClientId}&redirect_uri=https://telemedcare-v12.pages.dev/api/oauth/callback&response_type=code&scope=https://www.googleapis.com/auth/spreadsheets.readonly&access_type=offline&prompt=consent`
+      : null,
   }
 
   // Test 1: Apps Script URL
