@@ -22394,7 +22394,9 @@ app.post('/api/leads/complete', async (c) => {
 // ============================================
 
 // POST /api/cron/send-reminders - Invia reminder per lead incompleti
-// Cache per evitare esecuzioni multiple del CRON
+// NOTA: cronExecutionCache è in-memory e NON funziona tra Worker instances diverse.
+// La deduplicazione reale avviene a livello DB nel lock ottimistico di sendReminderEmail.
+// Questo cache serve solo come ottimizzazione per la stessa istanza.
 const cronExecutionCache = new Map<string, number>()
 
 app.post('/api/cron/send-reminders', async (c) => {
@@ -22421,14 +22423,15 @@ app.post('/api/cron/send-reminders', async (c) => {
       return c.json({ success: false, error: 'Non autorizzato — CRON_SECRET non corrisponde. Verifica Settings → Secrets su GitHub e Cloudflare.' }, 401)
     }
     
-    // Previeni esecuzioni multiple entro 1 ora
+    // Previeni esecuzioni multiple NELLA STESSA ISTANZA entro 1 ora
+    // (non protegge da istanze Worker parallele — quello è gestito dal DB lock)
     const now = Date.now()
     const lastExecution = cronExecutionCache.get('send-reminders') || 0
     const oneHour = 60 * 60 * 1000
     
     if (now - lastExecution < oneHour) {
       const minutesAgo = Math.floor((now - lastExecution) / 1000 / 60)
-      console.log(`⚠️ [CRON] Esecuzione già avvenuta ${minutesAgo} minuti fa - skip`)
+      console.log(`⚠️ [CRON] Esecuzione già avvenuta ${minutesAgo} minuti fa (stessa istanza) - skip`)
       return c.json({
         success: true,
         message: 'Esecuzione recente già completata',
@@ -22436,8 +22439,39 @@ app.post('/api/cron/send-reminders', async (c) => {
         minutesAgo
       }, 429)  // 429 Too Many Requests
     }
+
+    // 🔒 LOCK DB: controlla se il cron è già stato eseguito nelle ultime 4 ore
+    // da qualsiasi istanza Worker (cross-instance deduplication)
+    try {
+      const cronLockKey = 'cron_last_run_send_reminders'
+      const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
+      const lockRow = await db.prepare(
+        `SELECT value, updated_at FROM system_config WHERE key = ?`
+      ).bind(cronLockKey).first<{ value: string; updated_at: string }>()
+
+      if (lockRow && lockRow.updated_at > fourHoursAgo) {
+        const minutesAgo = Math.floor((Date.now() - new Date(lockRow.updated_at).getTime()) / 1000 / 60)
+        console.log(`⚠️ [CRON] Lock DB: esecuzione recente ${minutesAgo} minuti fa da altra istanza - skip`)
+        return c.json({
+          success: true,
+          message: 'Esecuzione recente già completata (lock DB)',
+          lastExecution: lockRow.updated_at,
+          minutesAgo
+        }, 429)
+      }
+
+      // Aggiorna lock DB prima di procedere
+      await db.prepare(`
+        INSERT INTO system_config (key, value, updated_at)
+        VALUES (?, datetime('now'), datetime('now'))
+        ON CONFLICT(key) DO UPDATE SET value = datetime('now'), updated_at = datetime('now')
+      `).bind(cronLockKey).run()
+    } catch (lockErr) {
+      // Se system_config non esiste o errore DB, continua senza lock (fail-open)
+      console.warn('⚠️ [CRON] DB lock non disponibile, procedo comunque:', lockErr)
+    }
     
-    // Registra esecuzione
+    // Registra esecuzione in cache locale
     cronExecutionCache.set('send-reminders', now)
     
     console.log('🔔 [CRON] Avvio processo reminder...')

@@ -282,19 +282,19 @@ export async function markTokenAsCompleted(
 }
 
 /**
- * Registra un reminder inviato
+ * Registra un reminder inviato (incrementa contatore).
+ * NOTA: reminder_sent_at è già impostato dal lock ottimistico in sendReminderEmail,
+ * qui aggiorniamo solo il contatore per evitare race conditions.
  */
 export async function recordReminderSent(
   db: D1Database,
   tokenId: string
 ): Promise<void> {
-  const now = new Date().toISOString()
-  
   await db.prepare(`
     UPDATE lead_completion_tokens
-    SET reminder_sent_at = ?, reminder_count = reminder_count + 1
+    SET reminder_count = reminder_count + 1
     WHERE id = ?
-  `).bind(now, tokenId).run()
+  `).bind(tokenId).run()
   
   const tokenData = await db.prepare(
     'SELECT lead_id, reminder_count FROM lead_completion_tokens WHERE id = ?'
@@ -329,20 +329,29 @@ export async function getTokenForLead(
 /**
  * Ottiene token che necessitano reminder
  * 
- * FIX: Aggiunta protezione contro invii multipli nello stesso giorno
- * Invia reminder SOLO se passate almeno 23 ore dall'ultimo invio
+ * REGOLA COOLDOWN: invia reminder SOLO se sono passati almeno 7 giorni
+ * dall'ultimo reminder automatico E dal token di completamento creato.
+ * Questo evita di bombardare lead contattati di recente manualmente.
  */
 export async function getTokensNeedingReminder(
   db: D1Database,
   reminderDays: number,
   maxReminders: number
 ): Promise<LeadCompletionToken[]> {
+  // Soglia minima: il token deve essere stato creato da almeno reminderDays giorni
   const reminderDate = new Date()
   reminderDate.setDate(reminderDate.getDate() - reminderDays)
   
-  // FIX: 23 ore di protezione contro doppi invii
+  // ⚠️ COOLDOWN 7 GIORNI tra reminder successivi (era 23 ore — troppo aggressivo)
+  // Evita di inviare più reminder a distanza ravvicinata e rispetta i contatti manuali
+  const MIN_DAYS_BETWEEN_REMINDERS = 7
   const minTimeBetweenReminders = new Date()
-  minTimeBetweenReminders.setHours(minTimeBetweenReminders.getHours() - 23)
+  minTimeBetweenReminders.setDate(minTimeBetweenReminders.getDate() - MIN_DAYS_BETWEEN_REMINDERS)
+
+  // ⚠️ PROTEZIONE CONTATTO RECENTE: non inviare reminder se il lead è stato
+  // aggiornato (contattato, email inviata, stato cambiato) negli ultimi 7 giorni
+  const recentContactCutoff = new Date()
+  recentContactCutoff.setDate(recentContactCutoff.getDate() - MIN_DAYS_BETWEEN_REMINDERS)
   
   // ============================================
   // 🎯 QUERY AVANZATA CON PRIORITÀ E FILTRI
@@ -360,19 +369,21 @@ export async function getTokensNeedingReminder(
   //    (es. Margherita Delaude, Maria Grazia Ronca - lead Andrea D'Avella)
   
   const result = await db.prepare(`
-    SELECT t.*, l.status, l.stato, l.nomeRichiedente, l.cognomeRichiedente, l.created_at as lead_created_at
+    SELECT t.*, l.status, l.stato, l.nomeRichiedente, l.cognomeRichiedente, l.created_at as lead_created_at,
+           l.updated_at as lead_updated_at
     FROM lead_completion_tokens t
     JOIN leads l ON t.lead_id = l.id
     WHERE t.completed = 0
       AND t.expires_at > datetime('now')
       AND t.reminder_count < ?
+      AND t.created_at < ?    -- Token esiste da almeno reminderDays giorni
       AND (
         t.reminder_sent_at IS NULL
-        OR (
-          t.reminder_sent_at < ? 
-          AND t.reminder_sent_at < ?
-        )
+        OR t.reminder_sent_at < ?    -- Almeno 7 giorni dall'ultimo reminder automatico
       )
+      -- 🛡️ PROTEZIONE CONTATTO RECENTE: skip se il lead è stato aggiornato
+      -- negli ultimi 7 giorni (es. operatore ha mandato email o cambiato stato)
+      AND COALESCE(l.updated_at, l.created_at) < ?
       -- ❌ ESCLUDI lead già convertiti (contratti firmati o attivi nel DB)
       AND l.status NOT IN ('CONTRACT_SIGNED', 'ACTIVE')
       -- ❌ ESCLUDI lead non interessati (campo status formale)
@@ -396,7 +407,12 @@ export async function getTokensNeedingReminder(
         ELSE 4                         -- Priorità 4: Senza stato (nuovi)
       END,
       l.created_at ASC                 -- Più vecchi per primi a parità di priorità
-  `).bind(maxReminders, reminderDate.toISOString(), minTimeBetweenReminders.toISOString()).all()
+  `).bind(
+    maxReminders,
+    reminderDate.toISOString(),            // token esiste da >= reminderDays
+    minTimeBetweenReminders.toISOString(), // ultimo reminder >= 7 giorni fa
+    recentContactCutoff.toISOString()      // lead non aggiornato negli ultimi 7gg
+  ).all()
   
   return result.results as LeadCompletionToken[]
 }
@@ -436,6 +452,31 @@ export async function sendReminderEmail(
   leadData: any
 ): Promise<boolean> {
   try {
+    // ============================================================
+    // 🔒 LOCK OTTIMISTICO: aggiorna reminder_sent_at PRIMA di inviare
+    // Se più Worker instances leggono lo stesso token simultaneamente,
+    // solo la prima UPDATE riesce (WHERE reminder_sent_at IS <vecchio valore>).
+    // Le altre trovano reminder_sent_at già aggiornato → 0 righe modificate → skip.
+    // Questo elimina i duplicati simultanei (es. 5 email identiche a Mouna Trina).
+    // ============================================================
+    const lockResult = await db.prepare(`
+      UPDATE lead_completion_tokens
+      SET reminder_sent_at = ?
+      WHERE id = ?
+        AND (reminder_sent_at IS ? OR reminder_sent_at = ?)
+        AND completed = 0
+    `).bind(
+      new Date().toISOString(),
+      tokenData.id,
+      tokenData.reminder_sent_at,  // IS NULL o IS <valore precedente>
+      tokenData.reminder_sent_at ?? ''
+    ).run()
+
+    if (!lockResult.meta?.changes || lockResult.meta.changes === 0) {
+      console.warn(`⚠️ [REMINDER] Lock fallito per token ${tokenData.id} — reminder già in invio da altra istanza. Skip.`)
+      return false
+    }
+
     // Importazione dinamica per evitare circular dependencies
     const EmailService = (await import('./email-service')).default
     const { loadEmailTemplate, renderTemplate } = await import('./template-loader-clean')
@@ -795,12 +836,12 @@ export async function processReminders(
   // ============================================
   // 2️⃣ REMINDER FIRMA CONTRATTO
   // Lead con status CONTRACT_SENT da più di reminderDays giorni
-  // e non hanno ricevuto reminder_firma nelle ultime 23 ore
+  // e non hanno ricevuto reminder_firma negli ultimi 7 giorni
   // ============================================
   const firmaReminderDate = new Date()
   firmaReminderDate.setDate(firmaReminderDate.getDate() - config.auto_completion_reminder_days)
   const firmaMinTime = new Date()
-  firmaMinTime.setHours(firmaMinTime.getHours() - 23)
+  firmaMinTime.setDate(firmaMinTime.getDate() - 7) // ✅ 7 giorni (era 23 ore)
   
   try {
     const contractLeads = await db.prepare(`
@@ -811,7 +852,7 @@ export async function processReminders(
       WHERE l.status = 'CONTRACT_SENT'
         AND c.status NOT IN ('SIGNED', 'PAID')
         AND l.email IS NOT NULL AND l.email != ''
-        AND l.updated_at < ?
+        AND l.updated_at < ?            -- Contratto inviato da almeno reminderDays giorni
         AND l.status NOT IN ('CONTRACT_SIGNED', 'ACTIVE', 'NOT_INTERESTED')
         -- ❌ ESCLUDI per stato CRM: convertito, non interessato, problemi economici, perso
         AND COALESCE(l.stato, '') NOT IN ('convertito', 'non_interessato', 'problemi_economici', 'perso', 'numero_non_attivo', 'inps')
@@ -825,7 +866,7 @@ export async function processReminders(
         AND COALESCE(l.reminder_firma_count, 0) < ?
         AND (
           l.reminder_firma_sent_at IS NULL
-          OR (l.reminder_firma_sent_at < ? AND l.reminder_firma_sent_at < ?)
+          OR (l.reminder_firma_sent_at < ? AND l.reminder_firma_sent_at < ?)   -- entrambe le soglie: reminderDays E 7gg
         )
       ORDER BY
         CASE l.stato
@@ -882,7 +923,7 @@ export async function processReminders(
   const proformaReminderDate = new Date()
   proformaReminderDate.setDate(proformaReminderDate.getDate() - config.auto_completion_reminder_days)
   const proformaMinTime = new Date()
-  proformaMinTime.setHours(proformaMinTime.getHours() - 23)
+  proformaMinTime.setDate(proformaMinTime.getDate() - 7) // ✅ 7 giorni (era 23 ore)
   
   try {
     const proformaLeads = await db.prepare(`
