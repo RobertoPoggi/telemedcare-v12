@@ -14569,6 +14569,7 @@ app.put('/api/leads/:id', async (c) => {
       canale: 'fonte',  // Il form invia 'canale' ma il DB ha 'fonte'
       fonte: 'fonte',
       canale_acquisizione: 'canale_acquisizione',
+      dettaglio_fonte: 'dettaglio_fonte',
       
       // Preferenze
       vuoleBrochure: 'vuoleBrochure',
@@ -19220,9 +19221,9 @@ app.post('/api/leads', async (c) => {
         vuoleBrochure, vuoleContratto, vuoleManuale,
         gdprConsent,
         intestatarioContratto,
-        note, fonte, status, timestamp, updated_at,
+        note, fonte, canale_acquisizione, status, timestamp, updated_at,
         hs_object_source, hs_object_source_detail_1, dettaglio_fonte
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       leadId,
       data.nomeRichiedente,
@@ -19248,14 +19249,17 @@ app.post('/api/leads', async (c) => {
       data.gdprConsent ? 1 : 0,
       data.intestatarioContratto || 'richiedente',
       data.note || '',
+      // fonte: usa il campo fonte decodificato dal frontend, fallback a canale o MANUAL_ENTRY
       (data.fonte && data.fonte.trim()) || (data.canale && data.canale.trim()) || 'MANUAL_ENTRY',
+      // canale_acquisizione: campo separato inviato dal frontend dopo decodeCanaleSelection()
+      data.canale_acquisizione || null,
       'NEW',
       timestamp,
       timestamp,
-      // ✅ Campi HubSpot (NULL per lead manuali)
+      // Campi HubSpot: NULL per lead manuali, tranne dettaglio_fonte che viene dal frontend
       null,  // hs_object_source
       null,  // hs_object_source_detail_1
-      null   // dettaglio_fonte
+      data.dettaglio_fonte || null  // dettaglio_fonte: 'FORM', 'ecura_landing', o null
     ).run()
     
     console.log('✅ Lead creato:', leadId)

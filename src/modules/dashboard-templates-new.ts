@@ -6347,7 +6347,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('newServizio').value = lead.servizio || 'eCura PRO';
             updatePrices(); // Aggiorna prezzi in base al servizio
             document.getElementById('newPiano').value = lead.piano || 'BASE';
-            document.getElementById('newCanale').value = lead.fonte || 'Website';
+            document.getElementById('newCanale').value = encodeCanaleSelection(lead);
             
             document.getElementById('newVuoleBrochure').checked = (lead.vuoleBrochure === 'Si');
             document.getElementById('newVuoleContratto').checked = (lead.vuoleContratto === 'Si');
@@ -7005,6 +7005,41 @@ export const leads_dashboard = `<!DOCTYPE html>
             priceNote.textContent = \`I prezzi mostrati sono per il servizio \${servizio}. Include dispositivo \${dispositivo}.\`;
         }
         
+        // Decodifica il value strutturato del select newCanale ("fonte|canale_acquisizione|dettaglio_fonte")
+        // in 3 campi separati pronti per il DB.
+        // Esempi:
+        //   "ecura|META|FORM"          → fonte='Form eCura', canale_acquisizione='META',    dettaglio_fonte='FORM'
+        //   "ecura|GOOGLE|ecura_landing"→ fonte='Form eCura', canale_acquisizione='GOOGLE',  dettaglio_fonte='ecura_landing'
+        //   "Privati IRBEMA||"         → fonte='Privati IRBEMA', canale_acquisizione=null,   dettaglio_fonte=null
+        function decodeCanaleSelection(val) {
+            if (!val) return { fonte: '', canale_acquisizione: null, dettaglio_fonte: null };
+            const parts = val.split('|');
+            const rawFonte   = parts[0] || '';
+            const rawCanale  = parts[1] || '';
+            const rawDett    = parts[2] || '';
+            const fonte = rawFonte === 'ecura' ? 'Form eCura' : rawFonte;
+            const canale_acquisizione = rawCanale || null;
+            const dettaglio_fonte = rawDett || null;
+            return { fonte, canale_acquisizione, dettaglio_fonte };
+        }
+
+        // Dato un lead DB, restituisce il value del select newCanale corrispondente.
+        // Usato da openEditLead() per ripopolare il select.
+        function encodeCanaleSelection(lead) {
+            const fonte   = (lead.fonte || '').trim();
+            const canale  = (lead.canale_acquisizione || '').trim().toUpperCase();
+            const dett    = (lead.dettaglio_fonte || '').trim();
+
+            // Lead eCura (form o landing)
+            if (fonte === 'Form eCura' || fonte.startsWith('Form eCura_')) {
+                const c = canale || 'GOOGLE';
+                const d = dett === 'ecura_landing' ? 'ecura_landing' : 'FORM';
+                return \`ecura|\${c}|\${d}\`;
+            }
+            // Tutte le altre fonti: usa la fonte raw come prima parte
+            return \`\${fonte}||\`;
+        }
+
         async function saveNewLead() {
             const isEditMode = !!window.editingLeadId;
             const leadId = window.editingLeadId;
@@ -7036,8 +7071,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                 // Servizio e Piano + Prezzo calcolato
                 servizio: document.getElementById('newServizio').value,
                 piano: document.getElementById('newPiano').value,
-                canale: document.getElementById('newCanale').value,
-                fonte: document.getElementById('newCanale').value,
+                // Decodifica il select strutturato in 3 campi DB separati
+                ...decodeCanaleSelection(document.getElementById('newCanale').value),
                 prezzo_anno: (function() {
                     // Legge il prezzo direttamente dalla tabella prezzi (stessa usata in updatePrices)
                     const srv = document.getElementById('newServizio').value;
@@ -7538,31 +7573,37 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition bg-white">
                                     <option value="">Seleziona fonte...</option>
                                     <optgroup label="— Form eCura (web) —">
-                                        <option value="Form eCura">Form eCura (organico)</option>
-                                        <option value="eCura — Meta (FB/IG)">eCura — Meta (FB/IG)</option>
-                                        <option value="eCura — Google">eCura — Google</option>
-                                        <option value="eCura — Diretto">eCura — Diretto</option>
-                                        <option value="eCura — Altro">eCura — Altro</option>
+                                        <!-- value = "fonte|canale_acquisizione|dettaglio_fonte" -->
+                                        <option value="ecura|GOOGLE|FORM">🔍 eCura — Google (organico)</option>
+                                        <option value="ecura|META|FORM">📘 eCura — Meta (FB/IG)</option>
+                                        <option value="ecura|DIRETTO|FORM">🔗 eCura — Diretto</option>
+                                        <option value="ecura|ALTRO|FORM">📎 eCura — Altro</option>
+                                    </optgroup>
+                                    <optgroup label="— Landing Page eCura —">
+                                        <option value="ecura|GOOGLE|ecura_landing">🔍 Landing — Google</option>
+                                        <option value="ecura|META|ecura_landing">📘 Landing — Meta (FB/IG)</option>
+                                        <option value="ecura|DIRETTO|ecura_landing">🔗 Landing — Diretto</option>
+                                        <option value="ecura|ALTRO|ecura_landing">📎 Landing — Altro</option>
                                     </optgroup>
                                     <optgroup label="— Partner / B2B —">
-                                        <option value="Privati IRBEMA">Privati IRBEMA</option>
-                                        <option value="B2B IRBEMA">B2B IRBEMA</option>
-                                        <option value="AON">AON</option>
-                                        <option value="NETWORKING">NETWORKING</option>
+                                        <option value="Privati IRBEMA||">Privati IRBEMA</option>
+                                        <option value="B2B IRBEMA||">B2B IRBEMA</option>
+                                        <option value="AON||">AON</option>
+                                        <option value="NETWORKING||">NETWORKING</option>
                                     </optgroup>
                                     <optgroup label="— Referral / Passaparola —">
-                                        <option value="Passaparola">Passaparola (cliente/familiare)</option>
-                                        <option value="Medico di base">Medico di base</option>
-                                        <option value="Farmacia">Farmacia</option>
-                                        <option value="Assistente sociale">Assistente sociale</option>
+                                        <option value="Passaparola||">Passaparola (cliente/familiare)</option>
+                                        <option value="Medico di base||">Medico di base</option>
+                                        <option value="Farmacia||">Farmacia</option>
+                                        <option value="Assistente sociale||">Assistente sociale</option>
                                     </optgroup>
                                     <optgroup label="— Altro —">
-                                        <option value="Sito www.eCura.it">Sito www.eCura.it</option>
-                                        <option value="Sito web Medica GB">Sito web Medica GB</option>
-                                        <option value="Fiera / Evento">Fiera / Evento</option>
-                                        <option value="Form Contattaci">Form Contattaci</option>
-                                        <option value="Telefonata diretta">Telefonata diretta</option>
-                                        <option value="MANUAL_ENTRY">Inserimento manuale operatore</option>
+                                        <option value="Sito www.eCura.it||">Sito www.eCura.it</option>
+                                        <option value="Sito web Medica GB||">Sito web Medica GB</option>
+                                        <option value="Fiera / Evento||">Fiera / Evento</option>
+                                        <option value="Form Contattaci||">Form Contattaci</option>
+                                        <option value="Telefonata diretta||">Telefonata diretta</option>
+                                        <option value="Inserimento manuale operatore||">Inserimento manuale operatore</option>
                                     </optgroup>
                                 </select>
                             </div>
