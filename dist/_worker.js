@@ -7030,6 +7030,12 @@ ${370+t.length}
                             fonteSelect.appendChild(option);
                         });
                     }
+                    // Sezione 4: lead senza fonte né canale (NULL/empty in entrambi)
+                    const hasSenzaFonte = allLeads.some(l => !l.fonte && !l.canale_acquisizione);
+                    if (hasSenzaFonte) {
+                        fonteSelect.innerHTML += '<option disabled>──────────────</option>';
+                        fonteSelect.innerHTML += '<option value="__NO_FONTE__">❓ Senza fonte (non tracciati)</option>';
+                    }
                     console.log('✅ Filtro Fonte unificato popolato:', canaliOrdinati.length, 'canali +', fontiRaw.length, 'fonti');
                 } catch (error) {
                     console.error('⚠️ Errore popolamento filtro fonte:', error);
@@ -7852,18 +7858,25 @@ ${370+t.length}
                 // Valori possibili di fonteFilter:
                 //   ''                  → tutti i lead (nessun filtro)
                 //   '__ECURA_ALL__'     → tutti i lead Form eCura (qualunque canale)
-                //   '__CANALE__META'    → lead eCura con canale_acquisizione = 'META'
-                //   '__CANALE__GOOGLE'  → lead eCura con canale_acquisizione = 'GOOGLE'
+                //   '__CANALE__META'    → lead eCura con canale_acquisizione = 'META' o 'SOCIAL' (sinonimo HubSpot)
+                //   '__CANALE__GOOGLE'  → lead eCura con canale_acquisizione = 'GOOGLE' o 'ORGANICO' (sinonimo HubSpot)
                 //   '__CANALE__DIRETTO' → lead eCura con canale_acquisizione = 'DIRETTO'
-                //   '__CANALE__ALTRO'   → lead eCura con canale_acquisizione = 'ALTRO'
+                //   '__CANALE__ALTRO'   → lead eCura con canale_acquisizione = 'ALTRO', 'REFERRAL' o 'EMAIL' (sinonimi HubSpot)
                 //   '__FONTE__Privati IRBEMA' → lead con fonte = 'Privati IRBEMA'
                 //   '__FONTE__Form eCura x Test' → lead di test
+                //   '__NO_FONTE__'      → lead con fonte = NULL/'' E canale_acquisizione = NULL/''
                 // ═══════════════════════════════════════════════════════════
                 const leadFonte = lead.fonte || '';
-                const leadCanale = lead.canale_acquisizione || ''; // META/GOOGLE/DIRETTO/ALTRO
+                const leadCanale = (lead.canale_acquisizione || '').toUpperCase(); // META/GOOGLE/DIRETTO/ALTRO (o sinonimi HubSpot)
                 const leadDettaglio = lead.dettaglio_fonte || '';
                 const isEcura = leadFonte === 'Form eCura' || leadFonte.startsWith('Form eCura_');
                 const isLanding = leadDettaglio === 'ecura_landing';
+
+                // Normalizzazione sinonimi HubSpot per matching canale
+                const canaleNorm = leadCanale === 'ORGANICO' ? 'GOOGLE'
+                                 : leadCanale === 'SOCIAL'   ? 'META'
+                                 : (leadCanale === 'REFERRAL' || leadCanale === 'EMAIL') ? 'ALTRO'
+                                 : leadCanale;
 
                 let matchFonte = true;
                 if (!fonteFilter) {
@@ -7873,19 +7886,23 @@ ${370+t.length}
                     matchFonte = isEcura;
                 } else if (fonteFilter.startsWith('__CANALE__')) {
                     // Filtra per canale_acquisizione (META/GOOGLE/DIRETTO/ALTRO) — Form eCura escluse landing
+                    // Gestisce anche sinonimi HubSpot: ORGANICO→GOOGLE, SOCIAL→META, REFERRAL/EMAIL→ALTRO
                     const canaleTarget = fonteFilter.replace('__CANALE__', '');
-                    matchFonte = isEcura && !isLanding && leadCanale === canaleTarget;
+                    matchFonte = isEcura && !isLanding && canaleNorm === canaleTarget;
                 } else if (fonteFilter === '__LANDING_ALL__') {
                     // Tutti i lead dalla landing proprietaria
                     matchFonte = isLanding;
                 } else if (fonteFilter.startsWith('__LANDING__')) {
                     // Landing per canale specifico
                     const canaleTarget = fonteFilter.replace('__LANDING__', '');
-                    matchFonte = isLanding && leadCanale === canaleTarget;
+                    matchFonte = isLanding && canaleNorm === canaleTarget;
                 } else if (fonteFilter.startsWith('__FONTE__')) {
                     // Filtra per fonte raw (IRBEMA, B2B, Test, ecc.)
                     const fonteTarget = fonteFilter.replace('__FONTE__', '');
                     matchFonte = leadFonte === fonteTarget;
+                } else if (fonteFilter === '__NO_FONTE__') {
+                    // Lead senza fonte né canale (NULL/empty in entrambi i campi)
+                    matchFonte = !leadFonte && !leadCanale;
                 }
 
                 const matchSorgente = true; // dismesso, sempre true
