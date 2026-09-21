@@ -2363,9 +2363,9 @@ export const dashboard = `<!DOCTYPE html>
             
             isLoading = true;
             try {
-                // Carica lead con limite ragionevole — limit=999999 esauriva D1 free tier
+                // Carica lead — limit alto per includere tutti i leads senza timeout D1
                 const cacheBuster = Date.now();
-                const allLeadsResponse = await fetch(\`/api/leads?limit=500&_=\${cacheBuster}\`);
+                const allLeadsResponse = await fetch(\`/api/leads?limit=9999&_=\${cacheBuster}\`);
                 const allLeadsData = await allLeadsResponse.json();
                 const allLeads = allLeadsData.leads || [];
                 
@@ -2379,8 +2379,8 @@ export const dashboard = `<!DOCTYPE html>
                 const assistitiData = await assistitiResponse.json();
                 const assistiti = assistitiData.assistiti || [];
                 
-                // Calcola statistiche reali
-                const totalLeads = allLeads.length;
+                // ✅ FIX BUG 4: usa il conteggio totale reale dal server, non allLeads.length
+                const totalLeads = allLeadsData.total || allLeads.length;
                 const contratti = contracts.length; // Conta contratti reali, non lead convertiti
                 const topService = 'eCura PRO';
                 
@@ -4222,6 +4222,9 @@ export const leads_dashboard = `<!DOCTYPE html>
         }
 
         let allLeads = [];
+        // ✅ FIX BUG 2: Mappa globale id→numero sequenziale (1=più vecchio, N=più recente)
+        // Calcolata una volta al caricamento; usata da renderLeadsTable per numerazione corretta.
+        let leadGlobalRank = new Map();
 
         // ─── Persistenza filtri via localStorage ─────────────────────────────
         // Salva i filtri attivi ogni volta che cambiano
@@ -4279,9 +4282,19 @@ export const leads_dashboard = `<!DOCTYPE html>
                 // Carica lead
                 // ✅ Aggiungi timestamp per evitare cache del browser
                 const cacheBuster = Date.now();
-                const leadsResponse = await fetch(\`/api/leads?limit=500&_=\${cacheBuster}\`);  // ✅ FIX: 500 invece di 99999 — evita timeout D1
+                const leadsResponse = await fetch(\`/api/leads?limit=9999&_=\${cacheBuster}\`);  // ✅ FIX: limite alto per caricare tutti i leads
                 const leadsData = await leadsResponse.json();
                 allLeads = leadsData.leads || [];
+
+                // ✅ FIX BUG 2: calcola rango globale (1=più vecchio … N=più recente)
+                // Ordina una copia ASC per data di creazione e assegna il rango progressivo.
+                leadGlobalRank = new Map();
+                const allSortedAsc = [...allLeads].sort((a, b) => {
+                    const da = new Date(a.created_at || a.timestamp || 0).getTime();
+                    const db = new Date(b.created_at || b.timestamp || 0).getTime();
+                    return da - db; // ASC: il più vecchio per primo
+                });
+                allSortedAsc.forEach((l, i) => leadGlobalRank.set(l.id, i + 1));
                 
                 // ✅ Popola filtro Fonte unificato: canali eCura + altre fonti dal DB
                 try {
@@ -4505,6 +4518,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                 'eCura — Landing (Google)':    'bg-emerald-400',
                 'eCura — Landing (Diretto)':   'bg-teal-500',
                 'eCura — Landing (Altro)':     'bg-teal-400',
+                'Form eCura':                  'bg-blue-400',
+                'Form eCura — Landing Page':   'bg-emerald-500',
                 'Form eCura x Test':           'bg-yellow-300',
                 'B2B IRBEMA':                  'bg-purple-500',
                 'Sito web Medica GB':          'bg-pink-500',
@@ -4539,7 +4554,36 @@ export const leads_dashboard = `<!DOCTYPE html>
                 console.warn('⚠️ updateChannelsBreakdown: impossibile caricare channel-stats', e);
             }
 
-            // Passo 2: fonti non-eCura da allLeads (IRBEMA, B2B, Test, ecc.)
+            // ✅ FIX BUG 3: data di separazione "Form eCura" vs "Form eCura — Landing Page"
+            // Fino al 28/7/2026 → "Form eCura" (vecchio form gestione Nur)
+            // Dal 29/7/2026 in poi → "Form eCura — Landing Page" (nuova landing eCura)
+            const LANDING_CUTOFF = '2026-07-29'; // data di attivazione nuova landing
+
+            // Passo 2a: conta i lead "Form eCura" separati per data dalla tabella allLeads
+            // (sostituisce il conteggio flat dell'API per questa distinzione)
+            let formEcuraBefore = 0;  // ≤ 28/7/2026
+            let formEcuraAfter  = 0;  // ≥ 29/7/2026
+            (leads || []).forEach(l => {
+                const fonteDB = l.fonte || '';
+                const isEcuraForm = fonteDB === 'Form eCura' || fonteDB.startsWith('Form eCura_');
+                if (!isEcuraForm) return;
+                // Esclude lead già categorizzati come landing proprietaria (dettaglio_fonte)
+                if ((l.dettaglio_fonte || '') === 'ecura_landing') return;
+                const leadDate = (l.created_at || l.timestamp || '').substring(0, 10); // YYYY-MM-DD
+                if (leadDate >= LANDING_CUTOFF) {
+                    formEcuraAfter++;
+                } else {
+                    formEcuraBefore++;
+                }
+            });
+            // Aggiorna (o crea) le voci nella mappa sources con i valori separati per data
+            // NOTA: rimuoviamo la voce generica "Form eCura" aggregata dall'API (se presente)
+            // perché la sostituiamo con le due voci distinte basate sulla data.
+            delete sources['Form eCura'];
+            if (formEcuraBefore > 0) sources['Form eCura']                  = formEcuraBefore;
+            if (formEcuraAfter  > 0) sources['Form eCura — Landing Page']   = formEcuraAfter;
+
+            // Passo 2b: fonti non-eCura da allLeads (IRBEMA, B2B, Test, ecc.)
             // I lead landing (dettaglio_fonte='ecura_landing') sono già contati sopra → saltiamo
             (leads || []).forEach(l => {
                 const fonteDB = l.fonte || '';
@@ -4807,7 +4851,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 
                 return \`
                     <tr class="border-b border-gray-100 hover:bg-gray-50" title="ID: \${escapeHtml(lead.id)}">
-                        <td class="py-2 text-xs text-gray-600 font-medium">\${leads.length - index}</td>
+                        <td class="py-2 text-xs text-gray-600 font-medium">\${leadGlobalRank.get(lead.id) ?? (leads.length - index)}</td>
                         <td class="py-2 text-xs truncate" title="\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || '')}">
                             <div class="font-medium truncate">\${(lead.nomeRichiedente && lead.cognomeRichiedente) ? escapeHtml(lead.nomeRichiedente + ' ' + lead.cognomeRichiedente) : escapeHtml(lead.email || 'N/A')}</div>
                         </td>
@@ -6805,8 +6849,15 @@ export const leads_dashboard = `<!DOCTYPE html>
                 interactionsSection.classList.add('hidden');
             }
             
+            // ✅ FIX BUG 5: form.reset() azzera il select → ripristina il valore default
+            // prima di chiamare updatePrices() altrimenti essa trova servizio="" e ritorna
+            const newServizioEl = document.getElementById('newServizio');
+            if (newServizioEl && !newServizioEl.value) {
+                newServizioEl.value = 'eCura PRO';
+            }
+            
             openModal('newLeadModal');
-            // Aggiorna prezzi iniziali
+            // Aggiorna prezzi iniziali (con servizio già impostato)
             updatePrices();
             
             // Aggiungi event listener per calcolo età automatico
