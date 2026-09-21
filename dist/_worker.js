@@ -24565,7 +24565,23 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await ue.sendEmail({to:((r=e.env)==nul
           SET dettaglio_fonte = hs_object_source_detail_1
           WHERE hs_object_source_detail_1 IS NOT NULL
             AND (dettaglio_fonte IS NULL OR dettaglio_fonte = '')
-        `).run();console.log(`✅ Popolato dettaglio_fonte da hs_object_source_detail_1 per ${((n=g.meta)==null?void 0:n.changes)||0} lead esistenti`),p.push(`Popolato dettaglio_fonte da hs_object_source_detail_1 per ${((r=g.meta)==null?void 0:r.changes)||0} lead esistenti`)}catch(g){console.log("⚠️ Errore popolamento dettaglio_fonte:",g)}console.log("✅ [MIGRATION] Campi HubSpot source aggiunti con successo"),p.push("Campi HubSpot source (hs_object_source, hs_object_source_detail_1, dettaglio_fonte) aggiunti a leads")}catch(u){console.error("❌ [MIGRATION] Errore aggiunta campi HubSpot source:",u),p.push(`Errore campi HubSpot source: ${u}`)}return e.json({success:!0,message:"Migrazioni completate",migrations:p})}catch(c){return console.error("❌ Errore migrazioni:",c),e.json({success:!1,error:"Errore esecuzione migrazioni",details:c instanceof Error?c.message:String(c)},500)}});I.get("/api/debug/leads-fonte",async e=>{try{if(!e.env.DB)return e.json({success:!1,error:"Database non configurato"},500);console.log("🔍 Report diagnostico campi fonte...");const a=await e.env.DB.prepare(`
+        `).run();console.log(`✅ Popolato dettaglio_fonte da hs_object_source_detail_1 per ${((n=g.meta)==null?void 0:n.changes)||0} lead esistenti`),p.push(`Popolato dettaglio_fonte da hs_object_source_detail_1 per ${((r=g.meta)==null?void 0:r.changes)||0} lead esistenti`)}catch(g){console.log("⚠️ Errore popolamento dettaglio_fonte:",g)}console.log("✅ [MIGRATION] Campi HubSpot source aggiunti con successo"),p.push("Campi HubSpot source (hs_object_source, hs_object_source_detail_1, dettaglio_fonte) aggiunti a leads")}catch(u){console.error("❌ [MIGRATION] Errore aggiunta campi HubSpot source:",u),p.push(`Errore campi HubSpot source: ${u}`)}return e.json({success:!0,message:"Migrazioni completate",migrations:p})}catch(c){return console.error("❌ Errore migrazioni:",c),e.json({success:!1,error:"Errore esecuzione migrazioni",details:c instanceof Error?c.message:String(c)},500)}});I.get("/api/debug/canale-stats",async e=>{var a;try{const t=await e.env.DB.prepare(`
+      SELECT
+        canale_acquisizione,
+        COUNT(*) as count
+      FROM leads
+      WHERE fonte = 'Form eCura'
+         OR dettaglio_fonte = 'ecura_landing'
+      GROUP BY canale_acquisizione
+      ORDER BY count DESC
+    `).all(),o=await e.env.DB.prepare(`
+      SELECT id, fonte, canale_acquisizione, dettaglio_fonte, created_at
+      FROM leads
+      WHERE (fonte = 'Form eCura' OR dettaglio_fonte = 'ecura_landing')
+        AND (canale_acquisizione IS NULL OR canale_acquisizione = '')
+      ORDER BY created_at DESC
+      LIMIT 20
+    `).all();return e.json({success:!0,breakdown:t.results,non_tracciati_leads:o.results,non_tracciati_count:(a=o.results)==null?void 0:a.length})}catch(t){return e.json({success:!1,error:t.message},500)}});I.get("/api/debug/leads-fonte",async e=>{try{if(!e.env.DB)return e.json({success:!1,error:"Database non configurato"},500);console.log("🔍 Report diagnostico campi fonte...");const a=await e.env.DB.prepare(`
       SELECT COUNT(*) as count FROM leads
     `).first(),t=await e.env.DB.prepare(`
       SELECT 

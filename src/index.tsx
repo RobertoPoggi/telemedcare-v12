@@ -20363,6 +20363,38 @@ app.post('/api/db/migrate', async (c) => {
   }
 })
 
+// GET /api/debug/canale-stats — Distribuzione canale_acquisizione per lead eCura (diagnostica nonTracciato)
+app.get('/api/debug/canale-stats', async (c) => {
+  try {
+    const rows = await c.env.DB.prepare(`
+      SELECT
+        canale_acquisizione,
+        COUNT(*) as count
+      FROM leads
+      WHERE fonte = 'Form eCura'
+         OR dettaglio_fonte = 'ecura_landing'
+      GROUP BY canale_acquisizione
+      ORDER BY count DESC
+    `).all()
+    const nullRows = await c.env.DB.prepare(`
+      SELECT id, fonte, canale_acquisizione, dettaglio_fonte, created_at
+      FROM leads
+      WHERE (fonte = 'Form eCura' OR dettaglio_fonte = 'ecura_landing')
+        AND (canale_acquisizione IS NULL OR canale_acquisizione = '')
+      ORDER BY created_at DESC
+      LIMIT 20
+    `).all()
+    return c.json({
+      success: true,
+      breakdown: rows.results,
+      non_tracciati_leads: nullRows.results,
+      non_tracciati_count: nullRows.results?.length
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
 // GET /api/debug/leads-fonte - Report diagnostico sui campi fonte e dettaglio_fonte
 app.get('/api/debug/leads-fonte', async (c) => {
   try {
