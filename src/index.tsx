@@ -29434,6 +29434,17 @@ app.get('/api/data/dashboard', async (c) => {
   }
 })
 
+// Helper functions per live-seo-report
+function formatDuration(secs: number): string {
+  if (!secs || secs < 0) return '0:00'
+  const m = Math.floor(secs / 60)
+  const s = Math.floor(secs % 60)
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+function escHtml(s: string): string {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 // GET /api/analytics/live-seo-report
 // Genera l'HTML del report SEO live (equivalente a report-ecura-seo-2026.html)
 // con dati in tempo reale da GA4 + CRM D1
