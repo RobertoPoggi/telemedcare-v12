@@ -6972,15 +6972,14 @@ ${370+t.length}
                 const leadsData = await leadsResponse.json();
                 allLeads = leadsData.leads || [];
 
-                // ✅ FIX BUG 2: calcola rango globale (1=più vecchio … N=più recente)
-                // Ordina una copia ASC per data di creazione e assegna il rango progressivo.
+                // ✅ FIX BUG 2 (rev2): rango globale dall'ordine dell'API (fonte di verità)
+                // L'API restituisce i lead già ordinati DESC per COALESCE(created_at, timestamp).
+                // Index 0 = lead più recente = rango N; index N-1 = lead più vecchio = rango 1.
+                // NON usiamo un sort JS perché può divergere dall'ordine SQL (es. timestamp Unix
+                // vs stringa ISO, lead con created_at NULL che cadono in posizioni diverse).
                 leadGlobalRank = new Map();
-                const allSortedAsc = [...allLeads].sort((a, b) => {
-                    const da = new Date(a.created_at || a.timestamp || 0).getTime();
-                    const db = new Date(b.created_at || b.timestamp || 0).getTime();
-                    return da - db; // ASC: il più vecchio per primo
-                });
-                allSortedAsc.forEach((l, i) => leadGlobalRank.set(l.id, i + 1));
+                const totalFromApi = leadsData.total || allLeads.length;
+                allLeads.forEach((l, i) => leadGlobalRank.set(l.id, totalFromApi - i));
                 
                 // ✅ Popola filtro Fonte unificato: canali eCura + altre fonti dal DB
                 try {
@@ -7484,12 +7483,10 @@ ${370+t.length}
                 return;
             }
 
-            // ✅ ORDINA PER DATA CREAZIONE DESC (più recenti prima)
-            const sortedLeads = [...leads].sort((a, b) => {
-                const dateA = new Date(a.created_at || a.timestamp || 0);
-                const dateB = new Date(b.created_at || b.timestamp || 0);
-                return dateB - dateA; // DESC
-            });
+            // ✅ Ordine già corretto dall'API (DESC COALESCE(created_at, timestamp)).
+            // NON re-sortare in JS: causerebbe divergenze con l'ordine SQL e rank errati.
+            // Il rank di ogni lead è già in leadGlobalRank (calcolato dall'ordine API).
+            const sortedLeads = leads; // mantieni l'ordine ricevuto (già DESC dal server)
 
             tbody.innerHTML = sortedLeads.map((lead, index) => {
                 // PRIORITY: piano > note > default BASE
