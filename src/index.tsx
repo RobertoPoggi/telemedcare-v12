@@ -20363,6 +20363,36 @@ app.post('/api/db/migrate', async (c) => {
   }
 })
 
+// POST /api/admin/fix-leads-canale — ONE-SHOT: corregge canale_acquisizione e dettaglio_fonte dei 4 lead non tracciati identificati manualmente
+app.post('/api/admin/fix-leads-canale', async (c) => {
+  const authHeader = c.req.header('Authorization') || ''
+  if (authHeader !== `Bearer ${c.env.ADMIN_SECRET_TOKEN}`) {
+    return c.json({ success: false, error: 'Unauthorized' }, 401)
+  }
+  const fixes = [
+    // Martina Bertoldi — arrivata da chatgpt.com → ecura_landing, canale ALTRO (referral non classificabile)
+    { id: 'LEAD-GSHEET-00008',           canale: 'ALTRO',   dettaglio: 'ecura_landing' },
+    // Giancarlo Traversa — inserito manuale NUOVO LEAD, DIRETTO → landing
+    { id: 'LEAD-MANUAL-1789329322442',   canale: 'DIRETTO', dettaglio: 'ecura_landing' },
+    // Bianca Lavarini — ORGANICO Google → landing
+    { id: 'LEAD-eCura-00001',            canale: 'GOOGLE',  dettaglio: 'ecura_landing' },
+    // Sergio Mutalipassi — Form eCura organico Google
+    { id: 'LEAD-IRBEMA-00196',           canale: 'GOOGLE',  dettaglio: 'FORM' },
+  ]
+  const results: any[] = []
+  for (const fix of fixes) {
+    try {
+      const r = await c.env.DB.prepare(
+        `UPDATE leads SET canale_acquisizione = ?, dettaglio_fonte = ? WHERE id = ?`
+      ).bind(fix.canale, fix.dettaglio, fix.id).run()
+      results.push({ id: fix.id, canale: fix.canale, dettaglio: fix.dettaglio, changes: r.meta?.changes ?? '?' })
+    } catch (e: any) {
+      results.push({ id: fix.id, error: e.message })
+    }
+  }
+  return c.json({ success: true, results })
+})
+
 // GET /api/debug/canale-stats — Distribuzione canale_acquisizione per lead eCura (diagnostica nonTracciato)
 app.get('/api/debug/canale-stats', async (c) => {
   try {
