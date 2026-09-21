@@ -7395,21 +7395,25 @@ app.get('/api/leads/channel-stats', async (c) => {
       rows.forEach((row: any) => {
         // Supporta sia il formato normalizzato ('META') sia quello vecchio ('Form eCura_ META')
         // presenti in DB storici (TEST) popolati con versioni precedenti del codice.
-        // Tutti i canali non-META/GOOGLE/DIRETTO confluiscono in 'altro':
-        // ALTRO, ORGANICO, REFERRAL, EMAIL, SOCIAL, ecc.
+        // FIX: 'altro' conta SOLO i lead esplicitamente taggati ALTRO.
+        // Canali non riconosciuti (ORGANICO, REFERRAL, SOCIAL, EMAIL, ecc.) restano
+        // nel residuo → vengono assorbiti da nonTracciato = totalEcura - meta - google - diretto - altro.
         const val: string = (row.canale_acquisizione || '').toUpperCase()
         const cnt = Number(row.count) || 0
         if      (val === 'META'    || val.includes('META'))    meta    += cnt
         else if (val === 'GOOGLE'  || val.includes('GOOGLE'))  google  += cnt
         else if (val === 'DIRETTO' || val.includes('DIRETTO')) diretto += cnt
-        else                                                    altro   += cnt  // ALTRO, ORGANICO, REFERRAL, EMAIL, SOCIAL...
+        else if (val === 'ALTRO')                              altro   += cnt  // solo esplicitamente ALTRO
+        // canali non standard (ORGANICO, REFERRAL, EMAIL, SOCIAL…) non incrementano
+        // nessun contatore nominato → finiscono in nonTracciato (residuo)
         breakdown.push({ label: row.canale_acquisizione, count: cnt })
       })
     } catch (err) {
       console.warn('⚠️ channel-stats: errore query canale_acquisizione', err)
     }
 
-    // nonTracciato = lead eCura senza canale_acquisizione
+    // nonTracciato = lead eCura senza canale_acquisizione O con canale non riconosciuto
+    // (ORGANICO, REFERRAL, EMAIL, SOCIAL, ecc. non rientrano nei 4 canali nominati)
     const nonTracciato = Math.max(0, totalEcura - meta - google - diretto - altro)
 
     // ─── Query landing: lead dalla nuova landing Cloudflare (dal 8/8/2026) ──────────

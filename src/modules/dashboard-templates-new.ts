@@ -2939,7 +2939,13 @@ export const dashboard = `<!DOCTYPE html>
         window.loadEcuraChannelStats = loadEcuraChannelStats;
 
         async function syncEcuraChannels() {
-            alert("ℹ️ Sincronizzazione HubSpot disabilitata.\\nI lead arrivano ora solo dalla landing eCura.");
+            // ✅ Ricalcola statistiche canali eCura (non chiama più HubSpot)
+            try {
+                await loadEcuraChannelStats();
+                console.log('✅ Canali eCura sincronizzati (dashboard operativa)');
+            } catch (e) {
+                console.error('❌ Errore sync canali:', e);
+            }
         }
         window.syncEcuraChannels = syncEcuraChannels;
 
@@ -4070,7 +4076,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     Form eCura — Fonti di Provenienza
                 </h3>
                 <div class="flex items-center gap-3">
-                    <button id="btnLeadsSyncChannels" onclick="leadssSyncEcuraChannels()" class="text-xs bg-gray-300 text-gray-500 px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 cursor-not-allowed" title="HubSpot disabilitato — lead solo da landing eCura">
+                    <button id="btnLeadsSyncChannels" onclick="leadssSyncEcuraChannels()" class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 hover:bg-blue-700 transition" title="Ricalcola statistiche canali eCura">
                         <i class="fas fa-sync-alt"></i> Sincronizza canali
                     </button>
                     <span class="text-xs text-gray-400" id="leadsEcuraChannelUpdated">Caricamento...</span>
@@ -4780,7 +4786,18 @@ export const leads_dashboard = `<!DOCTYPE html>
         window.loadLeadsEcuraChannelStats = loadLeadsEcuraChannelStats;
 
         async function leadssSyncEcuraChannels() {
-            alert("ℹ️ Sincronizzazione HubSpot disabilitata.\\nI lead arrivano ora solo dalla landing eCura.");
+            const btn = document.getElementById('btnLeadsSyncChannels');
+            if (btn) { btn.classList.add('opacity-50', 'cursor-wait'); btn.setAttribute('disabled', 'true'); }
+            try {
+                // Ricarica statistiche canali e grafico fonti
+                await loadLeadsEcuraChannelStats();
+                await updateChannelsBreakdown(window.allLeadsData || allLeads);
+                console.log('✅ Canali eCura sincronizzati');
+            } catch (e) {
+                console.error('❌ Errore sync canali:', e);
+            } finally {
+                if (btn) { btn.classList.remove('opacity-50', 'cursor-wait'); btn.removeAttribute('disabled'); }
+            }
         }
         window.leadssSyncEcuraChannels = leadssSyncEcuraChannels;
 
