@@ -4321,6 +4321,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                         option.textContent = canaleIcons[canale] || canale;
                         fonteSelect.appendChild(option);
                     });
+                    // Opzione: lead eCura senza canale_acquisizione (Non tracciati)
+                    fonteSelect.innerHTML += '<option value="__ECURA_NO_CANALE__">❓ eCura — Non tracciati (senza canale)</option>';
                     // Sezione 2: Landing proprietaria eCura
                     fonteSelect.innerHTML += '<option disabled>──────────────</option>';
                     fonteSelect.innerHTML += '<option value="__LANDING_ALL__">🏠 eCura — Landing (tutti i canali)</option>';
@@ -5217,6 +5219,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                 } else if (fonteFilter === '__NO_FONTE__') {
                     // Lead senza fonte né canale (NULL/empty in entrambi i campi)
                     matchFonte = !leadFonte && !leadCanale;
+                } else if (fonteFilter === '__ECURA_NO_CANALE__') {
+                    // Lead eCura (fonte='Form eCura') con canale_acquisizione NULL/empty
+                    matchFonte = isEcura && !leadCanale;
                 }
 
                 const matchSorgente = true; // dismesso, sempre true
