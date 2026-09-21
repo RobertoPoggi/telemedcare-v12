@@ -7393,27 +7393,27 @@ app.get('/api/leads/channel-stats', async (c) => {
       const rows = result.results || []
 
       rows.forEach((row: any) => {
-        // Supporta sia il formato normalizzato ('META') sia quello vecchio ('Form eCura_ META')
-        // presenti in DB storici (TEST) popolati con versioni precedenti del codice.
-        // FIX: 'altro' conta SOLO i lead esplicitamente taggati ALTRO.
-        // Canali non riconosciuti (ORGANICO, REFERRAL, SOCIAL, EMAIL, ecc.) restano
-        // nel residuo → vengono assorbiti da nonTracciato = totalEcura - meta - google - diretto - altro.
+        // Mappatura canali: supporta formato normalizzato E sinonimi HubSpot legacy.
+        // Sinonimi HubSpot (importati da hs_analytics_source, non normalizzati):
+        //   ORGANICO  → GOOGLE  (SEO/traffico organico da motori di ricerca)
+        //   REFERRAL  → ALTRO   (link da siti terzi)
+        //   SOCIAL    → META    (social non a pagamento)
+        //   EMAIL     → ALTRO   (campagne email)
+        // Valori con include() per vecchio formato 'Form eCura_ META' ecc.
         const val: string = (row.canale_acquisizione || '').toUpperCase()
         const cnt = Number(row.count) || 0
-        if      (val === 'META'    || val.includes('META'))    meta    += cnt
-        else if (val === 'GOOGLE'  || val.includes('GOOGLE'))  google  += cnt
-        else if (val === 'DIRETTO' || val.includes('DIRETTO')) diretto += cnt
-        else if (val === 'ALTRO')                              altro   += cnt  // solo esplicitamente ALTRO
-        // canali non standard (ORGANICO, REFERRAL, EMAIL, SOCIAL…) non incrementano
-        // nessun contatore nominato → finiscono in nonTracciato (residuo)
+        if      (val === 'META'     || val.includes('META')    || val === 'SOCIAL')   meta    += cnt
+        else if (val === 'GOOGLE'   || val.includes('GOOGLE')  || val === 'ORGANICO') google  += cnt
+        else if (val === 'DIRETTO'  || val.includes('DIRETTO'))                       diretto += cnt
+        else if (val === 'ALTRO'    || val === 'REFERRAL'      || val === 'EMAIL')    altro   += cnt
+        // eventuali altri valori non noti → finiscono in nonTracciato (residuo)
         breakdown.push({ label: row.canale_acquisizione, count: cnt })
       })
     } catch (err) {
       console.warn('⚠️ channel-stats: errore query canale_acquisizione', err)
     }
 
-    // nonTracciato = lead eCura senza canale_acquisizione O con canale non riconosciuto
-    // (ORGANICO, REFERRAL, EMAIL, SOCIAL, ecc. non rientrano nei 4 canali nominati)
+    // nonTracciato = lead eCura senza canale_acquisizione (NULL/vuoto) o con valore sconosciuto
     const nonTracciato = Math.max(0, totalEcura - meta - google - diretto - altro)
 
     // ─── Query landing: lead dalla nuova landing Cloudflare (dal 8/8/2026) ──────────
@@ -7773,15 +7773,20 @@ app.post('/api/admin/normalize-canale', async (c) => {
     if (!db) return c.json({ success: false, error: 'DB non configurato' }, 500)
 
     const mappings = [
+      // Vecchio formato 'Form eCura_ META' (prima del refactoring 21/05/2026)
       { from: 'Form eCura_ META',    to: 'META'    },
       { from: 'Form eCura_ GOOGLE',  to: 'GOOGLE'  },
       { from: 'Form eCura_ DIRETTO', to: 'DIRETTO' },
       { from: 'Form eCura_ ALTRO',   to: 'ALTRO'   },
-      // Varianti con spazio diverso o senza spazio
-      { from: 'Form eCura_META',    to: 'META'    },
-      { from: 'Form eCura_GOOGLE',  to: 'GOOGLE'  },
-      { from: 'Form eCura_DIRETTO', to: 'DIRETTO' },
-      { from: 'Form eCura_ALTRO',   to: 'ALTRO'   },
+      { from: 'Form eCura_META',     to: 'META'    },
+      { from: 'Form eCura_GOOGLE',   to: 'GOOGLE'  },
+      { from: 'Form eCura_DIRETTO',  to: 'DIRETTO' },
+      { from: 'Form eCura_ALTRO',    to: 'ALTRO'   },
+      // Sinonimi HubSpot legacy (hs_analytics_source importato senza normalizzazione)
+      { from: 'ORGANICO',  to: 'GOOGLE' }, // SEO / traffico organico da motori di ricerca
+      { from: 'REFERRAL',  to: 'ALTRO'  }, // link da siti terzi → Altro
+      { from: 'SOCIAL',    to: 'META'   }, // social non a pagamento → Meta
+      { from: 'EMAIL',     to: 'ALTRO'  }, // campagne email → Altro
     ]
 
     let totalUpdated = 0
