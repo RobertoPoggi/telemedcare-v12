@@ -30348,7 +30348,8 @@ new Chart(document.getElementById('tempPieChart'), {
 
     return c.html(html)
   } catch (e: any) {
-    return c.html(`<html><body><h1>Errore</h1><pre>${escHtml(e.message)}</pre></body></html>`, 500)
+    console.error('❌ live-seo-report error:', e?.message, e?.stack)
+    return c.json({ error: e?.message || 'unknown', stack: e?.stack?.slice(0, 500) }, 500)
   }
 })
 
