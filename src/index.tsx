@@ -50,6 +50,7 @@ import type { AuthSession, UserRole } from './modules/auth-service'
 // Import Dashboard Templates
 import { dashboard, leads_dashboard, data_dashboard, home, workflow_manager, admin_setup } from './modules/dashboard-templates-new'
 import { renderGoogleAdsDashboard } from './modules/google-ads-dashboard'
+import { fetchFullAnalyticsReport } from './modules/google-analytics'
 import { renderSeoManagerDashboard } from './modules/seo-manager-dashboard'
 import { renderAiMarketingDashboard } from './modules/ai-marketing-dashboard'
 import * as SignatureManager from './modules/signature-manager'
@@ -29439,8 +29440,6 @@ app.get('/api/data/dashboard', async (c) => {
 // ============================================================
 app.get('/api/analytics/live-seo-report', async (c) => {
   try {
-    const { fetchFullAnalyticsReport } = await import('./modules/google-analytics')
-
     const refreshToken = c.env?.GOOGLE_REFRESH_TOKEN
     const clientId = c.env?.GOOGLE_OAUTH_CLIENT_ID
     const clientSecret = c.env?.GOOGLE_OAUTH_CLIENT_SECRET
