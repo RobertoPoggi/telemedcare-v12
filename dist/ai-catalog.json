@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "name": "TeleMedCare eCura CRM",
+  "description": "Piattaforma CRM per la gestione dei lead e dei contratti di telemedicina eCura - TeleMedCare V12",
+  "url": "https://telemedcare-v12.pages.dev",
+  "api_base_url": "https://telemedcare-v12.pages.dev/api",
+  "contact": {
+    "email": "info@ecura.it",
+    "organization": "TeleMedCare / eCura"
+  },
+  "capabilities": [
+    "lead-management",
+    "contract-management",
+    "analytics-reporting",
+    "crm"
+  ],
+  "authentication": {
+    "type": "bearer",
+    "description": "Richiede Authorization: Bearer <API_KEY> per endpoint pubblici o Bearer <ADMIN_TOKEN> per endpoint admin"
+  },
+  "endpoints": [
+    {
+      "path": "/api/leads",
+      "method": "GET",
+      "description": "Recupera lista lead CRM"
+    },
+    {
+      "path": "/api/analytics/live-seo-report",
+      "method": "GET",
+      "description": "Report SEO live con dati GA4 e Search Console"
+    }
+  ]
+}

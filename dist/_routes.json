@@ -11,5 +11,5 @@
     "/form-lead",
     "/landing"
   ],
-  "exclude": []
+  "exclude": ["/ai-catalog.json", "/manifest.json", "/favicon.ico"]
 }
