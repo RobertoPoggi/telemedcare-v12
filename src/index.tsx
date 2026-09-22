@@ -29443,52 +29443,6 @@ app.get('/api/data/dashboard', async (c) => {
   }
 })
 
-// GET /api/debug/token-inspect — TEMPORANEO: ispeziona il GOOGLE_REFRESH_TOKEN esistente
-// Mostra email, scopes, e prova GA4 per diagnostica
-app.get('/api/debug/token-inspect', async (c) => {
-  const authHeader = c.req.header('Authorization') || ''
-  if (authHeader !== `Bearer ${c.env.ADMIN_SECRET_TOKEN}`) {
-    return c.json({ error: 'Unauthorized' }, 401)
-  }
-  const refreshToken  = c.env?.GOOGLE_REFRESH_TOKEN
-  const clientId      = c.env?.GOOGLE_OAUTH_CLIENT_ID
-  const clientSecret  = c.env?.GOOGLE_OAUTH_CLIENT_SECRET
-  const ga4PropertyId = c.env?.GA4_PROPERTY_ID || '549216845'
-
-  if (!refreshToken || !clientId || !clientSecret) {
-    return c.json({ error: 'Credenziali mancanti', refreshToken: !!refreshToken, clientId: !!clientId, clientSecret: !!clientSecret })
-  }
-
-  // Step 1: ottieni access token
-  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refreshToken, client_id: clientId, client_secret: clientSecret }).toString()
-  })
-  const tokenData = await tokenRes.json() as any
-  if (!tokenRes.ok) return c.json({ error: 'Token refresh fallito', detail: tokenData })
-
-  const accessToken = tokenData.access_token
-
-  // Step 2: tokeninfo — email e scopes
-  const infoRes  = await fetch(`https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${accessToken}`)
-  const infoData = await infoRes.json() as any
-
-  // Step 3: prova chiamata GA4
-  const ga4Res  = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${ga4PropertyId}:runReport`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }], metrics: [{ name: 'sessions' }] })
-  })
-  const ga4Data = await ga4Res.json() as any
-
-  return c.json({
-    tokenInfo: infoData,          // email + scope del token attuale
-    ga4Status: ga4Res.status,     // 200 = funziona, 403 = scope mancanti
-    ga4Response: ga4Data,
-    scopesAttuali: infoData.scope || 'N/A'
-  })
-})
 
 // GET /api/oauth/callback — Riceve il codice OAuth2 da Google e scambia con refresh token
 // Gestisce sia il flusso Sheets (state assente) che Analytics (state=analytics)
