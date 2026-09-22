@@ -29447,9 +29447,17 @@ app.get('/api/data/dashboard', async (c) => {
 // Step 1: visita questo URL per autorizzare, otterrai un ?code=...
 // Step 2: chiama /api/admin/analytics-token?code=... per scambiare il code con il refresh token
 app.get('/api/admin/analytics-reauth', async (c) => {
+  // Accetta token sia via header Authorization: Bearer <token>
+  // sia via query param ?token=<token> (comodo per aprire nel browser)
   const authHeader = c.req.header('Authorization') || ''
-  if (authHeader !== `Bearer ${c.env.ADMIN_SECRET_TOKEN}`) {
-    return c.json({ success: false, error: 'Unauthorized' }, 401)
+  const queryToken = c.req.query('token') || ''
+  const validToken = c.env.ADMIN_SECRET_TOKEN
+  const isAuthed = authHeader === `Bearer ${validToken}` || queryToken === validToken
+  if (!isAuthed) {
+    return c.html(`<html><body style="font-family:sans-serif;padding:32px">
+      <h2>🔒 Accesso negato</h2>
+      <p>Aggiungi <code>?token=IL_TUO_ADMIN_TOKEN</code> all'URL.</p>
+    </body></html>`, 401)
   }
   const clientId = c.env?.GOOGLE_OAUTH_CLIENT_ID
   if (!clientId) return c.json({ error: 'GOOGLE_OAUTH_CLIENT_ID non configurato' }, 500)
