@@ -29443,6 +29443,55 @@ app.get('/api/data/dashboard', async (c) => {
   }
 })
 
+// GET /api/oauth/callback — Riceve il codice OAuth2 da Google e scambia con refresh token
+// Gestisce sia il flusso Sheets (state assente) che Analytics (state=analytics)
+app.get('/api/oauth/callback', async (c) => {
+  const code  = c.req.query('code')
+  const error = c.req.query('error')
+  const state = c.req.query('state') || ''   // 'analytics' → flusso GA4+GSC, altrimenti Sheets
+
+  if (error) return c.html(`<html><body style="font-family:sans-serif;padding:32px"><h2>❌ Errore OAuth: ${error}</h2></body></html>`, 400)
+  if (!code)  return c.html(`<html><body style="font-family:sans-serif;padding:32px"><h2>❌ Nessun codice ricevuto</h2></body></html>`, 400)
+
+  const clientId     = c.env?.GOOGLE_OAUTH_CLIENT_ID
+  const clientSecret = c.env?.GOOGLE_OAUTH_CLIENT_SECRET
+  const redirectUri  = 'https://telemedcare-v12.pages.dev/api/oauth/callback'
+
+  if (!clientId || !clientSecret) return c.json({ error: 'OAuth credentials non configurate' }, 500)
+
+  try {
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ code, client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: 'authorization_code' }).toString()
+    })
+    const json = await tokenRes.json() as any
+
+    if (!tokenRes.ok) {
+      return c.html(`<html><body style="font-family:sans-serif;padding:32px"><h2>❌ Errore scambio token</h2><pre>${JSON.stringify(json, null, 2)}</pre></body></html>`, 500)
+    }
+
+    const refreshToken = json.refresh_token || ''
+    const isAnalytics  = state === 'analytics'
+    const secretName   = isAnalytics ? 'GOOGLE_REFRESH_TOKEN_ANALYTICS' : 'GOOGLE_REFRESH_TOKEN'
+    const scopeLabel   = isAnalytics ? 'GA4 + Search Console' : 'Google Sheets'
+    const borderColor  = isAnalytics ? '#34a853' : '#4285F4'
+
+    return c.html(`<html><body style="font-family:sans-serif;padding:32px;max-width:700px">
+      <h2>✅ Refresh Token ${scopeLabel} ottenuto!</h2>
+      <p>Copia questo valore nel secret Cloudflare <strong>${secretName}</strong>:</p>
+      <textarea style="width:100%;height:100px;font-family:monospace;font-size:.9rem;padding:8px;border:2px solid ${borderColor};border-radius:6px" onclick="this.select()">${refreshToken || '(nessun refresh token — riprova il flusso OAuth)'}</textarea>
+      <br><br>
+      <p><strong>Istruzioni:</strong> Cloudflare Dashboard → Pages → telemedcare-v12 → Settings → Environment variables → Add variable →<br>
+      Name: <code>${secretName}</code> → Type: Secret → Value: (incolla sopra) → Save</p>
+      <p>Scope ricevuti: <code>${json.scope || 'N/A'}</code></p>
+      ${!refreshToken ? '<p style="color:red">⚠️ Nessun refresh_token restituito. Assicurati che prompt=consent fosse nell\'URL OAuth e riprova.</p>' : ''}
+    </body></html>`)
+  } catch (e: any) {
+    return c.html(`<html><body style="font-family:sans-serif;padding:32px"><h2>❌ Eccezione: ${e.message}</h2></body></html>`, 500)
+  }
+})
+
 // GET /api/admin/analytics-reauth — Genera URL OAuth per refresh token GA4 + Search Console
 // Step 1: visita questo URL per autorizzare, otterrai un ?code=...
 // Step 2: chiama /api/admin/analytics-token?code=... per scambiare il code con il refresh token
@@ -29462,7 +29511,8 @@ app.get('/api/admin/analytics-reauth', async (c) => {
   const clientId = c.env?.GOOGLE_OAUTH_CLIENT_ID
   if (!clientId) return c.json({ error: 'GOOGLE_OAUTH_CLIENT_ID non configurato' }, 500)
 
-  const redirectUri = 'https://telemedcare-v12.pages.dev/api/admin/analytics-token'
+  // Usa lo stesso redirect_uri già autorizzato nel Google Cloud Console (usato per Sheets)
+  const redirectUri = 'https://telemedcare-v12.pages.dev/api/oauth/callback'
   const scopes = [
     'https://www.googleapis.com/auth/analytics.readonly',
     'https://www.googleapis.com/auth/webmasters.readonly',
@@ -29475,11 +29525,12 @@ app.get('/api/admin/analytics-reauth', async (c) => {
   url.searchParams.set('scope', scopes)
   url.searchParams.set('access_type', 'offline')
   url.searchParams.set('prompt', 'consent')  // forza nuovo refresh token
+  url.searchParams.set('state', 'analytics')  // indica al callback che è flusso analytics
 
   return c.html(`<html><body style="font-family:sans-serif;padding:32px;max-width:700px">
     <h2>🔐 Autorizzazione Google Analytics</h2>
     <p>Clicca il link sotto per autorizzare l'accesso a <strong>GA4</strong> e <strong>Search Console</strong>.</p>
-    <p>Dopo aver autorizzato, verrai reindirizzato a <code>/api/admin/analytics-token</code> che mostrerà il <strong>refresh token</strong> da copiare nel secret Cloudflare <code>GOOGLE_REFRESH_TOKEN_ANALYTICS</code>.</p>
+    <p>Dopo aver autorizzato, verrai reindirizzato e verrà mostrato il <strong>refresh token</strong> da copiare nel secret Cloudflare <code>GOOGLE_REFRESH_TOKEN_ANALYTICS</code>.</p>
     <br>
     <a href="${url.toString()}" style="background:#4285F4;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold">
       👉 Autorizza Google Analytics + Search Console
@@ -29490,40 +29541,13 @@ app.get('/api/admin/analytics-reauth', async (c) => {
   </body></html>`)
 })
 
-// GET /api/admin/analytics-token?code=... — Scambia authorization code con refresh token
+// GET /api/admin/analytics-token — DEPRECATO, ora gestito da /api/oauth/callback?state=analytics
+// Tenuto per retrocompatibilità ma reindirizza al reauth
 app.get('/api/admin/analytics-token', async (c) => {
-  const code = c.req.query('code')
-  const error = c.req.query('error')
-
-  if (error) return c.html(`<html><body style="font-family:sans-serif;padding:32px"><h2>❌ Errore OAuth</h2><pre>${error}</pre></body></html>`, 400)
-  if (!code) return c.html(`<html><body style="font-family:sans-serif;padding:32px"><h2>❌ Nessun code ricevuto</h2></body></html>`, 400)
-
-  const clientId = c.env?.GOOGLE_OAUTH_CLIENT_ID
-  const clientSecret = c.env?.GOOGLE_OAUTH_CLIENT_SECRET
-  const redirectUri = 'https://telemedcare-v12.pages.dev/api/admin/analytics-token'
-
-  if (!clientId || !clientSecret) return c.json({ error: 'OAuth credentials mancanti' }, 500)
-
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ code, client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: 'authorization_code' }).toString()
-  })
-  const data = await res.json() as any
-
-  if (!res.ok || !data.refresh_token) {
-    return c.html(`<html><body style="font-family:sans-serif;padding:32px"><h2>❌ Errore scambio token</h2><pre>${JSON.stringify(data, null, 2)}</pre></body></html>`, 500)
-  }
-
-  return c.html(`<html><body style="font-family:sans-serif;padding:32px;max-width:700px">
-    <h2>✅ Refresh Token ottenuto!</h2>
-    <p>Copia questo valore nel secret Cloudflare <strong>GOOGLE_REFRESH_TOKEN_ANALYTICS</strong>:</p>
-    <textarea style="width:100%;height:80px;font-family:monospace;font-size:.85rem;padding:8px;border:2px solid #4285F4;border-radius:6px" onclick="this.select()">${data.refresh_token}</textarea>
-    <br><br>
-    <p><strong>Istruzioni:</strong> Cloudflare Dashboard → Pages → telemedcare-v12 → Settings → Environment variables → Add variable → 
-    Name: <code>GOOGLE_REFRESH_TOKEN_ANALYTICS</code> → Type: Secret → Value: (incolla sopra) → Save</p>
-    <p>Dopo aver salvato il secret, rideploya il progetto e i report SEO funzioneranno.</p>
-  </body></html>`)
+  return c.html(`<html><body style="font-family:sans-serif;padding:32px">
+    <h2>⚠️ Endpoint spostato</h2>
+    <p>Usa <a href="/api/admin/analytics-reauth?token=IL_TUO_ADMIN_TOKEN">/api/admin/analytics-reauth</a> per generare il token.</p>
+  </body></html>`, 200)
 })
 
 // Helper functions per live-seo-report
