@@ -88,6 +88,15 @@ type Bindings = {
   ENCRYPTION_KEY?: string
   ADMIN_SECRET_TOKEN?: string // 🔒 Token admin per endpoint /api/admin/*
   API_KEY?: string // 🔒 Token per endpoint API sensibili (CRUD lead, contratti)
+  // Google OAuth (Sheets — scope spreadsheets)
+  GOOGLE_REFRESH_TOKEN?: string
+  GOOGLE_OAUTH_CLIENT_ID?: string
+  GOOGLE_OAUTH_CLIENT_SECRET?: string
+  // Google OAuth Analytics (GA4 + Search Console — scope analytics.readonly + webmasters.readonly)
+  // Se non presente, usa GOOGLE_REFRESH_TOKEN come fallback
+  GOOGLE_REFRESH_TOKEN_ANALYTICS?: string
+  GA4_PROPERTY_ID?: string
+  SC_SITE_URL?: string
   // User passwords (Cloudflare Secrets - NON inserire mai in codice sorgente)
   USER_ROBERTO_PASSWORD?: string
   USER_STEFANIA_PASSWORD?: string
@@ -29434,6 +29443,81 @@ app.get('/api/data/dashboard', async (c) => {
   }
 })
 
+// GET /api/admin/analytics-reauth — Genera URL OAuth per refresh token GA4 + Search Console
+// Step 1: visita questo URL per autorizzare, otterrai un ?code=...
+// Step 2: chiama /api/admin/analytics-token?code=... per scambiare il code con il refresh token
+app.get('/api/admin/analytics-reauth', async (c) => {
+  const authHeader = c.req.header('Authorization') || ''
+  if (authHeader !== `Bearer ${c.env.ADMIN_SECRET_TOKEN}`) {
+    return c.json({ success: false, error: 'Unauthorized' }, 401)
+  }
+  const clientId = c.env?.GOOGLE_OAUTH_CLIENT_ID
+  if (!clientId) return c.json({ error: 'GOOGLE_OAUTH_CLIENT_ID non configurato' }, 500)
+
+  const redirectUri = 'https://telemedcare-v12.pages.dev/api/admin/analytics-token'
+  const scopes = [
+    'https://www.googleapis.com/auth/analytics.readonly',
+    'https://www.googleapis.com/auth/webmasters.readonly',
+  ].join(' ')
+
+  const url = new URL('https://accounts.google.com/o/oauth2/v2/auth')
+  url.searchParams.set('client_id', clientId)
+  url.searchParams.set('redirect_uri', redirectUri)
+  url.searchParams.set('response_type', 'code')
+  url.searchParams.set('scope', scopes)
+  url.searchParams.set('access_type', 'offline')
+  url.searchParams.set('prompt', 'consent')  // forza nuovo refresh token
+
+  return c.html(`<html><body style="font-family:sans-serif;padding:32px;max-width:700px">
+    <h2>🔐 Autorizzazione Google Analytics</h2>
+    <p>Clicca il link sotto per autorizzare l'accesso a <strong>GA4</strong> e <strong>Search Console</strong>.</p>
+    <p>Dopo aver autorizzato, verrai reindirizzato a <code>/api/admin/analytics-token</code> che mostrerà il <strong>refresh token</strong> da copiare nel secret Cloudflare <code>GOOGLE_REFRESH_TOKEN_ANALYTICS</code>.</p>
+    <br>
+    <a href="${url.toString()}" style="background:#4285F4;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold">
+      👉 Autorizza Google Analytics + Search Console
+    </a>
+    <br><br>
+    <details><summary>URL completo (copia se il link non funziona)</summary>
+    <pre style="word-break:break-all;font-size:.8rem">${url.toString()}</pre></details>
+  </body></html>`)
+})
+
+// GET /api/admin/analytics-token?code=... — Scambia authorization code con refresh token
+app.get('/api/admin/analytics-token', async (c) => {
+  const code = c.req.query('code')
+  const error = c.req.query('error')
+
+  if (error) return c.html(`<html><body style="font-family:sans-serif;padding:32px"><h2>❌ Errore OAuth</h2><pre>${error}</pre></body></html>`, 400)
+  if (!code) return c.html(`<html><body style="font-family:sans-serif;padding:32px"><h2>❌ Nessun code ricevuto</h2></body></html>`, 400)
+
+  const clientId = c.env?.GOOGLE_OAUTH_CLIENT_ID
+  const clientSecret = c.env?.GOOGLE_OAUTH_CLIENT_SECRET
+  const redirectUri = 'https://telemedcare-v12.pages.dev/api/admin/analytics-token'
+
+  if (!clientId || !clientSecret) return c.json({ error: 'OAuth credentials mancanti' }, 500)
+
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ code, client_id: clientId, client_secret: clientSecret, redirect_uri: redirectUri, grant_type: 'authorization_code' }).toString()
+  })
+  const data = await res.json() as any
+
+  if (!res.ok || !data.refresh_token) {
+    return c.html(`<html><body style="font-family:sans-serif;padding:32px"><h2>❌ Errore scambio token</h2><pre>${JSON.stringify(data, null, 2)}</pre></body></html>`, 500)
+  }
+
+  return c.html(`<html><body style="font-family:sans-serif;padding:32px;max-width:700px">
+    <h2>✅ Refresh Token ottenuto!</h2>
+    <p>Copia questo valore nel secret Cloudflare <strong>GOOGLE_REFRESH_TOKEN_ANALYTICS</strong>:</p>
+    <textarea style="width:100%;height:80px;font-family:monospace;font-size:.85rem;padding:8px;border:2px solid #4285F4;border-radius:6px" onclick="this.select()">${data.refresh_token}</textarea>
+    <br><br>
+    <p><strong>Istruzioni:</strong> Cloudflare Dashboard → Pages → telemedcare-v12 → Settings → Environment variables → Add variable → 
+    Name: <code>GOOGLE_REFRESH_TOKEN_ANALYTICS</code> → Type: Secret → Value: (incolla sopra) → Save</p>
+    <p>Dopo aver salvato il secret, rideploya il progetto e i report SEO funzioneranno.</p>
+  </body></html>`)
+})
+
 // Helper functions per live-seo-report
 function formatDuration(secs: number): string {
   if (!secs || secs < 0) return '0:00'
@@ -29451,14 +29535,21 @@ function escHtml(s: string): string {
 // ============================================================
 app.get('/api/analytics/live-seo-report', async (c) => {
   try {
-    const refreshToken = c.env?.GOOGLE_REFRESH_TOKEN
     const clientId = c.env?.GOOGLE_OAUTH_CLIENT_ID
     const clientSecret = c.env?.GOOGLE_OAUTH_CLIENT_SECRET
     const ga4PropertyId = c.env?.GA4_PROPERTY_ID || '549216845'
     const scSiteUrl = c.env?.SC_SITE_URL || 'https://www.ecura.it/'
+    // Usa token dedicato GA4 se disponibile, altrimenti fallback al token Sheets
+    const refreshToken = c.env?.GOOGLE_REFRESH_TOKEN_ANALYTICS || c.env?.GOOGLE_REFRESH_TOKEN
 
     if (!refreshToken || !clientId || !clientSecret) {
-      return c.html(`<html><body><h1>Credenziali Google mancanti</h1><p>Configura GOOGLE_REFRESH_TOKEN, GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET nei secrets Cloudflare.</p></body></html>`, 500)
+      return c.html(`<html><body style="font-family:sans-serif;padding:32px"><h1>⚠️ Credenziali Google mancanti</h1>
+        <p>Per il report SEO servono le credenziali OAuth Google con scope <code>analytics.readonly</code> e <code>webmasters.readonly</code>.</p>
+        <p>Configura nei secrets Cloudflare:</p>
+        <ul><li><strong>GOOGLE_REFRESH_TOKEN_ANALYTICS</strong> — refresh token con scope GA4 + Search Console</li>
+        <li><strong>GOOGLE_OAUTH_CLIENT_ID</strong></li><li><strong>GOOGLE_OAUTH_CLIENT_SECRET</strong></li></ul>
+        <p>Usa <a href="/api/admin/analytics-reauth">/api/admin/analytics-reauth</a> per generare il token.</p>
+        </body></html>`, 500)
     }
 
     const today = new Date()
