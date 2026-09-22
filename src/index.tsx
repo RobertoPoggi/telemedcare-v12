@@ -17975,9 +17975,9 @@ app.post('/api/contracts/sign', async (c) => {
       // Non bloccare il processo se l'email fallisce
     }
     
-    // ✅ FIX: Auto-CREA proforma dopo firma digitale (senza inviarla — invio = passo manuale con anteprima)
+    // ✅ AUTO-INVIO: Crea E invia proforma automaticamente dopo firma digitale
     try {
-      console.log(`📊 [FIRMA→PROFORMA] Avvio creazione proforma per contratto ${contractId} (invio manuale)`)
+      console.log(`📊 [FIRMA→PROFORMA] Avvio creazione + invio automatico proforma per contratto ${contractId}`)
       
       // Recupera lead completo
       const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?')
@@ -18183,12 +18183,12 @@ app.post('/api/contracts/sign', async (c) => {
               lead.iva_agevolata ? 1 : 0,
               isRinnovoContract ? 1 : 0,
               lead.riserva_dominio ? 1 : 0,
-              'PENDING',  // ✅ FIX: non ancora inviata — invio = passo manuale dopo anteprima
+              'SENT',  // ✅ AUTO-INVIO: proforma inviata automaticamente dopo firma contratto
               new Date().toISOString(),
               proformaIdGenerated
             ).run()
             
-            console.log(`✅ [FIRMA→PROFORMA] UPDATE proforma completato (ID ${proformaIdGenerated}, status=PENDING)`)
+            console.log(`✅ [FIRMA→PROFORMA] UPDATE proforma completato (ID ${proformaIdGenerated}, status=SENT)`)
             
           } else {
             // ✅ INSERT: Proforma non esiste, creane una nuova
@@ -18225,13 +18225,13 @@ app.post('/api/contracts/sign', async (c) => {
               lead.iva_agevolata ? 1 : 0,
               isRinnovoContract ? 1 : 0,
               lead.riserva_dominio ? 1 : 0,
-              'PENDING',  // ✅ FIX: non ancora inviata — invio = passo manuale dopo anteprima
-              false,
+              'SENT',  // ✅ AUTO-INVIO: proforma inviata automaticamente dopo firma contratto
+              true,
               new Date().toISOString(),
               new Date().toISOString()
             ).run()
             
-            console.log(`✅ [FIRMA→PROFORMA] INSERT proforma eseguito (status=PENDING)`)
+            console.log(`✅ [FIRMA→PROFORMA] INSERT proforma eseguito (status=SENT)`)
             console.log(`🔍 [FIRMA→PROFORMA] insertResult.meta:`, JSON.stringify(insertResult.meta || {}))
             
             // Recupera l'ID auto-generato
@@ -18260,14 +18260,51 @@ app.post('/api/contracts/sign', async (c) => {
           // Continua comunque con l'invio email
         }
         
-        // ✅ FIX: Salva proforma_rinnovo_id sul contratto — NON inviare email (invio = manuale con anteprima)
+        // ✅ AUTO-INVIO: Collega proforma al contratto, aggiorna lead status, invia email automaticamente
         if (proformaIdGenerated) {
-          // Collega la proforma al contratto rinnovo
+          // 1. Collega la proforma al contratto
           await c.env.DB.prepare(
             `UPDATE contracts SET proforma_rinnovo_id = ?, updated_at = ? WHERE id = ?`
           ).bind(proformaIdGenerated, new Date().toISOString(), contractId).run()
           console.log(`✅ [FIRMA→PROFORMA] Proforma ${numeroProforma} (ID ${proformaIdGenerated}) creata e collegata al contratto ${contractId}`)
-          console.log(`📤 [FIRMA→PROFORMA] Email NON inviata — l'operatore invierà dopo anteprima (pulsante 📤 step=5)`)
+
+          // 2. Aggiorna status lead → CONTRACT_SIGNED
+          try {
+            await c.env.DB.prepare(
+              `UPDATE leads SET status = 'CONTRACT_SIGNED', updated_at = ? WHERE id = ?`
+            ).bind(new Date().toISOString(), lead.id).run()
+            console.log(`✅ [FIRMA→PROFORMA] Lead ${lead.id} aggiornato → CONTRACT_SIGNED`)
+          } catch (leadUpdateError) {
+            console.error(`⚠️ [FIRMA→PROFORMA] Errore aggiornamento status lead:`, leadUpdateError)
+          }
+
+          // 3. Invia email proforma automaticamente
+          try {
+            console.log(`📤 [FIRMA→PROFORMA] Invio automatico email proforma a ${emailCliente}...`)
+            // Recupera la proforma appena inserita/aggiornata per avere tutti i campi corretti
+            const proformaRecord = await c.env.DB.prepare(
+              `SELECT * FROM proforma WHERE id = ? LIMIT 1`
+            ).bind(proformaIdGenerated).first() as any
+
+            if (proformaRecord) {
+              // inviaEmailProforma si aspetta il campo .email (non cliente_email)
+              const proformaPerEmail = { ...proformaRecord, email: proformaRecord.cliente_email }
+              const emailResult = await inviaEmailProforma(proformaPerEmail, c.env)
+              if (emailResult?.success !== false) {
+                console.log(`✅ [FIRMA→PROFORMA] Email proforma inviata con successo a ${emailCliente}`)
+                // Segna email come inviata nel DB
+                await c.env.DB.prepare(
+                  `UPDATE proforma SET email_sent = 1, updated_at = ? WHERE id = ?`
+                ).bind(new Date().toISOString(), proformaIdGenerated).run()
+              } else {
+                console.error(`❌ [FIRMA→PROFORMA] Invio email proforma fallito:`, emailResult)
+              }
+            } else {
+              console.error(`❌ [FIRMA→PROFORMA] Record proforma non trovato per email (ID ${proformaIdGenerated})`)
+            }
+          } catch (emailProformaError) {
+            console.error(`⚠️ [FIRMA→PROFORMA] Errore invio email proforma (non critico):`, emailProformaError)
+          }
         } else {
           console.error(`❌ [FIRMA→PROFORMA] Proforma non salvata (ID mancante)`)
         }
