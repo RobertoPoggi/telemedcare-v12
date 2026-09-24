@@ -415,8 +415,8 @@
             console.log(`📥 [FORM CONFIG] Caricamento dati lead: ${leadId}`);
             
             try {
-                // Carica dati lead dal backend
-                const response = await fetch(`/api/leads/${leadId}`);
+                // Carica dati lead dal backend (endpoint pubblico con token — no sessione richiesta)
+                const response = await fetch(`/api/public/lead-info?leadId=${leadId}&token=${token}`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);

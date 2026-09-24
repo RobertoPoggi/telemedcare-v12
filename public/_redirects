@@ -11,6 +11,9 @@
 # CONFIGURAZIONE - Solo base path
 /configurazione /configurazione.html 200
 
+# FORM CONFIGURAZIONE (inviato via email ai clienti, con token)
+/form-configurazione /form-configurazione.html 200
+
 # PAGAMENTO - RIMOSSO REDIRECT (servire direttamente .html)
 # /pagamento /pagamento.html 200  ← COMMENTATO per evitare loop
 
