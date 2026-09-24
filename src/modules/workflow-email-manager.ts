@@ -1832,6 +1832,23 @@ export async function inviaEmailFormConfigurazione(
 
     const emailService = new EmailService(env)
     
+    // ✅ FIX 2026-09-24: Genera token per link sicuro (evita ERR_TOO_MANY_REDIRECTS)
+    // Il link /configurazione?leadId=... causava redirect loop perché il worker
+    // intercettava la rotta senza sessione. Ora usiamo /form-configurazione?token=&leadId=
+    // con validazione token D1 senza richiedere login.
+    const configToken = generateToken()
+    const baseUrl = getBaseUrl(env)
+    const configUrl = `${baseUrl}/form-configurazione?token=${configToken}&leadId=${clientData.id}`
+
+    // Salva token nel DB (scade in 30 giorni)
+    await db.prepare(`
+      INSERT INTO lead_completion_tokens (token, lead_id, expires_at, created_at)
+      VALUES (?, ?, datetime('now', '+30 days'), datetime('now'))
+    `).bind(configToken, clientData.id).run()
+
+    console.log(`🔗 [WORKFLOW] Token configurazione generato: ${configToken}`)
+    console.log(`🔗 [WORKFLOW] URL form configurazione: ${configUrl}`)
+    
     // Carica template email_configurazione
     const template = await loadEmailTemplate('email_configurazione', db, env)
     
@@ -1845,7 +1862,7 @@ export async function inviaEmailFormConfigurazione(
       COGNOME_CLIENTE: clientData.cognomeRichiedente,
       DISPOSITIVO: dispositivo,
       SERVIZIO: formatServiceName(clientData.servizio || 'PRO', clientData.pacchetto || clientData.piano),
-      LINK_CONFIGURAZIONE: `${getBaseUrl(env)}/configurazione.html?leadId=${clientData.id}`
+      LINK_CONFIGURAZIONE: configUrl  // ✅ Link con token — no sessione richiesta
     }
 
     // Renderizza template

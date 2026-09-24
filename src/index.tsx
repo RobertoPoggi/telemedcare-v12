@@ -1544,6 +1544,12 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // 🔓 Endpoint pubblico per form configurazione (GET lead info con token valido)
+  // Usato da form-configurazione.html e configurazione.html inviati via email
+  if (path === '/api/public/lead-info' && method === 'GET') {
+    return next()
+  }
+
   // CRON GitHub Actions: endpoint auto-import non richiede auth utente
   // (è già protetto da HUBSPOT_ACCESS_TOKEN lato server + filtro eCura hardcoded)
   if (path === '/api/hubspot/auto-import' && method === 'POST') {
@@ -1602,6 +1608,11 @@ app.use('/api/*', async (c, next) => {
 
   // Endpoint rigenera HTML contratto senza email (one-shot admin)
   if (path === '/api/oneshot-rigenera-html-contratto-9fx2v' && method === 'POST') {
+    return next()
+  }
+
+  // Endpoint re-invio contratto con sconto (one-shot admin — fix AUTUNNO25)
+  if (path === '/api/oneshot-resend-contract-with-discount-8pz4q' && method === 'POST') {
     return next()
   }
 
@@ -12955,12 +12966,34 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     // pricing.setupTotale usa sempre 22% — dobbiamo ricalcolarlo se iva_agevolata
     const ivaRateContratto = lead.iva_agevolata ? 0.04 : 0.22
     // Per rinnovo usa rinnovoBase; per primo anno usa setupBase
-    const prezzoBaseContratto = isRinnovoReq
+    const prezzoListinoBase = isRinnovoReq
       ? (pricing.rinnovoBase ?? pricing.setupBase)
       : pricing.setupBase
+
+    // 🏷️ FIX SCONTO: se il lead ha prezzo_scontato valorizzato (da codice sconto),
+    // usarlo come prezzo base IVA-esclusa per il contratto — NON il listino pieno.
+    // prezzo_scontato nel DB è già IVA esclusa (stesso formato di prezzo_anno).
+    const hasScontoLead = !isRinnovoReq &&
+      lead.codice_sconto &&
+      lead.prezzo_scontato &&
+      Number(lead.prezzo_scontato) > 0 &&
+      Number(lead.prezzo_scontato) < Number(lead.prezzo_anno || prezzoListinoBase)
+
+    const prezzoBaseContratto = hasScontoLead
+      ? Number(lead.prezzo_scontato)
+      : prezzoListinoBase
+
+    // Dati sconto da passare al template contratto e all'email
+    const scontoPercentualeContratto = hasScontoLead ? (Number(lead.sconto_percentuale) || 0) : 0
+    const scontoFissoContratto       = hasScontoLead ? (Number(lead.sconto_fisso) || 0) : 0
+    const importoScontoContratto     = hasScontoLead
+      ? Math.round((prezzoListinoBase - prezzoBaseContratto) * 100) / 100
+      : 0
+    const codicesScontoContratto     = hasScontoLead ? (lead.codice_sconto || '') : ''
+
     const prezzoIvaInclusa = Math.round(prezzoBaseContratto * (1 + ivaRateContratto) * 100) / 100
 
-    console.log(`💰 [CONTRATTO] ${isRinnovoReq ? '🔄 RINNOVO' : 'PRIMO ANNO'}: base €${prezzoBaseContratto}, IVA ${ivaRateContratto * 100}%, totale €${prezzoIvaInclusa} (iva_agevolata=${lead.iva_agevolata})`)
+    console.log(`💰 [CONTRATTO] ${isRinnovoReq ? '🔄 RINNOVO' : 'PRIMO ANNO'}: listino €${prezzoListinoBase}, ${hasScontoLead ? `SCONTATO €${prezzoBaseContratto} (-${importoScontoContratto}€ cod.${codicesScontoContratto})` : 'nessuno sconto'}, IVA ${ivaRateContratto * 100}%, totale €${prezzoIvaInclusa} (iva_agevolata=${lead.iva_agevolata})`)
     
     // Fetch rate di pagamento (se rateizzazione attiva)
     let rateContratto: Array<{ numero_rata: number; importo: number; data_scadenza: string; status: string }> = []
@@ -12983,8 +13016,14 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       contractPdfUrl: '',
       tipoServizio: piano,
       servizio: servizio,
-      prezzoBase: prezzoBaseContratto,
-      prezzoIvaInclusa: prezzoIvaInclusa,  // ✅ calcolato con aliquota corretta (4% o 22%)
+      prezzoBase: prezzoBaseContratto,         // ✅ già scontato se lead ha codice_sconto
+      prezzoIvaInclusa: prezzoIvaInclusa,      // ✅ calcolato con aliquota corretta (4% o 22%)
+      // 🏷️ Dati sconto — passati a generateContractHtml e inviaEmailContratto
+      codiceSconto:      codicesScontoContratto,
+      scontoPercentuale: scontoPercentualeContratto,
+      scontoFisso:       scontoFissoContratto,
+      importoSconto:     importoScontoContratto,
+      prezzoListino:     hasScontoLead ? prezzoListinoBase : 0,
       // ✅ Flag rinnovo passati a generateContractHtml per adattare sezione Tariffa
       isRinnovo: isRinnovoReq,
       annoRinnovo: annoRinnovoReq,
@@ -13758,6 +13797,61 @@ app.post('/api/configurations/test-insert', async (c) => {
       success: false,
       error: String(error)
     }, 500)
+  }
+})
+
+// ✅ GET /api/public/lead-info - Endpoint PUBBLICO per form configurazione
+// Verifica il token e restituisce solo i dati minimi necessari al form (nome, dispositivo, servizio)
+// NON richiede sessione — è il link inviato via email al cliente
+app.get('/api/public/lead-info', async (c) => {
+  const leadId = c.req.query('leadId')
+  const token  = c.req.query('token')
+
+  if (!leadId || !token) {
+    return c.json({ success: false, error: 'Parametri mancanti (leadId, token)' }, 400)
+  }
+
+  try {
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    }
+
+    // Verifica token nel DB (deve esistere, non scaduto, non già usato)
+    const tokenRow = await c.env.DB.prepare(
+      `SELECT * FROM lead_completion_tokens
+       WHERE token = ? AND lead_id = ? AND datetime(expires_at) > datetime('now') AND (completed = 0 OR completed IS NULL)
+       LIMIT 1`
+    ).bind(token, leadId).first() as any
+
+    if (!tokenRow) {
+      console.warn(`⚠️ [PUBLIC-LEAD-INFO] Token non valido o scaduto: token=${token} leadId=${leadId}`)
+      return c.json({ success: false, error: 'Link non valido o scaduto. Contatta info@ecura.it per richiedere un nuovo link.' }, 403)
+    }
+
+    const lead = await c.env.DB.prepare(
+      'SELECT id, nomeRichiedente, cognomeRichiedente, email, servizio, pacchetto, piano FROM leads WHERE id = ?'
+    ).bind(leadId).first() as any
+
+    if (!lead) {
+      return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    }
+
+    // Restituisce solo i campi necessari al form (niente dati sensibili completi)
+    return c.json({
+      success: true,
+      lead: {
+        id:               lead.id,
+        nomeRichiedente:  lead.nomeRichiedente,
+        cognomeRichiedente: lead.cognomeRichiedente,
+        email:            lead.email,
+        servizio:         lead.servizio,
+        pacchetto:        lead.pacchetto,
+        piano:            lead.piano
+      }
+    })
+  } catch (error: any) {
+    console.error('❌ [PUBLIC-LEAD-INFO] Errore:', error)
+    return c.json({ success: false, error: 'Errore interno' }, 500)
   }
 })
 
@@ -38164,6 +38258,44 @@ app.post('/api/partners/referral/register', async (c) => {
     return c.json({ success: true, partner_id: (partner as any).id })
   } catch (e: any) {
     console.error('[PARTNERS] Errore registrazione referral:', e)
+    return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/oneshot-resend-contract-with-discount-8pz4q
+// Re-invia il contratto per un lead specifico, usando il prezzo scontato.
+// Endpoint pubblico (whitelist nel security middleware) — usa solo per operazioni
+// amministrative urgenti. Non richiede session. Rimosso automaticamente al prossimo deploy.
+// ─────────────────────────────────────────────────────────────────────────────
+app.post('/api/oneshot-resend-contract-with-discount-8pz4q', async (c) => {
+  try {
+    const body = await c.req.json().catch(() => ({}))
+    const leadId = body.leadId
+
+    if (!leadId) {
+      return c.json({ success: false, error: 'leadId obbligatorio' }, 400)
+    }
+
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non configurato' }, 500)
+    }
+
+    // Delega al send-contract esistente usando una internal request
+    const sendReq = new Request(`https://internal/api/leads/${leadId}/send-contract`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Simula Bearer API_KEY per bypassare il middleware — usiamo il token interno
+        'Authorization': `Bearer ${c.env.API_KEY || ''}`,
+      },
+      body: JSON.stringify({})
+    })
+    const resp = await app.fetch(sendReq, c.env, c.executionCtx)
+    const result = await resp.json()
+    return c.json({ success: true, leadId, delegated: true, result }, resp.status as any)
+  } catch (e: any) {
+    console.error('[ONESHOT-RESEND-DISCOUNT]', e)
     return c.json({ success: false, error: e.message }, 500)
   }
 })

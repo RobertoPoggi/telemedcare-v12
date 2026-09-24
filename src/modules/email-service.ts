@@ -340,7 +340,7 @@ export class EmailService {
 <hr style="border:none;border-top:1px solid #dcfce7;margin:12px 0;">
 <p style="margin:4px 0;font-size:14px;color:#666;">
   <strong>Imponibile:</strong> {{IMPORTO_BASE}}<br>
-  <strong>IVA 22%:</strong> {{IMPORTO_IVA}}
+  <strong>{{IVA_LABEL}}:</strong> {{IMPORTO_IVA}}
 </p>
 <p style="margin:6px 0;font-size:18px;font-weight:700;color:#10b981;">
   <strong>TOTALE DA PAGARE: {{IMPORTO_CON_IVA}}</strong>
@@ -531,24 +531,9 @@ export class EmailService {
       let brevoError: any = null
       let sendgridError: any = null
 
-      // ✅ PRIMARIO: Resend
+      // ✅ PRIMARIO: Brevo (da disposizione 2026-09-23 — sostituisce Resend come provider principale)
       try {
-        console.log('📧 [PRIMARY] Tentativo Resend...')
-        const result = await this.sendWithResend(emailData, env)
-        if (result.success) {
-          console.log('✅ Email inviata con successo via Resend:', result.messageId)
-          return result
-        }
-        console.warn('⚠️ Resend non ha avuto successo:', result)
-        resendError = result.error || 'Unknown error'
-      } catch (error) {
-        resendError = error
-        console.error('❌ Resend exception:', error)
-      }
-
-      // 🔄 FALLBACK 1: Brevo
-      try {
-        console.log('📧 [FALLBACK-1] Tentativo Brevo...')
+        console.log('📧 [PRIMARY] Tentativo Brevo...')
         const result = await this.sendWithBrevo(emailData, env)
         if (result.success) {
           console.log('✅ Email inviata con successo via Brevo:', result.messageId)
@@ -559,6 +544,21 @@ export class EmailService {
       } catch (error) {
         brevoError = error
         console.error('❌ Brevo exception:', error)
+      }
+
+      // 🔄 FALLBACK 1: Resend
+      try {
+        console.log('📧 [FALLBACK-1] Tentativo Resend...')
+        const result = await this.sendWithResend(emailData, env)
+        if (result.success) {
+          console.log('✅ Email inviata con successo via Resend:', result.messageId)
+          return result
+        }
+        console.warn('⚠️ Resend non ha avuto successo:', result)
+        resendError = result.error || 'Unknown error'
+      } catch (error) {
+        resendError = error
+        console.error('❌ Resend exception:', error)
       }
 
       // 🔄 FALLBACK 2: SendGrid
@@ -580,11 +580,11 @@ export class EmailService {
       console.error('🚨🚨🚨 TUTTI I PROVIDER FALLITI - MODALITÀ DEMO ATTIVA 🚨🚨🚨')
       console.error('📧 Email destinatario:', emailData.to)
       console.error('📧 Oggetto:', emailData.subject)
-      console.error('❌ Resend error:', resendError)
       console.error('❌ Brevo error:', brevoError)
+      console.error('❌ Resend error:', resendError)
       console.error('❌ SendGrid error:', sendgridError)
-      console.error('🔑 RESEND_API_KEY presente?', !!env?.RESEND_API_KEY)
       console.error('🔑 BREVO_API_KEY presente?', !!env?.BREVO_API_KEY)
+      console.error('🔑 RESEND_API_KEY presente?', !!env?.RESEND_API_KEY)
       console.error('🔑 SENDGRID_API_KEY presente?', !!env?.SENDGRID_API_KEY)
       
       return {
