@@ -65,11 +65,13 @@ jobs:
       - name: Installa Wrangler
         run: npm install -g wrangler@3
 
-      - name: "Configura CRON_SECRET su Cloudflare Pages"
+      - name: "Configura secrets su Cloudflare Pages"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CRON_SECRET_VALUE: ${{ secrets.CRON_SECRET }}
+          BREVO_API_KEY_VALUE: ${{ secrets.BREVO_API_KEY }}
+          RESEND_API_KEY_VALUE: ${{ secrets.RESEND_API_KEY }}
         run: |
           if [ -n "$CRON_SECRET_VALUE" ]; then
             echo "$CRON_SECRET_VALUE" | wrangler pages secret put CRON_SECRET \
@@ -78,6 +80,22 @@ jobs:
               || echo "⚠️ CRON_SECRET: errore (non critico, deploy continua)"
           else
             echo "⚠️ CRON_SECRET non configurato in GitHub Secrets — skip"
+          fi
+          if [ -n "$BREVO_API_KEY_VALUE" ]; then
+            echo "$BREVO_API_KEY_VALUE" | wrangler pages secret put BREVO_API_KEY \
+              --project-name telemedcare-v12 \
+              && echo "✅ BREVO_API_KEY configurata su Cloudflare Pages" \
+              || echo "⚠️ BREVO_API_KEY: errore (non critico, deploy continua)"
+          else
+            echo "⚠️ BREVO_API_KEY non configurata in GitHub Secrets — skip (Brevo disabilitato)"
+          fi
+          if [ -n "$RESEND_API_KEY_VALUE" ]; then
+            echo "$RESEND_API_KEY_VALUE" | wrangler pages secret put RESEND_API_KEY \
+              --project-name telemedcare-v12 \
+              && echo "✅ RESEND_API_KEY configurata su Cloudflare Pages" \
+              || echo "⚠️ RESEND_API_KEY: errore (non critico, deploy continua)"
+          else
+            echo "⚠️ RESEND_API_KEY non configurata in GitHub Secrets — skip"
           fi
 
       - name: "Deploy su Cloudflare Pages"
