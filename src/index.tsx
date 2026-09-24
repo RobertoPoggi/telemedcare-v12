@@ -13800,6 +13800,12 @@ app.post('/api/configurations/test-insert', async (c) => {
   }
 })
 
+// ✅ GET /form-configurazione - Serve il form HTML inviato via email ai clienti
+// DEVE essere nel worker (non in _redirects) perché Cloudflare Pages Pretty URLs
+// fa loop 308 tra /form-configurazione e /form-configurazione.html.
+// Il worker serve il file staticamente senza alcun redirect.
+app.get('/form-configurazione', serveStatic({ path: './form-configurazione.html' }))
+
 // ✅ GET /api/public/lead-info - Endpoint PUBBLICO per form configurazione
 // Verifica il token e restituisce solo i dati minimi necessari al form (nome, dispositivo, servizio)
 // NON richiede sessione — è il link inviato via email al cliente
