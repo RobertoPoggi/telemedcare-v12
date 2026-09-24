@@ -13803,8 +13803,20 @@ app.post('/api/configurations/test-insert', async (c) => {
 // ✅ GET /form-configurazione - Serve il form HTML inviato via email ai clienti
 // DEVE essere nel worker (non in _redirects) perché Cloudflare Pages Pretty URLs
 // fa loop 308 tra /form-configurazione e /form-configurazione.html.
-// Il worker serve il file staticamente senza alcun redirect.
-app.get('/form-configurazione', serveStatic({ path: './form-configurazione.html' }))
+// Usa ASSETS binding (identico a /firma-contratto, /proforma-view, ecc.)
+app.get('/form-configurazione', async (c) => {
+  if (c.env?.ASSETS) {
+    const assetUrl = new URL(c.req.url)
+    assetUrl.pathname = '/form-configurazione.html'
+    try {
+      const response = await c.env.ASSETS.fetch(assetUrl.toString())
+      if (response.ok) return response
+    } catch (error) {
+      console.error('❌ Errore caricamento form-configurazione.html da ASSETS:', error)
+    }
+  }
+  return c.html('<!DOCTYPE html><html><body><p>Errore caricamento form. Contatta info@ecura.it</p></body></html>', 500)
+})
 
 // ✅ GET /api/public/lead-info - Endpoint PUBBLICO per form configurazione
 // Verifica il token e restituisce solo i dati minimi necessari al form (nome, dispositivo, servizio)
