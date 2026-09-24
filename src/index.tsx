@@ -26184,7 +26184,7 @@ app.patch('/api/leads/:id/rate/:rataId', requireAuth, async (c) => {
 
     // Verifica se tutte le rate sono pagate → aggiorna saldo
     const rate = await db.prepare(
-      `SELECT status FROM rate_pagamento WHERE lead_id = ?`
+      `SELECT numero_rata, status FROM rate_pagamento WHERE lead_id = ? ORDER BY numero_rata ASC`
     ).bind(leadId).all()
     const tuttiPagati = (rate.results || []).length > 0
       && (rate.results || []).every((r: any) => r.status === 'PAGATA')
@@ -26195,10 +26195,56 @@ app.patch('/api/leads/:id/rate/:rataId', requireAuth, async (c) => {
       `).bind(now, leadId).run()
     }
 
+    // ✅ TRIGGER EMAIL CONFIGURAZIONE: se Rata 1 appena segnata PAGATA → invia form configurazione
+    // Il lead con rateizzazione attiva riceve il dispositivo dopo il pagamento della prima rata.
+    // Il PATCH rate è il modo normale con cui l'operatore segna il bonifico ricevuto.
+    let emailConfigResult: any = null
+    if (body.status === 'PAGATA') {
+      // Verifica se la rata appena pagata è la numero 1 (prima rata del piano)
+      const rataAggiornata = (rate.results || []).find((r: any) => r.numero_rata === 1)
+      const primaRataAppenaPageta = rataAggiornata?.status === 'PAGATA'
+
+      // Conta quante rate erano già pagate prima (se 1 è la prima ad essere pagata)
+      const ratePagate = (rate.results || []).filter((r: any) => r.status === 'PAGATA').length
+      const eraGiaPagata = ratePagate > 1 // se più di 1 pagata, la 1 era già pagata prima
+
+      if (primaRataAppenaPageta && !eraGiaPagata) {
+        // Controlla che il lead non abbia già ricevuto il form (evita duplicati)
+        const lead = await db.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+        const statoAttuale = lead?.status || ''
+        const configGiaInviata = statoAttuale === 'CONFIGURATION_SENT' || statoAttuale === 'CONFIGURED'
+
+        if (!configGiaInviata && lead) {
+          console.log(`📧 [PATCH-RATA-1] Prima rata PAGATA per ${leadId} — invio email configurazione`)
+          try {
+            const { inviaEmailFormConfigurazione } = await import('./modules/workflow-email-manager')
+            const codiceCliente = lead.codiceCliente || `CLI-${Date.now()}`
+            emailConfigResult = await inviaEmailFormConfigurazione(
+              { ...lead, codiceCliente },
+              c.env,
+              db
+            )
+            if (emailConfigResult.success) {
+              await db.prepare('UPDATE leads SET status = ?, updated_at = ? WHERE id = ?')
+                .bind('CONFIGURATION_SENT', now, leadId).run()
+              console.log(`✅ [PATCH-RATA-1] Email configurazione inviata a ${lead.email}`)
+            } else {
+              console.warn(`⚠️ [PATCH-RATA-1] Email configurazione non inviata: ${emailConfigResult.errors?.join(', ')}`)
+            }
+          } catch (emailErr: any) {
+            console.error(`❌ [PATCH-RATA-1] Eccezione invio email configurazione:`, emailErr)
+          }
+        } else {
+          console.log(`ℹ️ [PATCH-RATA-1] Email configurazione già inviata (status: ${statoAttuale}) — skip`)
+        }
+      }
+    }
+
     return c.json({
       success: true,
       saldato: tuttiPagati,
-      message: `Rata ${rataId} aggiornata a ${body.status}${tuttiPagati ? ' — piano SALDATO ✅' : ''}`
+      email_configurazione_inviata: emailConfigResult?.success || false,
+      message: `Rata ${rataId} aggiornata a ${body.status}${tuttiPagati ? ' — piano SALDATO ✅' : ''}${emailConfigResult?.success ? ' — Email configurazione inviata ✅' : ''}`
     })
   } catch (err: any) {
     return c.json({ success: false, error: err?.message }, 500)
