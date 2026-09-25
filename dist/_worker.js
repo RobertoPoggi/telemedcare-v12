@@ -8398,11 +8398,22 @@ ${370+t.length}
             }
         }
 
-        async function generaDDT(leadId) {
-            // Prima prova senza IMEI: se DDT esiste già il backend lo prende dal DB
-            // e crea solo l'assistito mancante senza chiedere nulla
+        // ---------------------------------------------------------------
+        // _generaDdtCore(leadId, aid)
+        //   aid = null  → chiama POST /api/leads/:id/genera-ddt  (primario)
+        //   aid = 123   → chiama POST /api/leads/:id/assistiti/:aid/genera-ddt
+        // ---------------------------------------------------------------
+        async function _generaDdtCore(leadId, aid) {
+            const isPrimario = (aid === null || aid === undefined);
+            const endpoint   = isPrimario
+                ? \`/api/leads/\${leadId}/genera-ddt\`
+                : \`/api/leads/\${leadId}/assistiti/\${aid}/genera-ddt\`;
+
             try {
-                const r1 = await fetch('/api/leads/' + leadId + '/genera-ddt', {
+                // Primo tentativo senza IMEI:
+                //   - se DDT esiste già il backend lo riusa
+                //   - se non esiste restituisce needsImei:true
+                const r1 = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -8410,32 +8421,33 @@ ${370+t.length}
                 });
                 const res1 = await r1.json();
 
-                // Caso normale: DDT esistente, assistito creato senza domande
                 if (res1.success) {
-                    alert('OK - ' + res1.message +
-                        ' | DDT: ' + (res1.ddt&&res1.ddt.numero) +
-                        ' | IMEI: ' + (res1.ddt&&res1.ddt.imei) +
-                        ' | Assistito: ' + (res1.assistito&&res1.assistito.nome) +
-                        ' | Vai su /dashboard e premi Ricarica per vedere il nuovo assistito nella tabella.');
+                    if (isPrimario) {
+                        alert('OK - ' + res1.message +
+                            ' | DDT: '      + (res1.ddt&&res1.ddt.numero) +
+                            ' | IMEI: '     + (res1.ddt&&res1.ddt.imei) +
+                            ' | Assistito: '+ (res1.assistito&&res1.assistito.nome));
+                    } else {
+                        showToast(\`✅ DDT generato (\${res1.ddt&&res1.ddt.numero||''})\`, 'success');
+                    }
                     loadLeadsData();
                     return;
                 }
 
-                // DDT non esiste ancora: serve IMEI per crearlo
                 if (res1.needsImei) {
-                    const imei = prompt("Nessun DDT trovato per questo lead.\\nInserisci IMEI del dispositivo:");
+                    const imei = prompt("Nessun DDT trovato.\\nInserisci IMEI del dispositivo:");
                     if (!imei || !imei.trim()) return;
-                    const telefonoSim = prompt('Numero SIM (Invio per saltare):') || '';
-                    const numeroDdt = prompt('Numero DDT (vuoto = auto-incremento):') || '';
+                    const telefonoSim  = prompt('Numero SIM (Invio per saltare):') || '';
+                    const numeroDdt    = prompt('Numero DDT (vuoto = auto-incremento):') || '';
                     const dataConsegna = prompt('Data consegna (YYYY-MM-DD, vuoto = oggi):') || '';
-                    const note = prompt('Note (opzionale):') || '';
+                    const note         = prompt('Note (opzionale):') || '';
                     if (!confirm('Confermi creazione DDT + Dispositivo + Assistito?' +
                         "\\nIMEI: " + imei.trim() +
-                        "\\nSIM: " + (telefonoSim||'-') +
-                        "\\nN.DDT: " + (numeroDdt||'auto') +
+                        "\\nSIM: "  + (telefonoSim||'-') +
+                        "\\nN.DDT: "+ (numeroDdt||'auto') +
                         "\\nData: " + (dataConsegna||'oggi'))) return;
 
-                    const r2 = await fetch('/api/leads/' + leadId + '/genera-ddt', {
+                    const r2 = await fetch(endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
@@ -8443,11 +8455,14 @@ ${370+t.length}
                     });
                     const res2 = await r2.json();
                     if (res2.success) {
-                        alert('OK - ' + res2.message +
-                            ' | DDT: ' + (res2.ddt&&res2.ddt.numero) +
-                            ' | IMEI: ' + (res2.ddt&&res2.ddt.imei) +
-                            ' | Assistito: ' + (res2.assistito&&res2.assistito.nome) +
-                            ' | Vai su /dashboard e premi Ricarica per vedere il nuovo assistito nella tabella.');
+                        if (isPrimario) {
+                            alert('OK - ' + res2.message +
+                                ' | DDT: '      + (res2.ddt&&res2.ddt.numero) +
+                                ' | IMEI: '     + (res2.ddt&&res2.ddt.imei) +
+                                ' | Assistito: '+ (res2.assistito&&res2.assistito.nome));
+                        } else {
+                            showToast(\`✅ DDT creato (\${res2.ddt&&res2.ddt.numero||''})\`, 'success');
+                        }
                         loadLeadsData();
                     } else {
                         alert('ERRORE: ' + (res2.error || 'Errore sconosciuto'));
@@ -8455,11 +8470,111 @@ ${370+t.length}
                     return;
                 }
 
-                // Altro errore
                 alert('ERRORE: ' + (res1.error || 'Errore sconosciuto'));
-            } catch (error) {
-                alert('ERRORE di comunicazione: ' + error.message);
+            } catch (err) {
+                alert('ERRORE di comunicazione: ' + err.message);
             }
+        }
+
+        // ---------------------------------------------------------------
+        // generaDDT(leadId)  — bottone 📦 nella riga tabella leads
+        // Se il lead ha assistiti aggiuntivi mostra un pannello di selezione
+        // così l'operatore può scegliere per quale assistito generare il DDT.
+        // ---------------------------------------------------------------
+        async function generaDDT(leadId) {
+            // 1. Controlla se ci sono assistiti aggiuntivi
+            let assistitiAggiuntivi = [];
+            try {
+                const r = await fetch(\`/api/leads/\${leadId}/assistiti\`, { credentials: 'include' });
+                const d = await r.json();
+                if (d.success) assistitiAggiuntivi = d.assistiti || [];
+            } catch (_) { /* non bloccante: se il fetch fallisce procedi col primario */ }
+
+            // 2a. Lead senza assistiti aggiuntivi → comportamento originale, diretto
+            if (assistitiAggiuntivi.length === 0) {
+                await _generaDdtCore(leadId, null);
+                return;
+            }
+
+            // 2b. Lead con assistiti aggiuntivi → mostra pannello di selezione
+            // Rimuovi eventuali pannelli precedenti rimasti aperti
+            const oldPanel = document.getElementById('_ddtSelectPanel');
+            if (oldPanel) oldPanel.remove();
+
+            const panel = document.createElement('div');
+            panel.id = '_ddtSelectPanel';
+            panel.style.cssText = [
+                'position:fixed;inset:0;z-index:9999',
+                'background:rgba(0,0,0,.5)',
+                'display:flex;align-items:center;justify-content:center',
+            ].join(';');
+
+            const btnsPrimario = \`
+                <button id="_ddtSelPrim"
+                    style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;
+                           border:1.5px solid #d1d5db;border-radius:8px;background:#f9fafb;
+                           cursor:pointer;font-size:14px;text-align:left;transition:background .15s"
+                    onmouseover="this.style.background='#eff6ff'"
+                    onmouseout="this.style.background='#f9fafb'">
+                    🧑 Assistito Primario <span style="margin-left:auto;font-size:11px;color:#6b7280">(dati lead)</span>
+                </button>\`;
+
+            const btnsExtra = assistitiAggiuntivi.map(a => \`
+                <button data-aid="\${a.id}"
+                    style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;
+                           border:1.5px solid #d1d5db;border-radius:8px;background:#f9fafb;
+                           cursor:pointer;font-size:14px;text-align:left;transition:background .15s"
+                    onmouseover="this.style.background='#eff6ff'"
+                    onmouseout="this.style.background='#f9fafb'">
+                    👤 \${a.nome||''} \${a.cognome||''}
+                    \${a.codice_fiscale ? '<span style="font-family:monospace;font-size:12px;color:#6b7280"> — ' + a.codice_fiscale + '</span>' : ''}
+                    <span style="margin-left:auto;font-size:11px;color:#6366f1">aggiuntivo</span>
+                </button>\`).join('');
+
+            panel.innerHTML = \`
+                <div style="background:#fff;border-radius:16px;padding:28px 32px;
+                            width:min(420px,92vw);box-shadow:0 8px 40px rgba(0,0,0,.22)">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                        <h3 style="margin:0;font-size:17px;font-weight:700;color:#111827">
+                            📦 Per quale assistito generare il DDT?
+                        </h3>
+                        <button id="_ddtSelClose"
+                            style="background:none;border:none;cursor:pointer;font-size:20px;
+                                   color:#9ca3af;line-height:1;padding:0 4px">✕</button>
+                    </div>
+                    <p style="font-size:12px;color:#6b7280;margin:0 0 14px">
+                        Questo lead ha \${assistitiAggiuntivi.length} assistito/i aggiuntivo/i.<br>
+                        Seleziona il destinatario del DDT:
+                    </p>
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                        \${btnsPrimario}
+                        \${btnsExtra}
+                    </div>
+                    <p style="font-size:11px;color:#9ca3af;margin:14px 0 0;text-align:center">
+                        Per tutti gli assistiti aggiuntivi puoi usare anche i bottoni 📦 DDT nel modale Visualizza Lead.
+                    </p>
+                </div>\`;
+
+            document.body.appendChild(panel);
+
+            // Handler chiusura
+            document.getElementById('_ddtSelClose').onclick = () => panel.remove();
+            panel.addEventListener('click', e => { if (e.target === panel) panel.remove(); });
+
+            // Handler selezione primario
+            document.getElementById('_ddtSelPrim').onclick = async () => {
+                panel.remove();
+                await _generaDdtCore(leadId, null);
+            };
+
+            // Handler selezione assistiti aggiuntivi
+            panel.querySelectorAll('[data-aid]').forEach(btn => {
+                btn.onclick = async () => {
+                    const aid = btn.getAttribute('data-aid');
+                    panel.remove();
+                    await _generaDdtCore(leadId, aid);
+                };
+            });
         }
 
         // ============================================
