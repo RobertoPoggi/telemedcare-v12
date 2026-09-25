@@ -35543,10 +35543,18 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     const codiceContratto = contract?.codice_contratto || contract?.id || `CTR-${leadId}`
     const baseUrl = new URL(c.req.url).origin
 
-    // --- 5. Controlla se esiste già un DDT per questo lead (note LIKE 'LeadID:X%') ---
+    // --- 5. Controlla se esiste già un DDT per questo lead (PRIMARIO, non assistiti aggiuntivi) ---
+    // IMPORTANTE: cerchiamo solo DDT del primario, escludendo quelli degli assistiti aggiuntivi
+    // che hanno nota nel formato "LeadID:X|AssID:Y".
+    // Usiamo due pattern OR:
+    //   - note = 'LeadID:X'          → DDT primario senza note extra
+    //   - note LIKE 'LeadID:X | %'   → DDT primario con note extra (il separatore " | " precede le note)
+    // I DDT degli assistiti hanno "LeadID:X|AssID:Y" (| senza spazi), che non corrisponde a nessuno dei due.
     const existingDDT = await c.env.DB.prepare(
-      `SELECT id, numero_ddt, serial_number FROM ddts WHERE note LIKE ? ORDER BY created_at DESC LIMIT 1`
-    ).bind(`LeadID:${leadId}%`).first() as any
+      `SELECT id, numero_ddt, serial_number FROM ddts
+       WHERE (note = ? OR note LIKE ?)
+       ORDER BY created_at DESC LIMIT 1`
+    ).bind(`LeadID:${leadId}`, `LeadID:${leadId} | %`).first() as any
 
     let ddtId: string
     let pdfUrl: string
