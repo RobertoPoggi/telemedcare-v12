@@ -372,8 +372,8 @@ if (!proformaId) {
       const iva = parseFloat(proforma.importo_iva) || 0;
       const prezzoTotaleIvaInclusa = parseFloat(proforma.importo_totale) || (prezzoBaseIvaEsclusa + iva);
       
-      // ✅ FIX: aggiorna label IVA dinamicamente (4% o 22%)
-      const ivaLabel = proforma.iva_label || (proforma.iva_agevolata ? 'IVA 4% (Legge 104)' : 'IVA 22%');
+      // ✅ FIX: aggiorna label IVA dinamicamente (0%, 4% o 22%)
+      const ivaLabel = proforma.iva_label || (proforma.iva_esente ? 'IVA 0% (Esente art. 10 n. 18)' : proforma.iva_agevolata ? 'IVA 4% (Legge 104)' : 'IVA 22%');
       document.getElementById('label-iva').textContent = ivaLabel + ':';
       
       document.getElementById('prezzo-base').textContent = formatCurrency(prezzoBaseIvaEsclusa);

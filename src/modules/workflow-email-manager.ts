@@ -172,11 +172,12 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
   const funzioniDispositivoHtml = getDescrizioneFunzioniDispositivo(servizioTipo, piano)
   const importoAnniSuccessivi = pricing ? pricing.rinnovoBase : 0 // IVA esclusa
   
-  // ✅ FIX: IVA dinamica — legge iva_agevolata dal lead (4% Legge 104 o 22% standard)
+  // ✅ FIX: IVA dinamica — priorità esente 0% > agevolata 4% > standard 22%
   const ivaAgevolataContratto = !!(leadData as any).iva_agevolata
-  const ivaRateContratto = ivaAgevolataContratto ? 0.04 : 0.22
-  const ivaPercContratto = ivaAgevolataContratto ? '4%' : '22%'
-  const ivaNoteContratto = ivaAgevolataContratto ? ' (IVA agevolata 4% — Legge 104, disabilità 100%)' : ''
+  const ivaEsenteContratto    = !!(leadData as any).iva_esente
+  const ivaRateContratto = ivaEsenteContratto ? 0 : ivaAgevolataContratto ? 0.04 : 0.22
+  const ivaPercContratto = ivaEsenteContratto ? '0%' : ivaAgevolataContratto ? '4%' : '22%'
+  const ivaNoteContratto = ivaEsenteContratto ? ' (Operazione esente IVA — art. 10 n. 18 d.P.R. 633/1972)' : ivaAgevolataContratto ? ' (IVA agevolata 4% — Legge 104, disabilità 100%)' : ''
 
   // ✅ FIX IVA AGEVOLATA: ricalcola sempre prezzoIvaInclusa con l'aliquota corretta del lead
   // (pricing.setupTotale usa sempre 22%; qui sovrascriviamo con aliquota reale del cliente)
@@ -1136,7 +1137,7 @@ export async function inviaEmailContratto(
         // Salva contratto nel DB (usa schema esistente con TUTTI i campi NOT NULL)
         // ✅ REGOLA UNIVERSALE: prezzo_mensile = prezzoBase / 12 (IVA ESCLUSA)
         // ✅ FIX: usa prezzoIvaInclusa già calcolato con aliquota corretta (mai fallback 1.22 hardcoded)
-        const ivaRateEmail = (leadData as any).iva_agevolata ? 0.04 : 0.22
+        const ivaRateEmail = (leadData as any).iva_esente ? 0 : (leadData as any).iva_agevolata ? 0.04 : 0.22
         const prezzoIvaInclusa = contractData.prezzoIvaInclusa || Math.round(contractData.prezzoBase * (1 + ivaRateEmail) * 100) / 100
         const prezzoMensile = Math.round((contractData.prezzoBase / 12) * 100) / 100
         const durataMesi = 12
@@ -1274,8 +1275,8 @@ export async function inviaEmailContratto(
     const linkBrochure = `${baseUrl}/documents/${brochureFilename}` // ✅ FIX: /documents/ invece /brochures/
     
     // ✅ FIX: calcola IVA e totale con aliquota corretta per l'email di riepilogo
-    const ivaRateEmailTemplate = (leadData as any).iva_agevolata ? 0.04 : 0.22
-    const ivaLabelEmailTemplate = (leadData as any).iva_agevolata ? '4%' : '22%'
+    const ivaRateEmailTemplate = (leadData as any).iva_esente ? 0 : (leadData as any).iva_agevolata ? 0.04 : 0.22
+    const ivaLabelEmailTemplate = (leadData as any).iva_esente ? '0%' : (leadData as any).iva_agevolata ? '4%' : '22%'
     const prezzoTotaleEmail = contractData.prezzoIvaInclusa || Math.round(contractData.prezzoBase * (1 + ivaRateEmailTemplate) * 100) / 100
     const ivaImportoEmail = Math.round((prezzoTotaleEmail - contractData.prezzoBase) * 100) / 100
 
@@ -1441,10 +1442,11 @@ export async function inviaEmailProforma(
     const annoRinnovo = proformaData.annoRinnovo || 2
     const codiceOriginale = proformaData.codiceOriginale || ''
 
-    // IVA: leggi iva_agevolata dal lead (4% L.104 o 22% standard)
-    const ivaAgevolata = !!(leadData as any).iva_agevolata
-    const ivaRate = ivaAgevolata ? 0.04 : 0.22
-    const ivaLabel = ivaAgevolata ? '4%' : '22%'
+    // IVA: priorità esente 0% > agevolata 4% > standard 22%
+    const ivaEsente    = !!(leadData as any).iva_esente
+    const ivaAgevolata = !ivaEsente && !!(leadData as any).iva_agevolata
+    const ivaRate = ivaEsente ? 0 : ivaAgevolata ? 0.04 : 0.22
+    const ivaLabel = ivaEsente ? '0%' : ivaAgevolata ? '4%' : '22%'
 
     // 🏷️ Sconto applicato (passato da send-proforma endpoint)
     const codiceSconto = proformaData.codiceSconto || ''
@@ -1519,7 +1521,7 @@ export async function inviaEmailProforma(
       IMPORTO_CON_IVA: labelTotale,
       IMPORTO_TOTALE: labelTotale,
       IVA_LABEL: `IVA ${ivaLabel}`,
-      IVA_NOTE: ivaAgevolata ? ' — IVA agevolata 4% (Legge 104, disabilità 100%)' : '',
+      IVA_NOTE: ivaEsente ? ' — Operazione esente IVA (art. 10 n. 18 d.P.R. 633/1972)' : ivaAgevolata ? ' — IVA agevolata 4% (Legge 104, disabilità 100%)' : '',
       SCADENZA_PAGAMENTO: new Date(proformaData.dataScadenza).toLocaleDateString('it-IT'),
       IBAN: 'IT97L0503401727000000003519',
       CAUSALE: causale,
@@ -1727,10 +1729,11 @@ export async function inviaEmailBenvenuto(
     const pianoType: 'BASE' | 'AVANZATO' = (clientData.piano || clientData.pacchetto || 'BASE').toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE'
     const pricing = getPricing(servizioType, pianoType)
     
-    // ✅ IVA dinamica: 4% se iva_agevolata, 22% standard
-    const ivaAgevolataBenvenuto = !!(clientData as any).iva_agevolata
-    const ivaRateBenvenuto = ivaAgevolataBenvenuto ? 0.04 : 0.22
-    const ivaPercBenvenuto = ivaAgevolataBenvenuto ? '4%' : '22%'
+    // ✅ IVA dinamica: priorità esente 0% > agevolata 4% > standard 22%
+    const ivaEsenteBenvenuto    = !!(clientData as any).iva_esente
+    const ivaAgevolataBenvenuto = !ivaEsenteBenvenuto && !!(clientData as any).iva_agevolata
+    const ivaRateBenvenuto = ivaEsenteBenvenuto ? 0 : ivaAgevolataBenvenuto ? 0.04 : 0.22
+    const ivaPercBenvenuto = ivaEsenteBenvenuto ? '0%' : ivaAgevolataBenvenuto ? '4%' : '22%'
     const prezzoIvaInclusaBenvenuto = pricing
       ? Math.round(pricing.setupBase * (1 + ivaRateBenvenuto) * 100) / 100
       : 585.60
@@ -2272,6 +2275,7 @@ export async function sendRataReminderEmail(
     cognomeRichiedente: string
     email: string
     iva_agevolata?: number | boolean
+    iva_esente?: number | boolean
     [key: string]: any
   },
   rataData: {
@@ -2300,9 +2304,10 @@ export async function sendRataReminderEmail(
 
   try {
     const emailService = new EmailService(env)
-    const ivaAgevolata = !!(leadData.iva_agevolata)
-    const ivaRate      = ivaAgevolata ? 0.04 : 0.22
-    const ivaLabel     = ivaAgevolata ? '4%' : '22%'
+    const ivaEsente    = !!(leadData.iva_esente)
+    const ivaAgevolata = !ivaEsente && !!(leadData.iva_agevolata)
+    const ivaRate      = ivaEsente ? 0 : ivaAgevolata ? 0.04 : 0.22
+    const ivaLabel     = ivaEsente ? '0%' : ivaAgevolata ? '4%' : '22%'
 
     const imponibile = Number(rataData.importo) || 0
     const importoIva = Math.round(imponibile * ivaRate * 100) / 100
@@ -2333,7 +2338,7 @@ export async function sendRataReminderEmail(
       IMPORTO_IVA:         fmt(importoIva),
       IMPORTO_RATA_IVA:    fmt(totaleRata),
       IVA_LABEL:           `IVA ${ivaLabel}`,
-      IVA_NOTE:            ivaAgevolata ? ' — IVA agevolata 4% (Legge 104)' : '',
+      IVA_NOTE:            ivaEsente ? ' — Operazione esente IVA (art. 10 n. 18 d.P.R. 633/1972)' : ivaAgevolata ? ' — IVA agevolata 4% (Legge 104)' : '',
       SCADENZA_RATA:       scadenzaFmt,
       LINK_PAGAMENTO_RATA: linkPagamento,
       IBAN:                'IT97L0503401727000000003519',

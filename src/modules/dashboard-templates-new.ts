@@ -3293,13 +3293,16 @@ export const dashboard = `<!DOCTYPE html>
                 // Piano badge colors
                 const pianoColor = piano === 'AVANZATO' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
                 
-                // IVA agevolata flag (from leads JOIN)
-                const ivaAgevolataAssistito = assistito.iva_agevolata == 1 || assistito.iva_agevolata === true;
-                const rowBg = ivaAgevolataAssistito ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50';
-                const ivaBadgeCell = ivaAgevolataAssistito
+                // IVA flag (from leads JOIN) — priorità: esente 0% > agevolata 4% > standard 22%
+                const ivaEsenteAssistito   = assistito.iva_esente    == 1 || assistito.iva_esente    === true;
+                const ivaAgevolataAssistito = !ivaEsenteAssistito && (assistito.iva_agevolata == 1 || assistito.iva_agevolata === true);
+                const rowBg = ivaEsenteAssistito ? 'bg-green-50 hover:bg-green-100' : ivaAgevolataAssistito ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50';
+                const ivaBadgeCell = ivaEsenteAssistito
+                    ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full" title="Esente IVA — art. 10 n. 18 d.P.R. 633/1972">🏥 0%</span>'
+                    : ivaAgevolataAssistito
                     ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full" title="IVA agevolata 4% — Legge 104, disabilità 100%">⚕️ 4%</span>'
                     : '<span class="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full">22%</span>';
-                const prezzoCellClass = ivaAgevolataAssistito ? 'text-blue-600' : 'text-green-600';
+                const prezzoCellClass = ivaEsenteAssistito ? 'text-green-700' : ivaAgevolataAssistito ? 'text-blue-600' : 'text-green-600';
                 
                 return '<tr class="border-b border-gray-100 ' + rowBg + '">' +
                     '<td class="py-3 px-2">' +
@@ -8623,9 +8626,9 @@ export const data_dashboard = `<!DOCTYPE html>
 
         // ── Funzioni Rinnovo ────────────────────────────────────────────────────
 
-        async function inviaRinnovo(leadId, codiceContrattoOriginale, clienteNome, ivaAgevolata, annoRinnovo) {
+        async function inviaRinnovo(leadId, codiceContrattoOriginale, clienteNome, ivaAgevolata, annoRinnovo, ivaEsente) {
             if (!leadId) { alert('❌ Lead ID mancante — impossibile inviare il rinnovo.'); return; }
-            const ivaInfo = ivaAgevolata ? 'IVA 4% (Legge 104)' : 'IVA 22%';
+            const ivaInfo = ivaEsente ? 'IVA 0% (Esente art. 10 n. 18 d.P.R. 633/1972)' : ivaAgevolata ? 'IVA 4% (Legge 104)' : 'IVA 22%';
             if (!confirm(\`🔄 Generare contratto RINNOVO per:\\n\\n📋 \${codiceContrattoOriginale}\\n👤 \${clienteNome}\\n📅 Anno \${annoRinnovo}\\n\\nIl contratto verrà creato ma l"email NON sarà ancora inviata.\\nPotrai verificare il link e poi inviare l"email manualmente.\\nAliquota IVA applicata: \${ivaInfo}.\`)) return;
             try {
                 const resp = await fetch(\`/api/leads/\${leadId}/send-contract\`, {
@@ -8854,6 +8857,7 @@ export const data_dashboard = `<!DOCTYPE html>
             var codice  = btn.getAttribute('data-codice')  || '';
             var cliente = btn.getAttribute('data-cliente') || '';
             var iva     = btn.getAttribute('data-iva') === 'true';
+            var ivaEs   = btn.getAttribute('data-iva-esente') === 'true';
             var anno    = parseInt(btn.getAttribute('data-anno') || '2', 10);
             var id      = btn.getAttribute('data-id')      || '';
             var codiceR = btn.getAttribute('data-codicer') || '';
@@ -8861,7 +8865,7 @@ export const data_dashboard = `<!DOCTYPE html>
             var idSafe    = btn.getAttribute('data-idsafe')    || '';
             var rinnovoId = btn.getAttribute('data-rinnovo-id') || '';
 
-            if      (action === 'rinnovo-crea')               inviaRinnovo(leadId, codice, cliente, iva, anno);
+            if      (action === 'rinnovo-crea')               inviaRinnovo(leadId, codice, cliente, iva, anno, ivaEs);
             else if (action === 'rinnovo-invia-email')        inviaEmailRinnovo(id, codiceR, email);
             else if (action === 'rinnovo-segna-firmato')      segnaRinnovoFirmato(id, codiceR);
             else if (action === 'rinnovo-crea-proforma')      creaProformaRinnovo(id, codiceR);
@@ -8909,9 +8913,11 @@ export const data_dashboard = `<!DOCTYPE html>
                 const isSigned = contract.status === 'SIGNED';
                 // rinnovoFiglioFirmato: usato nella logica di step per la riga originale (steps 4+)
                 const rinnovoFiglioFirmato = contract.rinnovo_status === 'SIGNED';
-                const ivaAg = contract.iva_agevolata == 1 || contract.iva_agevolata === true;
-                const tooltipIva = ivaAg ? 'IVA 4% (Legge 104)' : 'IVA 22%';
+                const ivaEsente = contract.iva_esente == 1 || contract.iva_esente === true;
+                const ivaAg = !ivaEsente && (contract.iva_agevolata == 1 || contract.iva_agevolata === true);
+                const tooltipIva = ivaEsente ? 'IVA 0% (Esente art. 10 n. 18)' : ivaAg ? 'IVA 4% (Legge 104)' : 'IVA 22%';
                 const ivaAgSafe = ivaAg ? 'true' : 'false';
+                const ivaEsenteSafe = ivaEsente ? 'true' : 'false';
 
                 // Badge rinnovo — NO backtick, solo concatenazione
                 var _annoR = contract.anno_rinnovo || 2;
@@ -9011,7 +9017,8 @@ export const data_dashboard = `<!DOCTYPE html>
                     var dLeadId  = 'data-lead-id="'  + (contract.leadId || '') + '"';
                     var dCodice  = 'data-codice="'   + (contract.codice_contratto || String(contract.id)).replace(/"/g, '&quot;') + '"';
                     var dCliente = 'data-cliente="'  + clienteNome.trim().replace(/"/g, '&quot;') + '"';
-                    var dIva     = 'data-iva="'      + ivaAgSafe + '"';
+                    var dIva     = 'data-iva="'       + ivaAgSafe + '"';
+                    var dIvaEs   = 'data-iva-esente="' + ivaEsenteSafe + '"';
                     var dAnno    = 'data-anno="'     + annoRinnovoSafe + '"';
                     var rinnovoActId = rinnovoFiglioId || contract.id;
                     var dId      = 'data-id="'       + rinnovoActId + '"';
@@ -9030,7 +9037,7 @@ export const data_dashboard = `<!DOCTYPE html>
                     // btn1: Crea rinnovo — visibile SOLO sulla riga originale (non su righe rinnovo)
                     // Se isRinnovo=true significa che questa riga è già un rinnovo: non si crea un rinnovo di un rinnovo
                     var btn1  = !isRinnovo
-                        ? rinnovoMkBtn('\uD83D\uDD04', 'Crea contratto rinnovo', 'rinnovo-crea', d1, '#2563eb', dLeadId + ' ' + dCodice + ' ' + dCliente + ' ' + dIva + ' ' + dAnno)
+                        ? rinnovoMkBtn('\uD83D\uDD04', 'Crea contratto rinnovo', 'rinnovo-crea', d1, '#2563eb', dLeadId + ' ' + dCodice + ' ' + dCliente + ' ' + dIva + ' ' + dIvaEs + ' ' + dAnno)
                         : '';
                     var btn2  = rinnovoMkBtn('\uD83D\uDCE7', 'Invia email rinnovo',       'rinnovo-invia-email',    d2, '#f97316', dId + ' ' + dCodiceR + ' ' + dEmail);
                     var btn3  = rinnovoMkLink('\u270D\uFE0F', 'Apri link firma rinnovo',  firmaUrlRinnovo,          d3, '#4f46e5');
