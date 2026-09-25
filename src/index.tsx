@@ -769,6 +769,15 @@ app.use('*', async (c, next) => {
         ).run()
       } catch (_) {}
 
+      // Migrazione idempotente: aggiunge lead_assistiti_id a configurations
+      // Collega una configurazione a uno specifico assistito aggiuntivo (lead_assistiti.id)
+      try {
+        await c.env.DB.prepare(
+          `ALTER TABLE configurations ADD COLUMN lead_assistiti_id INTEGER DEFAULT NULL`
+        ).run()
+        console.log('✅ Colonna lead_assistiti_id aggiunta a configurations')
+      } catch (_) { /* già esiste — ok */ }
+
       // Crea tabella lead_interactions per tracciare i contatti
       try {
         await c.env.DB.prepare(`
@@ -13993,9 +14002,11 @@ app.get('/form-configurazione', async (c) => {
 // ✅ GET /api/public/lead-info - Endpoint PUBBLICO per form configurazione
 // Verifica il token e restituisce solo i dati minimi necessari al form (nome, dispositivo, servizio)
 // NON richiede sessione — è il link inviato via email al cliente
+// Se assistitoId è presente, restituisce anche i dati dell'assistito aggiuntivo per pre-compilare il form
 app.get('/api/public/lead-info', async (c) => {
-  const leadId = c.req.query('leadId')
-  const token  = c.req.query('token')
+  const leadId      = c.req.query('leadId')
+  const token       = c.req.query('token')
+  const assistitoId = c.req.query('assistitoId') // opzionale — assistito aggiuntivo
 
   if (!leadId || !token) {
     return c.json({ success: false, error: 'Parametri mancanti (leadId, token)' }, 400)
@@ -14026,6 +14037,16 @@ app.get('/api/public/lead-info', async (c) => {
       return c.json({ success: false, error: 'Lead non trovato' }, 404)
     }
 
+    // Se assistitoId presente, carica dati assistito aggiuntivo per pre-compilare il form
+    let assistito: any = null
+    if (assistitoId) {
+      assistito = await c.env.DB.prepare(
+        `SELECT id, nome, cognome, codice_fiscale, data_nascita, luogo_nascita,
+                indirizzo, cap, citta, provincia
+         FROM lead_assistiti WHERE id = ? AND lead_id = ? LIMIT 1`
+      ).bind(assistitoId, leadId).first() as any
+    }
+
     // Restituisce solo i campi necessari al form (niente dati sensibili completi)
     return c.json({
       success: true,
@@ -14037,7 +14058,20 @@ app.get('/api/public/lead-info', async (c) => {
         servizio:         lead.servizio,
         pacchetto:        lead.pacchetto,
         piano:            lead.piano
-      }
+      },
+      // dati dell'assistito aggiuntivo (null se non specificato o non trovato)
+      assistito: assistito ? {
+        id:             assistito.id,
+        nome:           assistito.nome,
+        cognome:        assistito.cognome,
+        codice_fiscale: assistito.codice_fiscale,
+        data_nascita:   assistito.data_nascita,
+        luogo_nascita:  assistito.luogo_nascita,
+        indirizzo:      assistito.indirizzo,
+        cap:            assistito.cap,
+        citta:          assistito.citta,
+        provincia:      assistito.provincia
+      } : null
     })
   } catch (error: any) {
     console.error('❌ [PUBLIC-LEAD-INFO] Errore:', error)
@@ -14065,8 +14099,9 @@ app.post('/api/configurations/submit', async (c) => {
       }, 400)
     }
     
-    const { leadId: extractedLeadId, token, ...configData } = data
+    const { leadId: extractedLeadId, token, assistitoId: extractedAssistitoId, ...configData } = data
     leadId = extractedLeadId // ✅ Assegna alla variabile esterna
+    const leadAssistitiId = extractedAssistitoId ? parseInt(extractedAssistitoId) : null
     
     console.log(`📋 [CONFIG SUBMIT] Step 1: Parse OK`)
     console.log(`📋 [CONFIG SUBMIT] LeadId: ${leadId}`)
@@ -14118,6 +14153,7 @@ app.post('/api/configurations/submit', async (c) => {
     const insertQuery = `
       INSERT INTO configurations (
         leadId,
+        lead_assistiti_id,
         device_id,
         contract_id,
         nome_assistito,
@@ -14175,7 +14211,7 @@ app.post('/api/configurations/submit', async (c) => {
         form_inviato,
         email_benvenuto_inviata,
         email_conferma_inviata
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
     
     // Prepara array farmaci come JSON string
@@ -14210,6 +14246,7 @@ app.post('/api/configurations/submit', async (c) => {
     // 🔍 DEBUG: Log della query completa prima dell'esecuzione
     const bindValues = [
       leadId,
+      leadAssistitiId,  // lead_assistiti_id — null per assistito primario
       null, // device_id
       null, // contract_id
       configData.nome || '',
@@ -15532,7 +15569,40 @@ app.post('/api/leads/:id/assistiti/:aid/send-contract', async (c) => {
   }
 })
 
-// POST /api/leads/:id/assistiti/:aid/genera-ddt
+// POST /api/leads/:id/assistiti/:aid/send-configuration
+// Invia il form di configurazione per un assistito specifico da lead_assistiti.
+// Genera un token dedicato e invia un link con ?leadId=X&assistitoId=Y&token=Z
+// Il form pre-compila nome/cognome/anagrafica dall'assistito aggiuntivo.
+app.post('/api/leads/:id/assistiti/:aid/send-configuration', requireAuth, async (c) => {
+  const leadId = c.req.param('id')
+  const aid    = c.req.param('aid')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
+
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+
+    const ass = await c.env.DB.prepare(
+      `SELECT * FROM lead_assistiti WHERE id = ? AND lead_id = ?`
+    ).bind(aid, leadId).first() as any
+    if (!ass) return c.json({ success: false, error: 'Assistito non trovato' }, 404)
+
+    const { inviaEmailFormConfigurazioneAssistito } = await import('./modules/workflow-email-manager')
+    const result = await inviaEmailFormConfigurazioneAssistito(lead, ass, c.env, c.env.DB)
+
+    if (result.success) {
+      console.log(`✅ [SEND-CONFIG-ASSISTITO] Email configurazione inviata per assistito ${aid} del lead ${leadId}`)
+      return c.json({ success: true, message: `Email configurazione inviata a ${lead.email}`, configUrl: result.configUrl })
+    } else {
+      throw new Error(result.errors?.join(', ') || 'Errore invio email')
+    }
+  } catch (error: any) {
+    console.error('❌ send-configuration per assistito:', error)
+    return c.json({ success: false, error: error.message || 'Errore invio form configurazione' }, 500)
+  }
+})
+
+
 // Genera DDT per un assistito specifico da lead_assistiti.
 app.post('/api/leads/:id/assistiti/:aid/genera-ddt', requireAuth, async (c) => {
   const leadId = c.req.param('id')

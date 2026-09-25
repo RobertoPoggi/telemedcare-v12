@@ -429,23 +429,25 @@
         async function loadLeadData() {
             // Leggi parametri URL
             const urlParams = new URLSearchParams(window.location.search);
-            const leadId = urlParams.get('leadId');
-            const token = urlParams.get('token');
+            const leadId     = urlParams.get('leadId');
+            const token      = urlParams.get('token');
+            const assistitoId = urlParams.get('assistitoId'); // presente solo per assistiti aggiuntivi
             
             if (!leadId) {
                 console.warn('⚠️ [FORM CONFIG] leadId mancante nell\'URL — form in modalità manuale');
                 return;
             }
-            // token è opzionale: il caricamento dati funziona anche senza
             if (!token) {
                 console.info('ℹ️ [FORM CONFIG] token non presente nell\'URL — dati caricati senza validazione token');
             }
             
-            console.log(`📥 [FORM CONFIG] Caricamento dati lead: ${leadId}`);
+            console.log(`📥 [FORM CONFIG] Caricamento dati lead: ${leadId}` + (assistitoId ? ` assistitoId: ${assistitoId}` : ''));
             
             try {
-                // Carica dati lead dal backend (endpoint pubblico con token — no sessione richiesta)
-                const response = await fetch(`/api/public/lead-info?leadId=${leadId}&token=${token}`);
+                // Carica dati lead (+ dati assistito aggiuntivo se assistitoId presente)
+                let url = `/api/public/lead-info?leadId=${leadId}&token=${token}`;
+                if (assistitoId) url += `&assistitoId=${assistitoId}`;
+                const response = await fetch(url);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -458,65 +460,82 @@
                 }
                 
                 const lead = data.lead;
-                console.log(`✅ [FORM CONFIG] Dati lead caricati:`, lead);
-                
-                // ✅ PRECOMPILA CAMPI CON DATI REALI
-                // Dati anagrafici
-                if (lead.nomeAssistito || lead.nomeRichiedente) {
-                    document.getElementById('nome').value = lead.nomeAssistito || lead.nomeRichiedente || '';
-                }
-                if (lead.cognomeAssistito || lead.cognomeRichiedente) {
-                    document.getElementById('cognome').value = lead.cognomeAssistito || lead.cognomeRichiedente || '';
-                }
-                if (lead.dataNascitaAssistito) {
-                    document.getElementById('data_nascita').value = lead.dataNascitaAssistito;
-                    // Ricalcola età
-                    document.getElementById('data_nascita').dispatchEvent(new Event('change'));
-                }
-                if (lead.telefono || lead.telefonoRichiedente) {
-                    document.getElementById('telefono').value = lead.telefono || lead.telefonoRichiedente || '';
-                }
-                if (lead.email || lead.emailRichiedente) {
-                    document.getElementById('email').value = lead.email || lead.emailRichiedente || '';
-                }
-                
-                // Indirizzo completo
-                let indirizzo = '';
-                if (lead.indirizzoAssistito) {
-                    indirizzo = lead.indirizzoAssistito;
-                    if (lead.cittaAssistito) indirizzo += ', ' + lead.cittaAssistito;
-                    if (lead.capAssistito) indirizzo += ' ' + lead.capAssistito;
-                    if (lead.provinciaAssistito) indirizzo += ' (' + lead.provinciaAssistito + ')';
-                } else if (lead.indirizzoIntestatario) {
-                    indirizzo = lead.indirizzoIntestatario;
-                    if (lead.cittaIntestatario) indirizzo += ', ' + lead.cittaIntestatario;
-                    if (lead.capIntestatario) indirizzo += ' ' + lead.capIntestatario;
-                    if (lead.provinciaIntestatario) indirizzo += ' (' + lead.provinciaIntestatario + ')';
-                }
-                if (indirizzo) {
-                    document.getElementById('indirizzo').value = indirizzo;
+                // Per assistiti aggiuntivi, 'ass' contiene i dati specifici (nome, CF, indirizzo...)
+                // Per l'assistito primario, 'ass' è null e si usano i dati del lead come prima.
+                const ass  = data.assistito || null;
+                console.log(`✅ [FORM CONFIG] Dati caricati — lead:`, lead, 'assistito:', ass);
+
+                // ✅ PRECOMPILA CAMPI ANAGRAFICI
+                // Priorità: dati assistito aggiuntivo > dati assistito dal lead > dati richiedente
+                if (ass) {
+                    // Assistito aggiuntivo: usa i suoi dati specifici
+                    if (ass.nome)         document.getElementById('nome').value = ass.nome;
+                    if (ass.cognome)      document.getElementById('cognome').value = ass.cognome;
+                    if (ass.data_nascita) {
+                        document.getElementById('data_nascita').value = ass.data_nascita;
+                        document.getElementById('data_nascita').dispatchEvent(new Event('change'));
+                    }
+                    // Indirizzo dall'assistito aggiuntivo
+                    if (ass.indirizzo) {
+                        let ind = ass.indirizzo;
+                        if (ass.citta)     ind += ', ' + ass.citta;
+                        if (ass.cap)       ind += ' ' + ass.cap;
+                        if (ass.provincia) ind += ' (' + ass.provincia + ')';
+                        document.getElementById('indirizzo').value = ind;
+                    }
+                    // Email e telefono sempre dal lead (il contatto di riferimento è il richiedente)
+                    if (lead.email)   document.getElementById('email').value = lead.email;
+                } else {
+                    // Assistito primario: comportamento originale
+                    if (lead.nomeAssistito || lead.nomeRichiedente) {
+                        document.getElementById('nome').value = lead.nomeAssistito || lead.nomeRichiedente || '';
+                    }
+                    if (lead.cognomeAssistito || lead.cognomeRichiedente) {
+                        document.getElementById('cognome').value = lead.cognomeAssistito || lead.cognomeRichiedente || '';
+                    }
+                    if (lead.dataNascitaAssistito) {
+                        document.getElementById('data_nascita').value = lead.dataNascitaAssistito;
+                        document.getElementById('data_nascita').dispatchEvent(new Event('change'));
+                    }
+                    if (lead.telefono || lead.telefonoRichiedente) {
+                        document.getElementById('telefono').value = lead.telefono || lead.telefonoRichiedente || '';
+                    }
+                    if (lead.email || lead.emailRichiedente) {
+                        document.getElementById('email').value = lead.email || lead.emailRichiedente || '';
+                    }
+                    // Indirizzo
+                    let indirizzo = '';
+                    if (lead.indirizzoAssistito) {
+                        indirizzo = lead.indirizzoAssistito;
+                        if (lead.cittaAssistito)    indirizzo += ', ' + lead.cittaAssistito;
+                        if (lead.capAssistito)      indirizzo += ' ' + lead.capAssistito;
+                        if (lead.provinciaAssistito) indirizzo += ' (' + lead.provinciaAssistito + ')';
+                    } else if (lead.indirizzoIntestatario) {
+                        indirizzo = lead.indirizzoIntestatario;
+                        if (lead.cittaIntestatario)    indirizzo += ', ' + lead.cittaIntestatario;
+                        if (lead.capIntestatario)      indirizzo += ' ' + lead.capIntestatario;
+                        if (lead.provinciaIntestatario) indirizzo += ' (' + lead.provinciaIntestatario + ')';
+                    }
+                    if (indirizzo) document.getElementById('indirizzo').value = indirizzo;
                 }
                 
                 // Condizioni salute (se presenti)
                 if (lead.condizioniSalute) {
                     const textarea = document.querySelector('textarea[placeholder*="altre condizioni"]');
-                    if (textarea) {
-                        textarea.value = lead.condizioniSalute;
-                    }
+                    if (textarea) textarea.value = lead.condizioniSalute;
                 }
                 
-                // ✅ PRECOMPILA CONTATTO EMERGENZA 1 CON RICHIEDENTE (se diverso da assistito)
+                // ✅ PRECOMPILA CONTATTO EMERGENZA 1 CON RICHIEDENTE (sempre — è il familiare)
+                // Per assistiti aggiuntivi il richiedente (Mario) è sempre il contatto 1
                 if (lead.nomeRichiedente && lead.cognomeRichiedente) {
-                    // Se assistito è diverso da richiedente, usa richiedente come contatto 1
-                    const assistitoNome = (lead.nomeAssistito || '').toLowerCase();
+                    const assistitoNome = (ass ? ass.nome : (lead.nomeAssistito || '')).toLowerCase();
                     const richiedenteNome = (lead.nomeRichiedente || '').toLowerCase();
-                    const assistitoCognome = (lead.cognomeAssistito || '').toLowerCase();
+                    const assistitoCognome = (ass ? ass.cognome : (lead.cognomeAssistito || '')).toLowerCase();
                     const richiedenteCognome = (lead.cognomeRichiedente || '').toLowerCase();
                     
                     const sonoLaStessaPersona = (assistitoNome === richiedenteNome && assistitoCognome === richiedenteCognome);
                     
                     if (!sonoLaStessaPersona) {
-                        // ✅ Precompila contatto 1 con richiedente
                         document.querySelector('input[name="contatto1_nome"]').value = lead.nomeRichiedente || '';
                         document.querySelector('input[name="contatto1_cognome"]').value = lead.cognomeRichiedente || '';
                         document.querySelector('input[name="contatto1_telefono"]').value = lead.telefono || '';
@@ -741,14 +760,16 @@
             
             // Leggi leadId e token dalla URL
             const urlParams = new URLSearchParams(window.location.search);
-            const leadId = urlParams.get('leadId');
-            const token = urlParams.get('token');
+            const leadId      = urlParams.get('leadId');
+            const token       = urlParams.get('token');
+            const assistitoId = urlParams.get('assistitoId'); // null per primario
             
             // Collect form data
             const formData = new FormData(this);
             const data = {
-                leadId: leadId,
-                token: token
+                leadId:      leadId,
+                token:       token,
+                assistitoId: assistitoId  // incluso nel payload → backend salva lead_assistiti_id
             };
             
             // Basic fields

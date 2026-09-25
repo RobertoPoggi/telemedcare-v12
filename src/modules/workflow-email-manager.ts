@@ -1914,8 +1914,87 @@ export async function inviaEmailFormConfigurazione(
 }
 
 /**
- * STEP 5: Invia configurazione cliente a info@ dopo compilazione form
+ * Variante per assistiti aggiuntivi (lead_assistiti):
+ * Invia il form di configurazione per un assistito specifico con URL che include assistitoId.
+ * L'URL generato: /form-configurazione?token=X&leadId=Y&assistitoId=Z
+ * Il form pre-compila nome/cognome/anagrafica dall'assistito aggiuntivo.
  */
+export async function inviaEmailFormConfigurazioneAssistito(
+  lead: any,
+  ass: any,          // riga da lead_assistiti
+  env: any,
+  db: D1Database
+): Promise<WorkflowEmailResult & { configUrl?: string }> {
+  const result: WorkflowEmailResult & { configUrl?: string } = {
+    success: false,
+    step: 'email_form_configurazione_assistito',
+    emailsSent: [],
+    errors: []
+  }
+
+  try {
+    const emailService = new EmailService(env)
+    const configToken  = generateToken()
+    const baseUrl      = getBaseUrl(env)
+    // URL con assistitoId — il form userà questo per pre-compilare i campi e salvare lead_assistiti_id
+    const configUrl    = `${baseUrl}/form-configurazione?token=${configToken}&leadId=${lead.id}&assistitoId=${ass.id}`
+
+    // Salva token nel DB (scade in 30 giorni) — stesso token table del primario
+    await db.prepare(`
+      INSERT INTO lead_completion_tokens (token, lead_id, expires_at, created_at)
+      VALUES (?, ?, datetime('now', '+30 days'), datetime('now'))
+    `).bind(configToken, lead.id).run()
+
+    console.log(`🔗 [CONFIG-ASSISTITO] Token generato per assistito ${ass.id}: ${configUrl}`)
+
+    // Carica template email_configurazione (stesso template del primario)
+    const template = await loadEmailTemplate('email_configurazione', db, env)
+
+    const servizio = lead.servizio || 'eCura PRO'
+    const piano    = lead.piano || 'BASE'
+    const dispositivo = (servizio || '').toUpperCase().includes('PREMIUM')
+      ? 'SiDLY Vital Care'
+      : 'SiDLY Care PRO'
+
+    const nomeAssistito = `${ass.nome || ''} ${ass.cognome || ''}`.trim()
+
+    const templateData = {
+      // Mostra il nome dell'assistito aggiuntivo nel saluto, non quello del richiedente
+      NOME_CLIENTE:        lead.nomeRichiedente,
+      COGNOME_CLIENTE:     lead.cognomeRichiedente,
+      NOME_ASSISTITO:      nomeAssistito,
+      DISPOSITIVO:         dispositivo,
+      SERVIZIO:            formatServiceName(servizio, piano),
+      LINK_CONFIGURAZIONE: configUrl
+    }
+
+    const emailHtml = renderTemplate(template, templateData)
+
+    const sendResult = await emailService.sendEmail({
+      to:      lead.email,
+      from:    env?.RESEND_FROM || 'info@ecura.it',
+      subject: `⚙️ Configura il dispositivo per ${nomeAssistito} — ${dispositivo}`,
+      html:    emailHtml
+    })
+
+    if (sendResult.success) {
+      result.success  = true
+      result.configUrl = configUrl
+      result.emailsSent.push(`email_configurazione_assistito -> ${lead.email}`)
+      console.log(`✅ [CONFIG-ASSISTITO] Email inviata a ${lead.email} per assistito "${nomeAssistito}"`)
+    } else {
+      result.errors.push(`Errore invio email: ${sendResult.error}`)
+    }
+
+  } catch (error: any) {
+    result.errors.push(`Eccezione: ${error.message}`)
+    console.error('❌ [CONFIG-ASSISTITO]', error)
+  }
+
+  return result
+}
+
+
 export async function inviaEmailConfigurazione(
   clientData: any,
   configData: any,
