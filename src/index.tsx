@@ -12984,7 +12984,9 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       vuoleContratto: true,
       // ✅ FIX: Passa iva_agevolata e iva_esente al workflow così il contract generator usa l'aliquota corretta
       iva_agevolata: lead.iva_agevolata ? 1 : 0,
-      iva_esente: lead.iva_esente ? 1 : 0
+      iva_esente: lead.iva_esente ? 1 : 0,
+      // Indirizzo spedizione dispositivo (controlla l'indirizzo in contratto e DDT)
+      indirizzo_spedizione: lead.indirizzo_spedizione || 'assistito'
     }
     
     // Calcola prezzi corretti
@@ -36114,6 +36116,7 @@ app.post('/api/oneshot-rigenera-html-contratto-9fx2v', async (c) => {
       dataNascitaIntestatario,
       iva_agevolata: lead.iva_agevolata ? 1 : 0,
       iva_esente: lead.iva_esente ? 1 : 0,
+      indirizzo_spedizione: lead.indirizzo_spedizione || 'assistito',
       vuoleBrochure: false,
       vuoleManuale: false,
       vuoleContratto: true

@@ -287,14 +287,27 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
   const emailCareGiver = leadData.email || 'N/A'
 
   // ── Indirizzo spedizione dispositivo ──────────────────────────────────────
-  // REGOLA FISSA: il dispositivo va SEMPRE al domicilio dell'ASSISTITO
-  // (indipendente dall'intestazione del contratto)
-  const nomeAssistitoSpedizione = leadData.nomeAssistito || leadData.nomeRichiedente || ''
-  const cognomeAssistitoSpedizione = leadData.cognomeAssistito || leadData.cognomeRichiedente || ''
-  const indirizzoSpedizione = leadData.indirizzoAssistito || leadData.indirizzoIntestatario || 'N/A'
-  const capSpedizione = leadData.capAssistito || leadData.capIntestatario || 'N/A'
-  const cittaSpedizione = leadData.cittaAssistito || leadData.cittaIntestatario || 'N/A'
-  const provinciaSpedizione = leadData.provinciaAssistito || leadData.provinciaIntestatario || ''
+  // Flag indirizzo_spedizione: 'assistito' (default) | 'richiedente'
+  // Indipendente da intestatarioContratto — controlla solo la destinazione fisica del dispositivo.
+  const spedDest = (leadData as any).indirizzo_spedizione || 'assistito'
+  const nomeAssistitoSpedizione = spedDest === 'richiedente'
+    ? (leadData.nomeRichiedente || '')
+    : (leadData.nomeAssistito || leadData.nomeRichiedente || '')
+  const cognomeAssistitoSpedizione = spedDest === 'richiedente'
+    ? (leadData.cognomeRichiedente || '')
+    : ((leadData as any).cognomeAssistito || leadData.cognomeRichiedente || '')
+  const indirizzoSpedizione = spedDest === 'richiedente'
+    ? ((leadData as any).indirizzoIntestatario || (leadData as any).indirizzoAssistito || 'N/A')
+    : (leadData.indirizzoAssistito || (leadData as any).indirizzoIntestatario || 'N/A')
+  const capSpedizione = spedDest === 'richiedente'
+    ? ((leadData as any).capIntestatario || (leadData as any).capAssistito || 'N/A')
+    : ((leadData as any).capAssistito || (leadData as any).capIntestatario || 'N/A')
+  const cittaSpedizione = spedDest === 'richiedente'
+    ? ((leadData as any).cittaIntestatario || (leadData as any).cittaAssistito || 'N/A')
+    : ((leadData as any).cittaAssistito || (leadData as any).cittaIntestatario || 'N/A')
+  const provinciaSpedizione = spedDest === 'richiedente'
+    ? ((leadData as any).provinciaIntestatario || (leadData as any).provinciaAssistito || '')
+    : ((leadData as any).provinciaAssistito || (leadData as any).provinciaIntestatario || '')
   
   // Template HTML completo ufficiale da Template_Contratto_eCura.html
   return `
