@@ -234,6 +234,26 @@ export const FORM_HTML = `<!DOCTYPE html>
                         </p>
                     </div>
 
+                    <!-- ESENZIONE IVA — art. 10 n. 18 d.P.R. 633/1972 -->
+                    <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 16px; margin: 16px 0;">
+                        <h3 style="margin: 0 0 8px 0; font-size: 15px; color: #15803d;">🏥 Esenzione IVA — art. 10 n. 18 d.P.R. 633/1972</h3>
+                        <p style="margin: 0 0 12px 0; font-size: 13px; color: #374151;">
+                            Il servizio è <strong>esente da IVA (0%)</strong> ai sensi dell'art. 10, n. 18 del d.P.R. 633/1972
+                            qualora costituisca una <strong>prestazione di diagnosi, cura e riabilitazione</strong>
+                            resa nell'esercizio di professioni sanitarie riconosciute.
+                            Selezionare solo se espressamente concordato con l'ufficio amministrativo.
+                        </p>
+                        <div class="checkbox-wrapper" style="background: transparent; padding: 0;">
+                            <input type="checkbox" id="iva_esente" name="iva_esente" value="1">
+                            <label for="iva_esente" style="font-weight: 600; color: #15803d;">
+                                ✅ Operazione esente IVA — art. 10 n. 18 d.P.R. n. 633 del 1972
+                            </label>
+                        </div>
+                        <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">
+                            ⚠️ Se selezionato, non verrà applicata alcuna IVA (0%). L'esenzione esclude automaticamente l'IVA agevolata 4%.
+                        </p>
+                    </div>
+
                     <div class="checkbox-wrapper">
                         <input type="checkbox" id="gdprConsent" name="gdprConsent" value="1" required>
                         <label for="gdprConsent">

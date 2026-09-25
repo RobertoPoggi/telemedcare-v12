@@ -305,18 +305,24 @@ function generaContrattoHtml(lead: any, tipoContratto: string, prezzario: any): 
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER: Aliquota IVA in base al lead
-// Legge 104 / disabilità 100% → 4% | Standard → 22%
+// Priorità: iva_esente (0%) > iva_agevolata 4% Legge 104 > standard 22%
 // ─────────────────────────────────────────────────────────────────────────────
 function getIvaRate(lead: any): number {
-  return lead?.iva_agevolata ? 0.04 : 0.22
+  if (lead?.iva_esente)    return 0
+  if (lead?.iva_agevolata) return 0.04
+  return 0.22
 }
 function getIvaLabel(lead: any): string {
-  return lead?.iva_agevolata ? '4%' : '22%'
+  if (lead?.iva_esente)    return '0%'
+  if (lead?.iva_agevolata) return '4%'
+  return '22%'
 }
 function getIvaNote(lead: any): string {
-  return lead?.iva_agevolata
-    ? ' (IVA agevolata 4% — Legge 104, disabilità 100%)'
-    : ' (IVA 22%)'
+  if (lead?.iva_esente)
+    return ' (Operazione esente IVA — art. 10 n. 18 d.P.R. 633/1972)'
+  if (lead?.iva_agevolata)
+    return ' (IVA agevolata 4% — Legge 104, disabilità 100%)'
+  return ' (IVA 22%)'
 }
 
 // Genera proforma da contratto firmato
@@ -438,7 +444,7 @@ async function inviaEmailProforma(proforma: any, env?: any) {
     const prezzoBase = parseFloat(proforma.prezzo_totale) || 0
     // Usa aliquota IVA dalla proforma (iva_agevolata) o default 22%
     const ivaRate = proforma.iva_agevolata ? 0.04 : 0.22
-    const ivaLabel = proforma.iva_agevolata ? '4%' : '22%'
+    const ivaLabel = proforma.iva_esente ? '0%' : proforma.iva_agevolata ? '4%' : '22%'
     const iva = Math.round(prezzoBase * ivaRate * 100) / 100
     const prezzoIvaInclusa = Math.round((prezzoBase + iva) * 100) / 100
     
@@ -710,6 +716,8 @@ app.use('*', async (c, next) => {
         { name: 'reminder_proforma_count', def: `INTEGER DEFAULT 0` },
         // IVA agevolata 4% per assistiti con disabilità 100% (Legge 104)
         { name: 'iva_agevolata', def: `INTEGER DEFAULT 0` },
+        // IVA esente — Esenzione art. 10 n. 18 d.P.R. 633/1972 (prestazioni sanitarie)
+        { name: 'iva_esente', def: `INTEGER DEFAULT 0` },
       ]
       for (const col of leadsHubspotColumns) {
         try {
@@ -798,6 +806,16 @@ app.use('*', async (c, next) => {
       } catch (e: any) {
         // Colonna già esistente — normale
       }
+
+      // Migrazione: Aggiungi colonna iva_esente a leads e proforma (esenzione art. 10 n. 18 DPR 633/1972)
+      try {
+        await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN iva_esente INTEGER DEFAULT 0`).run()
+        console.log('✅ Colonna iva_esente aggiunta a leads')
+      } catch (e: any) { /* già esistente */ }
+      try {
+        await c.env.DB.prepare(`ALTER TABLE proforma ADD COLUMN iva_esente INTEGER DEFAULT 0`).run()
+        console.log('✅ Colonna iva_esente aggiunta a proforma')
+      } catch (e: any) { /* già esistente */ }
 
       // ── RINNOVI CONTRATTUALI ──────────────────────────────────────────────────
       // Migrazione: colonne rinnovo su contracts
@@ -8558,7 +8576,7 @@ app.get('/api/contratti', async (c) => {
         l.cognomeRichiedente,
         l.email,
         l.email as email_cliente,
-        l.iva_agevolata,
+        l.iva_agevolata, l.iva_esente,
         s.timestamp_firma as data_firma,
         r.id as rinnovo_contract_id,
         r.codice_contratto as rinnovo_codice,
@@ -9338,7 +9356,7 @@ app.post('/api/contracts/send', async (c) => {
     // Prepara dati contratto per la funzione
     // ✅ FIX: Usa getPricing dalla pricing matrix per ottenere setupBase (IVA ESCLUSA)
     // contract.prezzo_totale contiene setupTotale (IVA INCLUSA 22%) — NON usarlo come prezzoBase
-    const ivaRateContr8931 = (lead as any).iva_agevolata ? 0.04 : 0.22
+    const ivaRateContr8931 = (lead as any).iva_esente ? 0 : (lead as any).iva_agevolata ? 0.04 : 0.22
     const servizioContr = ((contract as any).servizio || 'PRO').replace(/^eCura\s+/i, '').trim().toUpperCase() as 'FAMILY' | 'PRO' | 'PREMIUM'
     const pianoContr = ((contract as any).tipo_contratto || (contract as any).piano || 'BASE').toUpperCase() as 'BASE' | 'AVANZATO'
     const pricingContr = getPricing(servizioContr, pianoContr)
@@ -9670,9 +9688,9 @@ app.post('/api/create-payment-intent', async (c) => {
         
         if (rata) {
           // Importo nella tabella è l'imponibile; calcola IVA in base al flag iva_agevolata del lead
-          const lead = await c.env.DB.prepare(`SELECT iva_agevolata FROM leads WHERE id = ? LIMIT 1`)
+          const lead = await c.env.DB.prepare(`SELECT iva_agevolata, iva_esente FROM leads WHERE id = ? LIMIT 1`)
             .bind(proforma.lead_id).first()
-          const ivaRateRata = (lead as any)?.iva_agevolata ? 0.04 : 0.22
+          const ivaRateRata = (lead as any)?.iva_esente ? 0 : (lead as any)?.iva_agevolata ? 0.04 : 0.22
           const imponibileRata = Number((rata as any).importo) || 0
           totalAmount = Math.round((imponibileRata * (1 + ivaRateRata)) * 100) / 100
           console.log(`✅ [PAYMENT] Rata ${numeroRata}: imponibile €${imponibileRata.toFixed(2)}, IVA ${ivaRateRata*100}%, totale €${totalAmount.toFixed(2)}`)
@@ -9945,7 +9963,8 @@ app.get('/api/proforma/:id', async (c) => {
           l.cittaAssistito as lead_citta_assistito,
           l.provinciaAssistito as lead_provincia_assistito,
           l.cfAssistito as lead_cf_assistito,
-          l.iva_agevolata as lead_iva_agevolata
+          l.iva_agevolata as lead_iva_agevolata,
+          l.iva_esente as lead_iva_esente
         FROM proforma p
         LEFT JOIN leads l ON p.leadId = l.id
         WHERE p.id = ? OR UPPER(p.numero_proforma) = ?
@@ -9969,7 +9988,8 @@ app.get('/api/proforma/:id', async (c) => {
           l.cittaAssistito as lead_citta_assistito,
           l.provinciaAssistito as lead_provincia_assistito,
           l.cfAssistito as lead_cf_assistito,
-          l.iva_agevolata as lead_iva_agevolata
+          l.iva_agevolata as lead_iva_agevolata,
+          l.iva_esente as lead_iva_esente
         FROM proforma p
         LEFT JOIN leads l ON p.leadId = l.id
         WHERE UPPER(p.numero_proforma) = ?
@@ -9993,10 +10013,11 @@ app.get('/api/proforma/:id', async (c) => {
     // ✅ REGOLA UNIVERSALE: prezzo_totale nel DB contiene IVA ESCLUSA
     // Es: DB.prezzo_totale = €990 (IVA ESCLUSA)
     const prezzoBaseIvaEsclusa = parseFloat(proforma.prezzo_totale || 0)
-    // ✅ FIX IVA: usa iva_agevolata dalla proforma, con fallback al lead
+    // ✅ FIX IVA: usa iva_agevolata/iva_esente dalla proforma, con fallback al lead
     const ivaAgevolataEffettiva = proforma.iva_agevolata || proforma.lead_iva_agevolata || 0
-    const ivaRateProforma = ivaAgevolataEffettiva ? 0.04 : 0.22
-    const ivaLabelProforma = ivaAgevolataEffettiva ? '4% (Legge 104)' : '22%'
+    const ivaEsenteEffettiva    = proforma.iva_esente    || proforma.lead_iva_esente    || 0
+    const ivaRateProforma = ivaEsenteEffettiva ? 0 : ivaAgevolataEffettiva ? 0.04 : 0.22
+    const ivaLabelProforma = ivaEsenteEffettiva ? '0% (Esente art. 10)' : ivaAgevolataEffettiva ? '4% (Legge 104)' : '22%'
     const importoIva = Math.round((prezzoBaseIvaEsclusa * ivaRateProforma) * 100) / 100
     const importoTotaleIvaInclusa = Math.round((prezzoBaseIvaEsclusa + importoIva) * 100) / 100
     console.log(`📊 [API/proforma] IVA: agevolata=${ivaAgevolataEffettiva}, rate=${ivaRateProforma*100}%, base=€${prezzoBaseIvaEsclusa}, iva=€${importoIva}, totale=€${importoTotaleIvaInclusa}`)
@@ -10024,8 +10045,9 @@ app.get('/api/proforma/:id', async (c) => {
       cliente_provincia: proforma.cliente_provincia || proforma.lead_provincia || proforma.lead_provincia_assistito || '',
       // ✅ FIX: fallback a leads per codice fiscale
       cliente_codice_fiscale: proforma.cliente_codice_fiscale || proforma.lead_cf_intestatario || proforma.lead_cf_assistito || '',
-      // ✅ FIX: iva_agevolata con fallback a leads
-      iva_agevolata: proforma.iva_agevolata || proforma.lead_iva_agevolata || 0
+      // ✅ FIX: iva_agevolata e iva_esente con fallback a leads
+      iva_agevolata: proforma.iva_agevolata || proforma.lead_iva_agevolata || 0,
+      iva_esente: proforma.iva_esente || proforma.lead_iva_esente || 0
     }
     
     return c.json({ success: true, proforma: proformaResponse })
@@ -10789,7 +10811,7 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
                 l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
                 l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
                 l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
-                l.iva_agevolata,
+                l.iva_agevolata, l.iva_esente,
                 l.rateizzazione_attiva AS lead_rateizzazione_attiva,
                 l.riserva_dominio AS lead_riserva_dominio
          FROM contracts c
@@ -10812,7 +10834,7 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
                   l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
                   l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
                   l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
-                  l.iva_agevolata,
+                  l.iva_agevolata, l.iva_esente,
                   l.rateizzazione_attiva AS lead_rateizzazione_attiva,
                   l.riserva_dominio AS lead_riserva_dominio
            FROM contracts c
@@ -10863,6 +10885,7 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
 
     // ── Prezzi ────────────────────────────────────────────────────────
     const ivaAgevolata = !!(contractRow?.iva_agevolata)
+    const ivaEsente = !!(contractRow?.iva_esente)
     const ivaPct       = ivaAgevolata ? 4 : 22
 
     // Usa getPricing per ottenere l'imponibile corretto (IVA escl.)
@@ -11193,7 +11216,7 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
                 l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
                 l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
                 l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
-                l.iva_agevolata,
+                l.iva_agevolata, l.iva_esente,
                 l.rateizzazione_attiva AS lead_rateizzazione_attiva,
                 l.riserva_dominio AS lead_riserva_dominio
          FROM contracts c
@@ -11215,7 +11238,7 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
                   l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
                   l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
                   l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
-                  l.iva_agevolata,
+                  l.iva_agevolata, l.iva_esente,
                   l.rateizzazione_attiva AS lead_rateizzazione_attiva,
                   l.riserva_dominio AS lead_riserva_dominio
            FROM contracts c
@@ -11245,6 +11268,7 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
 
     // ── Prezzi ────────────────────────────────────────────────────────
     const ivaAgevolata = !!(contractRow?.iva_agevolata)
+    const ivaEsente = !!(contractRow?.iva_esente)
     const ivaPct       = ivaAgevolata ? 4 : 22
     const servizioRawP = (contractRow?.servizio || 'PRO').replace(/^eCura\s+/i, '').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'
     const pianoRawP    = (contractRow?.piano    || 'BASE').toUpperCase() as 'BASE'|'AVANZATO'
@@ -12964,7 +12988,7 @@ app.post('/api/leads/:id/send-contract', async (c) => {
 
     // ✅ FIX: calcola prezzoIvaInclusa con l'aliquota corretta del lead
     // pricing.setupTotale usa sempre 22% — dobbiamo ricalcolarlo se iva_agevolata
-    const ivaRateContratto = lead.iva_agevolata ? 0.04 : 0.22
+    const ivaRateContratto = lead.iva_esente ? 0 : lead.iva_agevolata ? 0.04 : 0.22
     // Per rinnovo usa rinnovoBase; per primo anno usa setupBase
     const prezzoListinoBase = isRinnovoReq
       ? (pricing.rinnovoBase ?? pricing.setupBase)
@@ -13370,7 +13394,8 @@ app.post('/api/leads/:id/complete', async (c) => {
       piano: 'piano',
       note: 'note',
       gdprConsent: 'gdprConsent',
-      iva_agevolata: 'iva_agevolata'  // 1 = IVA 4% Legge 104 (disabilità 100%), 0 = IVA 22% standard
+      iva_agevolata: 'iva_agevolata',  // 1 = IVA 4% Legge 104 (disabilità 100%), 0 = IVA 22% standard
+      iva_esente: 'iva_esente'          // 1 = Esente IVA art. 10 n. 18 d.P.R. 633/1972 (0% IVA)
     }
     
     for (const [formField, dbField] of Object.entries(fieldMapping)) {
@@ -13378,7 +13403,7 @@ app.post('/api/leads/:id/complete', async (c) => {
         updateFields.push(`${dbField} = ?`)
         
         // Converti checkbox a integer (0/1)
-        if (formField === 'gdprConsent' || formField === 'iva_agevolata') {
+        if (formField === 'gdprConsent' || formField === 'iva_agevolata' || formField === 'iva_esente') {
           binds.push(data[formField] === '1' || data[formField] === 'true' || data[formField] === true ? 1 : 0)
         } else {
           binds.push(data[formField])
@@ -15124,6 +15149,49 @@ app.patch('/api/leads/:id/iva-agevolata', async (c) => {
   }
 })
 
+// PATCH /api/leads/:id/iva-esente — Toggle esenzione IVA art. 10 n. 18 d.P.R. 633/1972
+// Operazione esente da IVA (0%) — prestazioni sanitarie
+// Analogo a iva-agevolata ma con aliquota 0% invece di 4%.
+// Attivare iva_esente disattiva automaticamente iva_agevolata (mutualmente esclusivi).
+app.patch('/api/leads/:id/iva-esente', async (c) => {
+  const leadId = c.req.param('id')
+
+  try {
+    const body = await c.req.json()
+    // Accetta { iva_esente: 0|1|true|false }
+    const iva_esente = body.iva_esente ? 1 : 0
+
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    }
+
+    // Se si attiva l'esenzione, si disattiva automaticamente l'agevolata (e viceversa)
+    await c.env.DB.prepare(`
+      UPDATE leads
+      SET iva_esente = ?,
+          iva_agevolata = CASE WHEN ? = 1 THEN 0 ELSE iva_agevolata END,
+          updated_at = ?
+      WHERE id = ?
+    `).bind(iva_esente, iva_esente, new Date().toISOString(), leadId).run()
+
+    console.log(`✅ IVA esente aggiornata per lead ${leadId}: ${iva_esente ? 'ATTIVATA (0% — art. 10 n. 18)' : 'DISATTIVATA'}`)
+
+    return c.json({
+      success: true,
+      leadId,
+      iva_esente,
+      iva_agevolata: iva_esente ? 0 : undefined,  // azzerata se esente attivato
+      aliquota: iva_esente ? '0%' : '22%',
+      message: iva_esente
+        ? 'Esenzione IVA attivata — art. 10 n. 18 d.P.R. 633/1972 (IVA 0%)'
+        : 'Esenzione IVA rimossa — verrà applicata IVA standard 22%'
+    })
+  } catch (error) {
+    console.error('❌ Errore aggiornamento IVA esente:', error)
+    return c.json({ success: false, error: 'Errore aggiornamento IVA esente' }, 500)
+  }
+})
+
 // ═══════════════════════════════════════════════════════════════════════════
 // RINNOVI CONTRATTUALI
 // ═══════════════════════════════════════════════════════════════════════════
@@ -15207,12 +15275,12 @@ app.post('/api/contracts/rinnovo', async (c) => {
     // 4. Calcola prezzo rinnovo
     const servizio = origContract.servizio || 'eCura PRO'
     const piano    = origContract.piano || origContract.tipo_contratto || 'BASE'
-    const ivaRate  = lead.iva_agevolata ? 0.04 : 0.22
+    const ivaRate  = lead.iva_esente ? 0 : lead.iva_agevolata ? 0.04 : 0.22
     const rinnovoBase  = PREZZI_RINNOVO_BASE[servizio]?.[piano] ?? 240
     const ivaImporto   = Math.round(rinnovoBase * ivaRate * 100) / 100
     const rinnovoTotale = Math.round((rinnovoBase + ivaImporto) * 100) / 100
 
-    const ivaLabel = lead.iva_agevolata ? 'IVA 4%' : 'IVA 22%'
+    const ivaLabel = lead.iva_esente ? 'IVA 0%' : lead.iva_agevolata ? 'IVA 4%' : 'IVA 22%'
     const ivaNote  = lead.iva_agevolata ? ' (IVA agevolata 4% — Legge 104, disabilità 100%)' : ''
 
     // 5. Date del rinnovo
@@ -15603,7 +15671,7 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
     // come fallback per lead creati prima dell'ALTER TABLE che ha aggiunto i campi *Intestatario
     const contract = await c.env.DB.prepare(`
       SELECT c.*,
-        l.nomeRichiedente, l.cognomeRichiedente, l.email, l.telefono, l.iva_agevolata,
+        l.nomeRichiedente, l.cognomeRichiedente, l.email, l.telefono, l.iva_agevolata, l.iva_esente,
         l.intestatarioContratto,
         l.cfIntestatario, l.codiceFiscaleIntestatario,
         l.indirizzoIntestatario,
@@ -15626,7 +15694,8 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
 
     // Calcolo prezzi
     const ivaAgevolata = !!(contract.iva_agevolata)
-    const ivaRate = ivaAgevolata ? 0.04 : 0.22
+    const ivaEsente = !!(contract.iva_esente)
+    const ivaRate = ivaEsente ? 0 : ivaAgevolata ? 0.04 : 0.22
     const rinnovoBase = parseFloat(contract.prezzo_totale || 0)
     const ivaImporto = Math.round(rinnovoBase * ivaRate * 100) / 100
     const rinnovoTotale = Math.round((rinnovoBase + ivaImporto) * 100) / 100
@@ -15782,8 +15851,8 @@ app.post('/api/contracts/:id/send-rinnovo-email', async (c) => {
     const firmaUrl = `${baseUrl}/firma-contratto.html?contractId=${rinnovoId}`
     const annoRinnovo  = contract.anno_rinnovo || 2
     const codiceRinnovo = contract.codice_contratto
-    const ivaRate = lead.iva_agevolata ? 0.04 : 0.22
-    const ivaLabel = lead.iva_agevolata ? 'IVA 4%' : 'IVA 22%'
+    const ivaRate = lead.iva_esente ? 0 : lead.iva_agevolata ? 0.04 : 0.22
+    const ivaLabel = lead.iva_esente ? 'IVA 0%' : lead.iva_agevolata ? 'IVA 4%' : 'IVA 22%'
     const ivaNote  = lead.iva_agevolata ? ' (IVA agevolata 4% — Legge 104)' : ''
     const rinnovoBase   = contract.prezzo_totale || 240
     const ivaImporto    = Math.round(rinnovoBase * ivaRate * 100) / 100
@@ -15926,6 +15995,7 @@ app.post('/api/contracts/:id/crea-proforma-rinnovo', async (c) => {
     if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
 
     const ivaAg = !!(lead.iva_agevolata)
+    const ivaEsente = !!(lead.iva_esente)
     const intestatario = lead.intestatarioContratto || 'richiedente'
 
     let nomeCliente: string, cognomeCliente: string, cfCliente: string
@@ -15968,9 +16038,9 @@ app.post('/api/contracts/:id/crea-proforma-rinnovo', async (c) => {
         cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
         cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
         tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
-        iva_agevolata, is_rinnovo,
+        iva_agevolata, iva_esente, is_rinnovo,
         email_sent, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, 'CREATED', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 12, ?, ?, 1, 0, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, 'CREATED', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 12, ?, ?, ?, 1, 0, ?, ?)
     `).bind(
       contractId, contract.leadId, numeroProforma,
       now.toISOString().split('T')[0], dataScadenza,
@@ -15980,6 +16050,7 @@ app.post('/api/contracts/:id/crea-proforma-rinnovo', async (c) => {
       prezzoMensile.toFixed(2),
       prezzoTotale,
       ivaAg ? 1 : 0,
+      ivaEsente ? 1 : 0,
       now.toISOString(), now.toISOString()
     ).run()
 
@@ -16040,8 +16111,9 @@ app.post('/api/contracts/:id/invia-proforma-rinnovo', async (c) => {
     const annoRinnovo   = contract.anno_rinnovo || 2
     const codiceOrig    = contract.rinnovo_di || ''
     const ivaAgevolata  = !!(lead.iva_agevolata)
-    const ivaRate       = ivaAgevolata ? 0.04 : 0.22
-    const ivaLabel      = ivaAgevolata ? '4%' : '22%'
+    const ivaEsente    = !!(lead.iva_esente)
+    const ivaRate       = ivaEsente ? 0 : ivaAgevolata ? 0.04 : 0.22
+    const ivaLabel      = ivaEsente ? '0%' : ivaAgevolata ? '4%' : '22%'
     const imponibile    = parseFloat(proforma.prezzo_totale ?? contract.prezzo_totale ?? 0)
     const importoIva    = Math.round(imponibile * ivaRate * 100) / 100
     const totaleConIva  = Math.round((imponibile + importoIva) * 100) / 100
@@ -16203,6 +16275,7 @@ app.get('/api/contracts/:id/proforma-interna-html', async (c) => {
 
     // Prezzi
     const ivaAgevolata = !!(lead.iva_agevolata)
+    const ivaEsente = !!(lead.iva_esente)
     const ivaPct       = ivaAgevolata ? 4 : 22
     const netto        = parseFloat(contract.prezzo_totale) || 0
     const ivaAmt       = Math.round(netto * ivaPct / 100 * 100) / 100
@@ -16379,8 +16452,9 @@ app.get('/api/contracts/:id/preview-proforma-email', async (c) => {
     const annoRinnovo  = contract.anno_rinnovo || 2
     const codiceOriginale = contract.rinnovo_di || ''
     const ivaAgevolata = !!(lead.iva_agevolata)
-    const ivaRate      = ivaAgevolata ? 0.04 : 0.22
-    const ivaLabel     = ivaAgevolata ? '4%' : '22%'
+    const ivaEsente = !!(lead.iva_esente)
+    const ivaRate      = ivaEsente ? 0 : ivaAgevolata ? 0.04 : 0.22
+    const ivaLabel     = ivaEsente ? '0%' : ivaAgevolata ? '4%' : '22%'
     const imponibile   = proforma.prezzo_totale ?? contract.prezzo_totale ?? 0
     const importoIva   = Math.round(imponibile * ivaRate * 100) / 100
     const totaleConIva = Math.round((imponibile + importoIva) * 100) / 100
@@ -18118,7 +18192,7 @@ app.post('/api/contracts/sign', async (c) => {
         const servizio = contract.servizio || contract.service_type || 'eCura Professional'
         
         // Calcola IVA inclusa da prezzo base (usa aliquota dal lead: 4% Legge 104 o 22% standard)
-        const ivaRateFirma = lead?.iva_agevolata ? 0.04 : 0.22
+        const ivaRateFirma = lead?.iva_esente ? 0 : lead?.iva_agevolata ? 0.04 : 0.22
 
         // ✅ FIX CRITICO: Leggi prezzo BASE (IVA esclusa) dal contratto
         // Il contratto contiene prezzo_totale = IVA ESCLUSA
@@ -18270,6 +18344,7 @@ app.post('/api/contracts/sign', async (c) => {
                 durata_mesi = ?,
                 prezzo_totale = ?,
                 iva_agevolata = ?,
+                iva_esente = ?,
                 is_rinnovo = ?,
                 riserva_dominio = ?,
                 status = ?,
@@ -18293,6 +18368,7 @@ app.post('/api/contracts/sign', async (c) => {
               12,
               prezzoBase,
               lead.iva_agevolata ? 1 : 0,
+              lead.iva_esente ? 1 : 0,
               isRinnovoContract ? 1 : 0,
               lead.riserva_dominio ? 1 : 0,
               'SENT',  // ✅ AUTO-INVIO: proforma inviata automaticamente dopo firma contratto
@@ -18313,8 +18389,8 @@ app.post('/api/contracts/sign', async (c) => {
                 cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
                 cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
                 tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
-                iva_agevolata, is_rinnovo, riserva_dominio, status, email_sent, created_at, updated_at
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                iva_agevolata, iva_esente, is_rinnovo, riserva_dominio, status, email_sent, created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).bind(
               contractId || '',
               lead.id,
@@ -18335,6 +18411,7 @@ app.post('/api/contracts/sign', async (c) => {
               12,
               prezzoBase,
               lead.iva_agevolata ? 1 : 0,
+              lead.iva_esente ? 1 : 0,
               isRinnovoContract ? 1 : 0,
               lead.riserva_dominio ? 1 : 0,
               'SENT',  // ✅ AUTO-INVIO: proforma inviata automaticamente dopo firma contratto
@@ -18744,15 +18821,17 @@ app.get('/api/contracts/:id', async (c) => {
     
     // ✅ REGOLA UNIVERSALE: prezzo_totale nel DB = IVA ESCLUSA
     const prezzoBase = parseFloat(contract.prezzo_totale || 0)
-    // ✅ FIX: recupera iva_agevolata dal lead per calcolo corretto
+    // ✅ FIX: recupera iva_agevolata e iva_esente dal lead per calcolo corretto
     let ivaAgevolataContratto = false
+    let ivaEsenteContratto = false
     if (contract.leadId) {
       try {
-        const leadIva = await c.env.DB.prepare('SELECT iva_agevolata FROM leads WHERE id = ?').bind(contract.leadId).first() as any
+        const leadIva = await c.env.DB.prepare('SELECT iva_agevolata, iva_esente FROM leads WHERE id = ?').bind(contract.leadId).first() as any
         ivaAgevolataContratto = !!(leadIva?.iva_agevolata)
+        ivaEsenteContratto = !!(leadIva?.iva_esente)
       } catch {}
     }
-    const ivaRateContratto = ivaAgevolataContratto ? 0.04 : 0.22
+    const ivaRateContratto = ivaEsenteContratto ? 0 : ivaAgevolataContratto ? 0.04 : 0.22
     const iva = Math.round(prezzoBase * ivaRateContratto * 100) / 100
     const totaleIvaInclusa = Math.round((prezzoBase + iva) * 100) / 100
     
@@ -32814,7 +32893,7 @@ app.post('/api/admin/test-trigger/:leadId', async (c) => {
     }
     
     // ✅ FIX IVA AGEVOLATA: ricalcola prezzoIvaInclusa con aliquota corretta del lead
-    const ivaRateContr29313 = (lead as any).iva_agevolata ? 0.04 : 0.22
+    const ivaRateContr29313 = (lead as any).iva_esente ? 0 : (lead as any).iva_agevolata ? 0.04 : 0.22
     const prezzoIvaInclusaContr29313 = Math.round(pricing.setupBase * (1 + ivaRateContr29313) * 100) / 100
     const contractData = {
       contractId,
@@ -34454,7 +34533,7 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
       const numeroProforma = `PRF${year}${month}-${random}`
       
       // ✅ IVA: calcola con aliquota corretta (4% Legge 104 o 22% standard)
-      const ivaRateManual = lead.iva_agevolata ? 0.04 : 0.22
+      const ivaRateManual = lead.iva_esente ? 0 : lead.iva_agevolata ? 0.04 : 0.22
       const prezzoBaseManual = pricing.setupBase  // IVA ESCLUSA
       const prezzoIvaInclusa = Math.round(prezzoBaseManual * (1 + ivaRateManual) * 100) / 100
 
@@ -34521,8 +34600,8 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
           cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
           cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
           tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
-          iva_agevolata, status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          iva_agevolata, iva_esente, status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         contractId || '',
         leadId,
@@ -34543,6 +34622,7 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
         12,
         prezzoBaseManual,  // ✅ IVA ESCLUSA
         lead.iva_agevolata ? 1 : 0,  // ✅ salva iva_agevolata
+        lead.iva_esente ? 1 : 0,  // ✅ salva iva_esente
         'SENT',
         new Date().toISOString(),
         new Date().toISOString()
@@ -34657,7 +34737,7 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
     }
 
     // ✅ FIX IVA AGEVOLATA: ricalcola prezzoIvaInclusa con aliquota corretta del lead
-    const ivaRateProforma31161 = (lead as any).iva_agevolata ? 0.04 : 0.22
+    const ivaRateProforma31161 = (lead as any).iva_esente ? 0 : (lead as any).iva_agevolata ? 0.04 : 0.22
     const prezzoIvaInclusaProforma31161 = Math.round(pricing.setupBase * (1 + ivaRateProforma31161) * 100) / 100
     const proformaData = {
       proformaId: '', // Sarà popolato dopo INSERT/UPDATE
@@ -34770,8 +34850,8 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
           cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
           cliente_codice_fiscale, cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia,
           tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
-          iva_agevolata, status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          iva_agevolata, iva_esente, status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         'MANUAL',
         leadId,
@@ -34792,6 +34872,7 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
         12,
         pricing.setupBase,  // ✅ IVA ESCLUSA (non setupTotale!)
         lead.iva_agevolata ? 1 : 0,
+        lead.iva_esente ? 1 : 0,
         'DRAFT',
         new Date().toISOString(),
         new Date().toISOString()
@@ -35982,7 +36063,7 @@ app.post('/api/oneshot-rigenera-html-contratto-9fx2v', async (c) => {
     }
 
     // 3. Ricostruisci contractData
-    const ivaRate = lead.iva_agevolata ? 0.04 : 0.22
+    const ivaRate = lead.iva_esente ? 0 : lead.iva_agevolata ? 0.04 : 0.22
     const prezzoBase = contract.prezzo_totale || 0
     const prezzoIvaInclusa = Math.round(prezzoBase * (1 + ivaRate) * 100) / 100
 
@@ -37199,7 +37280,7 @@ app.get('/api/oneshot-diag-rinnovo-capone-7wq3x', async (c) => {
 
     // Step 2: trova lead
     const lead = await c.env.DB.prepare(
-      `SELECT id, nomeRichiedente, cognomeRichiedente, email, iva_agevolata FROM leads WHERE id = ?`
+      `SELECT id, nomeRichiedente, cognomeRichiedente, email, iva_agevolata, iva_esente FROM leads WHERE id = ?`
     ).bind(origContract.leadId).first() as any
     steps.push({ step: '2_lead', found: !!lead, data: lead || null })
 
@@ -37423,7 +37504,7 @@ app.post('/api/oneshot-crea-e-completa-rinnovo-6nw4y', async (c) => {
       const annoRinnovo = (orig.anno_rinnovo || 1) + 1
       const rinnovoId = `RINNOVO-${orig.codice_contratto}-Y${annoRinnovo}-${Date.now()}`
       const codiceRinnovo = `${orig.codice_contratto}-R${annoRinnovo}`
-      const ivaRate = lead.iva_agevolata ? 0.04 : 0.22
+      const ivaRate = lead.iva_esente ? 0 : lead.iva_agevolata ? 0.04 : 0.22
       const PREZZI: Record<string,Record<string,number>> = { 'eCura PRO': { BASE: 240, PLUS: 360 }, 'eCura': { BASE: 180 } }
       const rinnovoBase = PREZZI[orig.servizio]?.[orig.piano] ?? 240
       const rinnovoTotale = Math.round(rinnovoBase * (1 + ivaRate) * 100) / 100
