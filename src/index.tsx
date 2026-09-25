@@ -36417,9 +36417,9 @@ app.get('/api/oneshot-diagnosi-email-provider-4k8m2', async (c) => {
 
     // Provider attivo dedotto dalla catena di fallback
     let provider_attivo_stimato = 'DEMO_MODE_nessuna_chiave_valida'
-    if (providerStatus.resend.key_presente) provider_attivo_stimato = 'RESEND (primario)'
-    else if (providerStatus.brevo.key_presente) provider_attivo_stimato = 'BREVO (fallback-1, Resend assente)'
-    else if (providerStatus.sendgrid.key_presente) provider_attivo_stimato = 'SENDGRID (fallback-2, Resend+Brevo assenti)'
+    if (providerStatus.brevo.key_presente) provider_attivo_stimato = 'BREVO (primario)'
+    else if (providerStatus.resend.key_presente) provider_attivo_stimato = 'RESEND (fallback-1, Brevo assente)'
+    else if (providerStatus.sendgrid.key_presente) provider_attivo_stimato = 'SENDGRID (fallback-2, Brevo+Resend assenti)'
 
     // ── 2. TEST LIVE RESEND (solo status HTTP, senza inviare email reale) ──
     let resend_api_test: any = { skipped: 'RESEND_API_KEY non presente' }
