@@ -1135,14 +1135,17 @@ export async function inviaEmailContratto(
         console.log(`💾 [CONTRATTO] Salvataggio nel DB...`)
         console.log(`💾 [CONTRATTO] DB type:`, typeof db, db ? 'Available' : 'NULL')
         
-        // ✅ VERIFICA se esiste già un contratto per questo lead
+        // ✅ VERIFICA se esiste già un contratto con questo STESSO codice_contratto
+        // IMPORTANTE: cercare per codice_contratto (non per leadId) così ogni assistito
+        // aggiuntivo ottiene il proprio contratto separato nel DB invece di sovrascrivere
+        // il contratto del lead principale.
         const existingContract = await db.prepare(
-          'SELECT id FROM contracts WHERE leadId = ? ORDER BY created_at DESC LIMIT 1'
-        ).bind(leadData.id).first() as any
+          'SELECT id FROM contracts WHERE codice_contratto = ? LIMIT 1'
+        ).bind(contractData.contractCode).first() as any
         
         if (existingContract) {
-          console.log(`⚠️  [CONTRATTO] Contratto esistente trovato per lead ${leadData.id}: ${existingContract.id}`)
-          console.log(`⚠️  [CONTRATTO] Riutilizzo contratto esistente invece di crearne uno nuovo`)
+          console.log(`⚠️  [CONTRATTO] Contratto con codice ${contractData.contractCode} già esistente: ${existingContract.id}`)
+          console.log(`⚠️  [CONTRATTO] Aggiorno il contratto esistente con nuovo HTML`)
           // Usa l'ID del contratto esistente
           contractData.contractId = existingContract.id
         }

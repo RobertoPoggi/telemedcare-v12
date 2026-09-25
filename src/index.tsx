@@ -15598,8 +15598,13 @@ app.post('/api/leads/:id/assistiti/:aid/genera-ddt', requireAuth, async (c) => {
       provinciaDestinatario= ass.provincia || lead.provinciaAssistito || ''
     }
 
-    // Servizio e dispositivo
-    const contract = await c.env.DB.prepare(
+    // Servizio e dispositivo — cerca prima il contratto specifico di questo assistito
+    // (codice_contratto contiene il cognome-tag dell'assistito), poi fallback all'ultimo firmato del lead
+    const assTag = ass.cognome.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 8)
+    const contractAss = await c.env.DB.prepare(
+      `SELECT * FROM contracts WHERE leadId = ? AND codice_contratto LIKE ? ORDER BY created_at DESC LIMIT 1`
+    ).bind(leadId, `CTR-${assTag}-%`).first() as any
+    const contract = contractAss || await c.env.DB.prepare(
       `SELECT * FROM contracts WHERE leadId = ? AND status = 'firmato' ORDER BY created_at DESC LIMIT 1`
     ).bind(leadId).first() as any
     const servizio    = contract?.servizio || lead.servizio || 'eCura PRO'
