@@ -765,6 +765,14 @@ app.use('*', async (c, next) => {
           console.warn('⚠️ Errore creazione tabella lead_assistiti:', e.message)
         }
       }
+      // Migrazione idempotente: aggiunge intestatario_contratto se non esiste
+      try {
+        await c.env.DB.prepare(
+          `ALTER TABLE lead_assistiti ADD COLUMN intestatario_contratto TEXT DEFAULT 'assistito'`
+        ).run()
+        console.log('✅ Colonna intestatario_contratto aggiunta a lead_assistiti')
+      } catch (_) { /* già esiste — ok */ }
+
       // Indice per lookup veloce per lead
       try {
         await c.env.DB.prepare(
@@ -12853,7 +12861,9 @@ app.post('/api/setup-real-contracts', async (c) => {
 // Usato sia dal path normale send-contract che da /assistiti/:aid/send-contract.
 // overrides: campi assistito da sovrascrivere (nomeAssistito, cognomeAssistito, ...)
 function _buildLeadDataFromLead(lead: any, overrides: any = {}): any {
-  const intestatario = lead.intestatarioContratto || 'richiedente'
+  // intestatarioContratto può essere sovrascritto dagli overrides (per assistiti aggiuntivi
+  // che hanno il proprio campo intestatario_contratto in lead_assistiti)
+  const intestatario = overrides.intestatarioContratto ?? lead.intestatarioContratto ?? 'richiedente'
   let nomeIntestatario: string, cognomeIntestatario: string
   let cfIntestatario: string, indirizzoIntestatario: string
   let cittaIntestatario: string, capIntestatario: string, provinciaIntestatario: string
@@ -12870,16 +12880,22 @@ function _buildLeadDataFromLead(lead: any, overrides: any = {}): any {
   const lgNascAss  = overrides.luogoNascitaAssistito ?? lead.luogoNascitaAssistito ?? ''
 
   if (intestatario === 'assistito') {
+    // Contratto intestato all'assistito:
+    // Per assistiti aggiuntivi (overrides presenti) i dati anagrafici vengono dagli overrides.
+    // Per l'assistito primario (no overrides) dal lead come prima.
+    // NOTA: l'ordine è overrides prima, lead come fallback — così ogni assistito aggiuntivo
+    // ha un contratto con i propri dati legali (nome, CF, indirizzo, nascita).
     nomeIntestatario        = nomeAss
     cognomeIntestatario     = cognomeAss
     cfIntestatario          = cfAss || lead.cfIntestatario || ''
-    indirizzoIntestatario   = lead.indirizzoIntestatario || indrAss
-    cittaIntestatario       = lead.cittaIntestatario     || cittaAss
-    capIntestatario         = lead.capIntestatario       || capAss
-    provinciaIntestatario   = lead.provinciaIntestatario || provAss
-    luogoNascitaIntestatario= lead.luogoNascitaIntestatario || lgNascAss
-    dataNascitaIntestatario = lead.dataNascitaIntestatario  || dtNascAss
+    indirizzoIntestatario   = indrAss || lead.indirizzoIntestatario || ''
+    cittaIntestatario       = cittaAss || lead.cittaIntestatario || ''
+    capIntestatario         = capAss || lead.capIntestatario || ''
+    provinciaIntestatario   = provAss || lead.provinciaIntestatario || ''
+    luogoNascitaIntestatario= lgNascAss || lead.luogoNascitaIntestatario || ''
+    dataNascitaIntestatario = dtNascAss || lead.dataNascitaIntestatario  || ''
   } else {
+    // Contratto intestato al richiedente/lead: dati sempre dal lead principale
     nomeIntestatario        = lead.nomeRichiedente
     cognomeIntestatario     = lead.cognomeRichiedente
     cfIntestatario          = lead.cfIntestatario || lead.cfAssistito || ''
@@ -15410,14 +15426,16 @@ app.post('/api/leads/:id/assistiti', async (c) => {
     const result = await c.env.DB.prepare(`
       INSERT INTO lead_assistiti
         (lead_id, sort_order, nome, cognome, codice_fiscale, data_nascita, luogo_nascita,
-         indirizzo, cap, citta, provincia, indirizzo_spedizione, note, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         indirizzo, cap, citta, provincia, indirizzo_spedizione, intestatario_contratto,
+         note, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       leadId, sortOrder,
       body.nome.trim(), body.cognome.trim(),
       body.codice_fiscale || null, body.data_nascita || null, body.luogo_nascita || null,
       body.indirizzo || null, body.cap || null, body.citta || null, body.provincia || null,
       body.indirizzo_spedizione || 'questo',
+      body.intestatario_contratto || 'assistito',
       body.note || null, now, now
     ).run()
     const inserted = await c.env.DB.prepare(
@@ -15439,7 +15457,8 @@ app.patch('/api/leads/:id/assistiti/:aid', async (c) => {
     if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
     const body = await c.req.json() as any
     const allowed = ['nome','cognome','codice_fiscale','data_nascita','luogo_nascita',
-                     'indirizzo','cap','citta','provincia','indirizzo_spedizione','note','sort_order']
+                     'indirizzo','cap','citta','provincia','indirizzo_spedizione',
+                     'intestatario_contratto','note','sort_order']
     const sets: string[] = []
     const vals: any[] = []
     for (const k of allowed) {
@@ -15496,8 +15515,12 @@ app.post('/api/leads/:id/assistiti/:aid/send-contract', async (c) => {
     if (!ass) return c.json({ success: false, error: 'Assistito non trovato' }, 404)
 
     // Compone leadData sovrascrivendo i campi assistito con quelli di lead_assistiti
-    // e rispettando indirizzo_spedizione dell'assistito specifico
+    // e rispettando indirizzo_spedizione e intestatario_contratto dell'assistito specifico
     const spedDest = ass.indirizzo_spedizione || 'questo'
+    // intestatario_contratto dell'assistito:
+    //   'assistito'   (default) → contratto intestato all'assistito stesso (Padre, Madre...)
+    //   'richiedente'           → contratto intestato al lead/familiare (Mario il figlio)
+    const intestatarioAss = ass.intestatario_contratto || 'assistito'
     const leadData = _buildLeadDataFromLead(lead, {
       nomeAssistito:      ass.nome,
       cognomeAssistito:   ass.cognome,
@@ -15508,6 +15531,8 @@ app.post('/api/leads/:id/assistiti/:aid/send-contract', async (c) => {
       capAssistito:       ass.cap || '',
       cittaAssistito:     ass.citta || '',
       provinciaAssistito: ass.provincia || '',
+      // ogni assistito aggiuntivo ha il suo intestatario_contratto indipendente dal lead
+      intestatarioContratto: intestatarioAss,
       // indirizzo_spedizione: 'questo' → usa indirizzo dell'assistito stesso
       indirizzo_spedizione: spedDest === 'richiedente' ? 'richiedente' : 'assistito',
       // tag per distinguere contratti: COGNOME-ASSISTITO nel codice

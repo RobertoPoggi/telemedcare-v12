@@ -6435,6 +6435,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 document.getElementById('assCitta').value = '';
                 document.getElementById('assProvincia').value = '';
                 document.getElementById('assSpedizione').value = 'questo';
+                document.getElementById('assIntestatario').value = 'assistito';
                 document.getElementById('assNote').value = '';
                 title.textContent = '➕ Nuovo Assistito';
                 panel.classList.remove('hidden');
@@ -6463,6 +6464,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('assCitta').value = ass.citta || '';
             document.getElementById('assProvincia').value = ass.provincia || '';
             document.getElementById('assSpedizione').value = ass.indirizzo_spedizione || 'questo';
+            document.getElementById('assIntestatario').value = ass.intestatario_contratto || 'assistito';
             document.getElementById('assNote').value = ass.note || '';
             title.textContent = \`✏️ Modifica: \${ass.nome} \${ass.cognome}\`;
             panel.classList.remove('hidden');
@@ -6489,6 +6491,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 citta:              document.getElementById('assCitta').value.trim() || null,
                 provincia:          document.getElementById('assProvincia').value.trim().toUpperCase() || null,
                 indirizzo_spedizione: document.getElementById('assSpedizione').value || 'questo',
+                intestatario_contratto: document.getElementById('assIntestatario').value || 'assistito',
                 note:               document.getElementById('assNote').value.trim() || null,
             };
             try {
@@ -6599,6 +6602,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                     const sped = ass.indirizzo_spedizione === 'richiedente'
                         ? '<span class="text-orange-600 font-medium">→ Richiedente</span>'
                         : '<span class="text-gray-500">→ Indirizzo proprio</span>';
+                    const intestBadge = (ass.intestatario_contratto || 'assistito') === 'richiedente'
+                        ? '<span class="text-orange-600 font-medium">Richiedente/Lead</span>'
+                        : '<span class="text-indigo-600 font-medium">Questo assistito</span>';
                     const indirizzoStr = [ass.indirizzo, ass.cap, ass.citta, ass.provincia ? \`(\${ass.provincia})\` : '']
                         .filter(Boolean).join(' ') || '<em class="text-gray-400">indirizzo non inserito</em>';
                     const cfStr = ass.codice_fiscale
@@ -6612,7 +6618,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <p class="font-semibold text-gray-900 text-sm">👤 \${ass.nome} \${ass.cognome}\${cfStr ? ' — ' + cfStr : ''}</p>
                                 <p class="text-xs text-gray-600 mt-0.5">\${indirizzoStr}</p>
                                 \${ass.note ? '<p class="text-xs text-gray-500 mt-0.5 italic">📝 ' + ass.note + '</p>' : ''}
-                                <p class="text-xs mt-1">📦 Spedizione: \${sped}</p>
+                                <p class="text-xs mt-1">📦 Spedizione: \${sped} &nbsp;|&nbsp; 📄 Contratto: \${intestBadge}</p>
                             </div>
                             <div class="flex flex-col gap-1 flex-shrink-0">
                                 <button id="btnContrattoAss-\${ass.id}"
@@ -8329,6 +8335,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <label class="block text-xs font-medium text-gray-700 mb-1">📦 Spedizione a</label>
                                 <select id="assSpedizione" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
                                     <option value="questo">Questo assistito</option>
+                                    <option value="richiedente">Richiedente/Lead</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">📄 Intestatario contratto</label>
+                                <select id="assIntestatario" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
+                                    <option value="assistito">Questo assistito</option>
                                     <option value="richiedente">Richiedente/Lead</option>
                                 </select>
                             </div>
