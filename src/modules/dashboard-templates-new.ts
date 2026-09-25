@@ -6285,8 +6285,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                     // Riapri il modal aggiornato
                     viewLead(leadId);
                     const msg = nuovoValore === 'richiedente'
-                        ? '✅ Spedizione impostata all\'indirizzo del richiedente'
-                        : '✅ Spedizione ripristinata all\'indirizzo dell\'assistito';
+                        ? "✅ Spedizione impostata all'indirizzo del richiedente"
+                        : "✅ Spedizione ripristinata all'indirizzo dell'assistito";
                     showToast(msg, 'success');
                 } else {
                     showToast('❌ Errore aggiornamento spedizione: ' + (data.error || 'Errore sconosciuto'), 'error');
