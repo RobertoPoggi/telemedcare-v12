@@ -6159,14 +6159,20 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('viewData').textContent = new Date(lead.created_at).toLocaleDateString('it-IT');
             document.getElementById('viewCM').textContent = lead.cm || 'Nessuno';
 
-            // ── IVA agevolata: mostra stato e configura toggle ────────────────
-            const ivaAgevolata = lead.iva_agevolata == 1 || lead.iva_agevolata === true;
+            // ── IVA: mostra stato e configura toggle (esente 0% > agevolata 4% > standard 22%) ──
+            const ivaEsente    = lead.iva_esente    == 1 || lead.iva_esente    === true;
+            const ivaAgevolata = !ivaEsente && (lead.iva_agevolata == 1 || lead.iva_agevolata === true);
             const ivaEl = document.getElementById('viewIvaAgevolata');
             const ivaBtn = document.getElementById('toggleIvaBtn');
+            const ivaEsenteBtn = document.getElementById('toggleIvaEsenteBtn');
             if (ivaEl) {
-                ivaEl.innerHTML = ivaAgevolata
-                    ? '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">⚕️ IVA 4% — Legge 104 (disabilità 100%) ATTIVA</span>'
-                    : '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-600 border border-gray-200">IVA 22% standard</span>';
+                if (ivaEsente) {
+                    ivaEl.innerHTML = '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-300">🏥 IVA 0% — Esente art. 10 n. 18 d.P.R. 633/1972 ATTIVA</span>';
+                } else if (ivaAgevolata) {
+                    ivaEl.innerHTML = '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">⚕️ IVA 4% — Legge 104 (disabilità 100%) ATTIVA</span>';
+                } else {
+                    ivaEl.innerHTML = '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-600 border border-gray-200">IVA 22% standard</span>';
+                }
             }
             if (ivaBtn) {
                 ivaBtn.textContent = ivaAgevolata ? '🔄 Ripristina IVA 22%' : '⚕️ Attiva IVA 4% Legge 104';
@@ -6174,6 +6180,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                     ? 'px-4 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition font-medium'
                     : 'px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition font-medium';
                 ivaBtn.onclick = () => toggleIvaAgevolata(lead.id, !ivaAgevolata);
+            }
+            if (ivaEsenteBtn) {
+                ivaEsenteBtn.textContent = ivaEsente ? '🔄 Rimuovi Esenzione IVA' : '🏥 Attiva Esenzione IVA (0%)';
+                ivaEsenteBtn.className = ivaEsente
+                    ? 'px-4 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition font-medium'
+                    : 'px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition font-medium';
+                ivaEsenteBtn.onclick = () => toggleIvaEsente(lead.id, !ivaEsente);
             }
 
             // Carica lo storico interazioni
@@ -6199,6 +6212,33 @@ export const leads_dashboard = `<!DOCTYPE html>
                     showToast(attiva ? '✅ IVA 4% Legge 104 attivata' : '✅ IVA ripristinata al 22%', 'success');
                 } else {
                     showToast('❌ Errore aggiornamento IVA: ' + (data.error || 'Errore sconosciuto'), 'error');
+                }
+            } catch (e) {
+                showToast('❌ Errore di rete: ' + e.message, 'error');
+            }
+        }
+
+        async function toggleIvaEsente(leadId, attiva) {
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/iva-esente\`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ iva_esente: attiva ? 1 : 0 })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    // Aggiorna il lead in memoria
+                    const lead = allLeads.find(l => l.id === leadId);
+                    if (lead) {
+                        lead.iva_esente = attiva ? 1 : 0;
+                        // Attivando esente, disattiva agevolata (come fa il server)
+                        if (attiva) lead.iva_agevolata = 0;
+                    }
+                    // Riapri il modal aggiornato
+                    viewLead(leadId);
+                    showToast(attiva ? '✅ Esenzione IVA 0% (art. 10 n. 18) attivata' : '✅ Esenzione IVA rimossa — IVA ripristinata al 22%', 'success');
+                } else {
+                    showToast('❌ Errore aggiornamento esenzione IVA: ' + (data.error || 'Errore sconosciuto'), 'error');
                 }
             } catch (e) {
                 showToast('❌ Errore di rete: ' + e.message, 'error');
@@ -7848,10 +7888,15 @@ export const leads_dashboard = `<!DOCTYPE html>
                     </p>
                 </div>
 
-                <div class="flex justify-between items-center pt-2 border-t">
-                    <button id="toggleIvaBtn" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition font-medium">
-                        ⚕️ Attiva IVA 4% Legge 104
-                    </button>
+                <div class="flex flex-wrap gap-2 justify-between items-center pt-2 border-t">
+                    <div class="flex flex-wrap gap-2">
+                        <button id="toggleIvaBtn" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition font-medium">
+                            ⚕️ Attiva IVA 4% Legge 104
+                        </button>
+                        <button id="toggleIvaEsenteBtn" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition font-medium">
+                            🏥 Attiva Esenzione IVA (0%)
+                        </button>
+                    </div>
                     <button onclick="closeModal('viewLeadModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm">
                         Chiudi
                     </button>
