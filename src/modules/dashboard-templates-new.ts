@@ -6476,30 +6476,41 @@ export const leads_dashboard = `<!DOCTYPE html>
                     container.innerHTML = '<p class="text-gray-400 text-xs text-center py-3 italic">Nessun assistito aggiuntivo — usa il pulsante ➕ per aggiungerne uno.</p>';
                     return;
                 }
+                // Salva la mappa id→oggetto per la funzione di modifica
+                window._leadAssistitiMap = {};
+                list.forEach(a => { window._leadAssistitiMap[a.id] = a; });
+
                 container.innerHTML = list.map(ass => {
                     const sped = ass.indirizzo_spedizione === 'richiedente'
                         ? '<span class="text-orange-600 font-medium">→ Richiedente</span>'
                         : '<span class="text-gray-500">→ Indirizzo proprio</span>';
                     const indirizzoStr = [ass.indirizzo, ass.cap, ass.citta, ass.provincia ? \`(\${ass.provincia})\` : '']
-                        .filter(Boolean).join(' ') || '<span class="text-gray-400 italic">indirizzo non inserito</span>';
-                    const cfStr = ass.codice_fiscale ? \`<span class="font-mono text-gray-600">\${ass.codice_fiscale}</span>\` : '';
+                        .filter(Boolean).join(' ') || '<em class="text-gray-400">indirizzo non inserito</em>';
+                    const cfStr = ass.codice_fiscale
+                        ? \`<span class="font-mono text-gray-600">\${ass.codice_fiscale}</span>\`
+                        : '';
+                    const nomeEsc = (ass.nome + ' ' + ass.cognome).replace(/'/g, "\\'");
                     return \`
                     <div class="border border-indigo-200 bg-indigo-50 rounded-lg p-3 flex flex-col gap-1">
                         <div class="flex items-start justify-between gap-2">
                             <div class="flex-1 min-w-0">
-                                <p class="font-semibold text-gray-900 text-sm">👤 \${ass.nome} \${ass.cognome} \${cfStr ? '— ' + cfStr : ''}</p>
+                                <p class="font-semibold text-gray-900 text-sm">👤 \${ass.nome} \${ass.cognome}\${cfStr ? ' — ' + cfStr : ''}</p>
                                 <p class="text-xs text-gray-600 mt-0.5">\${indirizzoStr}</p>
-                                \${ass.note ? \`<p class="text-xs text-gray-500 mt-0.5 italic">📝 \${ass.note}</p>\` : ''}
+                                \${ass.note ? '<p class="text-xs text-gray-500 mt-0.5 italic">📝 ' + ass.note + '</p>' : ''}
                                 <p class="text-xs mt-1">📦 Spedizione: \${sped}</p>
                             </div>
                             <div class="flex flex-col gap-1 flex-shrink-0">
-                                <button id="btnContrattoAss-\${ass.id}" onclick="sendContractAssistito('\${leadId}', '\${ass.id}', '\${ass.nome} \${ass.cognome}')"
+                                <button id="btnContrattoAss-\${ass.id}"
+                                    onclick="sendContractAssistito('\${leadId}',\${ass.id},'\${nomeEsc}')"
                                     class="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition whitespace-nowrap">📄 Contratto</button>
-                                <button id="btnDdtAss-\${ass.id}" onclick="generaDdtAssistito('\${leadId}', '\${ass.id}', '\${ass.nome} \${ass.cognome}')"
+                                <button id="btnDdtAss-\${ass.id}"
+                                    onclick="generaDdtAssistito('\${leadId}',\${ass.id},'\${nomeEsc}')"
                                     class="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition whitespace-nowrap">📦 DDT</button>
-                                <button onclick='editLeadAssistitoForm(\${JSON.stringify(ass).replace(/'/g, "\\\\'")})'
+                                <button
+                                    onclick="editLeadAssistitoForm(window._leadAssistitiMap[\${ass.id}])"
                                     class="px-2 py-1 bg-yellow-500 text-white text-xs rounded hover:bg-yellow-600 transition whitespace-nowrap">✏️ Modifica</button>
-                                <button onclick="deleteLeadAssistito('\${leadId}', '\${ass.id}', '\${ass.nome} \${ass.cognome}')"
+                                <button
+                                    onclick="deleteLeadAssistito('\${leadId}',\${ass.id},'\${nomeEsc}')"
                                     class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition whitespace-nowrap">🗑️ Elimina</button>
                             </div>
                         </div>
