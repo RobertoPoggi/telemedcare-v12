@@ -718,6 +718,9 @@ app.use('*', async (c, next) => {
         { name: 'iva_agevolata', def: `INTEGER DEFAULT 0` },
         // IVA esente — Esenzione art. 10 n. 18 d.P.R. 633/1972 (prestazioni sanitarie)
         { name: 'iva_esente', def: `INTEGER DEFAULT 0` },
+        // Indirizzo di spedizione dispositivo: 'assistito' (default) | 'richiedente'
+        // Indipendente da intestatarioContratto (che riguarda contratti/fatture)
+        { name: 'indirizzo_spedizione', def: `TEXT DEFAULT 'assistito'` },
       ]
       for (const col of leadsHubspotColumns) {
         try {
@@ -10807,7 +10810,7 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
                 c.leadId,
                 l.nomeRichiedente, l.cognomeRichiedente,
                 l.nomeAssistito, l.cognomeAssistito,
-                l.intestatarioContratto,
+                l.intestatarioContratto, l.indirizzo_spedizione,
                 l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
                 l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
                 l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
@@ -10830,7 +10833,7 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
                   c.leadId,
                   l.nomeRichiedente, l.cognomeRichiedente,
                   l.nomeAssistito, l.cognomeAssistito,
-                  l.intestatarioContratto,
+                  l.intestatarioContratto, l.indirizzo_spedizione,
                   l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
                   l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
                   l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
@@ -10862,17 +10865,11 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
     }
 
     // ── Intestatario ─────────────────────────────────────────────────
-    const intestatario = contractRow?.intestatarioContratto || 'richiedente'
+    // indirizzo_spedizione controlla la destinazione FISICA del dispositivo (DDT).
+    // È indipendente da intestatarioContratto (usato per contratti/fatture).
+    const spedDest = contractRow?.indirizzo_spedizione || 'assistito'
     let nomeInt: string, cognomeInt: string, cfInt: string, indrInt: string, cittaInt: string, capInt: string, provInt: string
-    if (intestatario === 'assistito') {
-      nomeInt    = contractRow?.nomeAssistito     || contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
-      cognomeInt = contractRow?.cognomeAssistito  || contractRow?.cognomeRichiedente || ''
-      cfInt      = contractRow?.cfAssistito       || contractRow?.cfIntestatario     || contractRow?.codiceFiscaleIntestatario || ''
-      indrInt    = contractRow?.indirizzoAssistito|| contractRow?.indirizzoIntestatario || ddt.destinatario_indirizzo || ''
-      cittaInt   = contractRow?.cittaAssistito    || contractRow?.cittaIntestatario   || ddt.destinatario_citta || ''
-      capInt     = contractRow?.capAssistito      || contractRow?.capIntestatario     || ddt.destinatario_cap || ''
-      provInt    = contractRow?.provinciaAssistito|| contractRow?.provinciaIntestatario || ddt.destinatario_provincia || ''
-    } else {
+    if (spedDest === 'richiedente') {
       nomeInt    = contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
       cognomeInt = contractRow?.cognomeRichiedente || ''
       cfInt      = contractRow?.cfIntestatario     || contractRow?.codiceFiscaleIntestatario || contractRow?.cfAssistito || ''
@@ -10880,6 +10877,15 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
       cittaInt   = contractRow?.cittaIntestatario  || contractRow?.cittaAssistito     || ddt.destinatario_citta || ''
       capInt     = contractRow?.capIntestatario    || contractRow?.capAssistito       || ddt.destinatario_cap || ''
       provInt    = contractRow?.provinciaIntestatario || contractRow?.provinciaAssistito || ddt.destinatario_provincia || ''
+    } else {
+      // 'assistito' (default)
+      nomeInt    = contractRow?.nomeAssistito     || contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
+      cognomeInt = contractRow?.cognomeAssistito  || contractRow?.cognomeRichiedente || ''
+      cfInt      = contractRow?.cfAssistito       || contractRow?.cfIntestatario     || contractRow?.codiceFiscaleIntestatario || ''
+      indrInt    = contractRow?.indirizzoAssistito|| contractRow?.indirizzoIntestatario || ddt.destinatario_indirizzo || ''
+      cittaInt   = contractRow?.cittaAssistito    || contractRow?.cittaIntestatario   || ddt.destinatario_citta || ''
+      capInt     = contractRow?.capAssistito      || contractRow?.capIntestatario     || ddt.destinatario_cap || ''
+      provInt    = contractRow?.provinciaAssistito|| contractRow?.provinciaIntestatario || ddt.destinatario_provincia || ''
     }
     const capCittaProv = [capInt, cittaInt, provInt ? `(${provInt})` : ''].filter(Boolean).join(' ')
 
@@ -11208,7 +11214,7 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
         `SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
                 c.prezzo_totale, c.rateizzazione_attiva, c.riserva_dominio,
                 c.leadId,
-                l.intestatarioContratto,
+                l.intestatarioContratto, l.indirizzo_spedizione,
                 l.nomeRichiedente, l.cognomeRichiedente,
                 l.nomeAssistito, l.cognomeAssistito,
                 l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
@@ -11230,7 +11236,7 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
           `SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
                   c.prezzo_totale, c.rateizzazione_attiva, c.riserva_dominio,
                   c.leadId,
-                  l.intestatarioContratto,
+                  l.intestatarioContratto, l.indirizzo_spedizione,
                   l.nomeRichiedente, l.cognomeRichiedente,
                   l.nomeAssistito, l.cognomeAssistito,
                   l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
@@ -11294,14 +11300,16 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
     const riservaDominioP = !!(contractRow?.riserva_dominio || contractRow?.lead_riserva_dominio)
 
     // ── Intestatario ─────────────────────────────────────────────────
-    const intestatario = contractRow?.intestatarioContratto || 'richiedente'
+    // Per la pre-fattura usiamo indirizzo_spedizione (destinazione fisica dispositivo)
+    const spedDestP = contractRow?.indirizzo_spedizione || 'assistito'
     let nomeIntP: string, cognomeIntP: string
-    if (intestatario === 'assistito') {
-      nomeIntP    = contractRow?.nomeAssistito    || contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
-      cognomeIntP = contractRow?.cognomeAssistito || contractRow?.cognomeRichiedente || ''
-    } else {
+    if (spedDestP === 'richiedente') {
       nomeIntP    = contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
       cognomeIntP = contractRow?.cognomeRichiedente || ''
+    } else {
+      // 'assistito' (default)
+      nomeIntP    = contractRow?.nomeAssistito    || contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
+      cognomeIntP = contractRow?.cognomeAssistito || contractRow?.cognomeRichiedente || ''
     }
 
     // ── Numero pre-fattura ────────────────────────────────────────────
@@ -14742,6 +14750,9 @@ app.put('/api/leads/:id', async (c) => {
       // IVA agevolata 4% (Legge 104, disabilità 100%)
       iva_agevolata: 'iva_agevolata',
       
+      // Indirizzo di spedizione dispositivo: 'assistito' | 'richiedente'
+      indirizzo_spedizione: 'indirizzo_spedizione',
+      
       // Altri
       condizioniSalute: 'condizioniSalute',
       intestatarioContratto: 'intestatarioContratto',
@@ -15195,7 +15206,46 @@ app.patch('/api/leads/:id/iva-esente', async (c) => {
 // RINNOVI CONTRATTUALI
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Tabella prezzi rinnovo (IVA esclusa) per servizio+piano
+// PATCH /api/leads/:id/indirizzo-spedizione — Imposta indirizzo spedizione dispositivo
+// Valori accettati: 'assistito' (default) | 'richiedente'
+// Questo flag è separato da intestatarioContratto (usato per contratti/fatture)
+// e controlla esclusivamente la destinazione fisica di spedizione del dispositivo (DDT).
+app.patch('/api/leads/:id/indirizzo-spedizione', async (c) => {
+  const leadId = c.req.param('id')
+  try {
+    const body = await c.req.json()
+    const valore = body.indirizzo_spedizione
+
+    if (valore !== 'assistito' && valore !== 'richiedente') {
+      return c.json({ success: false, error: "Valore non valido. Usare 'assistito' o 'richiedente'" }, 400)
+    }
+
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    }
+
+    await c.env.DB.prepare(`
+      UPDATE leads
+      SET indirizzo_spedizione = ?, updated_at = ?
+      WHERE id = ?
+    `).bind(valore, new Date().toISOString(), leadId).run()
+
+    console.log(`✅ indirizzo_spedizione aggiornato per lead ${leadId}: ${valore}`)
+
+    return c.json({
+      success: true,
+      leadId,
+      indirizzo_spedizione: valore,
+      message: valore === 'richiedente'
+        ? "Spedizione impostata all'indirizzo del richiedente/lead"
+        : "Spedizione impostata all'indirizzo dell'assistito (default)"
+    })
+  } catch (error) {
+    console.error('❌ Errore aggiornamento indirizzo_spedizione:', error)
+    return c.json({ success: false, error: 'Errore aggiornamento indirizzo spedizione' }, 500)
+  }
+})
+
 const PREZZI_RINNOVO_BASE: Record<string, Record<string, number>> = {
   'eCura FAMILY': { BASE: 200, AVANZATO: 500 },
   'eCura PRO':    { BASE: 240, AVANZATO: 600 },
@@ -35000,23 +35050,26 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     const pricing = getPricing(servizioUpper, pianoUpper)
     const dispositivo = pricing?.dispositivo || 'SiDLY Care PRO'
 
-    // --- 3. Determina intestatario (assistito o richiedente) ---
-    const intestatario = lead.intestatarioContratto || 'richiedente'
-    const nomeDestinatario = intestatario === 'assistito'
-      ? `${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`.trim()
-      : `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
-    const indirizzoDestinatario = intestatario === 'assistito'
-      ? lead.indirizzoAssistito || lead.indirizzoIntestatario || ''
-      : lead.indirizzoIntestatario || ''
-    const capDestinatario = intestatario === 'assistito'
-      ? lead.capAssistito || lead.capIntestatario || ''
-      : lead.capIntestatario || ''
-    const cittaDestinatario = intestatario === 'assistito'
-      ? lead.cittaAssistito || lead.cittaIntestatario || ''
-      : lead.cittaIntestatario || ''
-    const provinciaDestinatario = intestatario === 'assistito'
-      ? lead.provinciaAssistito || lead.provinciaIntestatario || ''
-      : lead.provinciaIntestatario || ''
+    // --- 3. Determina indirizzo di spedizione dispositivo ---
+    // indirizzo_spedizione è indipendente da intestatarioContratto:
+    //   'assistito'  (default) → spedisce all'assistito
+    //   'richiedente'          → spedisce al richiedente/lead
+    const spedizioneDest = lead.indirizzo_spedizione || 'assistito'
+    const nomeDestinatario = spedizioneDest === 'richiedente'
+      ? `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
+      : `${lead.nomeAssistito || lead.nomeRichiedente || ''} ${lead.cognomeAssistito || lead.cognomeRichiedente || ''}`.trim()
+    const indirizzoDestinatario = spedizioneDest === 'richiedente'
+      ? lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
+      : lead.indirizzoAssistito || lead.indirizzoIntestatario || ''
+    const capDestinatario = spedizioneDest === 'richiedente'
+      ? lead.capIntestatario || lead.capAssistito || ''
+      : lead.capAssistito || lead.capIntestatario || ''
+    const cittaDestinatario = spedizioneDest === 'richiedente'
+      ? lead.cittaIntestatario || lead.cittaAssistito || ''
+      : lead.cittaAssistito || lead.cittaIntestatario || ''
+    const provinciaDestinatario = spedizioneDest === 'richiedente'
+      ? lead.provinciaIntestatario || lead.provinciaAssistito || ''
+      : lead.provinciaAssistito || lead.provinciaIntestatario || ''
 
     // --- 4. Numero DDT: formato "DDT-NNN-AAAA" (es. DDT-008-2026) ---
     const annoCorrente = new Date().getFullYear()

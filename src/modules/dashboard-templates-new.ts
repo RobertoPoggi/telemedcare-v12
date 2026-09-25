@@ -6192,6 +6192,27 @@ export const leads_dashboard = `<!DOCTYPE html>
                 ivaEsenteBtn.onclick = () => toggleIvaEsente(lead.id, !ivaEsente);
             }
 
+            // ── Indirizzo spedizione dispositivo ──────────────────────────
+            const spedizione = lead.indirizzo_spedizione || 'assistito';
+            const spedEl  = document.getElementById('viewSpedizione');
+            const spedBtn = document.getElementById('toggleSpedizioneBtn');
+            if (spedEl) {
+                if (spedizione === 'richiedente') {
+                    spedEl.innerHTML = '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-300">📦 Spedizione → Richiedente/Lead</span>';
+                } else {
+                    spedEl.innerHTML = '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-600 border border-gray-200">📦 Spedizione → Assistito (default)</span>';
+                }
+            }
+            if (spedBtn) {
+                spedBtn.textContent = spedizione === 'richiedente'
+                    ? '🔄 Ripristina spedizione → Assistito'
+                    : '📦 Spedisci al Richiedente';
+                spedBtn.className = spedizione === 'richiedente'
+                    ? 'px-4 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition font-medium'
+                    : 'px-4 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition font-medium';
+                spedBtn.onclick = () => toggleIndirizzaSpedizione(lead.id, spedizione === 'richiedente' ? 'assistito' : 'richiedente');
+            }
+
             // Carica lo storico interazioni
             loadInteractions(leadId);
             
@@ -6242,6 +6263,32 @@ export const leads_dashboard = `<!DOCTYPE html>
                     showToast(attiva ? '✅ Esenzione IVA 0% (art. 10 n. 18) attivata' : '✅ Esenzione IVA rimossa — IVA ripristinata al 22%', 'success');
                 } else {
                     showToast('❌ Errore aggiornamento esenzione IVA: ' + (data.error || 'Errore sconosciuto'), 'error');
+                }
+            } catch (e) {
+                showToast('❌ Errore di rete: ' + e.message, 'error');
+            }
+        }
+
+        async function toggleIndirizzaSpedizione(leadId, nuovoValore) {
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/indirizzo-spedizione\`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ indirizzo_spedizione: nuovoValore })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    // Aggiorna il lead in memoria
+                    const lead = allLeads.find(l => l.id === leadId);
+                    if (lead) lead.indirizzo_spedizione = nuovoValore;
+                    // Riapri il modal aggiornato
+                    viewLead(leadId);
+                    const msg = nuovoValore === 'richiedente'
+                        ? '✅ Spedizione impostata all\'indirizzo del richiedente'
+                        : '✅ Spedizione ripristinata all\'indirizzo dell\'assistito';
+                    showToast(msg, 'success');
+                } else {
+                    showToast('❌ Errore aggiornamento spedizione: ' + (data.error || 'Errore sconosciuto'), 'error');
                 }
             } catch (e) {
                 showToast('❌ Errore di rete: ' + e.message, 'error');
@@ -7873,6 +7920,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <span class="text-xs text-gray-500">—</span>
                         </div>
                     </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">📦 Indirizzo Spedizione Dispositivo</label>
+                        <div id="viewSpedizione" class="p-2 rounded">
+                            <span class="text-xs text-gray-500">—</span>
+                        </div>
+                    </div>
                     <div class="col-span-3">
                         <label class="block text-xs font-medium text-gray-700 mb-1">Note</label>
                         <p id="viewNote" class="text-gray-900 bg-gray-50 p-2 rounded min-h-[50px] text-xs">-</p>
@@ -7898,6 +7951,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                         </button>
                         <button id="toggleIvaEsenteBtn" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition font-medium">
                             🏥 Attiva Esenzione IVA (0%)
+                        </button>
+                        <button id="toggleSpedizioneBtn" class="px-4 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition font-medium">
+                            📦 Spedisci al Richiedente
                         </button>
                     </div>
                     <button onclick="closeModal('viewLeadModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm">

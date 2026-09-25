@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audit SEO/GEO/AEO/AI/Backlink — www.ecura.it | Settembre 2026</title>
+<style>
+  :root {
+    --primary: #1a56db;
+    --success: #057a55;
+    --warning: #c27803;
+    --danger: #e02424;
+    --info: #6b7280;
+    --bg: #f9fafb;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  
+  .header { background: linear-gradient(135deg, #1a56db 0%, #0e4199 100%); color: white; padding: 48px 40px 40px; }
+  .header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+  .header .subtitle { font-size: 1.1rem; opacity: 0.85; margin-bottom: 24px; }
+  .header .meta { display: flex; gap: 24px; flex-wrap: wrap; font-size: 0.875rem; opacity: 0.75; }
+  .header .meta span { display: flex; align-items: center; gap: 6px; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 20px; }
+  
+  /* Score cards */
+  .score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 40px; }
+  .score-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .score-card .score { font-size: 2.8rem; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+  .score-card .score.green { color: var(--success); }
+  .score-card .score.yellow { color: var(--warning); }
+  .score-card .score.red { color: var(--danger); }
+  .score-card .label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; }
+  .score-card .sublabel { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+  /* Sections */
+  .section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 28px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .section h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 2px solid var(--border); }
+  .section h2 .emoji { font-size: 1.4rem; }
+  .section h3 { font-size: 1rem; font-weight: 600; margin: 20px 0 12px; color: #374151; }
+
+  /* Status badges */
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 9999px; }
+  .badge.ok { background: #d1fae5; color: #065f46; }
+  .badge.warn { background: #fef3c7; color: #92400e; }
+  .badge.err { background: #fee2e2; color: #991b1b; }
+  .badge.info { background: #dbeafe; color: #1e40af; }
+
+  /* Check list */
+  .checklist { list-style: none; }
+  .checklist li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; font-size: 0.9rem; }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist .icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+  .checklist .details { color: var(--muted); font-size: 0.82rem; margin-top: 2px; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  th { background: #f9fafb; text-align: left; padding: 10px 12px; font-weight: 600; border-bottom: 2px solid var(--border); color: #374151; font-size: 0.8rem; text-transform: uppercase; letter-spacing: .04em; }
+  td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f9fafb; }
+  .url { font-family: monospace; font-size: 0.8rem; color: #1a56db; }
+  .status-ok { color: var(--success); font-weight: 600; }
+  .status-warn { color: var(--warning); font-weight: 600; }
+  .status-err { color: var(--danger); font-weight: 600; }
+
+  /* Priority matrix */
+  .priority-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .priority-box { border-radius: 10px; padding: 18px; }
+  .priority-box.critical { background: #fff5f5; border: 1px solid #fca5a5; }
+  .priority-box.high { background: #fffbeb; border: 1px solid #fcd34d; }
+  .priority-box.medium { background: #f0f9ff; border: 1px solid #7dd3fc; }
+  .priority-box.low { background: #f0fdf4; border: 1px solid #86efac; }
+  .priority-box h4 { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; }
+  .priority-box.critical h4 { color: var(--danger); }
+  .priority-box.high h4 { color: var(--warning); }
+  .priority-box.medium h4 { color: #0369a1; }
+  .priority-box.low h4 { color: var(--success); }
+  .priority-box ul { list-style: none; font-size: 0.875rem; }
+  .priority-box ul li { padding: 4px 0; padding-left: 16px; position: relative; }
+  .priority-box ul li::before { content: "→"; position: absolute; left: 0; opacity: 0.6; }
+
+  /* Progress bar */
+  .progress-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; font-size: 0.875rem; }
+  .progress-bar { flex: 1; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 4px; }
+  .progress-fill.green { background: var(--success); }
+  .progress-fill.yellow { background: var(--warning); }
+  .progress-fill.red { background: var(--danger); }
+  .progress-label { width: 40px; text-align: right; font-weight: 600; font-size: 0.8rem; }
+
+  /* Alert box */
+  .alert { border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; display: flex; gap: 12px; align-items: flex-start; }
+  .alert.success { background: #ecfdf5; border: 1px solid #6ee7b7; }
+  .alert.warning { background: #fffbeb; border: 1px solid #fcd34d; }
+  .alert.danger { background: #fff5f5; border: 1px solid #fca5a5; }
+  .alert.info { background: #eff6ff; border: 1px solid #bfdbfe; }
+  .alert .alert-icon { font-size: 1.3rem; flex-shrink: 0; }
+  .alert .alert-body h4 { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+  .alert .alert-body p { font-size: 0.875rem; color: #374151; }
+
+  /* Two-col layout */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 680px) {
+    .two-col, .priority-grid { grid-template-columns: 1fr; }
+    .score-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  /* Competitor table */
+  .comp-win { background: #d1fae5; color: #065f46; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+  .comp-lose { background: #fee2e2; color: #991b1b; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+  .comp-tie { background: #f3f4f6; color: #374151; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+
+  /* Timeline */
+  .timeline { padding-left: 20px; border-left: 3px solid var(--border); }
+  .timeline-item { position: relative; padding: 0 0 20px 20px; }
+  .timeline-item::before { content: ''; position: absolute; left: -8px; top: 4px; width: 13px; height: 13px; border-radius: 50%; background: var(--primary); border: 2px solid white; box-shadow: 0 0 0 2px var(--primary); }
+  .timeline-item h4 { font-weight: 600; font-size: 0.9rem; }
+  .timeline-item p { font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
+
+  .footer { text-align: center; padding: 32px 20px; color: var(--muted); font-size: 0.8rem; border-top: 1px solid var(--border); margin-top: 40px; }
+  .tag { display: inline-block; background: #eff6ff; color: #1d4ed8; font-size: 0.72rem; font-weight: 600; padding: 2px 7px; border-radius: 4px; margin: 2px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔍 Audit SEO / GEO / AEO / AI / Backlink</h1>
+  <div class="subtitle">www.ecura.it — Analisi tecnica completa</div>
+  <div class="meta">
+    <span>📅 22 Settembre 2026</span>
+    <span>🏢 Medica GB S.r.l.</span>
+    <span>🌐 www.ecura.it</span>
+    <span>🔧 Cloudflare Pages (ecura-landing)</span>
+    <span>📊 21 URL analizzate</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- EXECUTIVE SUMMARY SCORES -->
+  <div class="score-grid">
+    <div class="score-card">
+      <div class="score green">87</div>
+      <div class="label">SEO Score</div>
+      <div class="sublabel">Tecnico + Onpage</div>
+    </div>
+    <div class="score-card">
+      <div class="score green">92</div>
+      <div class="label">GEO Score</div>
+      <div class="sublabel">Local SEO</div>
+    </div>
+    <div class="score-card">
+      <div class="score green">90</div>
+      <div class="label">AEO Score</div>
+      <div class="sublabel">Answer Engine</div>
+    </div>
+    <div class="score-card">
+      <div class="score green">95</div>
+      <div class="label">AI Score</div>
+      <div class="sublabel">LLM Readiness</div>
+    </div>
+    <div class="score-card">
+      <div class="score yellow">42</div>
+      <div class="label">Backlink</div>
+      <div class="sublabel">Authority</div>
+    </div>
+    <div class="score-card">
+      <div class="score green">100</div>
+      <div class="label">Uptime</div>
+      <div class="sublabel">21/21 pagine OK</div>
+    </div>
+    <div class="score-card">
+      <div class="score green">95</div>
+      <div class="label">Schema</div>
+      <div class="sublabel">37 @type values</div>
+    </div>
+    <div class="score-card">
+      <div class="score yellow">62</div>
+      <div class="label">Content Gap</div>
+      <div class="sublabel">vs. competitor</div>
+    </div>
+  </div>
+
+  <!-- INCIDENT ALERT: 404 RISOLTO -->
+  <div class="alert success">
+    <div class="alert-icon">✅</div>
+    <div class="alert-body">
+      <h4>INCIDENTE RISOLTO — 17 pagine 404 ripristinate</h4>
+      <p>Il deploy wrangler del solo <code>ai-catalog.json</code> aveva sovrascritto il progetto <strong>ecura-landing</strong> cancellando 17/21 pagine. 
+      Effettuato rollback al deployment <code>1e5066bc</code> via Cloudflare API, poi ridistribuite tutte le pagine + <code>ai-catalog.json</code> nel deployment <code>06797782</code>. 
+      Sito ora <strong>21/21 ✅ HTTP 200</strong>. Causa: <code>wrangler pages deploy &lt;dir&gt;</code> sostituisce l'intero sito — non fare deploy di directory parziali.</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- 1. TECHNICAL SEO -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="section">
+    <h2><span class="emoji">⚙️</span> 1. Technical SEO</h2>
+
+    <div class="two-col">
+      <div>
+        <h3>Meta & On-Page</h3>
+        <ul class="checklist">
+          <li><span class="icon">✅</span><div><strong>Title tag</strong><br><div class="details">"Bracciale Cadute Anziani con GPS e Teleassistenza H24 | eCura" — 61 chars, keyword-first, brand finale</div></div></li>
+          <li><span class="icon">✅</span><div><strong>Meta description</strong><br><div class="details">121 chars — entro 160, include USP (Classe IIA, GPS, H24)</div></div></li>
+          <li><span class="icon">✅</span><div><strong>Canonical URL</strong><br><div class="details">https://www.ecura.it/ — correttamente impostato</div></div></li>
+          <li><span class="icon">✅</span><div><strong>H1 tag unico</strong><br><div class="details">"Bracciale Cadute Anziani con GPS, SOS Automatico e Teleassistenza H24"</div></div></li>
+          <li><span class="icon">✅</span><div><strong>Struttura heading corretta</strong><br><div class="details">H1 → H2 → H3 senza salti di livello</div></div></li>
+          <li><span class="icon">✅</span><div><strong>Hreflang</strong><br><div class="details">it + x-default — corretto per sito mono-lingua Italia</div></div></li>
+          <li><span class="icon">⚠️</span><div><strong>2 immagini con alt vuoto</strong><br><div class="details">34 totali, 32 corrette. Correggere le 2 con alt="" per accessibilità e image SEO</div></div></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Infrastruttura & Performance</h3>
+        <ul class="checklist">
+          <li><span class="icon">✅</span><div><strong>HTTPS + SSL Google Trust Services</strong><br><div class="details">Cert WE1, scade 4 Nov 2026 — rinnovare entro ottobre</div></div></li>
+          <li><span class="icon">✅</span><div><strong>HSTS preload</strong><br><div class="details">max-age=31536000; includeSubDomains; preload</div></div></li>
+          <li><span class="icon">✅</span><div><strong>Security headers completi</strong><br><div class="details">X-Frame-Options, X-XSS-Protection, X-Content-Type, Referrer-Policy</div></div></li>
+          <li><span class="icon">✅</span><div><strong>CSP configurata (report-only)</strong><br><div class="details">Pronta per enforcement — passare a Content-Security-Policy</div></div></li>
+          <li><span class="icon">✅</span><div><strong>Cache-Control ottimizzato</strong><br><div class="details">public, max-age=3600, stale-while-revalidate=86400</div></div></li>
+          <li><span class="icon">✅</span><div><strong>Cloudflare CDN globale</strong><br><div class="details">Server: cloudflare, cf-ray, PoP Frankfurt (FRA)</div></div></li>
+          <li><span class="icon">✅</span><div><strong>Performance tecniche</strong><br><div class="details">Critical CSS inline, font preload, LCP fetchpriority, lazy loading, WebP, PWA manifest</div></div></li>
+          <li><span class="icon">⚠️</span><div><strong>SSL scade 4 Nov 2026</strong><br><div class="details">43 giorni. Cloudflare rinnova auto — verificare che il rinnovo automatico sia attivo</div></div></li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Crawlability & Indexing</h3>
+    <div class="two-col">
+      <ul class="checklist">
+        <li><span class="icon">✅</span><div><strong>Sitemap XML</strong><br><div class="details">https://www.ecura.it/sitemap.xml — 21 URL + immagini</div></div></li>
+        <li><span class="icon">✅</span><div><strong>robots.txt</strong><br><div class="details">Ottimizzato: 50+ user-agent (Google, Bing, AI bots), crawl-delay per Ahrefs/SEMrush, blocca /admin/ e /?q=</div></div></li>
+        <li><span class="icon">✅</span><div><strong>RSS Feed</strong><br><div class="details">https://www.ecura.it/blog/feed.xml — aggiornato</div></div></li>
+        <li><span class="icon">✅</span><div><strong>IndexNow implementato</strong><br><div class="details">Notifica real-time a Bing/Yandex sui nuovi contenuti</div></div></li>
+      </ul>
+      <ul class="checklist">
+        <li><span class="icon">✅</span><div><strong>21/21 pagine HTTP 200</strong><br><div class="details">Tutte le URL in sitemap rispondono correttamente post-rollback</div></div></li>
+        <li><span class="icon">✅</span><div><strong>PWA manifest</strong><br><div class="details">web-app-manifest-192x192.png + 512x512.png</div></div></li>
+        <li><span class="icon">✅</span><div><strong>Redirect configurati</strong><br><div class="details">_redirects attivo su Cloudflare Pages</div></div></li>
+        <li><span class="icon">⚠️</span><div><strong>URL /strategia-seo-link-building/ bloccata in robots.txt</strong><br><div class="details">Verifica se è intenzionale — esclusa dall'indice</div></div></li>
+      </ul>
+    </div>
+
+    <h3>Sitemap Status — 21/21 URL ✅</h3>
+    <table>
+      <thead><tr><th>URL</th><th>Status</th><th>Priorità SEO</th></tr></thead>
+      <tbody>
+        <tr><td class="url">/</td><td class="status-ok">200 ✅</td><td>Homepage — keyword principale</td></tr>
+        <tr><td class="url">/confronto-bracciali-anziani/</td><td class="status-ok">200 ✅</td><td>Alta — competitor comparison page</td></tr>
+        <tr><td class="url">/bracciale-anziani-detraibile/</td><td class="status-ok">200 ✅</td><td>Alta — keyword detrazioni fiscali</td></tr>
+        <tr><td class="url">/come-funziona-bracciale-ecura/</td><td class="status-ok">200 ✅</td><td>Alta — funnel informativo</td></tr>
+        <tr><td class="url">/guida-cadute-anziani/</td><td class="status-ok">200 ✅</td><td>Alta — SEO informativo</td></tr>
+        <tr><td class="url">/guida-dispositivi-medici-teleassistenza/</td><td class="status-ok">200 ✅</td><td>Media — niche authority</td></tr>
+        <tr><td class="url">/statistiche-cadute-anziani-italia/</td><td class="status-ok">200 ✅</td><td>Alta — linkbait/backlink magnet</td></tr>
+        <tr><td class="url">/partner/</td><td class="status-ok">200 ✅</td><td>Media — B2B</td></tr>
+        <tr><td class="url">/blog/ (+ 12 post)</td><td class="status-ok">200 ✅ (13/13)</td><td>Alta — content cluster</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- 2. STRUCTURED DATA / SCHEMA.ORG -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="section">
+    <h2><span class="emoji">🧩</span> 2. Structured Data — Schema.org</h2>
+
+    <div class="alert info">
+      <div class="alert-icon">ℹ️</div>
+      <div class="alert-body">
+        <h4>37 @type values — Implementazione di livello enterprise</h4>
+        <p>Struttura @graph con 2 blocchi JSON-LD: uno principale (Organization/LocalBusiness + Service + WebSite + MedicalDevice + Product + FAQPage) e uno WebPage con SpeakableSpecification.</p>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <h3>@type implementati (37 totali)</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:16px;">
+          <span class="tag">Organization</span><span class="tag">LocalBusiness</span><span class="tag">Service</span>
+          <span class="tag">WebSite</span><span class="tag">WebPage</span><span class="tag">BreadcrumbList</span>
+          <span class="tag">MedicalDevice</span><span class="tag">Product</span><span class="tag">FAQPage</span>
+          <span class="tag">AggregateRating</span><span class="tag">Review</span><span class="tag">Offer</span>
+          <span class="tag">OfferCatalog</span><span class="tag">OfferShippingDetails</span><span class="tag">MerchantReturnPolicy</span>
+          <span class="tag">ContactPoint</span><span class="tag">PostalAddress</span><span class="tag">GeoCoordinates</span>
+          <span class="tag">OpeningHoursSpecification</span><span class="tag">SearchAction</span><span class="tag">EntryPoint</span>
+          <span class="tag">SpeakableSpecification</span><span class="tag">ImageObject</span><span class="tag">Person</span>
+          <span class="tag">Brand</span><span class="tag">MedicalCode</span><span class="tag">PropertyValue</span>
+          <span class="tag">DefinedRegion</span><span class="tag">Country</span><span class="tag">MonetaryAmount</span>
+          <span class="tag">QuantitativeValue</span><span class="tag">Rating</span><span class="tag">Answer</span>
+          <span class="tag">Question</span><span class="tag">ListItem</span><span class="tag">Thing</span><span class="tag">ShippingDeliveryTime</span>
+        </div>
+
+        <h3>Highlights Schema</h3>
+        <ul class="checklist">
+          <li><span class="icon">✅</span><div><strong>AggregateRating</strong><br><div class="details">4.9/5 stelle · 847 recensioni → Rich Snippet in SERP</div></div></li>
+          <li><span class="icon">✅</span><div><strong>FAQPage — 9 domande</strong><br><div class="details">Eligible per People Also Ask box su Google</div></div></li>
+          <li><span class="icon">✅</span><div><strong>MedicalDevice (Classe IIA)</strong><br><div class="details">Unico differenziatore vs competitor — BD/RDM 2853300</div></div></li>
+          <li><span class="icon">✅</span><div><strong>Product con Offer pricing</strong><br><div class="details">Prezzi strutturati → eligible per Shopping snippet</div></div></li>
+          <li><span class="icon">✅</span><div><strong>SpeakableSpecification</strong><br><div class="details">cssSelector .hero-title → ottimizzato per voice search e AI</div></div></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Dati strutturati chiave</h3>
+        <table>
+          <tr><th>Campo</th><th>Valore</th></tr>
+          <tr><td>AggregateRating</td><td><strong>4.9 / 5</strong> (847 reviews)</td></tr>
+          <tr><td>FAQ count</td><td>9 domande FAQ</td></tr>
+          <tr><td>Prezzo base</td><td>€390/anno (Family BASE)</td></tr>
+          <tr><td>GeoCoordinates</td><td>45.4654219, 9.1859243 (Milano)</td></tr>
+          <tr><td>P.IVA</td><td>IT12435130963 (verificata)</td></tr>
+          <tr><td>Cert. MDR</td><td>BD/RDM 2853300 — Classe IIA</td></tr>
+          <tr><td>Telefono</td><td>+39 335 730 1206</td></tr>
+          <tr><td>Email</td><td>info@ecura.it</td></tr>
+        </table>
+
+        <h3 style="margin-top:20px;">Schema mancanti — Quick Wins</h3>
+        <ul class="checklist">
+          <li><span class="icon">❌</span><div><strong>HowTo schema</strong><br><div class="details">Aggiungere in "Come funziona" per rich snippet How-to steps</div></div></li>
+          <li><span class="icon">❌</span><div><strong>VideoObject</strong><br><div class="details">Se presente un video demo/tutorial, strutturarlo</div></div></li>
+          <li><span class="icon">❌</span><div><strong>ItemList per blog</strong><br><div class="details">Schema ItemList sull'index /blog/ per carousel in SERP</td></div></li>
+          <li><span class="icon">⚠️</span><div><strong>Review markup</strong><br><div class="details">Presenti ma verificare che siano recensioni reali da clienti (linee guida Google)</div></div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- 3. GEO — LOCAL SEO -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="section">
+    <h2><span class="emoji">📍</span> 3. GEO — Local SEO</h2>
+
+    <div class="alert success">
+      <div class="alert-icon">🏆</div>
+      <div class="alert-body">
+        <h4>Score GEO: 92/100 — Implementazione eccellente</h4>
+        <p>eCura ha uno dei profili Local SEO più completi per un e-commerce medico italiano. Tutti i segnali geolocalizzazione sono presenti e correttamente strutturati.</p>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <ul class="checklist">
+          <li><span class="icon">✅</span><div><strong>GeoCoordinates</strong><br><div class="details">lat: 45.4654219, lng: 9.1859243 — Milano, Piazza Grandi 14</div></div></li>
+          <li><span class="icon">✅</span><div><strong>LocalBusiness schema</strong><br><div class="details">Nome, indirizzo, telefono, email, orari strutturati</div></div></li>
+          <li><span class="icon">✅</span><div><strong>PostalAddress completo</strong><br><div class="details">Via Piazza Grandi 14, 20134 Milano (MI), IT</div></div></li>
+          <li><span class="icon">✅</span><div><strong>areaServed: Italia</strong><br><div class="details">Country: IT — scope nazionale correttamente dichiarato</div></div></li>
+          <li><span class="icon">✅</span><div><strong>OpeningHoursSpecification</strong><br><div class="details">Orari Centrale Operativa H24 strutturati</div></div></li>
+          <li><span class="icon">✅</span><div><strong>hreflang it + x-default</strong><br><div class="details">Signal linguistico/geografico per Google Italia</div></div></li>
+          <li><span class="icon">✅</span><div><strong>vatID verificato</strong><br><div class="details">IT12435130963 — credibilità E-E-A-T alta</div></div></li>
+          <li><span class="icon">✅</span><div><strong>foundingDate</strong><br><div class="details">Anno fondazione dichiarato in schema</div></div></li>
+        </ul>
+      </div>
+      <div>
+        <ul class="checklist">
+          <li><span class="icon">✅</span><div><strong>Link a sito madre</strong><br><div class="details">5 link a www.medicagb.it — NAP consistency tra siti</div></div></li>
+          <li><span class="icon">✅</span><div><strong>Link autorità istituzionali</strong><br><div class="details">salute.gov.it, epicentro.iss.it, eur-lex.europa.eu → E-E-A-T</div></div></li>
+          <li><span class="icon">⚠️</span><div><strong>Google Business Profile</strong><br><div class="details">Non verificabile da audit — assicurarsi che GBP sia attivo e NAP coerente con schema</div></div></li>
+          <li><span class="icon">⚠️</span><div><strong>Citazioni locali</strong><br><div class="details">Presenze su directory italiane (PagineBianche, Europages, Kompass) non verificate</div></div></li>
+          <li><span class="icon">❌</span><div><strong>Pagina /contatti/ assente</strong><br><div class="details">Una pagina dedicata /contatti/ con schema ContactPage migliora i segnali local</div></div></li>
+          <li><span class="icon">❌</span><div><strong>Schema @type MedicalOrganization</strong><br><div class="details">Aggiungere oltre a LocalBusiness per copertura specifica settore medico</div></div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- 4. AEO — ANSWER ENGINE OPTIMIZATION -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="section">
+    <h2><span class="emoji">💬</span> 4. AEO — Answer Engine Optimization</h2>
+    <p style="margin-bottom:20px; color:var(--muted); font-size:0.875rem;">Ottimizzazione per Featured Snippets, People Also Ask (PAA), Knowledge Panel e voice search Google Assistant / Siri / Alexa.</p>
+
+    <div class="two-col">
+      <div>
+        <h3>Segnali AEO presenti</h3>
+        <ul class="checklist">
+          <li><span class="icon">✅</span><div><strong>FAQPage schema — 9 FAQ</strong><br><div class="details">Eligible per PAA box. Domande ottimizzate per long-tail</div></div></li>
+          <li><span class="icon">✅</span><div><strong>SpeakableSpecification</strong><br><div class="details">.hero-title indicizzato per voice search Google Action</div></div></li>
+          <li><span class="icon">✅</span><div><strong>Keyword density bilanciata</strong><br><div class="details">"ecura" 184x, "bracciale" 66x, "anziani" 53x, "cadute" 36x, "teleassistenza" 31x — naturale</div></div></li>
+          <li><span class="icon">✅</span><div><strong>5400 parole homepage</strong><br><div class="details">Copertura semantica completa del topic cluster</div></div></li>
+          <li><span class="icon">✅</span><div><strong>AggregateRating 4.9/5</strong><br><div class="details">Stars snippet attrae click in SERP su query informative</div></div></li>
+          <li><span class="icon">✅</span><div><strong>MedicalDevice schema + MedicalCode</strong><br><div class="details">Autorità topical per query mediche — E-E-A-T elevato</div></div></li>
+          <li><span class="icon">✅</span><div><strong>12 post blog tematici</strong><br><div class="details">Cluster su: guida, confronto, detrazioni, GPS, cadute, badante vs. teleassistenza</div></div></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Quick Wins AEO</h3>
+        <ul class="checklist">
+          <li><span class="icon">❌</span><div><strong>HowTo schema mancante</strong><br><div class="details">Aggiungere su /come-funziona-bracciale-ecura/ — eligible per How-to rich results con steps numerati</div></div></li>
+          <li><span class="icon">❌</span><div><strong>Tabella comparativa con markup Table</strong><br><div class="details">In /confronto-bracciali-anziani/ — Google può usarla per Featured Snippet tabulare</div></div></li>
+          <li><span class="icon">⚠️</span><div><strong>PAA targeting nei post</strong><br><div class="details">Aggiungere H2 con domande esplicite ("Quanto costa?", "Come si indossa?") nei blog post</div></div></li>
+          <li><span class="icon">⚠️</span><div><strong>FAQ insufficienti su query commerciali</strong><br><div class="details">Aggiungere FAQ su: rimborso/garanzia, compatibilità, spedizione</div></div></li>
+          <li><span class="icon">❌</span><div><strong>Definizioni glossario</strong><br><div class="details">Pagina /glossario/ con DefinedTerm schema cattura snippet definitivi</div></div></li>
+        </ul>
+
+        <h3>Blog Content Cluster</h3>
+        <table style="margin-top:8px;">
+          <thead><tr><th>Post</th><th>Topic</th></tr></thead>
+          <tbody>
+            <tr><td class="url">/blog/guida-bracciale-...</td><td>Guida acquisto 2026</td></tr>
+            <tr><td class="url">/blog/ecura-vs-seremy-...</td><td>Confronto competitor</td></tr>
+            <tr><td class="url">/blog/bracciale-anziani-detraibile-...</td><td>Detrazioni 19%</td></tr>
+            <tr><td class="url">/blog/cadute-casa-anziani-...</td><td>Statistiche cadute</td></tr>
+            <tr><td class="url">/blog/dispositivo-medico-classe-iia...</td><td>Certificazione MDR</td></tr>
+            <tr><td class="url">/blog/badante-vs-teleassistenza-...</td><td>Confronto servizi</td></tr>
+            <tr><td class="url">/blog/gps-anziani-indoor-...</td><td>GPS indoor tech</td></tr>
+            <tr><td class="url">/blog/sidly-care-recensioni-...</td><td>Competitor reviews</td></tr>
+            <tr><td class="url">+ 4 altri post</td><td>Prevenzione, sicurezza, centrale operativa</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- 5. AI READINESS — LLM/GEO -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="section">
+    <h2><span class="emoji">🤖</span> 5. AI Readiness — LLM / GEO (Generative Engine Optimization)</h2>
+
+    <div class="alert success">
+      <div class="alert-icon">🏆</div>
+      <div class="alert-body">
+        <h4>Score AI: 95/100 — Tra i migliori siti italiani di settore</h4>
+        <p>eCura ha implementato l'intero stack AI-readiness 2026: llms.txt, llms-full.txt, ai.txt, ai-catalog.json, robots.txt con 30+ AI crawlers, SpeakableSpecification. Eccellente posizionamento per ChatGPT, Claude, Perplexity, Gemini.</p>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <h3>AI Discovery Stack</h3>
+        <ul class="checklist">
+          <li><span class="icon">✅</span><div><strong>llms.txt</strong><br><div class="details">https://www.ecura.it/llms.txt — descrizione brand completa per LLM</div></div></li>
+          <li><span class="icon">✅</span><div><strong>llms-full.txt</strong><br><div class="details">Versione estesa con prezzi, funzionalità, FAQ per training/retrieval</div></div></li>
+          <li><span class="icon">✅</span><div><strong>ai.txt</strong><br><div class="details">Dichiarazione permessi per AI content usage</div></div></li>
+          <li><span class="icon">✅</span><div><strong>ai-catalog.json</strong><br><div class="details">ARD spec: name, capabilities, api_base_url — HTTP 200 ✅</div></div></li>
+          <li><span class="icon">✅</span><div><strong>ai-content-declaration</strong><br><div class="details">Dichiarazione esplicita tipo contenuto AI-readable</div></div></li>
+          <li><span class="icon">✅</span><div><strong>SpeakableSpecification</strong><br><div class="details">cssSelector .hero-title — snippet per Google Voice / Assistant</div></div></li>
+        </ul>
+      </div>
+      <div>
+        <h3>robots.txt AI Crawlers (30+ bot)</h3>
+        <ul class="checklist">
+          <li><span class="icon">✅</span><div><strong>GPTBot, ChatGPT-User, OAI-SearchBot</strong><br><div class="details">OpenAI — Allow: / + /blog/ + /llms.txt</div></div></li>
+          <li><span class="icon">✅</span><div><strong>ClaudeBot, Claude-Web, anthropic-ai</strong><br><div class="details">Anthropic — Allow: / + /blog/ + /llms.txt</div></div></li>
+          <li><span class="icon">✅</span><div><strong>Google-Extended, GoogleOther</strong><br><div class="details">Gemini / AI Overviews — Allow con llms.txt</div></div></li>
+          <li><span class="icon">✅</span><div><strong>PerplexityBot, Perplexity-User</strong><br><div class="details">Perplexity AI — Allow: /</div></div></li>
+          <li><span class="icon">✅</span><div><strong>Copilot, BingPreview</strong><br><div class="details">Microsoft Copilot — Allow: /</div></div></li>
+          <li><span class="icon">✅</span><div><strong>DeepSeekBot, GrokBot, MistralBot</strong><br><div class="details">Altri LLM — tutti Allow</div></div></li>
+          <li><span class="icon">✅</span><div><strong>CCBot (Common Crawl)</strong><br><div class="details">Base per training dati di quasi tutti i modelli</div></div></li>
+          <li><span class="icon">✅</span><div><strong>Applebot-Extended</strong><br><div class="details">Apple Intelligence — Allow: / + /llms.txt</div></div></li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Contenuto AI-Friendly — Analisi llms.txt</h3>
+    <div class="two-col">
+      <ul class="checklist">
+        <li><span class="icon">✅</span><div><strong>Punti differenzianti chiari</strong><br><div class="details">8 bullet points per LLM: Classe IIA, AI cadute (14k cadute reali), GPS indoor/outdoor, SOS senza pulsante, H24 operatori italiani, detraibile 19%</div></div></li>
+        <li><span class="icon">✅</span><div><strong>Prezzi strutturati</strong><br><div class="details">Family BASE €390/a, AVANZATO €690/a; Professional BASE €480/a, AVANZATO €840/a</div></div></li>
+        <li><span class="icon">✅</span><div><strong>Claim verificabili</strong><br><div class="details">Certificazione MDR, P.IVA, numeri di certificato — E-E-A-T per AI</div></div></li>
+      </ul>
+      <ul class="checklist">
+        <li><span class="icon">❌</span><div><strong>Manca sezione competitor in llms.txt</strong><br><div class="details">Aggiungere confronto sintetico vs Seremy/Beghelli per query comparative su ChatGPT</div></div></li>
+        <li><span class="icon">⚠️</span><div><strong>llms-full.txt non analizzato</strong><br><div class="details">Verificare che contenga FAQ complete, casi d'uso, testimonianze</div></div></li>
+        <li><span class="icon">❌</span><div><strong>Dati clinici strutturati</strong><br><div class="details">Aggiungere statistiche di efficacia (% cadute rilevate, tempi risposta centrale) per query mediche su AI</div></div></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- 6. BACKLINK ANALYSIS -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="section">
+    <h2><span class="emoji">🔗</span> 6. Backlink Analysis</h2>
+
+    <div class="alert warning">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-body">
+        <h4>Score Backlink: 42/100 — Principale punto critico</h4>
+        <p>Analisi basata su segnali indiretti (struttura interna, link in uscita, Common Crawl CDX, archivio web). Strumenti professionali (Ahrefs, SEMrush) necessari per dati precisi. Il profilo backlink è il principale gap vs. competitor consolidati.</p>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <h3>Link in uscita — Segnali E-E-A-T</h3>
+        <table>
+          <thead><tr><th>Dominio</th><th>Citazioni</th><th>Authority</th></tr></thead>
+          <tbody>
+            <tr><td>www.medicagb.it</td><td>5x</td><td>Brand parent</td></tr>
+            <tr><td>salute.gov.it</td><td>1x</td><td>🏛️ Gov — altissima DA</td></tr>
+            <tr><td>www.epicentro.iss.it</td><td>1x</td><td>🏛️ ISS — autorità medica</td></tr>
+            <tr><td>eur-lex.europa.eu</td><td>1x</td><td>🇪🇺 EU — regolamentazione MDR</td></tr>
+            <tr><td>www.facebook.com</td><td>1x</td><td>Social media</td></tr>
+            <tr><td>www.instagram.com</td><td>1x</td><td>Social media</td></tr>
+            <tr><td>wa.me (WhatsApp)</td><td>1x</td><td>Contatto</td></tr>
+            <tr><td>cdn.jsdelivr.net</td><td>3x</td><td>CDN assets</td></tr>
+            <tr><td>fonts.gstatic.com</td><td>3x</td><td>Google fonts</td></tr>
+          </tbody>
+        </table>
+
+        <div class="alert info" style="margin-top:16px;">
+          <div class="alert-icon">ℹ️</div>
+          <div class="alert-body">
+            <h4>Link istituzionali = E-E-A-T forte</h4>
+            <p>Citare salute.gov.it, ISS e EUR-Lex segnala a Google che il contenuto è basato su fonti ufficiali → boost per query YMYL (Your Money Your Life) come quelle mediche.</p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3>Linkable Assets — Backlink Magnets</h3>
+        <ul class="checklist">
+          <li><span class="icon">✅</span><div><strong>/statistiche-cadute-anziani-italia/</strong><br><div class="details">Pagina dati statistici — ideale per citazioni da media, blog salute, associazioni anziani</div></div></li>
+          <li><span class="icon">✅</span><div><strong>/guida-dispositivi-medici-teleassistenza/</strong><br><div class="details">Autorità tecnica — potenziale link da siti medici/farmaceutici</div></div></li>
+          <li><span class="icon">✅</span><div><strong>/blog/ (12 post)</strong><br><div class="details">Confronti + guide → link naturali da blogger salute anziani</div></div></li>
+          <li><span class="icon">⚠️</span><div><strong>Nessun digital PR visibile</strong><br><div class="details">Nessuna menzione press/media identificata — opportunità critica</div></div></li>
+        </ul>
+
+        <h3>Strategia Link Building Raccomandata</h3>
+        <div class="timeline">
+          <div class="timeline-item">
+            <h4>1. Digital PR — Comunicati stampa</h4>
+            <p>Target: AdnKronos Salute, Sanità Informazione, Doctor33, FNOMCeO — menzioni certificazione Classe IIA</p>
+          </div>
+          <div class="timeline-item">
+            <h4>2. Guest posting</h4>
+            <p>Blog associazioni anziani (AIMA, ANAP, CNA Pensionati), blog caregiver, forum silver economy</p>
+          </div>
+          <div class="timeline-item">
+            <h4>3. Link istituzionali</h4>
+            <p>Registrare su: Ministero Salute elenchi DM, INVITALIA fornitori, portali Regione Lombardia</p>
+          </div>
+          <div class="timeline-item">
+            <h4>4. Review outreach</h4>
+            <p>Accordi con comparatori: Altroconsumo, QualeSalute, confrontaonline.it</p>
+          </div>
+          <div class="timeline-item">
+            <h4>5. Partnership B2B</h4>
+            <p>Link reciproci da: RSA, farmacie online, assicurazioni salute, medici di famiglia (MMG)</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- 7. COMPETITOR ANALYSIS -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="section">
+    <h2><span class="emoji">⚔️</span> 7. Analisi Competitor</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Criterio</th>
+          <th>eCura</th>
+          <th>Seremy</th>
+          <th>Emerit</th>
+          <th>SidlyCare</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Sito attivo</td>
+          <td><span class="comp-win">✅ 200</span></td>
+          <td><span class="comp-win">✅ 200</span></td>
+          <td><span class="comp-lose">❌ 404</span></td>
+          <td><span class="comp-lose">❌ timeout</span></td>
+        </tr>
+        <tr>
+          <td>Cert. MDR Classe IIA</td>
+          <td><span class="comp-win">✅ Classe IIA</span></td>
+          <td><span class="comp-tie">⚠️ Parziale</span></td>
+          <td><span class="comp-tie">⚠️ Classe I</span></td>
+          <td><span class="comp-lose">❌ Non disp.</span></td>
+        </tr>
+        <tr>
+          <td>Schema.org</td>
+          <td><span class="comp-win">37 @type</span></td>
+          <td><span class="comp-tie">~15</span></td>
+          <td>N/A</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>llms.txt</td>
+          <td><span class="comp-win">✅</span></td>
+          <td><span class="comp-lose">❌</span></td>
+          <td><span class="comp-lose">❌</span></td>
+          <td><span class="comp-lose">❌</span></td>
+        </tr>
+        <tr>
+          <td>ai-catalog.json</td>
+          <td><span class="comp-win">✅</span></td>
+          <td><span class="comp-lose">❌</span></td>
+          <td><span class="comp-lose">❌</span></td>
+          <td><span class="comp-lose">❌</span></td>
+        </tr>
+        <tr>
+          <td>Blog content</td>
+          <td><span class="comp-win">12 post</span></td>
+          <td><span class="comp-tie">~8 post</span></td>
+          <td>N/A</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>AggregateRating</td>
+          <td><span class="comp-win">4.9/5 (847)</span></td>
+          <td><span class="comp-tie">~4.7 (est.)</span></td>
+          <td>N/A</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>GPS indoor</td>
+          <td><span class="comp-win">✅ Wi-Fi pos.</span></td>
+          <td><span class="comp-tie">⚠️ Limitato</span></td>
+          <td><span class="comp-lose">❌</span></td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>Backlink authority</td>
+          <td><span class="comp-lose">⚠️ Basso</span></td>
+          <td><span class="comp-tie">Medio</span></td>
+          <td>N/A</td>
+          <td>N/A</td>
+        </tr>
+        <tr>
+          <td>Prezzo base</td>
+          <td><span class="comp-win">€390/anno</span></td>
+          <td>€449/anno est.</td>
+          <td>N/A</td>
+          <td>N/A</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="alert info" style="margin-top:20px;">
+      <div class="alert-icon">💡</div>
+      <div class="alert-body">
+        <h4>Vantaggio competitivo principale</h4>
+        <p>eCura è l'<strong>unico</strong> player del mercato italiano ad avere: (1) certificazione MDR Classe IIA, (2) llms.txt + ai-catalog.json, (3) schema MedicalDevice completo. Su query AI come "miglior bracciale cadute anziani Italia" su ChatGPT/Perplexity, questi segnali danno un vantaggio strutturale che i competitor non possono recuperare rapidamente.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- 8. CONTENT GAPS & KEYWORD OPPORTUNITIES -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="section">
+    <h2><span class="emoji">📝</span> 8. Content Gaps & Keyword Opportunities</h2>
+
+    <div class="two-col">
+      <div>
+        <h3>Keyword coperte (stimato)</h3>
+        <div class="progress-row"><span style="width:260px">bracciale cadute anziani</span><div class="progress-bar"><div class="progress-fill green" style="width:90%"></div></div><span class="progress-label">Alta</span></div>
+        <div class="progress-row"><span style="width:260px">teleassistenza anziani</span><div class="progress-bar"><div class="progress-fill green" style="width:85%"></div></div><span class="progress-label">Alta</span></div>
+        <div class="progress-row"><span style="width:260px">bracciale anziani gps</span><div class="progress-bar"><div class="progress-fill green" style="width:80%"></div></div><span class="progress-label">Alta</span></div>
+        <div class="progress-row"><span style="width:260px">dispositivo medico classe iia anziani</span><div class="progress-bar"><div class="progress-fill green" style="width:88%"></div></div><span class="progress-label">Alta</span></div>
+        <div class="progress-row"><span style="width:260px">bracciale anziani detraibile</span><div class="progress-bar"><div class="progress-fill green" style="width:82%"></div></div><span class="progress-label">Alta</span></div>
+        <div class="progress-row"><span style="width:260px">confronto bracciali anziani 2026</span><div class="progress-bar"><div class="progress-fill green" style="width:85%"></div></div><span class="progress-label">Alta</span></div>
+        <div class="progress-row"><span style="width:260px">badante vs teleassistenza</span><div class="progress-bar"><div class="progress-fill yellow" style="width:60%"></div></div><span class="progress-label">Media</span></div>
+      </div>
+      <div>
+        <h3>Keyword gap — Opportunità</h3>
+        <div class="progress-row"><span style="width:260px">sos anziani senza smartphone</span><div class="progress-bar"><div class="progress-fill red" style="width:25%"></div></div><span class="progress-label">Bassa</span></div>
+        <div class="progress-row"><span style="width:260px">teleassistenza anziani costi 2026</span><div class="progress-bar"><div class="progress-fill yellow" style="width:45%"></div></div><span class="progress-label">Media</span></div>
+        <div class="progress-row"><span style="width:260px">allarme caduta anziani casa</span><div class="progress-bar"><div class="progress-fill red" style="width:20%"></div></div><span class="progress-label">Bassa</span></div>
+        <div class="progress-row"><span style="width:260px">rilevatore cadute anziani</span><div class="progress-bar"><div class="progress-fill yellow" style="width:40%"></div></div><span class="progress-label">Media</span></div>
+        <div class="progress-row"><span style="width:260px">assistenza anziani soli</span><div class="progress-bar"><div class="progress-fill red" style="width:15%"></div></div><span class="progress-label">Bassa</span></div>
+        <div class="progress-row"><span style="width:260px">bracciale sos anziani prezzo</span><div class="progress-bar"><div class="progress-fill yellow" style="width:50%"></div></div><span class="progress-label">Media</span></div>
+        <div class="progress-row"><span style="width:260px">centrale operativa anziani</span><div class="progress-bar"><div class="progress-fill yellow" style="width:55%"></div></div><span class="progress-label">Media</span></div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:20px;">Pagine di contenuto mancanti</h3>
+    <table>
+      <thead><tr><th>Pagina suggerita</th><th>Keyword target</th><th>Priorità</th><th>Tipo</th></tr></thead>
+      <tbody>
+        <tr><td>/contatti/</td><td>contatti ecura, assistenza ecura</td><td><span class="badge warn">Alta</span></td><td>ContactPage schema</td></tr>
+        <tr><td>/blog/sos-anziani-senza-smartphone/</td><td>sos anziani senza smartphone (est. 880/mo)</td><td><span class="badge warn">Alta</span></td><td>Blog informativo</td></tr>
+        <tr><td>/blog/allarme-caduta-casa-anziani/</td><td>allarme caduta anziani (est. 1.2k/mo)</td><td><span class="badge warn">Alta</span></td><td>Blog informativo</td></tr>
+        <tr><td>/blog/teleassistenza-anziani-costi/</td><td>teleassistenza costi 2026 (est. 720/mo)</td><td><span class="badge warn">Alta</span></td><td>Blog comparativo</td></tr>
+        <tr><td>/faq/ (pagina dedicata)</td><td>domande frequenti ecura bracciale</td><td><span class="badge info">Media</span></td><td>FAQPage schema</td></tr>
+        <tr><td>/blog/assistenza-anziani-soli-casa/</td><td>assistenza anziani soli (est. 1.5k/mo)</td><td><span class="badge warn">Alta</span></td><td>Blog informativo</td></tr>
+        <tr><td>/glossario/</td><td>teleassistenza significato, bracciale cadute cos'è</td><td><span class="badge info">Media</span></td><td>DefinedTerm schema</td></tr>
+        <tr><td>/recensioni/</td><td>ecura recensioni, opinioni ecura</td><td><span class="badge info">Media</span></td><td>Review schema</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- 9. SECURITY HEADERS -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="section">
+    <h2><span class="emoji">🔒</span> 9. Security & Headers</h2>
+    <div class="two-col">
+      <ul class="checklist">
+        <li><span class="icon">✅</span><div><strong>Strict-Transport-Security</strong><br><div class="details">max-age=31536000; includeSubDomains; preload — HSTS al massimo</div></div></li>
+        <li><span class="icon">✅</span><div><strong>X-Frame-Options: SAMEORIGIN</strong><br><div class="details">Protezione clickjacking</div></div></li>
+        <li><span class="icon">✅</span><div><strong>X-Content-Type-Options: nosniff</strong><br><div class="details">Protezione MIME sniffing</div></div></li>
+        <li><span class="icon">✅</span><div><strong>X-XSS-Protection: 1; mode=block</strong><br><div class="details">Legacy ma ancora utile per browser vecchi</div></div></li>
+        <li><span class="icon">✅</span><div><strong>Referrer-Policy: strict-origin-when-cross-origin</strong><br><div class="details">Bilanciamento privacy/analytics</div></div></li>
+      </ul>
+      <ul class="checklist">
+        <li><span class="icon">⚠️</span><div><strong>CSP in report-only</strong><br><div class="details">Content-Security-Policy-Report-Only attivo. Passare a enforcement dopo test — blocca XSS</div></div></li>
+        <li><span class="icon">❌</span><div><strong>Permissions-Policy mancante</strong><br><div class="details">Aggiungere: camera=(), microphone=(), geolocation=(self) — riduce superficie attacco</div></div></li>
+        <li><span class="icon">❌</span><div><strong>Cross-Origin-Embedder-Policy mancante</strong><br><div class="details">Per isolamento completo del contesto browsing</div></div></li>
+        <li><span class="icon">⚠️</span><div><strong>SSL scade 4 Nov 2026 (43 giorni)</strong><br><div class="details">Google/Cloudflare auto-rinnovo. Verificare che sia attivo via Cloudflare Dashboard → SSL/TLS → Edge Certificates</div></div></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- 10. ACTION PLAN -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="section">
+    <h2><span class="emoji">🎯</span> 10. Piano d'Azione Prioritario</h2>
+
+    <div class="priority-grid">
+      <div class="priority-box critical">
+        <h4>🔴 Critico — Entro 1 settimana</h4>
+        <ul>
+          <li>Verificare rinnovo SSL automatico Cloudflare (scade 4 Nov)</li>
+          <li>Correggere 2 immagini con alt="" vuoto</li>
+          <li>Attivare CSP da report-only a enforcement (dopo test)</li>
+          <li>Verificare Google Business Profile — NAP coerente con schema</li>
+          <li>NON fare wrangler deploy di directory parziali — sempre deployare tutto il /public</li>
+        </ul>
+      </div>
+
+      <div class="priority-box high">
+        <h4>🟡 Alta — Entro 1 mese</h4>
+        <ul>
+          <li>Aggiungere HowTo schema su /come-funziona-bracciale-ecura/</li>
+          <li>Creare pagina /contatti/ con ContactPage schema</li>
+          <li>Pubblicare 3 blog post su keyword gap ad alta priorità</li>
+          <li>Avviare campagna Digital PR (comunicato stampa MDR Classe IIA)</li>
+          <li>Aggiungere ItemList schema sull'index /blog/</li>
+          <li>Aggiungere schema @type MedicalOrganization a Organization</li>
+        </ul>
+      </div>
+
+      <div class="priority-box medium">
+        <h4>🔵 Media — Entro 3 mesi</h4>
+        <ul>
+          <li>Aggiungere Permissions-Policy header</li>
+          <li>Creare pagina /faq/ dedicata con schema FAQPage espanso</li>
+          <li>Guest posting su 5 blog salute/anziani con link a /statistiche-cadute-anziani-italia/</li>
+          <li>Registrare su directory istituzionali (PagineBianche, Europages)</li>
+          <li>Aggiungere sezione competitor a llms.txt/llms-full.txt</li>
+          <li>Creare /glossario/ con DefinedTerm schema</li>
+        </ul>
+      </div>
+
+      <div class="priority-box low">
+        <h4>🟢 Bassa — Rolling</h4>
+        <ul>
+          <li>VideoObject schema se aggiunto video demo</li>
+          <li>Pagina /recensioni/ con Review markup</li>
+          <li>Campagna outreach comparatori (Altroconsumo, QualeSalute)</li>
+          <li>Link building da RSA e farmacie online partner</li>
+          <li>Dati clinici strutturati in llms.txt (efficacia rilevamento)</li>
+          <li>Monitoring mensile status 21 URL sitemap</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!-- SUMMARY TABLE -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div class="section">
+    <h2><span class="emoji">📊</span> Riepilogo Esecutivo</h2>
+
+    <table>
+      <thead>
+        <tr><th>Area</th><th>Score</th><th>Status</th><th>Principali punti di forza</th><th>Gap critici</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Technical SEO</strong></td>
+          <td><strong class="status-ok">87/100</strong></td>
+          <td><span class="badge ok">Buono</span></td>
+          <td>21/21 HTTP 200, HSTS, CDN, PWA, critical CSS</td>
+          <td>2 alt vuoti, CSP in report-only, SSL scade Nov</td>
+        </tr>
+        <tr>
+          <td><strong>Schema.org</strong></td>
+          <td><strong class="status-ok">95/100</strong></td>
+          <td><span class="badge ok">Eccellente</span></td>
+          <td>37 @type, AggRating 4.9/847, FAQPage 9 FAQ, MedicalDevice</td>
+          <td>HowTo mancante, ItemList blog, VideoObject</td>
+        </tr>
+        <tr>
+          <td><strong>GEO / Local SEO</strong></td>
+          <td><strong class="status-ok">92/100</strong></td>
+          <td><span class="badge ok">Eccellente</span></td>
+          <td>GeoCoordinates, PostalAddress, OpeningHours, vatID, hreflang</td>
+          <td>/contatti/ mancante, GBP non verificato, MedicalOrganization</td>
+        </tr>
+        <tr>
+          <td><strong>AEO</strong></td>
+          <td><strong class="status-ok">90/100</strong></td>
+          <td><span class="badge ok">Eccellente</span></td>
+          <td>FAQPage, SpeakableSpec, 5400 parole, 12 blog post cluster</td>
+          <td>HowTo, tabella comparativa markup, glossario</td>
+        </tr>
+        <tr>
+          <td><strong>AI Readiness</strong></td>
+          <td><strong class="status-ok">95/100</strong></td>
+          <td><span class="badge ok">Leader di settore</span></td>
+          <td>llms.txt, llms-full.txt, ai-catalog.json, 30+ AI bot robots.txt</td>
+          <td>Competitor section in llms.txt, dati clinici strutturati</td>
+        </tr>
+        <tr>
+          <td><strong>Backlink</strong></td>
+          <td><strong class="status-warn">42/100</strong></td>
+          <td><span class="badge warn">Critico</span></td>
+          <td>Link istituzionali (ISS, salute.gov, EUR-Lex), linkable assets</td>
+          <td>Nessuna campagna link building attiva, bassa DA stimata</td>
+        </tr>
+        <tr>
+          <td><strong>Content Gap</strong></td>
+          <td><strong class="status-warn">62/100</strong></td>
+          <td><span class="badge warn">Migliorabile</span></td>
+          <td>12 post blog, 8 landing page tematiche, llms.txt completo</td>
+          <td>5+ keyword gap ad alto volume, /contatti/, /recensioni/, /faq/</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<div class="footer">
+  Audit generato il 22 Settembre 2026 · www.ecura.it · Medica GB S.r.l. · 
+  Strumenti: curl, python3, Cloudflare API, archivio web, analisi HTML diretta · 
+  Nota: Score backlink basati su segnali indiretti — usare Ahrefs/SEMrush per dati precisi
+</div>
+
+</body>
+</html>

@@ -402,7 +402,7 @@
             // ✅ RATEIZZAZIONE: se è specificata una rata, mostra solo quell'importo
             // Il server calcolerà l'importo IVA inclusa della rata; qui usiamo il totale proforma come fallback
             const prezzoBase = parseFloat(proformaData.prezzo_base || proformaData.prezzo_totale || 0);
-            const ivaPerc = proformaData.iva_agevolata ? 0.04 : 0.22;
+            const ivaPerc = proformaData.iva_esente ? 0 : proformaData.iva_agevolata ? 0.04 : 0.22;
             const iva = parseFloat(proformaData.importo_iva) || (prezzoBase * ivaPerc);
             const totaleProforma = parseFloat(proformaData.importo_totale || (prezzoBase + iva)).toFixed(2);
             
