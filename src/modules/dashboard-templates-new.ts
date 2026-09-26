@@ -8329,8 +8329,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                     </div>
                     <div class="col-span-2">
                         <label class="block text-xs font-medium text-gray-700 mb-1">📦 Indirizzo Spedizione Dispositivo</label>
-                        <div id="viewSpedizione" class="p-2 rounded">
-                            <span class="text-xs text-gray-500">—</span>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <div id="viewSpedizione" class="p-2 rounded">
+                                <span class="text-xs text-gray-500">—</span>
+                            </div>
+                            <button id="toggleSpedizioneBtn" class="px-3 py-1 bg-orange-600 text-white text-xs rounded-lg hover:bg-orange-700 transition font-medium whitespace-nowrap">
+                                📦 Spedisci al Richiedente
+                            </button>
                         </div>
                     </div>
                     <div class="col-span-3">
@@ -8440,9 +8445,6 @@ export const leads_dashboard = `<!DOCTYPE html>
                         </button>
                         <button id="toggleIvaEsenteBtn" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition font-medium">
                             🏥 Attiva Esenzione IVA (0%)
-                        </button>
-                        <button id="toggleSpedizioneBtn" class="px-4 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition font-medium">
-                            📦 Spedisci al Richiedente
                         </button>
                     </div>
                     <button onclick="closeModal('viewLeadModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm">
