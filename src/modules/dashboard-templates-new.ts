@@ -6694,6 +6694,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                 interactionsSection.classList.remove('hidden');
                 loadEditInteractions(leadId);
             }
+
+            // Mostra sezione assistiti aggiuntivi e carica la lista
+            const assistitiSection = document.getElementById('editModalAssistitiSection');
+            if (assistitiSection) {
+                assistitiSection.classList.remove('hidden');
+                loadLeadAssistiti(leadId);
+            }
             
             openModal('newLeadModal');
         }
@@ -7155,6 +7162,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                     const field = document.getElementById(fieldId);
                     if (field) field.setAttribute('required', 'required');
                 });
+
+                // Nascondi sezione assistiti aggiuntivi (solo edit mode)
+                const assistitiSec = document.getElementById('editModalAssistitiSection');
+                if (assistitiSec) assistitiSec.classList.add('hidden');
+                // Chiudi form assistito se aperto
+                const assPanel = document.getElementById('assistitoFormPanel');
+                if (assPanel) assPanel.classList.add('hidden');
             }
         }
         
@@ -8095,6 +8109,81 @@ export const leads_dashboard = `<!DOCTYPE html>
                 </div>
                 
             </div>
+
+            <!-- ═══ ASSISTITI AGGIUNTIVI (solo in edit mode) ═══════════════════════ -->
+            <div id="editModalAssistitiSection" class="hidden px-8 pb-6">
+                <div class="border border-indigo-200 rounded-xl p-4 bg-indigo-50">
+                    <div class="flex items-center justify-between mb-3 border-b border-indigo-200 pb-2">
+                        <h4 class="text-sm font-semibold text-indigo-900">👥 Assistiti Aggiuntivi</h4>
+                        <button onclick="toggleLeadAssistitiForm()" class="px-3 py-1 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 transition font-medium">
+                            ➕ Aggiungi Assistito
+                        </button>
+                    </div>
+                    <!-- Form aggiunta/modifica (condiviso con viewLead) -->
+                    <div id="assistitoFormPanel" class="hidden mb-3 p-3 bg-white border border-indigo-200 rounded-lg">
+                        <h5 id="assistitoFormTitle" class="text-sm font-semibold text-indigo-800 mb-2">➕ Nuovo Assistito</h5>
+                        <input type="hidden" id="assistitoEditId" value="">
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Nome <span class="text-red-500">*</span></label>
+                                <input id="assNome" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Nome">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Cognome <span class="text-red-500">*</span></label>
+                                <input id="assCognome" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Cognome">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Codice Fiscale</label>
+                                <input id="assCF" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs uppercase" placeholder="RSSMRA80A01H501Z" maxlength="16">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Data Nascita</label>
+                                <input id="assDataNascita" type="date" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Luogo Nascita</label>
+                                <input id="assLuogoNascita" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Città (Prov)">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Indirizzo</label>
+                                <input id="assIndirizzo" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Via/Piazza, Civico">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">CAP</label>
+                                <input id="assCap" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="00000" maxlength="5">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Città</label>
+                                <input id="assCitta" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Città">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Provincia</label>
+                                <input id="assProvincia" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs uppercase" placeholder="RM" maxlength="2">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">📦 Spedizione a</label>
+                                <select id="assSpedizione" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
+                                    <option value="questo">Questo assistito</option>
+                                    <option value="richiedente">Richiedente/Lead</option>
+                                </select>
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Note</label>
+                                <textarea id="assNote" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" rows="2" placeholder="Note aggiuntive..."></textarea>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 justify-end">
+                            <button onclick="cancelLeadAssistitoForm()" class="px-3 py-1 bg-gray-400 text-white text-xs rounded hover:bg-gray-500 transition">Annulla</button>
+                            <button onclick="saveLeadAssistito()" class="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition font-medium">💾 Salva</button>
+                        </div>
+                    </div>
+                    <!-- Lista assistiti -->
+                    <div id="leadAssistitiList" class="space-y-2">
+                        <p class="text-gray-400 text-xs text-center py-3 italic">Nessun assistito aggiuntivo — usa ➕ per aggiungerne uno.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- ═══════════════════════════════════════════════════════════════════ -->
             
             <!-- FOOTER BUTTONS -->
             <div class="bg-gray-50 px-8 py-6 rounded-b-xl border-t flex justify-between items-center">

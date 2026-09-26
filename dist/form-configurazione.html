@@ -346,6 +346,31 @@
                 <textarea name="note_aggiuntive" rows="4" placeholder="Inserisci eventuali note aggiuntive, allergie, esigenze particolari..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
             </div>
 
+            <!-- ═══ ALTRI ASSISTITI ═══════════════════════════════════════════════ -->
+            <div class="bg-white rounded-lg shadow-lg p-6 form-section">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-users text-indigo-600 text-2xl mr-3"></i>
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Altri Assistiti</h2>
+                            <p class="text-sm text-gray-500 mt-0.5">Aggiungi altri familiari che utilizzeranno il dispositivo</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="aggiungiAssisitoExtra()" class="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium">
+                        <i class="fas fa-plus"></i> Aggiungi Assistito
+                    </button>
+                </div>
+
+                <div id="assistiti-extra-container" class="space-y-4">
+                    <!-- I blocchi assistito vengono aggiunti dinamicamente -->
+                </div>
+
+                <p id="assistiti-extra-empty" class="text-gray-400 text-sm text-center py-4 italic">
+                    Nessun altro assistito aggiunto. Clicca "Aggiungi Assistito" se il dispositivo sarà usato da più persone.
+                </p>
+            </div>
+            <!-- ════════════════════════════════════════════════════════════════════ -->
+
             <!-- Submit Button -->
             <div class="bg-white rounded-lg shadow-lg p-6">
                 <div class="text-center">
@@ -508,6 +533,132 @@
             }
         }
 
+        // ═══════════════════════════════════════════════════════════
+        // ASSISTITI EXTRA — logica UI (aggiunta/rimozione dinamica)
+        // ═══════════════════════════════════════════════════════════
+        let _assistitiExtraCount = 0;
+
+        function aggiungiAssisitoExtra() {
+            _assistitiExtraCount++;
+            const idx = _assistitiExtraCount;
+            const container = document.getElementById('assistiti-extra-container');
+            const emptyMsg  = document.getElementById('assistiti-extra-empty');
+            if (emptyMsg) emptyMsg.style.display = 'none';
+
+            const block = document.createElement('div');
+            block.id = 'assistito-extra-' + idx;
+            block.className = 'border border-indigo-200 bg-indigo-50 rounded-lg p-4';
+            block.innerHTML = `
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-base font-semibold text-indigo-800"><i class="fas fa-user mr-2"></i>Assistito #${idx}</h3>
+                    <button type="button" onclick="rimuoviAssistitoExtra(${idx})" class="text-red-500 hover:text-red-700 text-sm">
+                        <i class="fas fa-trash mr-1"></i>Rimuovi
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nome <span class="text-red-500">*</span></label>
+                        <input type="text" id="ass_extra_nome_${idx}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Nome">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cognome <span class="text-red-500">*</span></label>
+                        <input type="text" id="ass_extra_cognome_${idx}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Cognome">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Codice Fiscale</label>
+                        <input type="text" id="ass_extra_cf_${idx}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm uppercase" placeholder="RSSMRA80A01H501Z" maxlength="16">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Data di Nascita</label>
+                        <input type="date" id="ass_extra_nascita_${idx}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Indirizzo (se diverso dall'assistito principale)</label>
+                        <input type="text" id="ass_extra_indirizzo_${idx}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Via/Piazza, Civico">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">CAP</label>
+                        <input type="text" id="ass_extra_cap_${idx}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="00000" maxlength="5">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Città</label>
+                        <input type="text" id="ass_extra_citta_${idx}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Città">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Provincia</label>
+                        <input type="text" id="ass_extra_prov_${idx}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm uppercase" placeholder="RM" maxlength="2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">📦 Spedizione dispositivo a</label>
+                        <select id="ass_extra_sped_${idx}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                            <option value="questo">Questo assistito</option>
+                            <option value="richiedente">Richiedente</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Note</label>
+                        <input type="text" id="ass_extra_note_${idx}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Note aggiuntive (opzionale)">
+                    </div>
+                </div>
+            `;
+            container.appendChild(block);
+        }
+
+        function rimuoviAssistitoExtra(idx) {
+            const block = document.getElementById('assistito-extra-' + idx);
+            if (block) block.remove();
+            // Mostra messaggio vuoto se non ci sono più blocchi
+            const container = document.getElementById('assistiti-extra-container');
+            const emptyMsg  = document.getElementById('assistiti-extra-empty');
+            if (emptyMsg && container && container.children.length === 0) {
+                emptyMsg.style.display = '';
+            }
+        }
+
+        function raccogliAssistitiExtra() {
+            const lista = [];
+            const container = document.getElementById('assistiti-extra-container');
+            if (!container) return lista;
+            const blocks = container.querySelectorAll('[id^="assistito-extra-"]');
+            blocks.forEach(block => {
+                const idx = block.id.replace('assistito-extra-', '');
+                const nome    = (document.getElementById('ass_extra_nome_'    + idx) || {}).value || '';
+                const cognome = (document.getElementById('ass_extra_cognome_' + idx) || {}).value || '';
+                if (!nome.trim() || !cognome.trim()) return; // salta se nome/cognome vuoti
+                lista.push({
+                    nome:                nome.trim(),
+                    cognome:             cognome.trim(),
+                    codice_fiscale:      ((document.getElementById('ass_extra_cf_'      + idx) || {}).value || '').trim().toUpperCase() || null,
+                    data_nascita:        ((document.getElementById('ass_extra_nascita_' + idx) || {}).value || '') || null,
+                    indirizzo:           ((document.getElementById('ass_extra_indirizzo_'+ idx) || {}).value || '').trim() || null,
+                    cap:                 ((document.getElementById('ass_extra_cap_'     + idx) || {}).value || '').trim() || null,
+                    citta:               ((document.getElementById('ass_extra_citta_'   + idx) || {}).value || '').trim() || null,
+                    provincia:           ((document.getElementById('ass_extra_prov_'    + idx) || {}).value || '').trim().toUpperCase() || null,
+                    indirizzo_spedizione:((document.getElementById('ass_extra_sped_'    + idx) || {}).value || 'questo'),
+                    note:                ((document.getElementById('ass_extra_note_'    + idx) || {}).value || '').trim() || null,
+                });
+            });
+            return lista;
+        }
+
+        async function salvaAssistitiExtra(leadId) {
+            const lista = raccogliAssistitiExtra();
+            if (lista.length === 0) return;
+            for (const ass of lista) {
+                try {
+                    await fetch('/api/leads/' + leadId + '/assistiti', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(ass)
+                    });
+                } catch (e) {
+                    console.warn('Errore salvataggio assistito extra:', ass.nome, e);
+                }
+            }
+            console.log('✅ [FORM CONFIG] Salvati ' + lista.length + ' assistiti aggiuntivi');
+        }
+        // ═══════════════════════════════════════════════════════════
+
         // Calculate age from birth date
         document.getElementById('data_nascita').addEventListener('change', function() {
             const birthDate = new Date(this.value);
@@ -658,6 +809,11 @@
                 if (result.success) {
                     console.log('✅ [FORM CONFIG] Configurazione salvata con successo');
                     console.log('✅ [FORM CONFIG] Email benvenuto inviata:', result.emailSent);
+                    
+                    // ✅ Salva eventuali assistiti aggiuntivi
+                    if (leadId) {
+                        await salvaAssistitiExtra(leadId);
+                    }
                     
                     // ✅ Imposta flag per disabilitare warning
                     formSubmitted = true;
