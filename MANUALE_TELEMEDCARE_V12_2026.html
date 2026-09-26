@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manuale Operativo TeleMedCare V12 — 2026</title>
+  <style>
+    :root {
+      --blu: #1e40af;
+      --blu-chiaro: #3b82f6;
+      --teal: #0f766e;
+      --verde: #16a34a;
+      --arancio: #ea580c;
+      --grigio: #374151;
+      --grigio-chiaro: #f9fafb;
+      --bordo: #e5e7eb;
+      --rosso: #dc2626;
+      --viola: #7c3aed;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--grigio);
+      background: #fff;
+    }
+
+    /* ── COPERTINA ── */
+    .cover {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 40%, #0f766e 100%);
+      color: white;
+      padding: 80px 60px;
+      text-align: center;
+      page-break-after: always;
+    }
+    .cover .logo { font-size: 48px; margin-bottom: 16px; }
+    .cover h1 { font-size: 42px; font-weight: 800; letter-spacing: -1px; margin-bottom: 10px; }
+    .cover h2 { font-size: 22px; font-weight: 400; opacity: .85; margin-bottom: 32px; }
+    .cover .badge {
+      display: inline-block;
+      background: rgba(255,255,255,.18);
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 999px;
+      padding: 6px 22px;
+      font-size: 14px;
+      margin: 6px;
+    }
+    .cover .meta { margin-top: 48px; font-size: 13px; opacity: .7; }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 960px; margin: 0 auto; padding: 48px 40px; }
+
+    /* ── SOMMARIO ── */
+    .toc { background: var(--grigio-chiaro); border: 1px solid var(--bordo); border-radius: 12px; padding: 32px 40px; margin-bottom: 48px; }
+    .toc h2 { color: var(--blu); margin-bottom: 20px; font-size: 20px; }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin: 6px 0; }
+    .toc a { color: var(--blu-chiaro); text-decoration: none; font-weight: 500; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ── SEZIONI ── */
+    section { margin-bottom: 64px; }
+    h1.section-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--blu);
+      border-bottom: 3px solid var(--blu-chiaro);
+      padding-bottom: 12px;
+      margin-bottom: 28px;
+    }
+    h2.sub-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--teal);
+      margin: 32px 0 14px;
+    }
+    h3.sub-sub {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--grigio);
+      margin: 20px 0 8px;
+    }
+    p { margin-bottom: 10px; }
+
+    /* ── BLOCCHI INFO ── */
+    .info-box {
+      background: #eff6ff;
+      border-left: 4px solid var(--blu-chiaro);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      margin: 14px 0;
+    }
+    .warn-box {
+      background: #fff7ed;
+      border-left: 4px solid var(--arancio);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      margin: 14px 0;
+    }
+    .ok-box {
+      background: #f0fdf4;
+      border-left: 4px solid var(--verde);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      margin: 14px 0;
+    }
+
+    /* ── TABELLE ── */
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+    th { background: var(--blu); color: white; padding: 10px 14px; text-align: left; }
+    td { padding: 9px 14px; border-bottom: 1px solid var(--bordo); }
+    tr:nth-child(even) td { background: var(--grigio-chiaro); }
+
+    /* ── BADGE STATUS ── */
+    .badge-status {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .s-new       { background:#dbeafe; color:#1d4ed8; }
+    .s-contacted { background:#fef9c3; color:#854d0e; }
+    .s-sent      { background:#e0f2fe; color:#0369a1; }
+    .s-signed    { background:#d1fae5; color:#065f46; }
+    .s-converted { background:#dcfce7; color:#15803d; }
+    .s-lost      { background:#fee2e2; color:#991b1b; }
+    .s-pending   { background:#fef3c7; color:#92400e; }
+    .s-paid      { background:#d1fae5; color:#065f46; }
+    .s-active    { background:#dcfce7; color:#14532d; }
+    .s-shipped   { background:#e0f2fe; color:#075985; }
+    .s-delivered { background:#d1fae5; color:#065f46; }
+
+    /* ── WORKFLOW STEPS ── */
+    .workflow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0;
+      margin: 24px 0;
+    }
+    .wf-step {
+      flex: 1;
+      min-width: 120px;
+      background: var(--grigio-chiaro);
+      border: 1px solid var(--bordo);
+      padding: 14px 12px;
+      text-align: center;
+      position: relative;
+    }
+    .wf-step:not(:last-child)::after {
+      content: '→';
+      position: absolute;
+      right: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+      color: var(--blu-chiaro);
+      z-index: 1;
+    }
+    .wf-step .step-num {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--blu);
+    }
+    .wf-step .step-label {
+      font-size: 12px;
+      color: var(--grigio);
+      margin-top: 4px;
+    }
+
+    /* ── API ENDPOINT PILL ── */
+    .endpoint {
+      display: inline-block;
+      font-family: monospace;
+      font-size: 12px;
+      background: #1e293b;
+      color: #94a3b8;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin: 2px 0;
+    }
+    .method-get    { color: #4ade80; }
+    .method-post   { color: #60a5fa; }
+    .method-put    { color: #fbbf24; }
+    .method-patch  { color: #fb923c; }
+    .method-delete { color: #f87171; }
+
+    /* ── GRIGLIA FUNZIONALITÀ ── */
+    .feat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .feat-card {
+      border: 1px solid var(--bordo);
+      border-radius: 10px;
+      padding: 18px;
+      background: #fff;
+    }
+    .feat-card .icon { font-size: 24px; margin-bottom: 8px; }
+    .feat-card h4 { font-size: 15px; font-weight: 700; color: var(--blu); margin-bottom: 6px; }
+    .feat-card p { font-size: 13px; color: #6b7280; margin: 0; }
+
+    /* ── CODE ── */
+    code {
+      background: #f1f5f9;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #7c3aed;
+    }
+
+    /* ── CHANGELOG ── */
+    .changelog-item {
+      border-left: 3px solid var(--blu-chiaro);
+      padding: 10px 16px;
+      margin: 12px 0;
+      background: var(--grigio-chiaro);
+      border-radius: 0 8px 8px 0;
+    }
+    .changelog-item .date { font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+    .changelog-item h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+
+    /* ── SEPARATORE ── */
+    hr { border: none; border-top: 2px solid var(--bordo); margin: 40px 0; }
+
+    /* ── PRINT ── */
+    @media print {
+      .cover { page-break-after: always; }
+      section { page-break-inside: avoid; }
+      .container { padding: 20px; }
+    }
+
+    /* ── NAV INTERNA ── */
+    #back-to-top {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: var(--blu);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 46px;
+      height: 46px;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 99;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════ COPERTINA -->
+<div class="cover">
+  <div class="logo">🏥</div>
+  <h1>TeleMedCare V12</h1>
+  <h2>Manuale Operativo Completo — Operatori &amp; Sviluppatori</h2>
+  <div>
+    <span class="badge">Versione 12.0</span>
+    <span class="badge">Settembre 2026</span>
+    <span class="badge">Cloudflare Workers + D1</span>
+    <span class="badge">Riservato interno</span>
+  </div>
+  <div class="meta">
+    Ultima revisione: 26 settembre 2026<br>
+    Basato su git log telemedcare-v12 · Branch main<br>
+    eCura / MedicaGB — Documento ad uso interno
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ CONTAINER -->
+<div class="container">
+
+  <!-- SOMMARIO -->
+  <div class="toc" id="top">
+    <h2>📋 Sommario</h2>
+    <ol>
+      <li><a href="#panoramica">Panoramica del Sistema</a></li>
+      <li><a href="#flusso">Flusso Operativo Completo (Pipeline)</a></li>
+      <li><a href="#lead">Lead — Gestione Completa</a> <small style="color:#6b7280">(incl. §3.3 <code>indirizzo_spedizione</code>)</small></li>
+      <li><a href="#assistiti">Assistiti &amp; Relazione Lead↔Assistito</a> <small style="color:#6b7280">(incl. §4.5 <code>lead_assistiti</code> multi-assistiti)</small></li>
+      <li><a href="#contratti">Contratti — Generazione &amp; Firma</a> <small style="color:#6b7280">(incl. §5.6 <code>SEZIONE_CONSEGNA</code>)</small></li>
+      <li><a href="#proforma">Proforma — Fatture Proforma</a></li>
+      <li><a href="#rateizzazione">Rateizzazione &amp; Pagamenti</a></li>
+      <li><a href="#ddt">DDT — Documenti di Trasporto</a></li>
+      <li><a href="#prefattura">Pre-Fattura</a></li>
+      <li><a href="#iva">IVA — Aliquote &amp; Esenzioni</a></li>
+      <li><a href="#dispositivi">Dispositivi — Magazzino &amp; Assegnazione</a></li>
+      <li><a href="#configurazione">Configurazione Dispositivo (Form Paziente)</a></li>
+      <li><a href="#email">Sistema Email — Provider &amp; Template</a></li>
+      <li><a href="#rinnovo">Rinnovo Contratti</a></li>
+      <li><a href="#partners">Partners &amp; Referral</a></li>
+      <li><a href="#sconti">Sconti &amp; Codici Promozionali</a></li>
+      <li><a href="#canali">Canali Acquisizione &amp; Fonti</a></li>
+      <li><a href="#hubspot">Integrazione HubSpot</a></li>
+      <li><a href="#analytics">Analytics — GA4 &amp; GSC</a></li>
+      <li><a href="#infra">Infrastruttura &amp; Deploy</a></li>
+      <li><a href="#changelog">Changelog Settembre 2026</a> <small style="color:#6b7280">(aggiornato 26/09)</small></li>
+    </ol>
+  </div>
+
+  <!-- ════════════════════════ 1. PANORAMICA -->
+  <section id="panoramica">
+    <h1 class="section-title">1. Panoramica del Sistema</h1>
+
+    <p>TeleMedCare V12 è il CRM operativo di eCura / MedicaGB per la gestione end-to-end del ciclo di vita di un cliente: dal primo contatto come <strong>lead</strong> fino all'<strong>attivazione del dispositivo di telemedicina</strong> e al <strong>rinnovo contrattuale</strong>.</p>
+
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="icon">⚙️</div>
+        <h4>Stack Tecnico</h4>
+        <p>Cloudflare Pages + Workers (Hono framework), database D1 (SQLite serverless), TypeScript.</p>
+      </div>
+      <div class="feat-card">
+        <div class="icon">🗃️</div>
+        <h4>Database D1</h4>
+        <p>SQLite remoto su Cloudflare. Tabelle principali: leads, contracts, proforma, ddts, dispositivi, assistiti, configurations, partners, email_logs.</p>
+      </div>
+      <div class="feat-card">
+        <div class="icon">📧</div>
+        <h4>Email Provider</h4>
+        <p>Brevo (primario) + Resend (fallback-1). Switch automatico in caso di errore. Monitorabile da /diagnostica.</p>
+      </div>
+      <div class="feat-card">
+        <div class="icon">🔐</div>
+        <h4>Autenticazione</h4>
+        <p>Login cookie-based per operatori. Endpoint pubblici per form lead, firma contratto e configurazione dispositivo.</p>
+      </div>
+      <div class="feat-card">
+        <div class="icon">🤝</div>
+        <h4>Integrazioni</h4>
+        <p>HubSpot CRM (sync bidirezionale), Google Analytics 4 + Search Console, Google Sheets (import lead), Stripe (pagamenti).</p>
+      </div>
+      <div class="feat-card">
+        <div class="icon">📑</div>
+        <h4>Documenti PDF</h4>
+        <p>Generazione lato server di: Contratti, Proforma, DDT, Pre-fatture. HTML renderizzato + print CSS.</p>
+      </div>
+    </div>
+
+    <h2 class="sub-title">Tabelle Principali DB</h2>
+    <table>
+      <tr><th>Tabella</th><th>Contenuto</th><th>Relazioni chiave</th></tr>
+      <tr><td><code>leads</code></td><td>Anagrafiche richiedenti + assistiti, stato pipeline, canale, prezzi</td><td>Radice di tutto il sistema</td></tr>
+      <tr><td><code>contracts</code></td><td>Contratti generati (HTML + PDF), stato firma, dati economici</td><td>→ leads (leadId)</td></tr>
+      <tr><td><code>signatures</code></td><td>Firme elettroniche con IP, timestamp, hash documento</td><td>→ contracts</td></tr>
+      <tr><td><code>proforma</code></td><td>Fatture proforma post-firma: importi, scadenze, stato pagamento</td><td>→ contracts, → leads</td></tr>
+      <tr><td><code>rate_pagamento</code></td><td>Rate del piano rateizzato (numero rata, importo, scadenza, stato)</td><td>→ leads</td></tr>
+      <tr><td><code>ddts</code></td><td>Documenti di trasporto per spedizione dispositivi</td><td>→ contracts, → proforma</td></tr>
+      <tr><td><code>prefatture</code></td><td>Pre-fatture generate e inviate al commercialista</td><td>→ ddts</td></tr>
+      <tr><td><code>dispositivi</code></td><td>Inventario fisico dispositivi (IMEI, seriale, stato)</td><td>→ leads, → contracts</td></tr>
+      <tr><td><code>assistiti</code></td><td>Persone fisiche che usano il dispositivo</td><td>→ leads (lead_id)</td></tr>
+      <tr><td><code>configurations</code></td><td>Configurazioni compilate dal paziente (contatti emergenza, medico, ecc.)</td><td>→ leads, → dispositivi</td></tr>
+      <tr><td><code>partners</code></td><td>Professionisti referral (fisioterapisti, badanti, medici)</td><td>→ leads (via partner_referrals)</td></tr>
+      <tr><td><code>document_templates</code></td><td>Template email HTML modificabili da interfaccia admin</td><td>Standalone</td></tr>
+      <tr><td><code>email_logs</code></td><td>Log di ogni email inviata con stato delivery</td><td>→ leads, → contracts, → proforma</td></tr>
+    </table>
+  </section>
+
+  <!-- ════════════════════════ 2. FLUSSO -->
+  <section id="flusso">
+    <h1 class="section-title">2. Flusso Operativo Completo (Pipeline)</h1>
+
+    <p>Il ciclo di vita di ogni cliente segue questa sequenza standard. Ogni passaggio può essere azionato manualmente dall'operatore oppure automaticamente dal sistema.</p>
+
+    <div class="workflow">
+      <div class="wf-step"><div class="step-num">1</div><div class="step-label">Lead<br>ricevuto</div></div>
+      <div class="wf-step"><div class="step-num">2</div><div class="step-label">Contatto<br>operatore</div></div>
+      <div class="wf-step"><div class="step-num">3</div><div class="step-label">Invio<br>contratto</div></div>
+      <div class="wf-step"><div class="step-num">4</div><div class="step-label">Firma<br>digitale</div></div>
+      <div class="wf-step"><div class="step-num">5</div><div class="step-label">Proforma<br>+pagamento</div></div>
+      <div class="wf-step"><div class="step-num">6</div><div class="step-label">DDT<br>spedizione</div></div>
+      <div class="wf-step"><div class="step-num">7</div><div class="step-label">Config.<br>dispositivo</div></div>
+      <div class="wf-step"><div class="step-num">8</div><div class="step-label">Attivazione<br>&amp; Benvenuto</div></div>
+      <div class="wf-step"><div class="step-num">9</div><div class="step-label">Rinnovo<br>annuale</div></div>
+    </div>
+
+    <h2 class="sub-title">Stati del Lead</h2>
+    <table>
+      <tr><th>Status</th><th>Significato</th><th>Azione successiva tipica</th></tr>
+      <tr><td><span class="badge-status s-new">NEW</span></td><td>Lead appena ricevuto, non ancora contattato</td><td>Telefonare entro 24h</td></tr>
+      <tr><td><span class="badge-status s-contacted">CONTACTED</span></td><td>Primo contatto effettuato</td><td>Inviare brochure o contratto</td></tr>
+      <tr><td><span class="badge-status s-sent">DOCUMENTS_SENT</span></td><td>Brochure e/o documentazione inviata</td><td>Follow-up dopo 3-5 giorni</td></tr>
+      <tr><td><span class="badge-status s-sent">CONTRACT_SENT</span></td><td>Contratto inviato in attesa di firma</td><td>Reminder automatico</td></tr>
+      <tr><td><span class="badge-status s-signed">CONTRACT_SIGNED</span></td><td>Contratto firmato</td><td>Generare proforma e inviare</td></tr>
+      <tr><td><span class="badge-status s-converted">CONVERTED</span></td><td>Pagamento ricevuto, dispositivo spedito/attivato</td><td>Monitoraggio rinnovo</td></tr>
+      <tr><td><span class="badge-status s-lost">LOST</span></td><td>Lead perso (non interessato, non raggiungibile)</td><td>Archivio</td></tr>
+    </table>
+
+    <h2 class="sub-title">Automazioni attive</h2>
+    <ul style="padding-left:20px;margin-top:8px;">
+      <li><strong>Notifica operatore</strong>: email automatica a ogni nuovo lead ricevuto</li>
+      <li><strong>Reminder contratto</strong>: email automatica al lead se non firma entro N giorni</li>
+      <li><strong>Proforma post-firma</strong>: generazione e invio automatici dopo firma contratto</li>
+      <li><strong>Email configurazione</strong>: inviata automaticamente quando Rata 1 è segnata PAGATA</li>
+      <li><strong>Reminder rata</strong>: notifica automatica alle scadenze delle rate rateizzate</li>
+      <li><strong>Cron giornaliero</strong>: invio reminder + sync canali (abilitabile da pannello)</li>
+    </ul>
+  </section>
+
+  <!-- ════════════════════════ 3. LEAD -->
+  <section id="lead">
+    <h1 class="section-title">3. Lead — Gestione Completa</h1>
+
+    <h2 class="sub-title">3.1 Campi Anagrafici</h2>
+    <p>Un lead è sempre composto da due figure che possono coincidere o essere persone diverse:</p>
+    <table>
+      <tr><th>Figura</th><th>Campi</th><th>Note</th></tr>
+      <tr>
+        <td><strong>Richiedente</strong><br><em>(Lead / Caregiver)</em></td>
+        <td>nomeRichiedente, cognomeRichiedente, email, telefono, CF, indirizzo, cap, città, provincia, luogo/data nascita</td>
+        <td>Chi firma il contratto e paga. Può essere il figlio, il familiare, il caregiver.</td>
+      </tr>
+      <tr>
+        <td><strong>Assistito</strong><br><em>(Paziente)</em></td>
+        <td>nomeAssistito, cognomeAssistito, etaAssistito, CF, indirizzo, cap, città, provincia, luogo/data nascita</td>
+        <td>Chi usa fisicamente il dispositivo. Spesso l'anziano/paziente.</td>
+      </tr>
+      <tr>
+        <td><strong>Intestatario contratto</strong></td>
+        <td>Campo <code>intestazioneContratto</code>: <code>richiedente</code> | <code>assistito</code></td>
+        <td>Determina a chi viene intestato legalmente il contratto. Influenza CF, indirizzo su contratto e proforma.</td>
+      </tr>
+    </table>
+
+    <h2 class="sub-title">3.2 Dati Economici</h2>
+    <table>
+      <tr><th>Campo</th><th>Valori</th><th>Descrizione</th></tr>
+      <tr><td><code>tipoServizio</code></td><td>BASE, AVANZATO</td><td>Piano sottoscritto</td></tr>
+      <tr><td><code>prezzo_mensile</code></td><td>Calcolato automaticamente</td><td>Prezzo base del piano</td></tr>
+      <tr><td><code>iva_agevolata</code></td><td>0 / 1</td><td>IVA 4% Legge 104 (disabilità 100%)</td></tr>
+      <tr><td><code>iva_esente</code></td><td>0 / 1</td><td>Esenzione IVA art. 10 n. 18 DPR 633/1972</td></tr>
+      <tr><td><code>rateizzazione_attiva</code></td><td>0 / 1</td><td>Pagamento rateizzato abilitato</td></tr>
+      <tr><td><code>codice_sconto</code></td><td>Stringa</td><td>Codice promozionale applicato</td></tr>
+    </table>
+
+    <h2 class="sub-title">3.3 Indirizzo di Spedizione — Campo <code>indirizzo_spedizione</code></h2>
+    <p>Ogni lead ha un campo dedicato <code>indirizzo_spedizione</code> (TEXT, default <code>'assistito'</code>) che controlla <strong>dove viene spedito il dispositivo</strong> in modo <em>indipendente</em> dall'intestatario del contratto:</p>
+    <table>
+      <tr><th>Valore campo</th><th>Destinatario DDT / Contratto</th></tr>
+      <tr><td><code>'assistito'</code> (default)</td><td>Indirizzo del paziente (<code>indirizzoAssistito</code> + nome assistito)</td></tr>
+      <tr><td><code>'richiedente'</code></td><td>Indirizzo del caregiver/lead (<code>indirizzoIntestatario</code> + nome richiedente)</td></tr>
+    </table>
+    <p style="margin-top:8px;">Questo campo è <strong>indipendente</strong> da <code>intestatarioContratto</code>: è possibile avere un contratto intestato all'assistito ma il dispositivo spedito al richiedente (o viceversa), coprendo tutti i casi pratici.</p>
+    <div class="info-box">
+      <strong>Come impostarlo:</strong><br>
+      • Dashboard → visualizza lead → pulsante <strong>📦 Spedisci al Richiedente</strong> (footer viewLeadModal)<br>
+      • Il pulsante si aggiorna dinamicamente: mostra "Spedisci al Richiedente" o "Spedisci all'Assistito" a seconda dello stato corrente<br>
+      • Endpoint: <code>PATCH /api/leads/:id/indirizzo-spedizione</code> con body <code>{ "valore": "richiedente" | "assistito" }</code>
+    </div>
+    <p style="margin-top:8px;"><strong>Effetti su DDT e Contratti:</strong></p>
+    <ul style="padding-left:20px;margin-top:4px;">
+      <li><strong>DDT (<code>genera-ddt</code>):</strong> il destinatario del documento di trasporto viene risolto dal campo <code>indirizzo_spedizione</code></li>
+      <li><strong>Contratto HTML (<code>send-contract</code>):</strong> viene generata la <code>SEZIONE_CONSEGNA</code> — un riquadro azzurro nel PDF che mostra l'indirizzo di consegna se diverso dall'intestatario</li>
+      <li><strong>Rinnovo (<code>POST /api/contracts/rinnovo</code>) e Rigenera HTML (<code>POST /api/contracts/:id/rigenera-html</code>):</strong> la <code>SEZIONE_CONSEGNA</code> viene reinserita anche nei contratti rigenerati o nei rinnovi</li>
+    </ul>
+
+    <h2 class="sub-title">3.4 Temperatura Lead</h2>
+    <p>Campo <code>temperatura</code> per qualificare l'interesse del lead:</p>
+    <table>
+      <tr><th>Valore</th><th>Significato</th></tr>
+      <tr><td>🔥 CALDO</td><td>Molto interessato, intende acquistare a breve</td></tr>
+      <tr><td>🌡️ TIEPIDO</td><td>Interessato ma indeciso, richiede follow-up</td></tr>
+      <tr><td>❄️ FREDDO</td><td>Poco interessato, da seguire con bassa priorità</td></tr>
+    </table>
+
+    <h2 class="sub-title">3.5 CRUD Lead</h2>
+    <table>
+      <tr><th>Operazione</th><th>Endpoint</th><th>Note</th></tr>
+      <tr><td>Lista lead (filtrata)</td><td><span class="endpoint"><span class="method-get">GET</span> /api/leads?status=&amp;fonte=&amp;canale=</span></td><td>Supporta filtri multipli</td></tr>
+      <tr><td>Dettaglio lead</td><td><span class="endpoint"><span class="method-get">GET</span> /api/leads/:id</span></td><td></td></tr>
+      <tr><td>Crea lead (admin)</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads</span></td><td></td></tr>
+      <tr><td>Crea lead (pubblico)</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/public</span></td><td>Da landing page, form eCura, GSheet</td></tr>
+      <tr><td>Aggiorna lead</td><td><span class="endpoint"><span class="method-put">PUT</span> /api/leads/:id</span></td><td></td></tr>
+      <tr><td>Elimina lead</td><td><span class="endpoint"><span class="method-delete">DELETE</span> /api/leads/:id</span></td><td>Soft delete con pulizia cascata</td></tr>
+      <tr><td>Imposta temperatura</td><td><span class="endpoint"><span class="method-patch">PATCH</span> /api/leads/:id/temperatura</span></td><td></td></tr>
+      <tr><td>IVA agevolata</td><td><span class="endpoint"><span class="method-patch">PATCH</span> /api/leads/:id/iva-agevolata</span></td><td>Toggle 4% Legge 104</td></tr>
+      <tr><td>IVA esente</td><td><span class="endpoint"><span class="method-patch">PATCH</span> /api/leads/:id/iva-esente</span></td><td>Toggle art. 10 DPR 633/72</td></tr>
+      <tr><td>Spedizione DDT</td><td><span class="endpoint"><span class="method-patch">PATCH</span> /api/leads/:id/indirizzo-spedizione</span></td><td>Toggle <code>'assistito'</code> | <code>'richiedente'</code></td></tr>
+      <tr><td>Aggiungi interazione</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/interactions</span></td><td>Log chiamate/email/note</td></tr>
+      <tr><td>Lista interazioni</td><td><span class="endpoint"><span class="method-get">GET</span> /api/leads/:id/interactions</span></td><td></td></tr>
+      <tr><td>Converti in cliente</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/convert</span></td><td>Imposta status CONVERTED</td></tr>
+      <tr><td>Invia contratto</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/send-contract</span></td><td>Genera PDF + invia email</td></tr>
+      <tr><td>Invia brochure</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/send-brochure</span></td><td></td></tr>
+      <tr><td>Invia proforma</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/send-proforma</span></td><td></td></tr>
+      <tr><td>Genera DDT</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/genera-ddt</span></td><td>Crea DDT e prepara spedizione</td></tr>
+      <tr><td>Invia email benvenuto</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/send-benvenuto</span></td><td></td></tr>
+      <tr><td>Firma manuale</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/manual-sign</span></td><td>Segna contratto come firmato manualmente</td></tr>
+      <tr><td>Pagamento manuale</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/manual-payment</span></td><td>Registra pagamento ricevuto (es. bonifico)</td></tr>
+      <tr><td>Richiedi completamento dati</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:leadId/request-completion</span></td><td>Invia email al lead con link per completare anagrafica</td></tr>
+    </table>
+
+    <h2 class="sub-title">3.6 Fonti e Canali Acquisizione</h2>
+    <table>
+      <tr><th>fonte</th><th>canale_acquisizione</th><th>Descrizione</th></tr>
+      <tr><td>LANDING_PAGE</td><td>GOOGLE / META / ORGANICO / EMAIL / ALTRO</td><td>Form ecura.it</td></tr>
+      <tr><td>IRBEMA</td><td>CORPORATE</td><td>Partner convenzionato</td></tr>
+      <tr><td>LUXOTTICA</td><td>CORPORATE</td><td>Corporate welfare</td></tr>
+      <tr><td>PIRELLI</td><td>CORPORATE</td><td>Corporate welfare</td></tr>
+      <tr><td>FAS</td><td>CORPORATE</td><td>Corporate welfare</td></tr>
+      <tr><td>FORM PARTNER</td><td>REFERRAL</td><td>Da codice partner</td></tr>
+      <tr><td>HUBSPOT</td><td>Vario</td><td>Import da CRM esterno</td></tr>
+    </table>
+  </section>
+
+  <!-- ════════════════════════ 4. ASSISTITI -->
+  <section id="assistiti">
+    <h1 class="section-title">4. Assistiti &amp; Relazione Lead↔Assistito</h1>
+
+    <h2 class="sub-title">4.1 Modello Multi-Assistiti per Lead</h2>
+    <p>Il sistema supporta una relazione <strong>1 Lead → N Assistiti</strong>. Un caregiver (lead) può gestire e fare da referente per più persone anziane/pazienti contemporaneamente.</p>
+
+    <div class="ok-box">
+      <strong>Esempio reale:</strong> Un figlio (lead) gestisce sia il padre (assistito 1) sia la madre (assistito 2). Ogni assistito ha il proprio contratto, dispositivo, configurazione e piano separato. Il figlio è il riferimento unico per entrambi.
+    </div>
+
+    <p>Nel DB, ogni record nella tabella <code>assistiti</code> ha un <code>lead_id</code> che punta al caregiver. Non c'è limite al numero di assistiti per un singolo lead. La dashboard mostra tutti gli assistiti associati a un lead.</p>
+
+    <h2 class="sub-title">4.2 Campi Tabella Assistiti</h2>
+    <table>
+      <tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr>
+      <tr><td><code>id</code></td><td>INTEGER AUTOINCREMENT</td><td>PK</td></tr>
+      <tr><td><code>codice</code></td><td>TEXT UNIQUE</td><td>Codice identificativo (es. ASS-0001)</td></tr>
+      <tr><td><code>nome</code></td><td>TEXT</td><td>Nome e cognome assistito</td></tr>
+      <tr><td><code>email</code></td><td>TEXT</td><td>Email dell'assistito (se diversa dal lead)</td></tr>
+      <tr><td><code>telefono</code></td><td>TEXT</td><td></td></tr>
+      <tr><td><code>imei</code></td><td>TEXT UNIQUE</td><td>IMEI del dispositivo SiDLY assegnato</td></tr>
+      <tr><td><code>piano</code></td><td>TEXT</td><td>BASE / AVANZATO</td></tr>
+      <tr><td><code>status</code></td><td>TEXT</td><td>ATTIVO / SOSPESO / SCADUTO</td></tr>
+      <tr><td><code>lead_id</code></td><td>TEXT FK → leads</td><td>Caregiver di riferimento</td></tr>
+    </table>
+
+    <h2 class="sub-title">4.3 CRUD Assistiti</h2>
+    <table>
+      <tr><th>Operazione</th><th>Endpoint</th></tr>
+      <tr><td>Lista assistiti</td><td><span class="endpoint"><span class="method-get">GET</span> /api/assistiti</span></td></tr>
+      <tr><td>Crea assistito</td><td><span class="endpoint"><span class="method-post">POST</span> /api/assistiti</span></td></tr>
+      <tr><td>Aggiorna assistito</td><td><span class="endpoint"><span class="method-put">PUT</span> /api/assistiti/:id</span></td></tr>
+      <tr><td>Elimina assistito</td><td><span class="endpoint"><span class="method-delete">DELETE</span> /api/assistiti/:id</span></td></tr>
+      <tr><td>Fix anagrafica</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/fix-assistito</span></td></tr>
+    </table>
+
+    <h2 class="sub-title">4.4 Lookup IMEI → Lead</h2>
+    <p>Il percorso di lookup per trovare il lead a partire dall'IMEI del dispositivo è: <code>IMEI → assistiti → leads</code>. Questo è usato dal form di configurazione paziente per identificare automaticamente il cliente senza richiedere login.</p>
+
+    <h2 class="sub-title">4.5 Multi-Assistiti per Lead — Tabella <code>lead_assistiti</code></h2>
+    <p>La tabella <code>lead_assistiti</code> implementa la relazione <strong>1 lead → N assistiti aggiuntivi</strong> direttamente sul lead, senza creare un nuovo lead separato. Ogni riga è un paziente/familiare in più rispetto al principale (già nei campi flat di <code>leads</code>). Si usa per il caso del caregiver che gestisce più anziani con un unico contratto quadro.</p>
+
+    <div class="ok-box">
+      <strong>Esempio pratico:</strong> Un figlio ha firmato il contratto principale per il padre (campi flat su leads). Ora vuole aggiungere la madre. Si usa <em>Aggiungi Assistito</em> nella scheda lead → viene creata una riga in <code>lead_assistiti</code> con i dati della madre. Da lì si può generare contratto e DDT separati per la madre, con il figlio come richiedente/pagante.
+    </div>
+
+    <h2 class="sub-title">4.5.1 Schema Tabella <code>lead_assistiti</code></h2>
+    <table>
+      <tr><th>Campo</th><th>Tipo</th><th>Descrizione</th></tr>
+      <tr><td><code>id</code></td><td>INTEGER AUTOINCREMENT</td><td>PK</td></tr>
+      <tr><td><code>lead_id</code></td><td>TEXT FK → leads.id</td><td>Lead (caregiver) di riferimento</td></tr>
+      <tr><td><code>sort_order</code></td><td>INTEGER default 0</td><td>Ordinamento nella lista (0=primo aggiunto)</td></tr>
+      <tr><td><code>nome</code></td><td>TEXT NOT NULL</td><td>Nome assistito</td></tr>
+      <tr><td><code>cognome</code></td><td>TEXT NOT NULL</td><td>Cognome assistito</td></tr>
+      <tr><td><code>codice_fiscale</code></td><td>TEXT</td><td>CF assistito</td></tr>
+      <tr><td><code>data_nascita</code></td><td>TEXT</td><td>Data di nascita (ISO)</td></tr>
+      <tr><td><code>luogo_nascita</code></td><td>TEXT</td><td>Comune di nascita</td></tr>
+      <tr><td><code>indirizzo</code></td><td>TEXT</td><td>Via/n. civico residenza assistito</td></tr>
+      <tr><td><code>cap</code></td><td>TEXT</td><td></td></tr>
+      <tr><td><code>citta</code></td><td>TEXT</td><td></td></tr>
+      <tr><td><code>provincia</code></td><td>TEXT</td><td></td></tr>
+      <tr><td><code>indirizzo_spedizione</code></td><td>TEXT default <code>'questo'</code></td><td><code>'questo'</code> = spedire all'assistito; <code>'richiedente'</code> = spedire al lead</td></tr>
+      <tr><td><code>note</code></td><td>TEXT</td><td>Note libere operatore</td></tr>
+      <tr><td><code>created_at</code> / <code>updated_at</code></td><td>TEXT</td><td>Timestamp ISO, auto</td></tr>
+    </table>
+
+    <h2 class="sub-title">4.5.2 Dove si attiva l'interfaccia multi-assistiti</h2>
+    <table>
+      <tr><th>Contesto</th><th>Dove</th><th>Chi lo usa</th></tr>
+      <tr>
+        <td>Visualizzazione lead</td>
+        <td><code>viewLeadModal</code> → sezione "👥 Assistiti Aggiuntivi" con CRUD inline</td>
+        <td>Operatore (dashboard)</td>
+      </tr>
+      <tr>
+        <td>Modifica lead</td>
+        <td><code>newLeadModal</code> in edit mode → sezione <code>editModalAssistitiSection</code> (visibile solo in modalità modifica)</td>
+        <td>Operatore (dashboard)</td>
+      </tr>
+      <tr>
+        <td>Form completamento dati</td>
+        <td><code>form-configurazione.html</code> → sezione "👥 Altri Assistiti" prima del bottone di invio</td>
+        <td>Richiedente (form pubblico)</td>
+      </tr>
+    </table>
+
+    <h2 class="sub-title">4.5.3 API CRUD lead_assistiti</h2>
+    <table>
+      <tr><th>Operazione</th><th>Endpoint</th><th>Note</th></tr>
+      <tr><td>Lista assistiti lead</td><td><span class="endpoint"><span class="method-get">GET</span> /api/leads/:id/assistiti</span></td><td>Ordinati per sort_order ASC</td></tr>
+      <tr><td>Aggiunge assistito</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/assistiti</span></td><td>Body: nome*, cognome*, + campi opzionali. sort_order auto</td></tr>
+      <tr><td>Aggiorna assistito</td><td><span class="endpoint"><span class="method-patch">PATCH</span> /api/leads/:id/assistiti/:aid</span></td><td>Solo campi presenti nel body vengono aggiornati</td></tr>
+      <tr><td>Elimina assistito</td><td><span class="endpoint"><span class="method-delete">DELETE</span> /api/leads/:id/assistiti/:aid</span></td><td>Rimozione definitiva</td></tr>
+      <tr><td>Invia contratto assistito</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/assistiti/:aid/send-contract</span></td><td>Usa dati lead + override assistito; crea contratto con tag COGNOME nel codice</td></tr>
+      <tr><td>Genera DDT assistito</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/assistiti/:aid/genera-ddt</span></td><td>Body: imei*, telefonoSim, dataConsegna, note. Spedizione secondo <code>indirizzo_spedizione</code> dell'assistito</td></tr>
+    </table>
+
+    <div class="info-box">
+      <strong>Nota tecnica — helper <code>_buildLeadDataFromLead(lead, overrides)</code>:</strong><br>
+      La funzione costruisce il <code>leadData</code> per contratti/email a partire da un record <code>leads</code> con override opzionali. Gli override permettono di sostituire i campi assistito con i dati di <code>lead_assistiti</code> mantenendo richiedente/intestatario del lead principale. Usata da <code>send-contract</code> e <code>send-contract per assistito</code>.
+    </div>
+  </section>
+
+  <!-- ════════════════════════ 5. CONTRATTI -->
+  <section id="contratti">
+    <h1 class="section-title">5. Contratti — Generazione &amp; Firma</h1>
+
+    <h2 class="sub-title">5.1 Tipi di Contratto</h2>
+    <table>
+      <tr><th>Tipo</th><th>Template</th><th>Descrizione</th></tr>
+      <tr><td>BASE</td><td>Template_Contratto_Base_TeleMedCare</td><td>Piano base monitoraggio</td></tr>
+      <tr><td>AVANZATO</td><td>Template_Contratto_Avanzato_TeleMedCare</td><td>Piano avanzato con più funzionalità</td></tr>
+      <tr><td>RINNOVO</td><td>contratto-rinnovo-template</td><td>Rinnovo annuale contratto esistente</td></tr>
+    </table>
+
+    <h2 class="sub-title">5.2 Ciclo di Vita del Contratto</h2>
+    <table>
+      <tr><th>Status</th><th>Trigger</th></tr>
+      <tr><td><span class="badge-status s-new">DRAFT</span></td><td>Contratto generato ma non inviato</td></tr>
+      <tr><td><span class="badge-status s-sent">SENT</span></td><td>Email con PDF inviata al lead</td></tr>
+      <tr><td><span class="badge-status s-signed">SIGNED</span></td><td>Lead ha firmato (digitalmente o manualmente)</td></tr>
+      <tr><td><span class="badge-status s-lost">EXPIRED</span></td><td>Scaduto senza firma (30 giorni dall'invio)</td></tr>
+      <tr><td><span class="badge-status s-lost">CANCELLED</span></td><td>Annullato dall'operatore</td></tr>
+    </table>
+
+    <h2 class="sub-title">5.3 Firma Digitale</h2>
+    <p>Il sistema di firma digitale funziona via pagina pubblica <code>/firma-contratto?token=XXX</code>:</p>
+    <ol style="padding-left:20px;margin-top:8px;">
+      <li>Operatore invia email con link univoco firmato (OTP)</li>
+      <li>Lead apre la pagina, visualizza il contratto HTML</li>
+      <li>Lead firma con mouse/touch nella canvas di firma</li>
+      <li>Sistema registra: firma base64, IP, user-agent, timestamp, hash documento</li>
+      <li>Status contratto → SIGNED; proforma generata automaticamente</li>
+    </ol>
+
+    <h2 class="sub-title">5.4 CRUD Contratti</h2>
+    <table>
+      <tr><th>Operazione</th><th>Endpoint</th></tr>
+      <tr><td>Lista contratti</td><td><span class="endpoint"><span class="method-get">GET</span> /api/contratti</span></td></tr>
+      <tr><td>Dettaglio contratto</td><td><span class="endpoint"><span class="method-get">GET</span> /api/contratti/:id</span></td></tr>
+      <tr><td>Crea contratto</td><td><span class="endpoint"><span class="method-post">POST</span> /api/contracts</span></td></tr>
+      <tr><td>Aggiorna contratto</td><td><span class="endpoint"><span class="method-put">PUT</span> /api/contratti/:id</span></td></tr>
+      <tr><td>Elimina contratto</td><td><span class="endpoint"><span class="method-delete">DELETE</span> /api/contratti/:id</span></td></tr>
+      <tr><td>Visualizza HTML</td><td><span class="endpoint"><span class="method-get">GET</span> /api/contratti/:id/view</span></td></tr>
+      <tr><td>Scarica PDF</td><td><span class="endpoint"><span class="method-get">GET</span> /api/contratti/:id/download</span></td></tr>
+      <tr><td>Stampa PDF</td><td><span class="endpoint"><span class="method-get">GET</span> /api/contratti/:id/pdf-print</span></td></tr>
+      <tr><td>Rigenera HTML</td><td><span class="endpoint"><span class="method-post">POST</span> /api/contracts/:id/rigenera-html</span></td></tr>
+      <tr><td>Segna come firmato</td><td><span class="endpoint"><span class="method-patch">PATCH</span> /api/contracts/:id/segna-firmato</span></td></tr>
+      <tr><td>Firma via form</td><td><span class="endpoint"><span class="method-post">POST</span> /api/contracts/sign</span></td></tr>
+      <tr><td>Invia email contratto</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/send-contract</span></td></tr>
+    </table>
+
+    <h2 class="sub-title">5.5 Dati Economici nel Contratto</h2>
+    <table>
+      <tr><th>Campo</th><th>Descrizione</th></tr>
+      <tr><td>prezzo_mensile</td><td>Canone mensile del piano</td></tr>
+      <tr><td>durata_mesi</td><td>Durata contrattuale (default 12 mesi)</td></tr>
+      <tr><td>prezzo_totale</td><td>Totale contratto (calcolato)</td></tr>
+      <tr><td>riserva_dominio</td><td>Clausola riserva di proprietà se rateizzato</td></tr>
+      <tr><td>rateizzazione_attiva</td><td>1 = pagamento rateizzato</td></tr>
+      <tr><td>data_scadenza</td><td>Scadenza per firma (30gg dall'invio)</td></tr>
+    </table>
+
+    <h2 class="sub-title">5.6 SEZIONE_CONSEGNA — Riquadro Indirizzo di Consegna nel Contratto</h2>
+    <p>Il placeholder <code>{{SEZIONE_CONSEGNA}}</code> viene sostituito nel contratto HTML con un riquadro grafico che mostra le informazioni di consegna del dispositivo quando queste differiscono dall'indirizzo dell'intestatario.</p>
+    <div class="info-box" style="background:#f0f9ff;border-left:3px solid #2563eb;">
+      <strong>Stile visivo:</strong> sfondo azzurro chiaro (<code>#f0f9ff</code>), bordo sinistro blu (<code>#2563eb</code>), intestazione "📦 Indirizzo di Consegna Dispositivo"<br>
+      <strong>Presenza:</strong> il blocco viene generato solo quando <code>indirizzo_spedizione = 'richiedente'</code> e i dati di consegna sono valorizzati; altrimenti è stringa vuota (nessun riquadro nel PDF).
+    </div>
+    <p style="margin-top:8px;"><strong>Dove è attivo:</strong></p>
+    <ul style="padding-left:20px;margin-top:4px;">
+      <li><strong>Contratti standard</strong> (<code>send-contract</code> / <code>contract-generator.ts</code>) — campi <code>nomeConsegna</code>, <code>indirizzoConsegna</code>, <code>capConsegna</code>, <code>cittaConsegna</code>, <code>provinciaConsegna</code> su <code>ContractData</code></li>
+      <li><strong>Rinnovi</strong> (<code>POST /api/contracts/rinnovo</code>) — calcolata da <code>lead.indirizzo_spedizione</code> e iniettata nel map dei vars</li>
+      <li><strong>Rigenera HTML</strong> (<code>POST /api/contracts/:id/rigenera-html</code>) — il JOIN include <code>l.indirizzo_spedizione</code> dal lead; sezione ricalcolata e reinserita</li>
+      <li><strong>Template rinnovo</strong> (<code>contratto-rinnovo-template.ts</code>) — il placeholder <code>{{SEZIONE_CONSEGNA}}</code> è posizionato dopo il box del cliente</li>
+    </ul>
+  </section>
+
+  <!-- ════════════════════════ 6. PROFORMA -->
+  <section id="proforma">
+    <h1 class="section-title">6. Proforma — Fatture Proforma</h1>
+
+    <p>La <strong>proforma</strong> è il documento economico emesso dopo la firma del contratto, prima del pagamento. Viene inviata al cliente per confermare l'importo da pagare.</p>
+
+    <h2 class="sub-title">6.1 Numerazione</h2>
+    <p>Formato: <code>PF-YYYY-NNNN</code> (es. <code>PF-2026-0042</code>). Autoincrement garantito con gestione di conflitti UNIQUE.</p>
+
+    <h2 class="sub-title">6.2 Ciclo di Vita Proforma</h2>
+    <table>
+      <tr><th>Status</th><th>Trigger</th></tr>
+      <tr><td><span class="badge-status s-new">DRAFT</span></td><td>Proforma generata automaticamente dopo firma contratto</td></tr>
+      <tr><td><span class="badge-status s-sent">SENT</span></td><td>Email inviata al cliente</td></tr>
+      <tr><td><span class="badge-status s-paid">PAID</span></td><td>Pagamento confermato dall'operatore</td></tr>
+      <tr><td><span class="badge-status s-lost">EXPIRED</span></td><td>Scaduta senza pagamento</td></tr>
+      <tr><td><span class="badge-status s-lost">CANCELLED</span></td><td>Annullata</td></tr>
+    </table>
+
+    <h2 class="sub-title">6.3 IVA sulla Proforma</h2>
+    <div class="info-box">
+      Il calcolo IVA segue la priorità:<br>
+      1. <strong>iva_esente = 1</strong> → IVA 0% + dicitura "Operazione esente IVA — art. 10 n. 18 d.P.R. 633/1972"<br>
+      2. <strong>iva_agevolata = 1</strong> → IVA 4% + dicitura "IVA agevolata 4% (Legge 104, disabilità 100%)"<br>
+      3. Standard → IVA 22%
+    </div>
+
+    <h2 class="sub-title">6.4 CRUD Proforma</h2>
+    <table>
+      <tr><th>Operazione</th><th>Endpoint</th></tr>
+      <tr><td>Lista proforma</td><td><span class="endpoint"><span class="method-get">GET</span> /api/proforma</span></td></tr>
+      <tr><td>Dettaglio proforma</td><td><span class="endpoint"><span class="method-get">GET</span> /api/proforma/:id</span></td></tr>
+      <tr><td>Crea proforma</td><td><span class="endpoint"><span class="method-post">POST</span> /api/proforma</span></td></tr>
+      <tr><td>Aggiorna proforma</td><td><span class="endpoint"><span class="method-put">PUT</span> /api/proforma/:id</span></td></tr>
+      <tr><td>Elimina proforma</td><td><span class="endpoint"><span class="method-delete">DELETE</span> /api/proforma/:id</span></td></tr>
+      <tr><td>Invia proforma al lead</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/send-proforma</span></td></tr>
+      <tr><td>Invia via endpoint diretto</td><td><span class="endpoint"><span class="method-post">POST</span> /api/proforma/send</span></td></tr>
+      <tr><td>HTML proforma interna</td><td><span class="endpoint"><span class="method-get">GET</span> /api/contracts/:id/proforma-interna-html</span></td></tr>
+    </table>
+
+    <h2 class="sub-title">6.5 Auto-invio proforma dopo firma</h2>
+    <p>Quando un contratto viene firmato (via form digitale), il sistema genera automaticamente la proforma e la invia al cliente via email senza intervento dell'operatore.</p>
+  </section>
+
+  <!-- ════════════════════════ 7. RATEIZZAZIONE -->
+  <section id="rateizzazione">
+    <h1 class="section-title">7. Rateizzazione &amp; Pagamenti</h1>
+
+    <h2 class="sub-title">7.1 Piano Rateizzato</h2>
+    <p>Quando <code>rateizzazione_attiva = 1</code>, il totale del contratto viene suddiviso in N rate con scadenze individuali. Le rate sono memorizzate nella tabella <code>rate_pagamento</code>.</p>
+
+    <table>
+      <tr><th>Campo rate_pagamento</th><th>Descrizione</th></tr>
+      <tr><td>numero_rata</td><td>1, 2, 3, … (progressivo)</td></tr>
+      <tr><td>importo</td><td>Importo della singola rata</td></tr>
+      <tr><td>scadenza</td><td>Data di scadenza pagamento</td></tr>
+      <tr><td>status</td><td>PENDING / PAGATA / SCADUTA</td></tr>
+      <tr><td>data_pagamento</td><td>Data effettiva pagamento (compilata dall'operatore)</td></tr>
+    </table>
+
+    <h2 class="sub-title">7.2 Trigger Email Configurazione su Rata 1</h2>
+    <div class="ok-box">
+      <strong>Automazione chiave:</strong> Quando l'operatore segna la <strong>Rata 1 come PAGATA</strong>, il sistema invia automaticamente al cliente l'email con il link al form di configurazione del dispositivo. Non è necessaria nessuna azione manuale aggiuntiva.
+    </div>
+
+    <h2 class="sub-title">7.3 Reminder Rate</h2>
+    <p>Il cron <code>/api/cron/rata-reminders</code> verifica le rate in scadenza e invia automaticamente reminder al cliente N giorni prima della scadenza.</p>
+
+    <h2 class="sub-title">7.4 CRUD Rateizzazione</h2>
+    <table>
+      <tr><th>Operazione</th><th>Endpoint</th></tr>
+      <tr><td>Crea piano rate</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/rateizzazione</span></td></tr>
+      <tr><td>Visualizza rate</td><td><span class="endpoint"><span class="method-get">GET</span> /api/leads/:id/rateizzazione</span></td></tr>
+      <tr><td>Aggiorna singola rata</td><td><span class="endpoint"><span class="method-patch">PATCH</span> /api/leads/:id/rate/:rataId</span></td></tr>
+      <tr><td>Elimina piano rate</td><td><span class="endpoint"><span class="method-delete">DELETE</span> /api/leads/:id/rateizzazione</span></td></tr>
+      <tr><td>Pagamento manuale</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/manual-payment</span></td></tr>
+    </table>
+
+    <h2 class="sub-title">7.5 Pagamenti Stripe</h2>
+    <p>Per pagamenti con carta di credito è integrato Stripe. Gli endpoint <code>/api/create-payment-intent</code> e <code>/api/payments</code> gestiscono il flusso. Il webhook Stripe <code>/api/webhooks/stripe</code> aggiorna automaticamente lo stato al pagamento completato.</p>
+  </section>
+
+  <!-- ════════════════════════ 8. DDT -->
+  <section id="ddt">
+    <h1 class="section-title">8. DDT — Documenti di Trasporto</h1>
+
+    <p>Il DDT (Documento di Trasporto) traccia la spedizione fisica del dispositivo SiDLY al cliente. Viene generato dopo il pagamento confermato e prima della spedizione.</p>
+
+    <h2 class="sub-title">8.1 Campi DDT</h2>
+    <table>
+      <tr><th>Campo</th><th>Descrizione</th></tr>
+      <tr><td>numero_ddt</td><td>Numerazione progressiva (es. DDT-2026-042)</td></tr>
+      <tr><td>contract_code</td><td>Codice contratto collegato (FK)</td></tr>
+      <tr><td>proforma_number</td><td>Numero proforma collegata (FK)</td></tr>
+      <tr><td>dispositivo</td><td>Modello dispositivo (SiDLY Care Pro / Vital Care)</td></tr>
+      <tr><td>serial_number</td><td>Seriale del dispositivo fisico</td></tr>
+      <tr><td>quantita</td><td>Numero pezzi (default 1)</td></tr>
+      <tr><td>destinatario_nome/indirizzo/cap/città/prov/tel/email</td><td>Anagrafica destinatario spedizione</td></tr>
+      <tr><td>corriere</td><td>Corriere usato (es. GLS, BRT, SDA)</td></tr>
+      <tr><td>tracking_number</td><td>Codice tracking spedizione</td></tr>
+      <tr><td>peso_kg / numero_colli</td><td>Dati collo</td></tr>
+      <tr><td>status</td><td>preparazione / spedito / in_transito / consegnato / anomalia</td></tr>
+      <tr><td>data_spedizione / data_consegna</td><td>Timestamp eventi</td></tr>
+    </table>
+
+    <h2 class="sub-title">8.2 Stato DDT</h2>
+    <table>
+      <tr><th>Status</th><th>Significato</th></tr>
+      <tr><td><span class="badge-status s-pending">preparazione</span></td><td>DDT creato, dispositivo in preparazione</td></tr>
+      <tr><td><span class="badge-status s-shipped">spedito</span></td><td>Consegnato al corriere, tracking disponibile</td></tr>
+      <tr><td><span class="badge-status s-shipped">in_transito</span></td><td>In viaggio verso destinatario</td></tr>
+      <tr><td><span class="badge-status s-delivered">consegnato</span></td><td>Consegnato al destinatario</td></tr>
+      <tr><td><span class="badge-status s-lost">anomalia</span></td><td>Problema spedizione (smarrito, indirizzo errato, ecc.)</td></tr>
+    </table>
+
+    <h2 class="sub-title">8.3 PDF DDT</h2>
+    <p>Il PDF DDT è generato lato server con layout fedele al modello MedicaGB (carta intestata, tabella articoli, dati mittente/destinatario, firma). Include la colonna IVA separata e il codice fiscale intestatario.</p>
+
+    <h2 class="sub-title">8.4 CRUD DDT</h2>
+    <table>
+      <tr><th>Operazione</th><th>Endpoint</th></tr>
+      <tr><td>Lista DDT</td><td><span class="endpoint"><span class="method-get">GET</span> /api/ddts</span></td></tr>
+      <tr><td>Dettaglio DDT</td><td><span class="endpoint"><span class="method-get">GET</span> /api/ddts/:id</span></td></tr>
+      <tr><td>Crea DDT</td><td><span class="endpoint"><span class="method-post">POST</span> /api/ddts</span></td></tr>
+      <tr><td>Aggiorna DDT</td><td><span class="endpoint"><span class="method-put">PUT</span> /api/ddts/:id</span></td></tr>
+      <tr><td>Fix status DDT</td><td><span class="endpoint"><span class="method-post">POST</span> /api/ddts/fix-status</span></td></tr>
+      <tr><td>Elimina DDT</td><td><span class="endpoint"><span class="method-delete">DELETE</span> /api/ddts/:id</span></td></tr>
+      <tr><td>Stampa PDF DDT</td><td><span class="endpoint"><span class="method-get">GET</span> /api/ddts/:id/pdf-print</span></td></tr>
+      <tr><td>Genera DDT da lead</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/genera-ddt</span></td></tr>
+    </table>
+  </section>
+
+  <!-- ════════════════════════ 9. PREFATTURA -->
+  <section id="prefattura">
+    <h1 class="section-title">9. Pre-Fattura</h1>
+
+    <p>La <strong>pre-fattura</strong> è un documento riepilogativo generato a partire da un DDT, destinato al commercialista per la fatturazione ufficiale. Non è una fattura fiscale ma un documento interno di supporto contabile.</p>
+
+    <h2 class="sub-title">9.1 Contenuto Pre-Fattura</h2>
+    <ul style="padding-left:20px;margin-top:8px;">
+      <li>Dati cliente (anagrafica completa con CF)</li>
+      <li>Dati contratto (codice, tipo servizio, date)</li>
+      <li>Dati dispositivo (modello, seriale, IMEI)</li>
+      <li>Importo imponibile + IVA (con nota esenzione se applicabile)</li>
+      <li>Piano rateizzato con dettaglio rate se presente</li>
+      <li>Riferimento DDT e numero proforma</li>
+    </ul>
+
+    <h2 class="sub-title">9.2 Invio al Commercialista</h2>
+    <p>La pre-fattura viene inviata automaticamente via email al commercialista al momento della generazione. L'email include il PDF come allegato.</p>
+
+    <h2 class="sub-title">9.3 Endpoint Pre-Fattura</h2>
+    <table>
+      <tr><th>Operazione</th><th>Endpoint</th></tr>
+      <tr><td>HTML pre-fattura (visualizza)</td><td><span class="endpoint"><span class="method-get">GET</span> /api/ddts/:id/prefattura-html</span></td></tr>
+      <tr><td>Genera e invia pre-fattura</td><td><span class="endpoint"><span class="method-post">POST</span> /api/ddts/:id/prefattura</span></td></tr>
+      <tr><td>Lista pre-fatture</td><td><span class="endpoint"><span class="method-get">GET</span> /api/prefatture</span></td></tr>
+    </table>
+  </section>
+
+  <!-- ════════════════════════ 10. IVA -->
+  <section id="iva">
+    <h1 class="section-title">10. IVA — Aliquote &amp; Esenzioni</h1>
+
+    <p>TeleMedCare supporta tre regimi IVA distinti, configurabili per singolo lead/contratto:</p>
+
+    <table>
+      <tr><th>Regime</th><th>Aliquota</th><th>Norma</th><th>Quando usarla</th></tr>
+      <tr>
+        <td><strong>Standard</strong></td>
+        <td>22%</td>
+        <td>DPR 633/1972 — regime ordinario</td>
+        <td>Default per tutti i clienti</td>
+      </tr>
+      <tr>
+        <td><strong>Agevolata</strong></td>
+        <td>4%</td>
+        <td>Tabella A, Parte II, DPR 633/1972 — Legge 104</td>
+        <td>Portatori di handicap con invalidità 100%</td>
+      </tr>
+      <tr>
+        <td><strong>Esente</strong></td>
+        <td>0%</td>
+        <td>Art. 10, n. 18, d.P.R. 633/1972</td>
+        <td>Prestazioni sanitarie rese da professionisti sanitari (telemedicina medica)</td>
+      </tr>
+    </table>
+
+    <div class="warn-box">
+      <strong>⚠️ Attenzione:</strong> L'esenzione art. 10 n. 18 è applicabile solo quando il servizio è erogato da un professionista sanitario abilitato. Verificare con il commercialista prima di applicarla.
+    </div>
+
+    <h2 class="sub-title">Come impostare il regime IVA</h2>
+    <p>Dall'interfaccia lead, usare i pulsanti dedicati oppure le API:</p>
+    <ul style="padding-left:20px;margin-top:6px;">
+      <li><span class="endpoint"><span class="method-patch">PATCH</span> /api/leads/:id/iva-agevolata</span> — toggle IVA 4%</li>
+      <li><span class="endpoint"><span class="method-patch">PATCH</span> /api/leads/:id/iva-esente</span> — toggle IVA 0% art. 10</li>
+    </ul>
+    <p>Il regime si propagherà automaticamente su proforma e pre-fattura generate da quel lead.</p>
+  </section>
+
+  <!-- ════════════════════════ 11. DISPOSITIVI -->
+  <section id="dispositivi">
+    <h1 class="section-title">11. Dispositivi — Magazzino &amp; Assegnazione</h1>
+
+    <p>I dispositivi SiDLY (Care Pro, Vital Care) sono tracciati come asset fisici dall'acquisto fino alla restituzione o fine vita.</p>
+
+    <h2 class="sub-title">11.1 Ciclo di Vita Dispositivo</h2>
+    <table>
+      <tr><th>Status</th><th>Significato</th></tr>
+      <tr><td><span class="badge-status s-new">INVENTORY</span></td><td>Disponibile in magazzino, non assegnato</td></tr>
+      <tr><td><span class="badge-status s-pending">RESERVED</span></td><td>Riservato per un contratto in fase di conclusione</td></tr>
+      <tr><td><span class="badge-status s-sent">ASSIGNED</span></td><td>Assegnato a un cliente ma non ancora spedito</td></tr>
+      <tr><td><span class="badge-status s-shipped">SHIPPED</span></td><td>Spedito, in attesa di consegna</td></tr>
+      <tr><td><span class="badge-status s-delivered">DELIVERED</span></td><td>Consegnato al cliente</td></tr>
+      <tr><td><span class="badge-status s-active">ACTIVE</span></td><td>Attivo e monitorante</td></tr>
+      <tr><td><span class="badge-status s-pending">MAINTENANCE</span></td><td>In manutenzione / riparazione</td></tr>
+      <tr><td><span class="badge-status s-lost">RETIRED</span></td><td>Dismesso o reso</td></tr>
+    </table>
+
+    <h2 class="sub-title">11.2 Dati Dispositivo</h2>
+    <table>
+      <tr><th>Campo</th><th>Descrizione</th></tr>
+      <tr><td>imei</td><td>Identificatore univoco hardware (IMEI 15 cifre)</td></tr>
+      <tr><td>serial_number</td><td>Seriale del dispositivo</td></tr>
+      <tr><td>modello</td><td>SiDLY Care Pro / SiDLY Vital Care</td></tr>
+      <tr><td>versione_firmware</td><td>Versione firmware installata</td></tr>
+      <tr><td>leadId</td><td>Cliente assegnatario</td></tr>
+      <tr><td>contract_id</td><td>Contratto di riferimento</td></tr>
+      <tr><td>tracking_number</td><td>Tracking spedizione</td></tr>
+      <tr><td>configurato / attivato</td><td>Flag configurazione e attivazione</td></tr>
+      <tr><td>data_attivazione</td><td>Timestamp attivazione del servizio</td></tr>
+    </table>
+
+    <h2 class="sub-title">11.3 CRUD Dispositivi</h2>
+    <table>
+      <tr><th>Operazione</th><th>Endpoint</th></tr>
+      <tr><td>Lista dispositivi</td><td><span class="endpoint"><span class="method-get">GET</span> /api/dispositivi</span></td></tr>
+      <tr><td>Aggiungi dispositivo</td><td><span class="endpoint"><span class="method-post">POST</span> /api/dispositivi</span></td></tr>
+      <tr><td>Assegna a lead</td><td><span class="endpoint"><span class="method-put">PUT</span> /api/dispositivi/:id/assign</span></td></tr>
+      <tr><td>Inventario magazzino</td><td><span class="endpoint"><span class="method-get">GET</span> /api/magazzino</span></td></tr>
+      <tr><td>Stats dispositivi</td><td><span class="endpoint"><span class="method-get">GET</span> /api/devices/stats</span></td></tr>
+      <tr><td>Registro dispositivi</td><td><span class="endpoint"><span class="method-get">GET</span> /api/devices/registry</span></td></tr>
+      <tr><td>Aggiungi a inventario</td><td><span class="endpoint"><span class="method-post">POST</span> /api/dispositivi/add-inventory</span></td></tr>
+      <tr><td>Assegna dispositivo</td><td><span class="endpoint"><span class="method-post">POST</span> /api/dispositivi/assign</span></td></tr>
+      <tr><td>Reso dispositivo</td><td><span class="endpoint"><span class="method-post">POST</span> /api/dispositivi/return</span></td></tr>
+      <tr><td>Aggiorna via IMEI</td><td><span class="endpoint"><span class="method-put">PUT</span> /api/devices/update/:imei</span></td></tr>
+      <tr><td>Elimina dispositivo</td><td><span class="endpoint"><span class="method-delete">DELETE</span> /api/devices/:imei</span></td></tr>
+    </table>
+  </section>
+
+  <!-- ════════════════════════ 12. CONFIGURAZIONE -->
+  <section id="configurazione">
+    <h1 class="section-title">12. Configurazione Dispositivo (Form Paziente)</h1>
+
+    <p>Dopo l'attivazione del contratto, il paziente/caregiver deve compilare un form di configurazione con i dati necessari per il corretto funzionamento del dispositivo e della centrale operativa.</p>
+
+    <h2 class="sub-title">12.1 Flusso</h2>
+    <ol style="padding-left:20px;margin-top:8px;">
+      <li>Rata 1 segnata PAGATA → email automatica inviata al cliente</li>
+      <li>Email contiene link univoco: <code>/form-configurazione?token=XXX</code></li>
+      <li>Cliente compila il form (zero login richiesto)</li>
+      <li>Dati salvati in tabella <code>configurations</code></li>
+      <li>Email di conferma inviata al cliente + notifica all'operatore</li>
+    </ol>
+
+    <h2 class="sub-title">12.2 Dati Raccolti nel Form</h2>
+    <table>
+      <tr><th>Sezione</th><th>Campi</th></tr>
+      <tr><td>Contatto emergenza 1</td><td>Nome, telefono, relazione (figlio, sorella, medico…)</td></tr>
+      <tr><td>Contatto emergenza 2</td><td>Nome, telefono, relazione (opzionale)</td></tr>
+      <tr><td>Medico curante</td><td>Nome medico, telefono, centro medico di riferimento</td></tr>
+      <tr><td>Informazioni mediche</td><td>Allergie, patologie croniche, farmaci assunti</td></tr>
+      <tr><td>Preferenze utilizzo</td><td>Modalità (STANDARD, INTENSIVA, NOTTURNA), orari preferiti</td></tr>
+    </table>
+
+    <h2 class="sub-title">12.3 Risoluzione Bug Tecnico (24/09/2026)</h2>
+    <div class="ok-box">
+      <strong>Fix applicato:</strong> Il form di configurazione usava <code>serveStatic</code> per servire l'HTML, causando <code>ERR_TOO_MANY_REDIRECTS</code> (loop 308 Pretty URLs su Cloudflare Pages). Risolto usando il <code>ASSETS</code> binding nativo di Cloudflare Pages Functions.
+    </div>
+  </section>
+
+  <!-- ════════════════════════ 13. EMAIL -->
+  <section id="email">
+    <h1 class="section-title">13. Sistema Email — Provider &amp; Template</h1>
+
+    <h2 class="sub-title">13.1 Provider Email</h2>
+    <table>
+      <tr><th>Provider</th><th>Ruolo</th><th>Note</th></tr>
+      <tr><td><strong>Brevo</strong></td><td>Primario</td><td>EU-based, GDPR. Configurato con BREVO_API_KEY</td></tr>
+      <tr><td><strong>Resend</strong></td><td>Fallback-1</td><td>Attivato automaticamente se Brevo risponde con errore</td></tr>
+    </table>
+    <div class="info-box">
+      Il provider attivo si può verificare in qualsiasi momento su <code>/diagnostica</code> (endpoint protetto). La logica di switching è trasparente all'operatore: l'email viene comunque inviata con il provider disponibile.
+    </div>
+
+    <h2 class="sub-title">13.2 Template Email (modificabili da UI)</h2>
+    <table>
+      <tr><th>Template ID</th><th>Oggetto</th><th>Inviata quando</th></tr>
+      <tr><td>email_notifica_info</td><td>🚨 Nuovo Lead: [nome]</td><td>Nuovo lead ricevuto → operatore interno</td></tr>
+      <tr><td>email_invio_contratto</td><td>📋 Il tuo contratto è pronto!</td><td>Operatore invia contratto al lead</td></tr>
+      <tr><td>email_invio_proforma</td><td>💳 La tua proforma</td><td>Post-firma contratto → al cliente</td></tr>
+      <tr><td>email_invio_documenti</td><td>📄 I tuoi documenti</td><td>Invio brochure/documentazione</td></tr>
+      <tr><td>email_benvenuto</td><td>🎉 Benvenuto in eCura!</td><td>Attivazione contratto</td></tr>
+      <tr><td>email_configurazione</td><td>⚙️ Completa la configurazione SiDLY</td><td>Rata 1 PAGATA → al cliente</td></tr>
+      <tr><td>email_reminder_contratto</td><td>⏰ Reminder firma contratto</td><td>Cron automatico N giorni dopo invio</td></tr>
+      <tr><td>email_reminder_rata</td><td>💰 Reminder scadenza rata</td><td>Cron automatico N giorni prima scadenza</td></tr>
+      <tr><td>email_rinnovo</td><td>🔄 Rinnovo contratto</td><td>Avvio procedura rinnovo</td></tr>
+      <tr><td>email_prefattura_commercialista</td><td>📊 Pre-fattura [numero DDT]</td><td>Generazione pre-fattura → al commercialista</td></tr>
+    </table>
+
+    <h2 class="sub-title">13.3 Gestione Template</h2>
+    <table>
+      <tr><th>Operazione</th><th>Endpoint</th></tr>
+      <tr><td>Leggi template</td><td><span class="endpoint"><span class="method-get">GET</span> /api/email-templates/:name</span></td></tr>
+      <tr><td>Aggiorna template</td><td><span class="endpoint"><span class="method-patch">PATCH</span> /api/email-templates/:name</span></td></tr>
+      <tr><td>Reset template a default</td><td><span class="endpoint"><span class="method-delete">DELETE</span> /api/email/template/:name/reset</span></td></tr>
+      <tr><td>Preview email</td><td><span class="endpoint"><span class="method-post">POST</span> /api/email/preview/:templateId</span></td></tr>
+      <tr><td>Test invio email</td><td><span class="endpoint"><span class="method-post">POST</span> /api/email/test-send</span></td></tr>
+      <tr><td>Lista tutti i template</td><td><span class="endpoint"><span class="method-get">GET</span> /api/debug/email-templates</span></td></tr>
+    </table>
+  </section>
+
+  <!-- ════════════════════════ 14. RINNOVO -->
+  <section id="rinnovo">
+    <h1 class="section-title">14. Rinnovo Contratti</h1>
+
+    <p>Al termine della durata contrattuale, il sistema gestisce il rinnovo mantenendo storico, prezzi aggiornati e nuova firma.</p>
+
+    <h2 class="sub-title">14.1 Flusso Rinnovo</h2>
+    <ol style="padding-left:20px;margin-top:8px;">
+      <li>Operatore avvia rinnovo da dashboard</li>
+      <li>Nuovo contratto di rinnovo generato da template dedicato</li>
+      <li>Email inviata al cliente con link per firma</li>
+      <li>Firma → proforma rinnovo generata automaticamente</li>
+      <li>Pagamento → rinnovo completato, nuovo periodo attivo</li>
+    </ol>
+
+    <div class="warn-box">
+      L'email proforma rinnovo usa la logica post-pagamento standard (no spedizione dispositivo — il dispositivo è già attivo).
+    </div>
+
+    <h2 class="sub-title">14.2 Endpoint Rinnovo</h2>
+    <table>
+      <tr><th>Operazione</th><th>Endpoint</th></tr>
+      <tr><td>Crea contratto rinnovo</td><td><span class="endpoint"><span class="method-post">POST</span> /api/contracts/rinnovo</span></td></tr>
+      <tr><td>Invia email rinnovo</td><td><span class="endpoint"><span class="method-post">POST</span> /api/contracts/:id/send-rinnovo-email</span></td></tr>
+      <tr><td>Segna firmato</td><td><span class="endpoint"><span class="method-patch">PATCH</span> /api/contracts/:id/segna-firmato</span></td></tr>
+      <tr><td>Crea proforma rinnovo</td><td><span class="endpoint"><span class="method-post">POST</span> /api/contracts/:id/crea-proforma-rinnovo</span></td></tr>
+      <tr><td>Invia proforma rinnovo</td><td><span class="endpoint"><span class="method-post">POST</span> /api/contracts/:id/invia-proforma-rinnovo</span></td></tr>
+      <tr><td>Segna rinnovo completato</td><td><span class="endpoint"><span class="method-patch">PATCH</span> /api/contracts/:id/rinnovo-completato</span></td></tr>
+      <tr><td>Rigenera HTML contratto</td><td><span class="endpoint"><span class="method-post">POST</span> /api/contracts/:id/rigenera-html</span></td></tr>
+    </table>
+  </section>
+
+  <!-- ════════════════════════ 15. PARTNERS -->
+  <section id="partners">
+    <h1 class="section-title">15. Partners &amp; Referral</h1>
+
+    <p>Il programma Partner permette a professionisti del settore sanitario/assistenziale di promuovere i servizi eCura tramite un codice referral personale, guadagnando commissioni sulle conversioni.</p>
+
+    <h2 class="sub-title">15.1 Profili Partner Supportati</h2>
+    <p>Fisioterapista, Badante, Medico, Infermiere, Caregiver professionale, Farmacista, Altro</p>
+
+    <h2 class="sub-title">15.2 Workflow Partner</h2>
+    <ol style="padding-left:20px;margin-top:8px;">
+      <li>Partner richiede adesione via form pubblico (status: <strong>pending</strong>)</li>
+      <li>Operatore revisiona e approva/rifiuta (status: <strong>active</strong> / <strong>rejected</strong>)</li>
+      <li>Partner attivo riceve codice referral <code>ECU-XXXX</code> e URL personale</li>
+      <li>I lead acquisiti tramite quel codice vengono collegati al partner</li>
+      <li>Al momento della conversione, matura la commissione (% configurabile, default 5%)</li>
+      <li>L'operatore gestisce i pagamenti commissioni manualmente</li>
+    </ol>
+
+    <h2 class="sub-title">15.3 Struttura DB Partner</h2>
+    <table>
+      <tr><th>Tabella</th><th>Contenuto</th></tr>
+      <tr><td>partners</td><td>Anagrafica partner, codice referral, status, commissioni, performance</td></tr>
+      <tr><td>partner_referrals</td><td>Ogni lead portato da un partner (partner_id, lead_id, codice snapshot)</td></tr>
+    </table>
+
+    <h2 class="sub-title">15.4 CRUD Partners</h2>
+    <table>
+      <tr><th>Operazione</th><th>Endpoint</th></tr>
+      <tr><td>Richiesta adesione (pubblica)</td><td><span class="endpoint"><span class="method-post">POST</span> /api/partners/public</span></td></tr>
+      <tr><td>Lookup codice referral</td><td><span class="endpoint"><span class="method-get">GET</span> /api/partners/referral/:code</span></td></tr>
+      <tr><td>Lista partner (admin)</td><td><span class="endpoint"><span class="method-get">GET</span> /api/partners</span></td></tr>
+      <tr><td>Stats partner</td><td><span class="endpoint"><span class="method-get">GET</span> /api/partners/stats</span></td></tr>
+      <tr><td>Dettaglio partner</td><td><span class="endpoint"><span class="method-get">GET</span> /api/partners/:id</span></td></tr>
+      <tr><td>Crea partner</td><td><span class="endpoint"><span class="method-post">POST</span> /api/partners</span></td></tr>
+      <tr><td>Aggiorna partner</td><td><span class="endpoint"><span class="method-put">PUT</span> /api/partners/:id</span></td></tr>
+      <tr><td>Approva</td><td><span class="endpoint"><span class="method-post">POST</span> /api/partners/:id/approve</span></td></tr>
+      <tr><td>Rifiuta</td><td><span class="endpoint"><span class="method-post">POST</span> /api/partners/:id/reject</span></td></tr>
+      <tr><td>Sospendi</td><td><span class="endpoint"><span class="method-post">POST</span> /api/partners/:id/suspend</span></td></tr>
+      <tr><td>Elimina</td><td><span class="endpoint"><span class="method-delete">DELETE</span> /api/partners/:id</span></td></tr>
+    </table>
+  </section>
+
+  <!-- ════════════════════════ 16. SCONTI -->
+  <section id="sconti">
+    <h1 class="section-title">16. Sconti &amp; Codici Promozionali</h1>
+
+    <p>Il sistema gestisce codici sconto personalizzati applicabili ai lead prima della generazione del contratto.</p>
+
+    <h2 class="sub-title">16.1 Tipi di Sconto</h2>
+    <ul style="padding-left:20px;margin-top:6px;">
+      <li><strong>Sconto percentuale</strong>: riduzione % sul prezzo totale</li>
+      <li><strong>Sconto per canale</strong>: sconti automatici applicati in base al canale di acquisizione (es. tutti i lead IRBEMA hanno sconto X%)</li>
+    </ul>
+
+    <h2 class="sub-title">16.2 CRUD Sconti</h2>
+    <table>
+      <tr><th>Operazione</th><th>Endpoint</th></tr>
+      <tr><td>Lista codici sconto</td><td><span class="endpoint"><span class="method-get">GET</span> /api/discount-codes</span></td></tr>
+      <tr><td>Crea codice sconto</td><td><span class="endpoint"><span class="method-post">POST</span> /api/discount-codes</span></td></tr>
+      <tr><td>Aggiorna codice</td><td><span class="endpoint"><span class="method-put">PUT</span> /api/discount-codes/:codice</span></td></tr>
+      <tr><td>Elimina codice</td><td><span class="endpoint"><span class="method-delete">DELETE</span> /api/discount-codes/:codice</span></td></tr>
+      <tr><td>Applica sconto a lead</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/:id/apply-discount</span></td></tr>
+      <tr><td>Rimuovi sconto da lead</td><td><span class="endpoint"><span class="method-delete">DELETE</span> /api/leads/:id/apply-discount</span></td></tr>
+      <tr><td>Sconti applicati al lead</td><td><span class="endpoint"><span class="method-get">GET</span> /api/leads/:id/discounts</span></td></tr>
+      <tr><td>Applica sconti canale bulk</td><td><span class="endpoint"><span class="method-post">POST</span> /api/leads/apply-canale-discounts</span></td></tr>
+    </table>
+  </section>
+
+  <!-- ════════════════════════ 17. CANALI -->
+  <section id="canali">
+    <h1 class="section-title">17. Canali Acquisizione &amp; Fonti</h1>
+
+    <p>Ogni lead ha tracciati: fonte, canale di acquisizione, dettaglio fonte (UTM). Questo consente analisi di marketing precise per ROI per canale.</p>
+
+    <h2 class="sub-title">17.1 Struttura</h2>
+    <table>
+      <tr><th>Campo</th><th>Esempi</th></tr>
+      <tr><td>fonte</td><td>LANDING_PAGE, IRBEMA, LUXOTTICA, HUBSPOT, FORM PARTNER…</td></tr>
+      <tr><td>canale_acquisizione</td><td>GOOGLE, META, ORGANICO, EMAIL, CORPORATE, REFERRAL, ALTRO</td></tr>
+      <tr><td>dettaglio_fonte</td><td>Campagna specifica, keyword, partner name…</td></tr>
+    </table>
+
+    <h2 class="sub-title">17.2 Channel Stats</h2>
+    <p><span class="endpoint"><span class="method-get">GET</span> /api/leads/channel-stats</span> — restituisce conteggi e KPI aggregati per canale (lead totali, convertiti, tasso conversione, valore medio).</p>
+
+    <h2 class="sub-title">17.3 Filtri Dashboard</h2>
+    <p>La dashboard leads supporta filtri combinati: status, fonte, canale, data, temperatura. Il filtro <em>"eCura Non tracciati"</em> identifica i lead con canale_acquisizione NULL per operazioni di cleanup.</p>
+  </section>
+
+  <!-- ════════════════════════ 18. HUBSPOT -->
+  <section id="hubspot">
+    <h1 class="section-title">18. Integrazione HubSpot</h1>
+
+    <p>Il sistema è integrato con HubSpot CRM per la sincronizzazione bidirezionale dei contatti.</p>
+
+    <h2 class="sub-title">18.1 Funzionalità</h2>
+    <ul style="padding-left:20px;margin-top:6px;">
+      <li><strong>Auto-import</strong>: importazione automatica di nuovi contatti HubSpot nel CRM TeleMedCare</li>
+      <li><strong>Sync manuale</strong>: sincronizzazione on-demand dei dati</li>
+      <li><strong>Webhook</strong>: ricezione eventi real-time da HubSpot (nuovo contatto, aggiornamento, deal)</li>
+      <li><strong>Lookup</strong>: ricerca contatto HubSpot per email/telefono</li>
+      <li><strong>Verifica duplicati</strong>: confronto lead TeleMedCare vs HubSpot per evitare duplicati</li>
+    </ul>
+
+    <h2 class="sub-title">18.2 Endpoint HubSpot</h2>
+    <table>
+      <tr><th>Operazione</th><th>Endpoint</th></tr>
+      <tr><td>Test connessione</td><td><span class="endpoint"><span class="method-get">GET</span> /api/hubspot/test</span></td></tr>
+      <tr><td>Lista contatti recenti</td><td><span class="endpoint"><span class="method-get">GET</span> /api/hubspot/contacts/recent</span></td></tr>
+      <tr><td>Cerca contatto</td><td><span class="endpoint"><span class="method-post">POST</span> /api/hubspot/search</span></td></tr>
+      <tr><td>Sync completo</td><td><span class="endpoint"><span class="method-post">POST</span> /api/hubspot/sync</span></td></tr>
+      <tr><td>Auto-import</td><td><span class="endpoint"><span class="method-post">POST</span> /api/hubspot/auto-import</span></td></tr>
+      <tr><td>Status auto-import</td><td><span class="endpoint"><span class="method-get">GET</span> /api/hubspot/auto-import/status</span></td></tr>
+      <tr><td>Verifica lead</td><td><span class="endpoint"><span class="method-get">GET</span> /api/hubspot/verify-leads</span></td></tr>
+      <tr><td>Webhook ricezione</td><td><span class="endpoint"><span class="method-post">POST</span> /api/webhooks/hubspot</span></td></tr>
+    </table>
+  </section>
+
+  <!-- ════════════════════════ 19. ANALYTICS -->
+  <section id="analytics">
+    <h1 class="section-title">19. Analytics — GA4 &amp; Google Search Console</h1>
+
+    <p>La piattaforma integra Google Analytics 4 e Search Console per reporting SEO e traffico direttamente nel CRM.</p>
+
+    <h2 class="sub-title">19.1 Report Live SEO</h2>
+    <p><span class="endpoint"><span class="method-get">GET</span> /api/analytics/live-seo-report</span> — Dashboard SEO in tempo reale con dati GA4 + GSC: sessioni, utenti, bounce rate, top query, top pagine, traffico organico.</p>
+
+    <h2 class="sub-title">19.2 Dashboard Marketing</h2>
+    <ul style="padding-left:20px;margin-top:6px;">
+      <li><code>/admin/google-ads</code> — Dashboard Google Ads con metriche campagne</li>
+      <li><code>/admin/seo-manager</code> — SEO Manager integrato</li>
+      <li><code>/admin/ai-marketing</code> — AI Marketing Dashboard</li>
+    </ul>
+
+    <h2 class="sub-title">19.3 OAuth Google</h2>
+    <p>Autenticazione OAuth2 con Google per accesso a GA4 + GSC. Token salvato come <code>GOOGLE_REFRESH_TOKEN_ANALYTICS</code> nelle secrets Cloudflare Pages. Re-autenticazione disponibile da <code>/api/admin/analytics-reauth</code>.</p>
+  </section>
+
+  <!-- ════════════════════════ 20. INFRA -->
+  <section id="infra">
+    <h1 class="section-title">20. Infrastruttura &amp; Deploy</h1>
+
+    <h2 class="sub-title">20.1 Stack</h2>
+    <table>
+      <tr><th>Componente</th><th>Tecnologia</th><th>Note</th></tr>
+      <tr><td>Hosting</td><td>Cloudflare Pages</td><td>Deploy automatico da GitHub push su main</td></tr>
+      <tr><td>Worker</td><td>Cloudflare Workers (Hono)</td><td>src/index.tsx compilato con Vite</td></tr>
+      <tr><td>Database</td><td>Cloudflare D1 (SQLite)</td><td>telemedcare-db</td></tr>
+      <tr><td>CI/CD</td><td>GitHub Actions</td><td>.github/workflows/deploy.yml</td></tr>
+      <tr><td>Build</td><td>Vite + TypeScript</td><td>vite.config.ts</td></tr>
+      <tr><td>PDF</td><td>HTML + print CSS</td><td>Lato server, no headless browser</td></tr>
+    </table>
+
+    <h2 class="sub-title">20.2 Variabili d'Ambiente (Secrets Cloudflare)</h2>
+    <table>
+      <tr><th>Variabile</th><th>Descrizione</th></tr>
+      <tr><td>BREVO_API_KEY</td><td>API key Brevo (email provider primario)</td></tr>
+      <tr><td>RESEND_API_KEY</td><td>API key Resend (fallback)</td></tr>
+      <tr><td>HUBSPOT_API_KEY</td><td>Token HubSpot CRM</td></tr>
+      <tr><td>STRIPE_SECRET_KEY</td><td>Chiave segreta Stripe</td></tr>
+      <tr><td>GOOGLE_REFRESH_TOKEN_ANALYTICS</td><td>Token OAuth Google Analytics</td></tr>
+      <tr><td>JWT_SECRET</td><td>Secret per token di sessione operatori</td></tr>
+      <tr><td>ADMIN_PASSWORD_HASH</td><td>Hash bcrypt password admin</td></tr>
+    </table>
+
+    <h2 class="sub-title">20.3 Migrations DB</h2>
+    <p>Le migration sono in <code>migrations/</code> e applicate con <code>wrangler d1 migrations apply --remote</code>. L'ordine è garantito dal prefisso numerico (0001, 0002, …). Le migration sono idempotenti (<code>CREATE TABLE IF NOT EXISTS</code>, <code>INSERT OR IGNORE</code>).</p>
+
+    <h2 class="sub-title">20.4 Dashboard Admin</h2>
+    <table>
+      <tr><th>URL</th><th>Contenuto</th></tr>
+      <tr><td>/dashboard</td><td>Dashboard principale CRM (lead, contratti, assistiti, dispositivi)</td></tr>
+      <tr><td>/admin/leads-dashboard</td><td>Vista tabellare lead con filtri avanzati</td></tr>
+      <tr><td>/admin/ddt</td><td>Gestione DDT e spedizioni</td></tr>
+      <tr><td>/admin/devices</td><td>Inventario dispositivi</td></tr>
+      <tr><td>/admin/google-ads</td><td>Metriche Google Ads</td></tr>
+      <tr><td>/admin/seo-manager</td><td>SEO + Search Console</td></tr>
+      <tr><td>/admin/ai-marketing</td><td>AI Marketing</td></tr>
+      <tr><td>/admin/docs</td><td>Documentazione API interna</td></tr>
+    </table>
+  </section>
+
+  <!-- ════════════════════════ 21. CHANGELOG -->
+  <section id="changelog">
+    <h1 class="section-title">21. Changelog — Settembre 2026</h1>
+
+    <h2 class="sub-title">26 settembre 2026</h2>
+
+    <div class="changelog-item">
+      <div class="date">feat · 26/09/2026</div>
+      <h4>📦 <code>indirizzo_spedizione</code> — Spedizione DDT e Contratto indipendente dall'intestatario</h4>
+      <p>Campo <code>indirizzo_spedizione</code> ('assistito' | 'richiedente') su tabella <code>leads</code> che controlla dove viene fisicamente spedito il dispositivo, indipendentemente dall'intestatario del contratto. Il DDT (<code>genera-ddt</code>) usa questo campo per il destinatario. Il contratto HTML genera il blocco <code>SEZIONE_CONSEGNA</code> (riquadro azzurro) quando la spedizione va al richiedente. Il toggle è disponibile nella dashboard con il pulsante <strong>📦 Spedisci al Richiedente / all'Assistito</strong>.</p>
+    </div>
+
+    <div class="changelog-item">
+      <div class="date">feat · 26/09/2026</div>
+      <h4>🏥 <code>{{SEZIONE_CONSEGNA}}</code> nei contratti di rinnovo e rigenera-HTML</h4>
+      <p>Aggiunto il placeholder <code>{{SEZIONE_CONSEGNA}}</code> anche al template dei rinnovi (<code>contratto-rinnovo-template.ts</code>) e all'endpoint <code>POST /api/contracts/:id/rigenera-html</code>. La sezione viene ricalcolata dal campo <code>lead.indirizzo_spedizione</code> al momento della rigenerazione, garantendo che tutti i contratti (nuovi, rinnovi, rigenerati) abbiano sempre le informazioni di consegna corrette e aggiornate.</p>
+    </div>
+
+    <div class="changelog-item">
+      <div class="date">feat · 26/09/2026</div>
+      <h4>👥 Multi-Assistiti: backend ripristinato e sistema completamente funzionale</h4>
+      <p>Ripristinato il backend completo per la funzionalità multi-assistiti (andato perso in un merge precedente):</p>
+      <ul style="padding-left:20px;margin-top:6px;">
+        <li><strong>DB:</strong> tabella <code>lead_assistiti</code> creata via auto-migration con indice <code>idx_lead_assistiti_lead_id</code></li>
+        <li><strong>Helper:</strong> <code>_buildLeadDataFromLead(lead, overrides)</code> per costruire il leadData con override assistito</li>
+        <li><strong>6 API:</strong> GET / POST / PATCH / DELETE su <code>/api/leads/:id/assistiti</code> + <code>/send-contract</code> e <code>/genera-ddt</code> per assistito specifico</li>
+        <li><strong>UI operatore:</strong> sezione "👥 Assistiti Aggiuntivi" in <code>viewLeadModal</code> + <code>editModalAssistitiSection</code> in <code>newLeadModal</code> (edit mode)</li>
+        <li><strong>UI richiedente:</strong> sezione "👥 Altri Assistiti" nel <code>form-configurazione.html</code> con salvataggio automatico post-submit</li>
+      </ul>
+    </div>
+
+    <h2 class="sub-title">25 settembre 2026</h2>
+
+    <div class="changelog-item">
+      <div class="date">feat · 25/09/2026 17:10</div>
+      <h4>🧾 Esenzione IVA art. 10 n. 18 d.P.R. 633/1972</h4>
+      <p>Aggiunto flag <code>iva_esente</code> su tabella leads e proforma. Quando attivato: IVA 0%, dicitura legale completa su proforma e pre-fattura. Endpoint: <code>PATCH /api/leads/:id/iva-esente</code>.</p>
+    </div>
+
+    <div class="changelog-item">
+      <div class="date">fix · 25/09/2026 08:17</div>
+      <h4>📊 Fix pagina /diagnostica — provider email corretto</h4>
+      <p>La pagina <code>/diagnostica</code> mostrava erroneamente Resend come provider primario. Corretta per mostrare Brevo come primario e Resend come fallback-1.</p>
+    </div>
+
+    <div class="changelog-item">
+      <div class="date">ci · 25/09/2026 08:13</div>
+      <h4>🔑 Aggiornamento BREVO_API_KEY su Cloudflare Pages</h4>
+      <p>Force redeploy per propagare la nuova BREVO_API_KEY nelle variabili d'ambiente del Worker live.</p>
+    </div>
+
+    <h2 class="sub-title">24 settembre 2026</h2>
+
+    <div class="changelog-item">
+      <div class="date">ci · 24/09/2026 13:32</div>
+      <h4>🔑 Aggiunti BREVO_API_KEY e RESEND_API_KEY come secrets Cloudflare Pages</h4>
+      <p>Entrambe le API key aggiunte al workflow CI per essere disponibili come environment variables nel Worker durante il build.</p>
+    </div>
+
+    <div class="changelog-item">
+      <div class="date">fix · 24/09/2026 13:30</div>
+      <h4>💳 Rata 1 PAGATA → trigger email configurazione</h4>
+      <p>Aggiunto trigger: quando un operatore segna la Rata 1 come PAGATA, il sistema invia automaticamente al cliente l'email con il link al form di configurazione del dispositivo SiDLY. Prima questo passaggio era manuale.</p>
+    </div>
+
+    <div class="changelog-item">
+      <div class="date">fix · 24/09/2026 12:40</div>
+      <h4>🔁 Fix definitivo ERR_TOO_MANY_REDIRECTS — form-configurazione</h4>
+      <p>Sostituito <code>serveStatic</code> con il binding <code>ASSETS</code> nativo Cloudflare Pages Functions. Risolto loop 308 Pretty URLs. Il form di configurazione è ora accessibile correttamente.</p>
+    </div>
+
+    <hr>
+
+    <h2 class="sub-title">Settembre 2026 — Funzionalità Principali Aggiunte nel Mese</h2>
+
+    <div class="changelog-item">
+      <div class="date">feat · Settembre 2026</div>
+      <h4>📦 Indirizzo di spedizione con flag Assistito / Lead</h4>
+      <p>Ogni lead ha ora due indirizzi distinti: <code>indirizzoIntestatario</code> (lead/caregiver) e <code>indirizzoAssistito</code> (paziente). Il DDT usa automaticamente l'indirizzo corretto in base al campo <code>intestazioneContratto</code>. Risolve il caso frequente di anziano residente in città diversa dal figlio che ha firmato.</p>
+    </div>
+
+    <div class="changelog-item">
+      <div class="date">feat · Settembre 2026</div>
+      <h4>👨‍👩‍👧‍👦 Multi-Assistiti per Lead (1 Lead → N Assistiti)</h4>
+      <p>Abilitata la relazione one-to-many tra lead (caregiver) e assistiti. Un unico caregiver può ora gestire più persone anziane/pazienti, ciascuna con il proprio contratto, dispositivo e configurazione indipendenti. Supporta il caso di figli che gestiscono entrambi i genitori anziani o caregiver professionali con più assistiti.</p>
+    </div>
+
+    <div class="changelog-item">
+      <div class="date">feat · Settembre 2026</div>
+      <h4>🤝 Sistema Partners &amp; Referral</h4>
+      <p>Tabella <code>partners</code> + <code>partner_referrals</code>. Workflow completo: richiesta adesione → approvazione operatore → codice referral ECU-XXXX → tracking lead portati → maturazione commissioni. Profili: fisioterapisti, badanti, medici, infermieri, caregiver professionali, farmacisti.</p>
+    </div>
+
+    <div class="changelog-item">
+      <div class="date">feat · Settembre 2026</div>
+      <h4>📊 Pre-Fattura completa con invio commercialista</h4>
+      <p>Documento riepilogativo generato da DDT con tutti i dati economici (imponibile, IVA, rate se rateizzato). Invio automatico via email al commercialista. Accessibile da tabella DDT con bottone dedicato.</p>
+    </div>
+
+    <div class="changelog-item">
+      <div class="date">feat · Settembre 2026</div>
+      <h4>📧 Email provider: Brevo primario + Resend fallback</h4>
+      <p>Architettuta la catena provider email con Brevo come primario (EU, GDPR) e Resend come fallback automatico. Switch trasparente senza intervento operatore. Monitorabile da /diagnostica.</p>
+    </div>
+  </section>
+
+  <hr>
+
+  <div style="text-align:center; color:#9ca3af; font-size:13px; padding:32px 0;">
+    TeleMedCare V12 — Manuale Operativo &amp; Sviluppatori<br>
+    Versione 12.0 · 26 Settembre 2026 · eCura / MedicaGB<br>
+    <em>Documento riservato ad uso interno — non distribuire</em>
+  </div>
+
+</div>
+
+<!-- back to top -->
+<button id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Torna in cima">↑</button>
+
+</body>
+</html>
