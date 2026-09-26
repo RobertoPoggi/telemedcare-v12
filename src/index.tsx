@@ -730,6 +730,45 @@ app.use('*', async (c, next) => {
         }
       }
       
+      // ── Tabella lead_assistiti: relazione 1 lead → N assistiti ──────────────
+      // Ogni riga rappresenta un assistito aggiuntivo collegato al lead.
+      // Il "primo assistito legacy" rimane nei campi flat su leads (backward compat).
+      // ordinamento: sort_order ASC (0 = primo aggiunto, 1 = secondo, ...)
+      try {
+        await c.env.DB.prepare(`
+          CREATE TABLE IF NOT EXISTS lead_assistiti (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            lead_id TEXT NOT NULL,
+            sort_order INTEGER DEFAULT 0,
+            nome TEXT NOT NULL,
+            cognome TEXT NOT NULL,
+            codice_fiscale TEXT,
+            data_nascita TEXT,
+            luogo_nascita TEXT,
+            indirizzo TEXT,
+            cap TEXT,
+            citta TEXT,
+            provincia TEXT,
+            indirizzo_spedizione TEXT DEFAULT 'questo',
+            note TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
+          )
+        `).run()
+        console.log('✅ Tabella lead_assistiti creata')
+      } catch (e: any) {
+        if (!e.message?.includes('already exists')) {
+          console.warn('⚠️ Errore creazione tabella lead_assistiti:', e.message)
+        }
+      }
+      // Indice per lookup veloce per lead
+      try {
+        await c.env.DB.prepare(
+          `CREATE INDEX IF NOT EXISTS idx_lead_assistiti_lead_id ON lead_assistiti(lead_id)`
+        ).run()
+      } catch (_) {}
+
       // Crea tabella lead_interactions per tracciare i contatti
       try {
         await c.env.DB.prepare(`
@@ -12801,6 +12840,90 @@ app.post('/api/setup-real-contracts', async (c) => {
 */
 
 // ========================================
+// HELPER: _buildLeadDataFromLead
+// Costruisce il leadData da un record lead con override opzionali (per assistiti aggiuntivi)
+// ========================================
+function _buildLeadDataFromLead(lead: any, overrides: any = {}): any {
+  const intestatario = lead.intestatarioContratto || 'richiedente'
+  let nomeIntestatario: string, cognomeIntestatario: string
+  let cfIntestatario: string, indirizzoIntestatario: string
+  let cittaIntestatario: string, capIntestatario: string, provinciaIntestatario: string
+  let luogoNascitaIntestatario: string, dataNascitaIntestatario: string
+
+  const nomeAss    = overrides.nomeAssistito    ?? lead.nomeAssistito    ?? lead.nomeRichiedente
+  const cognomeAss = overrides.cognomeAssistito ?? lead.cognomeAssistito ?? lead.cognomeRichiedente
+  const cfAss      = overrides.cfAssistito      ?? lead.cfAssistito      ?? ''
+  const indrAss    = overrides.indirizzoAssistito ?? lead.indirizzoAssistito ?? ''
+  const capAss     = overrides.capAssistito       ?? lead.capAssistito    ?? ''
+  const cittaAss   = overrides.cittaAssistito     ?? lead.cittaAssistito  ?? ''
+  const provAss    = overrides.provinciaAssistito ?? lead.provinciaAssistito ?? ''
+  const dtNascAss  = overrides.dataNascitaAssistito  ?? lead.dataNascitaAssistito  ?? ''
+  const lgNascAss  = overrides.luogoNascitaAssistito ?? lead.luogoNascitaAssistito ?? ''
+
+  if (intestatario === 'assistito') {
+    nomeIntestatario        = nomeAss
+    cognomeIntestatario     = cognomeAss
+    cfIntestatario          = cfAss || lead.cfIntestatario || ''
+    indirizzoIntestatario   = lead.indirizzoIntestatario || indrAss
+    cittaIntestatario       = lead.cittaIntestatario     || cittaAss
+    capIntestatario         = lead.capIntestatario       || capAss
+    provinciaIntestatario   = lead.provinciaIntestatario || provAss
+    luogoNascitaIntestatario= lead.luogoNascitaIntestatario || lgNascAss
+    dataNascitaIntestatario = lead.dataNascitaIntestatario  || dtNascAss
+  } else {
+    nomeIntestatario        = lead.nomeRichiedente
+    cognomeIntestatario     = lead.cognomeRichiedente
+    cfIntestatario          = lead.cfIntestatario || lead.cfAssistito || ''
+    indirizzoIntestatario   = lead.indirizzoIntestatario || ''
+    cittaIntestatario       = lead.cittaIntestatario     || ''
+    capIntestatario         = lead.capIntestatario       || ''
+    provinciaIntestatario   = lead.provinciaIntestatario || ''
+    luogoNascitaIntestatario= lead.luogoNascitaIntestatario || ''
+    dataNascitaIntestatario = lead.dataNascitaIntestatario  || ''
+  }
+
+  return {
+    id: lead.id,
+    nomeRichiedente:  lead.nomeRichiedente,
+    cognomeRichiedente: lead.cognomeRichiedente,
+    email:    lead.email,
+    telefono: lead.telefono || '',
+    nomeAssistito:    nomeAss,
+    cognomeAssistito: cognomeAss,
+    luogoNascitaAssistito: lgNascAss,
+    dataNascitaAssistito:  dtNascAss,
+    indirizzoAssistito: indrAss,
+    capAssistito:       capAss,
+    cittaAssistito:     cittaAss,
+    provinciaAssistito: provAss,
+    cfAssistito:        cfAss,
+    condizioniSalute:   lead.condizioniSalute || '',
+    pacchetto:          lead.piano  || 'BASE',
+    servizio:           lead.servizio || 'eCura PRO',
+    intestatarioContratto: intestatario,
+    nomeIntestatario,
+    cognomeIntestatario,
+    emailIntestatario:    lead.email,
+    telefonoIntestatario: lead.telefono || '',
+    cfIntestatario,
+    indirizzoIntestatario,
+    cittaIntestatario,
+    capIntestatario,
+    provinciaIntestatario,
+    luogoNascitaIntestatario,
+    dataNascitaIntestatario,
+    vuoleBrochure: true,
+    vuoleManuale:  false,
+    vuoleContratto: true,
+    iva_agevolata: lead.iva_agevolata ? 1 : 0,
+    iva_esente:    lead.iva_esente    ? 1 : 0,
+    indirizzo_spedizione: overrides.indirizzo_spedizione || lead.indirizzo_spedizione || 'assistito',
+    // tag opzionale per identificare assistito nel codice contratto
+    _assistitoTag: overrides._assistitoTag || undefined
+  }
+}
+
+// ========================================
 // INVIO MANUALE - LEAD ACTIONS
 // ========================================
 
@@ -15217,6 +15340,300 @@ app.patch('/api/leads/:id/iva-esente', async (c) => {
   } catch (error) {
     console.error('❌ Errore aggiornamento IVA esente:', error)
     return c.json({ success: false, error: 'Errore aggiornamento IVA esente' }, 500)
+  }
+})
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LEAD_ASSISTITI — CRUD multi-assistito per lead
+// Un lead può avere N assistiti. Ogni assistito aggiuntivo è una riga in
+// lead_assistiti. Il "primo assistito legacy" resta nei campi flat di leads
+// per backward compatibility con contratti/DDT esistenti.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// GET /api/leads/:id/assistiti — Lista assistiti aggiuntivi del lead
+app.get('/api/leads/:id/assistiti', async (c) => {
+  const leadId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    const rows = await c.env.DB.prepare(
+      `SELECT * FROM lead_assistiti WHERE lead_id = ? ORDER BY sort_order ASC, id ASC`
+    ).bind(leadId).all()
+    return c.json({ success: true, assistiti: rows.results || [] })
+  } catch (error) {
+    console.error('❌ GET lead_assistiti:', error)
+    return c.json({ success: false, error: 'Errore recupero assistiti' }, 500)
+  }
+})
+
+// POST /api/leads/:id/assistiti — Aggiunge un nuovo assistito al lead
+app.post('/api/leads/:id/assistiti', async (c) => {
+  const leadId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    const body = await c.req.json() as any
+    if (!body.nome || !body.cognome) {
+      return c.json({ success: false, error: 'nome e cognome sono obbligatori' }, 400)
+    }
+    // Calcola sort_order = MAX esistente + 1
+    const maxRow = await c.env.DB.prepare(
+      `SELECT COALESCE(MAX(sort_order), -1) AS maxord FROM lead_assistiti WHERE lead_id = ?`
+    ).bind(leadId).first() as any
+    const sortOrder = (maxRow?.maxord ?? -1) + 1
+    const now = new Date().toISOString()
+    await c.env.DB.prepare(`
+      INSERT INTO lead_assistiti
+        (lead_id, sort_order, nome, cognome, codice_fiscale, data_nascita, luogo_nascita,
+         indirizzo, cap, citta, provincia, indirizzo_spedizione, note, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      leadId, sortOrder,
+      body.nome.trim(), body.cognome.trim(),
+      body.codice_fiscale || null, body.data_nascita || null, body.luogo_nascita || null,
+      body.indirizzo || null, body.cap || null, body.citta || null, body.provincia || null,
+      body.indirizzo_spedizione || 'questo',
+      body.note || null, now, now
+    ).run()
+    const inserted = await c.env.DB.prepare(
+      `SELECT * FROM lead_assistiti WHERE lead_id = ? ORDER BY id DESC LIMIT 1`
+    ).bind(leadId).first()
+    console.log(`✅ Assistito aggiunto a lead ${leadId}: ${body.nome} ${body.cognome}`)
+    return c.json({ success: true, assistito: inserted })
+  } catch (error) {
+    console.error('❌ POST lead_assistiti:', error)
+    return c.json({ success: false, error: 'Errore aggiunta assistito' }, 500)
+  }
+})
+
+// PATCH /api/leads/:id/assistiti/:aid — Aggiorna dati assistito
+app.patch('/api/leads/:id/assistiti/:aid', async (c) => {
+  const leadId = c.req.param('id')
+  const aid    = c.req.param('aid')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    const body = await c.req.json() as any
+    const allowed = ['nome','cognome','codice_fiscale','data_nascita','luogo_nascita',
+                     'indirizzo','cap','citta','provincia','indirizzo_spedizione','note','sort_order']
+    const sets: string[] = []
+    const vals: any[] = []
+    for (const k of allowed) {
+      if (k in body) { sets.push(`${k} = ?`); vals.push(body[k]) }
+    }
+    if (sets.length === 0) return c.json({ success: false, error: 'Nessun campo da aggiornare' }, 400)
+    sets.push('updated_at = ?'); vals.push(new Date().toISOString())
+    vals.push(aid, leadId)
+    await c.env.DB.prepare(
+      `UPDATE lead_assistiti SET ${sets.join(', ')} WHERE id = ? AND lead_id = ?`
+    ).bind(...vals).run()
+    const updated = await c.env.DB.prepare(
+      `SELECT * FROM lead_assistiti WHERE id = ? AND lead_id = ?`
+    ).bind(aid, leadId).first()
+    return c.json({ success: true, assistito: updated })
+  } catch (error) {
+    console.error('❌ PATCH lead_assistiti:', error)
+    return c.json({ success: false, error: 'Errore aggiornamento assistito' }, 500)
+  }
+})
+
+// DELETE /api/leads/:id/assistiti/:aid — Rimuove assistito dal lead
+app.delete('/api/leads/:id/assistiti/:aid', async (c) => {
+  const leadId = c.req.param('id')
+  const aid    = c.req.param('aid')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    await c.env.DB.prepare(
+      `DELETE FROM lead_assistiti WHERE id = ? AND lead_id = ?`
+    ).bind(aid, leadId).run()
+    console.log(`🗑️ Assistito ${aid} rimosso da lead ${leadId}`)
+    return c.json({ success: true })
+  } catch (error) {
+    console.error('❌ DELETE lead_assistiti:', error)
+    return c.json({ success: false, error: 'Errore rimozione assistito' }, 500)
+  }
+})
+
+// POST /api/leads/:id/assistiti/:aid/send-contract
+// Genera e invia contratto per un assistito specifico da lead_assistiti.
+// Usa i dati del lead (richiedente/intestatario) combinati con i dati dell'assistito scelto.
+app.post('/api/leads/:id/assistiti/:aid/send-contract', async (c) => {
+  const leadId = c.req.param('id')
+  const aid    = c.req.param('aid')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
+
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+
+    const ass = await c.env.DB.prepare(
+      `SELECT * FROM lead_assistiti WHERE id = ? AND lead_id = ?`
+    ).bind(aid, leadId).first() as any
+    if (!ass) return c.json({ success: false, error: 'Assistito non trovato' }, 404)
+
+    // Compone leadData sovrascrivendo i campi assistito con quelli di lead_assistiti
+    // e rispettando indirizzo_spedizione dell'assistito specifico
+    const spedDest = ass.indirizzo_spedizione || 'questo'
+    const leadData = _buildLeadDataFromLead(lead, {
+      nomeAssistito:      ass.nome,
+      cognomeAssistito:   ass.cognome,
+      cfAssistito:        ass.codice_fiscale || '',
+      dataNascitaAssistito: ass.data_nascita || '',
+      luogoNascitaAssistito: ass.luogo_nascita || '',
+      indirizzoAssistito: ass.indirizzo || '',
+      capAssistito:       ass.cap || '',
+      cittaAssistito:     ass.citta || '',
+      provinciaAssistito: ass.provincia || '',
+      // indirizzo_spedizione: 'questo' → usa indirizzo dell'assistito stesso
+      indirizzo_spedizione: spedDest === 'richiedente' ? 'richiedente' : 'assistito',
+      // tag per distinguere contratti: COGNOME-ASSISTITO nel codice
+      _assistitoTag: `${ass.cognome.toUpperCase().replace(/[^A-Z]/g, '')}`
+    })
+
+    const body = await c.req.json().catch(() => ({})) as any
+    const { inviaEmailContratto } = await import('./modules/workflow-email-manager')
+    const { calculatePrice }      = await import('./modules/pricing-calculator')
+
+    const servizio = lead.servizio || 'eCura PRO'
+    const piano    = body.piano || lead.piano || 'BASE'
+    const servizioType = servizio.replace('eCura ', '').trim().toUpperCase()
+    const pianoType    = piano.toUpperCase()
+    const pricing = calculatePrice(servizioType, pianoType)
+    const ivaRate = lead.iva_esente ? 0 : lead.iva_agevolata ? 0.04 : 0.22
+    const prezzoBase = pricing.setupBase || 0
+    const prezzoIvaInclusa = Math.round(prezzoBase * (1 + ivaRate) * 100) / 100
+
+    const anno      = new Date().getFullYear()
+    const ts        = Date.now()
+    const tag       = leadData._assistitoTag || ass.cognome.toUpperCase().replace(/[^A-Z]/g,'').slice(0,8)
+    const contractId   = `CONTRACT_CTR-${tag}-${anno}_${ts}`
+    const contractCode = `CTR-${tag}-${anno}`
+
+    const contractData = {
+      contractId, contractCode,
+      contractPdfUrl: '',
+      tipoServizio: piano,
+      servizio,
+      prezzoBase,
+      prezzoIvaInclusa,
+      isRinnovo: false,
+      annoRinnovo: 1,
+      codiceOriginale: '',
+      riserva_dominio: Boolean(lead.riserva_dominio),
+      rateizzazione_attiva: Boolean(lead.rateizzazione_attiva),
+      rateizzazione_note: lead.rateizzazione_note || '',
+      rate: []
+    }
+
+    const result = await inviaEmailContratto(leadData, contractData, c.env, [], c.env.DB)
+    return c.json({ success: result.success, emailsSent: result.emailsSent, errors: result.errors })
+
+  } catch (error: any) {
+    console.error('❌ send-contract per assistito:', error)
+    return c.json({ success: false, error: error.message || 'Errore invio contratto' }, 500)
+  }
+})
+
+// POST /api/leads/:id/assistiti/:aid/genera-ddt
+// Genera DDT per un assistito specifico da lead_assistiti.
+app.post('/api/leads/:id/assistiti/:aid/genera-ddt', requireAuth, async (c) => {
+  const leadId = c.req.param('id')
+  const aid    = c.req.param('aid')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
+
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+
+    const ass = await c.env.DB.prepare(
+      `SELECT * FROM lead_assistiti WHERE id = ? AND lead_id = ?`
+    ).bind(aid, leadId).first() as any
+    if (!ass) return c.json({ success: false, error: 'Assistito non trovato' }, 404)
+
+    const body = await c.req.json() as any
+    const { imei: imeiInput, telefonoSim, dataConsegna, note } = body
+
+    // Determina indirizzo di spedizione per questo assistito specifico
+    const spedDest = ass.indirizzo_spedizione || 'questo'
+    let nomeDestinatario: string, indirizzoDestinatario: string
+    let capDestinatario: string, cittaDestinatario: string, provinciaDestinatario: string
+
+    if (spedDest === 'richiedente') {
+      nomeDestinatario     = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
+      indirizzoDestinatario= lead.indirizzoIntestatario || ''
+      capDestinatario      = lead.capIntestatario || ''
+      cittaDestinatario    = lead.cittaIntestatario || ''
+      provinciaDestinatario= lead.provinciaIntestatario || ''
+    } else {
+      // 'questo' = indirizzo dell'assistito stesso (da lead_assistiti)
+      nomeDestinatario     = `${ass.nome} ${ass.cognome}`.trim()
+      indirizzoDestinatario= ass.indirizzo || lead.indirizzoAssistito || ''
+      capDestinatario      = ass.cap       || lead.capAssistito || ''
+      cittaDestinatario    = ass.citta     || lead.cittaAssistito || ''
+      provinciaDestinatario= ass.provincia || lead.provinciaAssistito || ''
+    }
+
+    // Servizio e dispositivo
+    const contract = await c.env.DB.prepare(
+      `SELECT * FROM contracts WHERE leadId = ? AND status = 'firmato' ORDER BY created_at DESC LIMIT 1`
+    ).bind(leadId).first() as any
+    const servizio    = contract?.servizio || lead.servizio || 'eCura PRO'
+    const piano       = contract?.piano    || lead.piano    || 'BASE'
+    const servizioUpper = servizio.replace(/^eCura\s+/i,'').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'
+    const pianoUpper    = (piano.toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE') as 'BASE'|'AVANZATO'
+    const { getPricing } = await import('./modules/ecura-pricing')
+    const pricing        = getPricing(servizioUpper, pianoUpper)
+    const dispositivo    = pricing?.dispositivo || 'SiDLY Care PRO'
+
+    // Numero DDT auto-incremento
+    const annoCorrente = new Date().getFullYear()
+    const formatNum = (n: number, a: number) => `DDT-${String(n).padStart(3,'0')}-${a}`
+    const allDdts    = await c.env.DB.prepare(`SELECT numero_ddt FROM ddts`).all() as any
+    const nums       = (allDdts?.results || []).map((r: any) => {
+      const m = String(r.numero_ddt).match(/DDT-(\d+)-(\d{4})/i)
+      return m ? parseInt(m[1]) : 0
+    }).filter((n: number) => n > 0)
+    const maxNum     = nums.length > 0 ? Math.max(...nums) : 0
+    const numDdt     = formatNum(maxNum + 1, annoCorrente)
+
+    // Tag per identificare DDT di quale assistito
+    const noteConTag = `LeadID:${leadId}|AssID:${aid}${note ? ' | ' + note : ''}`
+
+    if (!imeiInput) return c.json({ success: false, needsImei: true, error: 'IMEI richiesto' })
+
+    const ddtId  = `DDT-${leadId}-ASS${aid}-${Date.now()}`
+    const baseUrl = new URL(c.req.url).origin
+    const pdfUrl  = `${baseUrl}/api/ddts/${ddtId}/pdf-print`
+    const todayItaly = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' }).format(new Date())
+    const dataDoc    = dataConsegna || todayItaly
+    const codiceCtr  = contract?.codice_contratto || `CTR-${leadId}`
+
+    try { await c.env.DB.prepare(`ALTER TABLE ddts ADD COLUMN sim_number TEXT`).run() } catch (_) {}
+    await c.env.DB.prepare(`
+      INSERT INTO ddts (
+        id, numero_ddt, contract_code,
+        data_spedizione, data_consegna,
+        destinatario_nome, destinatario_indirizzo, destinatario_cap,
+        destinatario_citta, destinatario_provincia,
+        destinatario_email, destinatario_telefono,
+        dispositivo, serial_number, sim_number, quantita,
+        status, pdf_url, pdf_generated, note,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    `).bind(
+      ddtId, numDdt, codiceCtr,
+      dataDoc, dataDoc,
+      nomeDestinatario, indirizzoDestinatario, capDestinatario,
+      cittaDestinatario, provinciaDestinatario,
+      lead.email || '', lead.telefono || '',
+      dispositivo, imeiInput, telefonoSim || null, 1,
+      'CONSEGNATO', pdfUrl, 1, noteConTag
+    ).run()
+
+    console.log(`✅ [GENERA-DDT-ASSISTITO] DDT ${numDdt} per assistito ${aid} (${nomeDestinatario})`)
+    return c.json({ success: true, numeroDdt: numDdt, ddtId, pdfUrl })
+
+  } catch (error: any) {
+    console.error('❌ genera-ddt assistito:', error)
+    return c.json({ success: false, error: error.message || 'Errore generazione DDT' }, 500)
   }
 })
 
