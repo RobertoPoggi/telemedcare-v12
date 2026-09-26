@@ -9305,7 +9305,7 @@ Il link sarà inviato via email al richiedente/lead.\`)) return;
             }
         }
 
-
+        async function generaDdtAssistito(leadId, aid, nomeCompleto) {
             if (!confirm(\`Generare DDT per "\${nomeCompleto}"?\`)) return;
             const btn = document.getElementById(\`btnDdtAss-\${aid}\`);
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Genera...'; }
