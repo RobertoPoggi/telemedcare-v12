@@ -55,6 +55,14 @@ export interface ContractData {
   // IVA agevolata 4% (Legge 104 / disabilità 100%)
   iva_agevolata?: boolean | number
 
+  // ⭐ Indirizzo di CONSEGNA dispositivo (separato dall'intestatario contratto)
+  // Calcolato da lead.indirizzo_spedizione: 'assistito' (default) | 'richiedente'
+  nomeConsegna?: string
+  indirizzoConsegna?: string
+  capConsegna?: string
+  cittaConsegna?: string
+  provinciaConsegna?: string
+
   // Rateizzazione e Riserva di Dominio
   riserva_dominio?: boolean | number  // se true: inserisce clausola riserva dominio
   
@@ -264,6 +272,31 @@ export class ContractGenerator {
       // SEZIONE_PARAMETRI_VITALI: già inclusa dentro SEZIONE_FUNZIONI_DISPOSITIVO (lasciata vuota per retro-compat.)
       SEZIONE_PARAMETRI_VITALI: '',
 
+      // ⭐ Indirizzo di CONSEGNA dispositivo (separato dall'intestatario contratto)
+      // Se nomeConsegna è diverso dal nome intestatario, mostra la differenza nel contratto.
+      NOME_CONSEGNA:      data.nomeConsegna || data.nomeIntestatario || data.nomeRichiedente || '',
+      INDIRIZZO_CONSEGNA: data.indirizzoConsegna || data.indirizzoIntestatario || data.indirizzoAssistito || 'DA COMPLETARE',
+      CAP_CONSEGNA:       data.capConsegna || data.capIntestatario || data.capAssistito || '',
+      CITTA_CONSEGNA:     data.cittaConsegna || data.cittaIntestatario || data.cittaAssistito || '',
+      PROVINCIA_CONSEGNA: data.provinciaConsegna || data.provinciaIntestatario || data.provinciaAssistito || '',
+      // Sezione completa di consegna (mostrata nel contratto solo se indirizzo è disponibile)
+      SEZIONE_CONSEGNA: (() => {
+        const nC  = data.nomeConsegna      || data.nomeIntestatario    || data.nomeRichiedente    || ''
+        const inC = data.indirizzoConsegna || data.indirizzoIntestatario || data.indirizzoAssistito || ''
+        const capC = data.capConsegna  || data.capIntestatario  || data.capAssistito  || ''
+        const citC = data.cittaConsegna || data.cittaIntestatario || data.cittaAssistito || ''
+        const prC  = data.provinciaConsegna || data.provinciaIntestatario || data.provinciaAssistito || ''
+        if (!inC || inC === 'DA COMPLETARE') return ''
+        const addrLine = [inC, capC, citC, prC ? `(${prC})` : ''].filter(Boolean).join(', ')
+        const nomeInt = (data.nomeIntestatario || data.nomeRichiedente || '').trim()
+        const nomeConsDiff = nC && nC !== nomeInt
+        return `<p style="margin-top:8px;padding:8px 12px;background:#f0f9ff;border-left:3px solid #2563eb;font-size:10pt;">` +
+          `<strong>&#128230; Indirizzo spedizione dispositivo:</strong> ` +
+          (nomeConsDiff ? `<em>${nC}</em> — ` : '') +
+          addrLine +
+          `</p>`
+      })(),
+
       // Riserva di Dominio (clausola opzionale)
       CLAUSOLA_RISERVA_DOMINIO: data.riserva_dominio
         ? `<h2 style="color:#c2410c;">Patto di Riserva di Dominio</h2>
@@ -374,6 +407,7 @@ export class ContractGenerator {
 <p>&nbsp;</p>
 <p>Riferimenti:</p>
 <p>telefono {{TELEFONO_CLIENTE}} – e-mail {{EMAIL_CLIENTE}}</p>
+{{SEZIONE_CONSEGNA}}
 <p>&nbsp;</p>
 <p class="italic center">(breviter Il Cliente)</p>
 <p>&nbsp;</p>

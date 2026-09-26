@@ -3293,16 +3293,13 @@ export const dashboard = `<!DOCTYPE html>
                 // Piano badge colors
                 const pianoColor = piano === 'AVANZATO' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
                 
-                // IVA flag (from leads JOIN) — priorità: esente 0% > agevolata 4% > standard 22%
-                const ivaEsenteAssistito   = assistito.iva_esente    == 1 || assistito.iva_esente    === true;
-                const ivaAgevolataAssistito = !ivaEsenteAssistito && (assistito.iva_agevolata == 1 || assistito.iva_agevolata === true);
-                const rowBg = ivaEsenteAssistito ? 'bg-green-50 hover:bg-green-100' : ivaAgevolataAssistito ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50';
-                const ivaBadgeCell = ivaEsenteAssistito
-                    ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded-full" title="Esente IVA — art. 10 n. 18 d.P.R. 633/1972">🏥 0%</span>'
-                    : ivaAgevolataAssistito
+                // IVA agevolata flag (from leads JOIN)
+                const ivaAgevolataAssistito = assistito.iva_agevolata == 1 || assistito.iva_agevolata === true;
+                const rowBg = ivaAgevolataAssistito ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50';
+                const ivaBadgeCell = ivaAgevolataAssistito
                     ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full" title="IVA agevolata 4% — Legge 104, disabilità 100%">⚕️ 4%</span>'
                     : '<span class="inline-flex items-center px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full">22%</span>';
-                const prezzoCellClass = ivaEsenteAssistito ? 'text-green-700' : ivaAgevolataAssistito ? 'text-blue-600' : 'text-green-600';
+                const prezzoCellClass = ivaAgevolataAssistito ? 'text-blue-600' : 'text-green-600';
                 
                 return '<tr class="border-b border-gray-100 ' + rowBg + '">' +
                     '<td class="py-3 px-2">' +
@@ -5709,22 +5706,11 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
         }
 
-        // ---------------------------------------------------------------
-        // _generaDdtCore(leadId, aid)
-        //   aid = null  → chiama POST /api/leads/:id/genera-ddt  (primario)
-        //   aid = 123   → chiama POST /api/leads/:id/assistiti/:aid/genera-ddt
-        // ---------------------------------------------------------------
-        async function _generaDdtCore(leadId, aid) {
-            const isPrimario = (aid === null || aid === undefined);
-            const endpoint   = isPrimario
-                ? \`/api/leads/\${leadId}/genera-ddt\`
-                : \`/api/leads/\${leadId}/assistiti/\${aid}/genera-ddt\`;
-
+        async function generaDDT(leadId) {
+            // Prima prova senza IMEI: se DDT esiste già il backend lo prende dal DB
+            // e crea solo l'assistito mancante senza chiedere nulla
             try {
-                // Primo tentativo senza IMEI:
-                //   - se DDT esiste già il backend lo riusa
-                //   - se non esiste restituisce needsImei:true
-                const r1 = await fetch(endpoint, {
+                const r1 = await fetch('/api/leads/' + leadId + '/genera-ddt', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -5732,33 +5718,32 @@ export const leads_dashboard = `<!DOCTYPE html>
                 });
                 const res1 = await r1.json();
 
+                // Caso normale: DDT esistente, assistito creato senza domande
                 if (res1.success) {
-                    if (isPrimario) {
-                        alert('OK - ' + res1.message +
-                            ' | DDT: '      + (res1.ddt&&res1.ddt.numero) +
-                            ' | IMEI: '     + (res1.ddt&&res1.ddt.imei) +
-                            ' | Assistito: '+ (res1.assistito&&res1.assistito.nome));
-                    } else {
-                        showToast(\`✅ DDT generato (\${res1.ddt&&res1.ddt.numero||''})\`, 'success');
-                    }
+                    alert('OK - ' + res1.message +
+                        ' | DDT: ' + (res1.ddt&&res1.ddt.numero) +
+                        ' | IMEI: ' + (res1.ddt&&res1.ddt.imei) +
+                        ' | Assistito: ' + (res1.assistito&&res1.assistito.nome) +
+                        ' | Vai su /dashboard e premi Ricarica per vedere il nuovo assistito nella tabella.');
                     loadLeadsData();
                     return;
                 }
 
+                // DDT non esiste ancora: serve IMEI per crearlo
                 if (res1.needsImei) {
-                    const imei = prompt("Nessun DDT trovato.\\nInserisci IMEI del dispositivo:");
+                    const imei = prompt("Nessun DDT trovato per questo lead.\\nInserisci IMEI del dispositivo:");
                     if (!imei || !imei.trim()) return;
-                    const telefonoSim  = prompt('Numero SIM (Invio per saltare):') || '';
-                    const numeroDdt    = prompt('Numero DDT (vuoto = auto-incremento):') || '';
+                    const telefonoSim = prompt('Numero SIM (Invio per saltare):') || '';
+                    const numeroDdt = prompt('Numero DDT (vuoto = auto-incremento):') || '';
                     const dataConsegna = prompt('Data consegna (YYYY-MM-DD, vuoto = oggi):') || '';
-                    const note         = prompt('Note (opzionale):') || '';
+                    const note = prompt('Note (opzionale):') || '';
                     if (!confirm('Confermi creazione DDT + Dispositivo + Assistito?' +
                         "\\nIMEI: " + imei.trim() +
-                        "\\nSIM: "  + (telefonoSim||'-') +
-                        "\\nN.DDT: "+ (numeroDdt||'auto') +
+                        "\\nSIM: " + (telefonoSim||'-') +
+                        "\\nN.DDT: " + (numeroDdt||'auto') +
                         "\\nData: " + (dataConsegna||'oggi'))) return;
 
-                    const r2 = await fetch(endpoint, {
+                    const r2 = await fetch('/api/leads/' + leadId + '/genera-ddt', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
@@ -5766,14 +5751,11 @@ export const leads_dashboard = `<!DOCTYPE html>
                     });
                     const res2 = await r2.json();
                     if (res2.success) {
-                        if (isPrimario) {
-                            alert('OK - ' + res2.message +
-                                ' | DDT: '      + (res2.ddt&&res2.ddt.numero) +
-                                ' | IMEI: '     + (res2.ddt&&res2.ddt.imei) +
-                                ' | Assistito: '+ (res2.assistito&&res2.assistito.nome));
-                        } else {
-                            showToast(\`✅ DDT creato (\${res2.ddt&&res2.ddt.numero||''})\`, 'success');
-                        }
+                        alert('OK - ' + res2.message +
+                            ' | DDT: ' + (res2.ddt&&res2.ddt.numero) +
+                            ' | IMEI: ' + (res2.ddt&&res2.ddt.imei) +
+                            ' | Assistito: ' + (res2.assistito&&res2.assistito.nome) +
+                            ' | Vai su /dashboard e premi Ricarica per vedere il nuovo assistito nella tabella.');
                         loadLeadsData();
                     } else {
                         alert('ERRORE: ' + (res2.error || 'Errore sconosciuto'));
@@ -5781,111 +5763,11 @@ export const leads_dashboard = `<!DOCTYPE html>
                     return;
                 }
 
+                // Altro errore
                 alert('ERRORE: ' + (res1.error || 'Errore sconosciuto'));
-            } catch (err) {
-                alert('ERRORE di comunicazione: ' + err.message);
+            } catch (error) {
+                alert('ERRORE di comunicazione: ' + error.message);
             }
-        }
-
-        // ---------------------------------------------------------------
-        // generaDDT(leadId)  — bottone 📦 nella riga tabella leads
-        // Se il lead ha assistiti aggiuntivi mostra un pannello di selezione
-        // così l'operatore può scegliere per quale assistito generare il DDT.
-        // ---------------------------------------------------------------
-        async function generaDDT(leadId) {
-            // 1. Controlla se ci sono assistiti aggiuntivi
-            let assistitiAggiuntivi = [];
-            try {
-                const r = await fetch(\`/api/leads/\${leadId}/assistiti\`, { credentials: 'include' });
-                const d = await r.json();
-                if (d.success) assistitiAggiuntivi = d.assistiti || [];
-            } catch (_) { /* non bloccante: se il fetch fallisce procedi col primario */ }
-
-            // 2a. Lead senza assistiti aggiuntivi → comportamento originale, diretto
-            if (assistitiAggiuntivi.length === 0) {
-                await _generaDdtCore(leadId, null);
-                return;
-            }
-
-            // 2b. Lead con assistiti aggiuntivi → mostra pannello di selezione
-            // Rimuovi eventuali pannelli precedenti rimasti aperti
-            const oldPanel = document.getElementById('_ddtSelectPanel');
-            if (oldPanel) oldPanel.remove();
-
-            const panel = document.createElement('div');
-            panel.id = '_ddtSelectPanel';
-            panel.style.cssText = [
-                'position:fixed;inset:0;z-index:9999',
-                'background:rgba(0,0,0,.5)',
-                'display:flex;align-items:center;justify-content:center',
-            ].join(';');
-
-            const btnsPrimario = \`
-                <button id="_ddtSelPrim"
-                    style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;
-                           border:1.5px solid #d1d5db;border-radius:8px;background:#f9fafb;
-                           cursor:pointer;font-size:14px;text-align:left;transition:background .15s"
-                    onmouseover="this.style.background='#eff6ff'"
-                    onmouseout="this.style.background='#f9fafb'">
-                    🧑 Assistito Primario <span style="margin-left:auto;font-size:11px;color:#6b7280">(dati lead)</span>
-                </button>\`;
-
-            const btnsExtra = assistitiAggiuntivi.map(a => \`
-                <button data-aid="\${a.id}"
-                    style="display:flex;align-items:center;gap:8px;width:100%;padding:10px 14px;
-                           border:1.5px solid #d1d5db;border-radius:8px;background:#f9fafb;
-                           cursor:pointer;font-size:14px;text-align:left;transition:background .15s"
-                    onmouseover="this.style.background='#eff6ff'"
-                    onmouseout="this.style.background='#f9fafb'">
-                    👤 \${a.nome||''} \${a.cognome||''}
-                    \${a.codice_fiscale ? '<span style="font-family:monospace;font-size:12px;color:#6b7280"> — ' + a.codice_fiscale + '</span>' : ''}
-                    <span style="margin-left:auto;font-size:11px;color:#6366f1">aggiuntivo</span>
-                </button>\`).join('');
-
-            panel.innerHTML = \`
-                <div style="background:#fff;border-radius:16px;padding:28px 32px;
-                            width:min(420px,92vw);box-shadow:0 8px 40px rgba(0,0,0,.22)">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-                        <h3 style="margin:0;font-size:17px;font-weight:700;color:#111827">
-                            📦 Per quale assistito generare il DDT?
-                        </h3>
-                        <button id="_ddtSelClose"
-                            style="background:none;border:none;cursor:pointer;font-size:20px;
-                                   color:#9ca3af;line-height:1;padding:0 4px">✕</button>
-                    </div>
-                    <p style="font-size:12px;color:#6b7280;margin:0 0 14px">
-                        Questo lead ha \${assistitiAggiuntivi.length} assistito/i aggiuntivo/i.<br>
-                        Seleziona il destinatario del DDT:
-                    </p>
-                    <div style="display:flex;flex-direction:column;gap:8px">
-                        \${btnsPrimario}
-                        \${btnsExtra}
-                    </div>
-                    <p style="font-size:11px;color:#9ca3af;margin:14px 0 0;text-align:center">
-                        Per tutti gli assistiti aggiuntivi puoi usare anche i bottoni 📦 DDT nel modale Visualizza Lead.
-                    </p>
-                </div>\`;
-
-            document.body.appendChild(panel);
-
-            // Handler chiusura
-            document.getElementById('_ddtSelClose').onclick = () => panel.remove();
-            panel.addEventListener('click', e => { if (e.target === panel) panel.remove(); });
-
-            // Handler selezione primario
-            document.getElementById('_ddtSelPrim').onclick = async () => {
-                panel.remove();
-                await _generaDdtCore(leadId, null);
-            };
-
-            // Handler selezione assistiti aggiuntivi
-            panel.querySelectorAll('[data-aid]').forEach(btn => {
-                btn.onclick = async () => {
-                    const aid = btn.getAttribute('data-aid');
-                    panel.remove();
-                    await _generaDdtCore(leadId, aid);
-                };
-            });
         }
 
         // ============================================
@@ -6277,20 +6159,31 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('viewData').textContent = new Date(lead.created_at).toLocaleDateString('it-IT');
             document.getElementById('viewCM').textContent = lead.cm || 'Nessuno';
 
-            // ── IVA: mostra stato e configura toggle (esente 0% > agevolata 4% > standard 22%) ──
-            const ivaEsente    = lead.iva_esente    == 1 || lead.iva_esente    === true;
-            const ivaAgevolata = !ivaEsente && (lead.iva_agevolata == 1 || lead.iva_agevolata === true);
+            // ── Intestatario contratto + spedizione DDT ───────────────────────
+            const intestatarioLabel = (lead.intestatarioContratto || 'richiedente') === 'assistito' ? '👴 Assistito' : '📝 Richiedente';
+            const spedVal = lead.indirizzo_spedizione || 'assistito';
+            const spedLabel = spedVal === 'richiedente' ? '📝 Richiedente / Lead' : '👴 Assistito (default)';
+            // Override = spedizione NON va all'assistito (valore non-default)
+            const spedIsOverride = spedVal === 'richiedente';
+            const viewIntestSpedEl = document.getElementById('viewIntestSpedizione');
+            if (viewIntestSpedEl) {
+                viewIntestSpedEl.innerHTML =
+                    '<span class="text-xs text-gray-700">Intestatario contratto: <strong>' + intestatarioLabel + '</strong></span>'
+                    + '&nbsp;&nbsp;|&nbsp;&nbsp;'
+                    + '<span class="text-xs ' + (spedIsOverride ? 'text-orange-700 font-bold' : 'text-gray-500') + '">'
+                    + '📦 Spedizione DDT: <strong>' + spedLabel + '</strong>'
+                    + (spedIsOverride ? ' <span class="ml-1 bg-orange-100 text-orange-700 px-1 rounded text-xs">OVERRIDE</span>' : '')
+                    + '</span>';
+            }
+
+            // ── IVA agevolata: mostra stato e configura toggle ────────────────
+            const ivaAgevolata = lead.iva_agevolata == 1 || lead.iva_agevolata === true;
             const ivaEl = document.getElementById('viewIvaAgevolata');
             const ivaBtn = document.getElementById('toggleIvaBtn');
-            const ivaEsenteBtn = document.getElementById('toggleIvaEsenteBtn');
             if (ivaEl) {
-                if (ivaEsente) {
-                    ivaEl.innerHTML = '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-300">🏥 IVA 0% — Esente art. 10 n. 18 d.P.R. 633/1972 ATTIVA</span>';
-                } else if (ivaAgevolata) {
-                    ivaEl.innerHTML = '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">⚕️ IVA 4% — Legge 104 (disabilità 100%) ATTIVA</span>';
-                } else {
-                    ivaEl.innerHTML = '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-600 border border-gray-200">IVA 22% standard</span>';
-                }
+                ivaEl.innerHTML = ivaAgevolata
+                    ? '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">⚕️ IVA 4% — Legge 104 (disabilità 100%) ATTIVA</span>'
+                    : '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-600 border border-gray-200">IVA 22% standard</span>';
             }
             if (ivaBtn) {
                 ivaBtn.textContent = ivaAgevolata ? '🔄 Ripristina IVA 22%' : '⚕️ Attiva IVA 4% Legge 104';
@@ -6299,38 +6192,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                     : 'px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition font-medium';
                 ivaBtn.onclick = () => toggleIvaAgevolata(lead.id, !ivaAgevolata);
             }
-            if (ivaEsenteBtn) {
-                ivaEsenteBtn.textContent = ivaEsente ? '🔄 Rimuovi Esenzione IVA' : '🏥 Attiva Esenzione IVA (0%)';
-                ivaEsenteBtn.className = ivaEsente
-                    ? 'px-4 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition font-medium'
-                    : 'px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition font-medium';
-                ivaEsenteBtn.onclick = () => toggleIvaEsente(lead.id, !ivaEsente);
-            }
 
-            // ── Indirizzo spedizione dispositivo ──────────────────────────
-            const spedizione = lead.indirizzo_spedizione || 'assistito';
-            const spedEl  = document.getElementById('viewSpedizione');
-            const spedBtn = document.getElementById('toggleSpedizioneBtn');
-            if (spedEl) {
-                if (spedizione === 'richiedente') {
-                    spedEl.innerHTML = '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-300">📦 Spedizione → Richiedente/Lead</span>';
-                } else {
-                    spedEl.innerHTML = '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-600 border border-gray-200">📦 Spedizione → Assistito (default)</span>';
-                }
-            }
-            if (spedBtn) {
-                spedBtn.textContent = spedizione === 'richiedente'
-                    ? '🔄 Ripristina spedizione → Assistito'
-                    : '📦 Spedisci al Richiedente';
-                spedBtn.className = spedizione === 'richiedente'
-                    ? 'px-4 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition font-medium'
-                    : 'px-4 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition font-medium';
-                spedBtn.onclick = () => toggleIndirizzaSpedizione(lead.id, spedizione === 'richiedente' ? 'assistito' : 'richiedente');
-            }
-
-            // Carica lo storico interazioni e gli assistiti aggiuntivi
+            // Carica lo storico interazioni
             loadInteractions(leadId);
-            loadLeadAssistiti(leadId);
             
             openModal('viewLeadModal');
         }
@@ -6357,292 +6221,6 @@ export const leads_dashboard = `<!DOCTYPE html>
                 showToast('❌ Errore di rete: ' + e.message, 'error');
             }
         }
-
-        async function toggleIvaEsente(leadId, attiva) {
-            try {
-                const response = await fetch(\`/api/leads/\${leadId}/iva-esente\`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ iva_esente: attiva ? 1 : 0 })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    // Aggiorna il lead in memoria
-                    const lead = allLeads.find(l => l.id === leadId);
-                    if (lead) {
-                        lead.iva_esente = attiva ? 1 : 0;
-                        // Attivando esente, disattiva agevolata (come fa il server)
-                        if (attiva) lead.iva_agevolata = 0;
-                    }
-                    // Riapri il modal aggiornato
-                    viewLead(leadId);
-                    showToast(attiva ? '✅ Esenzione IVA 0% (art. 10 n. 18) attivata' : '✅ Esenzione IVA rimossa — IVA ripristinata al 22%', 'success');
-                } else {
-                    showToast('❌ Errore aggiornamento esenzione IVA: ' + (data.error || 'Errore sconosciuto'), 'error');
-                }
-            } catch (e) {
-                showToast('❌ Errore di rete: ' + e.message, 'error');
-            }
-        }
-
-        async function toggleIndirizzaSpedizione(leadId, nuovoValore) {
-            try {
-                const response = await fetch(\`/api/leads/\${leadId}/indirizzo-spedizione\`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ indirizzo_spedizione: nuovoValore })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    // Aggiorna il lead in memoria
-                    const lead = allLeads.find(l => l.id === leadId);
-                    if (lead) lead.indirizzo_spedizione = nuovoValore;
-                    // Riapri il modal aggiornato
-                    viewLead(leadId);
-                    const msg = nuovoValore === 'richiedente'
-                        ? "✅ Spedizione impostata all'indirizzo del richiedente"
-                        : "✅ Spedizione ripristinata all'indirizzo dell'assistito";
-                    showToast(msg, 'success');
-                } else {
-                    showToast('❌ Errore aggiornamento spedizione: ' + (data.error || 'Errore sconosciuto'), 'error');
-                }
-            } catch (e) {
-                showToast('❌ Errore di rete: ' + e.message, 'error');
-            }
-        }
-
-        // ═══════════════════════════════════════════════════════════════
-        // ASSISTITI AGGIUNTIVI — gestione lead_assistiti
-        // ═══════════════════════════════════════════════════════════════
-
-        // Contesto corrente per il form assistiti
-        let _currentAssistitiLeadId = null;
-
-        function toggleLeadAssistitiForm() {
-            const panel = document.getElementById('assistitoFormPanel');
-            const title = document.getElementById('assistitoFormTitle');
-            if (!panel) return;
-            if (panel.classList.contains('hidden')) {
-                // Reset per nuova aggiunta
-                document.getElementById('assistitoEditId').value = '';
-                document.getElementById('assNome').value = '';
-                document.getElementById('assCognome').value = '';
-                document.getElementById('assCF').value = '';
-                document.getElementById('assDataNascita').value = '';
-                document.getElementById('assLuogoNascita').value = '';
-                document.getElementById('assIndirizzo').value = '';
-                document.getElementById('assCap').value = '';
-                document.getElementById('assCitta').value = '';
-                document.getElementById('assProvincia').value = '';
-                document.getElementById('assSpedizione').value = 'questo';
-                document.getElementById('assIntestatario').value = 'assistito';
-                document.getElementById('assNote').value = '';
-                title.textContent = '➕ Nuovo Assistito';
-                panel.classList.remove('hidden');
-            } else {
-                panel.classList.add('hidden');
-            }
-        }
-
-        function cancelLeadAssistitoForm() {
-            const panel = document.getElementById('assistitoFormPanel');
-            if (panel) panel.classList.add('hidden');
-        }
-
-        function editLeadAssistitoForm(ass) {
-            const panel = document.getElementById('assistitoFormPanel');
-            const title = document.getElementById('assistitoFormTitle');
-            if (!panel) return;
-            document.getElementById('assistitoEditId').value = ass.id;
-            document.getElementById('assNome').value = ass.nome || '';
-            document.getElementById('assCognome').value = ass.cognome || '';
-            document.getElementById('assCF').value = ass.codice_fiscale || '';
-            document.getElementById('assDataNascita').value = ass.data_nascita || '';
-            document.getElementById('assLuogoNascita').value = ass.luogo_nascita || '';
-            document.getElementById('assIndirizzo').value = ass.indirizzo || '';
-            document.getElementById('assCap').value = ass.cap || '';
-            document.getElementById('assCitta').value = ass.citta || '';
-            document.getElementById('assProvincia').value = ass.provincia || '';
-            document.getElementById('assSpedizione').value = ass.indirizzo_spedizione || 'questo';
-            document.getElementById('assIntestatario').value = ass.intestatario_contratto || 'assistito';
-            document.getElementById('assNote').value = ass.note || '';
-            title.textContent = \`✏️ Modifica: \${ass.nome} \${ass.cognome}\`;
-            panel.classList.remove('hidden');
-            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-
-        async function saveLeadAssistito() {
-            const leadId = _currentAssistitiLeadId;
-            if (!leadId) return;
-            const editId = document.getElementById('assistitoEditId').value;
-            const nome    = document.getElementById('assNome').value.trim();
-            const cognome = document.getElementById('assCognome').value.trim();
-            if (!nome || !cognome) {
-                showToast('❌ Nome e Cognome sono obbligatori', 'error');
-                return;
-            }
-            const body = {
-                nome, cognome,
-                codice_fiscale:     document.getElementById('assCF').value.trim().toUpperCase() || null,
-                data_nascita:       document.getElementById('assDataNascita').value || null,
-                luogo_nascita:      document.getElementById('assLuogoNascita').value.trim() || null,
-                indirizzo:          document.getElementById('assIndirizzo').value.trim() || null,
-                cap:                document.getElementById('assCap').value.trim() || null,
-                citta:              document.getElementById('assCitta').value.trim() || null,
-                provincia:          document.getElementById('assProvincia').value.trim().toUpperCase() || null,
-                indirizzo_spedizione: document.getElementById('assSpedizione').value || 'questo',
-                intestatario_contratto: document.getElementById('assIntestatario').value || 'assistito',
-                note:               document.getElementById('assNote').value.trim() || null,
-            };
-            try {
-                const isEdit = !!editId;
-                const url    = isEdit
-                    ? \`/api/leads/\${leadId}/assistiti/\${editId}\`
-                    : \`/api/leads/\${leadId}/assistiti\`;
-                const method = isEdit ? 'PATCH' : 'POST';
-                const res  = await fetch(url, {
-                    method, headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
-                const data = await res.json();
-                if (data.success) {
-                    cancelLeadAssistitoForm();
-                    loadLeadAssistiti(leadId);
-                    showToast(isEdit ? '✅ Assistito aggiornato' : '✅ Assistito aggiunto', 'success');
-                } else {
-                    showToast('❌ Errore: ' + (data.error || 'Sconosciuto'), 'error');
-                }
-            } catch (e) {
-                showToast('❌ Errore di rete: ' + e.message, 'error');
-            }
-        }
-
-        async function deleteLeadAssistito(leadId, aid, nomeCompleto) {
-            if (!confirm(\`Eliminare l'assistito "\${nomeCompleto}"? L'operazione non può essere annullata.\`)) return;
-            try {
-                const res  = await fetch(\`/api/leads/\${leadId}/assistiti/\${aid}\`, { method: 'DELETE' });
-                const data = await res.json();
-                if (data.success) {
-                    loadLeadAssistiti(leadId);
-                    showToast('✅ Assistito rimosso', 'success');
-                } else {
-                    showToast('❌ Errore: ' + (data.error || 'Sconosciuto'), 'error');
-                }
-            } catch (e) {
-                showToast('❌ Errore di rete: ' + e.message, 'error');
-            }
-        }
-
-        async function sendContractAssistito(leadId, aid, nomeCompleto) {
-            if (!confirm(\`Inviare contratto per "\${nomeCompleto}"? Il contratto verrà generato e inviato via email.\`)) return;
-            const btn = document.getElementById(\`btnContrattoAss-\${aid}\`);
-            if (btn) { btn.disabled = true; btn.textContent = '⏳ Invio...'; }
-            try {
-                const res  = await fetch(\`/api/leads/\${leadId}/assistiti/\${aid}/send-contract\`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({})
-                });
-                const data = await res.json();
-                if (data.success) {
-                    showToast(\`✅ Contratto inviato per \${nomeCompleto} (\${data.emailsSent || 0} email)\`, 'success');
-                } else {
-                    showToast('❌ Errore contratto: ' + (data.error || 'Sconosciuto'), 'error');
-                }
-            } catch (e) {
-                showToast('❌ Errore di rete: ' + e.message, 'error');
-            } finally {
-                if (btn) { btn.disabled = false; btn.textContent = '📄 Contratto'; }
-            }
-        }
-
-        async function generaDdtAssistito(leadId, aid, nomeCompleto) {
-            if (!confirm(\`Generare DDT per "\${nomeCompleto}"?\`)) return;
-            const btn = document.getElementById(\`btnDdtAss-\${aid}\`);
-            if (btn) { btn.disabled = true; btn.textContent = '⏳ Genera...'; }
-            try {
-                const res  = await fetch(\`/api/leads/\${leadId}/assistiti/\${aid}/genera-ddt\`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({})
-                });
-                const data = await res.json();
-                if (data.success) {
-                    showToast(\`✅ DDT generato per \${nomeCompleto}\`, 'success');
-                    if (data.ddtId) showToast(\`📦 DDT ID: \${data.ddtId}\`, 'info');
-                } else {
-                    showToast('❌ Errore DDT: ' + (data.error || 'Sconosciuto'), 'error');
-                }
-            } catch (e) {
-                showToast('❌ Errore di rete: ' + e.message, 'error');
-            } finally {
-                if (btn) { btn.disabled = false; btn.textContent = '📦 DDT'; }
-            }
-        }
-
-        async function loadLeadAssistiti(leadId) {
-            _currentAssistitiLeadId = leadId;
-            const container = document.getElementById('leadAssistitiList');
-            if (!container) return;
-            try {
-                const res  = await fetch(\`/api/leads/\${leadId}/assistiti\`);
-                const data = await res.json();
-                if (!data.success) {
-                    container.innerHTML = '<p class="text-red-400 text-xs text-center py-2">Errore caricamento assistiti</p>';
-                    return;
-                }
-                const list = data.assistiti || [];
-                if (list.length === 0) {
-                    container.innerHTML = '<p class="text-gray-400 text-xs text-center py-3 italic">Nessun assistito aggiuntivo — usa il pulsante ➕ per aggiungerne uno.</p>';
-                    return;
-                }
-                // Salva la mappa id→oggetto per la funzione di modifica
-                window._leadAssistitiMap = {};
-                list.forEach(a => { window._leadAssistitiMap[a.id] = a; });
-
-                container.innerHTML = list.map(ass => {
-                    const sped = ass.indirizzo_spedizione === 'richiedente'
-                        ? '<span class="text-orange-600 font-medium">→ Richiedente</span>'
-                        : '<span class="text-gray-500">→ Indirizzo proprio</span>';
-                    const intestBadge = (ass.intestatario_contratto || 'assistito') === 'richiedente'
-                        ? '<span class="text-orange-600 font-medium">Richiedente/Lead</span>'
-                        : '<span class="text-indigo-600 font-medium">Questo assistito</span>';
-                    const indirizzoStr = [ass.indirizzo, ass.cap, ass.citta, ass.provincia ? \`(\${ass.provincia})\` : '']
-                        .filter(Boolean).join(' ') || '<em class="text-gray-400">indirizzo non inserito</em>';
-                    const cfStr = ass.codice_fiscale
-                        ? \`<span class="font-mono text-gray-600">\${ass.codice_fiscale}</span>\`
-                        : '';
-                    const nomeEsc = (ass.nome + ' ' + ass.cognome).replace(/'/g, "\\'");
-                    return \`
-                    <div class="border border-indigo-200 bg-indigo-50 rounded-lg p-3 flex flex-col gap-1">
-                        <div class="flex items-start justify-between gap-2">
-                            <div class="flex-1 min-w-0">
-                                <p class="font-semibold text-gray-900 text-sm">👤 \${ass.nome} \${ass.cognome}\${cfStr ? ' — ' + cfStr : ''}</p>
-                                <p class="text-xs text-gray-600 mt-0.5">\${indirizzoStr}</p>
-                                \${ass.note ? '<p class="text-xs text-gray-500 mt-0.5 italic">📝 ' + ass.note + '</p>' : ''}
-                                <p class="text-xs mt-1">📦 Spedizione: \${sped} &nbsp;|&nbsp; 📄 Contratto: \${intestBadge}</p>
-                            </div>
-                            <div class="flex flex-col gap-1 flex-shrink-0">
-                                <button id="btnContrattoAss-\${ass.id}"
-                                    onclick="sendContractAssistito('\${leadId}',\${ass.id},'\${nomeEsc}')"
-                                    class="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition whitespace-nowrap">📄 Contratto</button>
-                                <button id="btnDdtAss-\${ass.id}"
-                                    onclick="generaDdtAssistito('\${leadId}',\${ass.id},'\${nomeEsc}')"
-                                    class="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition whitespace-nowrap">📦 DDT</button>
-                                <button
-                                    onclick="editLeadAssistitoForm(window._leadAssistitiMap[\${ass.id}])"
-                                    class="px-2 py-1 bg-yellow-500 text-white text-xs rounded hover:bg-yellow-600 transition whitespace-nowrap">✏️ Modifica</button>
-                                <button
-                                    onclick="deleteLeadAssistito('\${leadId}',\${ass.id},'\${nomeEsc}')"
-                                    class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition whitespace-nowrap">🗑️ Elimina</button>
-                            </div>
-                        </div>
-                    </div>\`;
-                }).join('');
-            } catch (e) {
-                container.innerHTML = '<p class="text-red-400 text-xs text-center py-2">Errore di rete</p>';
-            }
-        }
-
-        // ═══════════════════════════════════════════════════════════════
 
         async function loadInteractions(leadId) {
             try {
@@ -6782,6 +6360,12 @@ export const leads_dashboard = `<!DOCTYPE html>
             } else {
                 document.getElementById('newIntestatarioAssistito').checked = true;
             }
+
+            // Spedizione dispositivo (DDT) — separata dall'intestatario
+            const indirizzoSped = lead.indirizzo_spedizione || 'assistito';
+            const spedRadio = document.querySelector('input[name="indirizzo_spedizione"][value="' + indirizzoSped + '"]');
+            if (spedRadio) (spedRadio as HTMLInputElement).checked = true;
+            else (document.getElementById('newSpedizioneAssistito') as HTMLInputElement).checked = true;
             
             document.getElementById('newServizio').value = lead.servizio || 'eCura PRO';
             updatePrices(); // Aggiorna prezzi in base al servizio
@@ -7503,6 +7087,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                 
                 // Intestatario contratto
                 intestatarioContratto: document.querySelector('input[name="intestatario"]:checked').value,
+
+                // Destinazione spedizione DDT (indipendente dall'intestatario)
+                indirizzo_spedizione: (document.querySelector('input[name="indirizzo_spedizione"]:checked') as HTMLInputElement)?.value || 'assistito',
                 
                 // Condizioni di salute
                 condizioniSalute: document.getElementById('newCondizioniSalute').value,
@@ -7974,6 +7561,33 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 </label>
                             </div>
                         </div>
+
+                        <!-- INDIRIZZO SPEDIZIONE DDT (separato dall'intestatario) -->
+                        <div class="mt-3 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">
+                                <i class="fas fa-shipping-fast text-blue-500 mr-2"></i>
+                                Spedizione dispositivo (DDT)
+                            </label>
+                            <p class="text-xs text-gray-500 mb-3">Indipendente dall'intestatario del contratto. Di default il dispositivo viene spedito all'assistito.</p>
+                            <div class="flex flex-wrap gap-4">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" id="newSpedizioneAssistito" name="indirizzo_spedizione" value="assistito" checked
+                                        class="w-4 h-4 text-blue-600 focus:ring-blue-500 focus:ring-2">
+                                    <span class="ml-2 text-gray-700 text-sm font-medium">
+                                        👴 Assistito
+                                        <span class="block text-xs text-gray-500 font-normal">Default — spedisci all'assistito</span>
+                                    </span>
+                                </label>
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" id="newSpedizioneRichiedente" name="indirizzo_spedizione" value="richiedente"
+                                        class="w-4 h-4 text-blue-600 focus:ring-blue-500 focus:ring-2">
+                                    <span class="ml-2 text-gray-700 text-sm font-medium">
+                                        📝 Richiedente / Lead
+                                        <span class="block text-xs text-gray-500 font-normal">Spedisci all'indirizzo del richiedente</span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- STEP 3: QUALE SERVIZIO VUOI -->
@@ -8269,99 +7883,17 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <span class="text-xs text-gray-500">—</span>
                         </div>
                     </div>
-                    <div class="col-span-2">
-                        <label class="block text-xs font-medium text-gray-700 mb-1">📦 Indirizzo Spedizione Dispositivo</label>
-                        <div id="viewSpedizione" class="p-2 rounded">
-                            <span class="text-xs text-gray-500">—</span>
-                        </div>
-                    </div>
                     <div class="col-span-3">
                         <label class="block text-xs font-medium text-gray-700 mb-1">Note</label>
                         <p id="viewNote" class="text-gray-900 bg-gray-50 p-2 rounded min-h-[50px] text-xs">-</p>
                     </div>
-                </div>
-
-                <!-- ═══ ASSISTITI AGGIUNTIVI ══════════════════════════════════════ -->
-                <div class="mt-4 mb-4">
-                    <div class="flex items-center justify-between mb-2 border-b pb-2">
-                        <h4 class="text-base font-semibold text-gray-800">👥 Assistiti Aggiuntivi</h4>
-                        <button onclick="toggleLeadAssistitiForm()" class="px-3 py-1 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 transition font-medium">
-                            ➕ Aggiungi Assistito
-                        </button>
-                    </div>
-
-                    <!-- Form aggiunta/modifica assistito (collapsible) -->
-                    <div id="assistitoFormPanel" class="hidden mb-3 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
-                        <h5 id="assistitoFormTitle" class="text-sm font-semibold text-indigo-800 mb-2">➕ Nuovo Assistito</h5>
-                        <input type="hidden" id="assistitoEditId" value="">
-                        <div class="grid grid-cols-2 gap-2 mb-2">
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-1">Nome <span class="text-red-500">*</span></label>
-                                <input id="assNome" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Nome">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-1">Cognome <span class="text-red-500">*</span></label>
-                                <input id="assCognome" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Cognome">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-1">Codice Fiscale</label>
-                                <input id="assCF" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs uppercase" placeholder="RSSMRA80A01H501Z" maxlength="16">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-1">Data Nascita</label>
-                                <input id="assDataNascita" type="date" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
-                            </div>
-                            <div class="col-span-2">
-                                <label class="block text-xs font-medium text-gray-700 mb-1">Luogo Nascita</label>
-                                <input id="assLuogoNascita" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Città (Prov)">
-                            </div>
-                            <div class="col-span-2">
-                                <label class="block text-xs font-medium text-gray-700 mb-1">Indirizzo</label>
-                                <input id="assIndirizzo" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Via/Piazza, Civico">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-1">CAP</label>
-                                <input id="assCap" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="00000" maxlength="5">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-1">Città</label>
-                                <input id="assCitta" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Città">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-1">Provincia</label>
-                                <input id="assProvincia" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs uppercase" placeholder="RM" maxlength="2">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-1">📦 Spedizione a</label>
-                                <select id="assSpedizione" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
-                                    <option value="questo">Questo assistito</option>
-                                    <option value="richiedente">Richiedente/Lead</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-700 mb-1">📄 Intestatario contratto</label>
-                                <select id="assIntestatario" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
-                                    <option value="assistito">Questo assistito</option>
-                                    <option value="richiedente">Richiedente/Lead</option>
-                                </select>
-                            </div>
-                            <div class="col-span-2">
-                                <label class="block text-xs font-medium text-gray-700 mb-1">Note</label>
-                                <textarea id="assNote" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" rows="2" placeholder="Note aggiuntive..."></textarea>
-                            </div>
-                        </div>
-                        <div class="flex gap-2 justify-end">
-                            <button onclick="cancelLeadAssistitoForm()" class="px-3 py-1 bg-gray-400 text-white text-xs rounded hover:bg-gray-500 transition">Annulla</button>
-                            <button onclick="saveLeadAssistito()" class="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition font-medium">💾 Salva</button>
+                    <div class="col-span-3">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Intestatario &amp; Spedizione DDT</label>
+                        <div id="viewIntestSpedizione" class="bg-gray-50 p-2 rounded text-xs flex flex-wrap gap-1 items-center">
+                            <span class="text-gray-400">—</span>
                         </div>
                     </div>
-
-                    <!-- Lista assistiti -->
-                    <div id="leadAssistitiList" class="space-y-2">
-                        <p class="text-gray-400 text-xs text-center py-3">Caricamento...</p>
-                    </div>
                 </div>
-                <!-- ════════════════════════════════════════════════════════════════ -->
 
                 <!-- Storico Interazioni (SOLO LETTURA) -->
                 <h4 class="text-base font-semibold text-gray-800 mb-3 border-b pb-2 mt-4">💬 Storico Interazioni</h4>
@@ -8375,18 +7907,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                     </p>
                 </div>
 
-                <div class="flex flex-wrap gap-2 justify-between items-center pt-2 border-t">
-                    <div class="flex flex-wrap gap-2">
-                        <button id="toggleIvaBtn" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition font-medium">
-                            ⚕️ Attiva IVA 4% Legge 104
-                        </button>
-                        <button id="toggleIvaEsenteBtn" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition font-medium">
-                            🏥 Attiva Esenzione IVA (0%)
-                        </button>
-                        <button id="toggleSpedizioneBtn" class="px-4 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition font-medium">
-                            📦 Spedisci al Richiedente
-                        </button>
-                    </div>
+                <div class="flex justify-between items-center pt-2 border-t">
+                    <button id="toggleIvaBtn" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition font-medium">
+                        ⚕️ Attiva IVA 4% Legge 104
+                    </button>
                     <button onclick="closeModal('viewLeadModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm">
                         Chiudi
                     </button>
@@ -9113,9 +8637,9 @@ export const data_dashboard = `<!DOCTYPE html>
 
         // ── Funzioni Rinnovo ────────────────────────────────────────────────────
 
-        async function inviaRinnovo(leadId, codiceContrattoOriginale, clienteNome, ivaAgevolata, annoRinnovo, ivaEsente) {
+        async function inviaRinnovo(leadId, codiceContrattoOriginale, clienteNome, ivaAgevolata, annoRinnovo) {
             if (!leadId) { alert('❌ Lead ID mancante — impossibile inviare il rinnovo.'); return; }
-            const ivaInfo = ivaEsente ? 'IVA 0% (Esente art. 10 n. 18 d.P.R. 633/1972)' : ivaAgevolata ? 'IVA 4% (Legge 104)' : 'IVA 22%';
+            const ivaInfo = ivaAgevolata ? 'IVA 4% (Legge 104)' : 'IVA 22%';
             if (!confirm(\`🔄 Generare contratto RINNOVO per:\\n\\n📋 \${codiceContrattoOriginale}\\n👤 \${clienteNome}\\n📅 Anno \${annoRinnovo}\\n\\nIl contratto verrà creato ma l"email NON sarà ancora inviata.\\nPotrai verificare il link e poi inviare l"email manualmente.\\nAliquota IVA applicata: \${ivaInfo}.\`)) return;
             try {
                 const resp = await fetch(\`/api/leads/\${leadId}/send-contract\`, {
@@ -9344,7 +8868,6 @@ export const data_dashboard = `<!DOCTYPE html>
             var codice  = btn.getAttribute('data-codice')  || '';
             var cliente = btn.getAttribute('data-cliente') || '';
             var iva     = btn.getAttribute('data-iva') === 'true';
-            var ivaEs   = btn.getAttribute('data-iva-esente') === 'true';
             var anno    = parseInt(btn.getAttribute('data-anno') || '2', 10);
             var id      = btn.getAttribute('data-id')      || '';
             var codiceR = btn.getAttribute('data-codicer') || '';
@@ -9352,7 +8875,7 @@ export const data_dashboard = `<!DOCTYPE html>
             var idSafe    = btn.getAttribute('data-idsafe')    || '';
             var rinnovoId = btn.getAttribute('data-rinnovo-id') || '';
 
-            if      (action === 'rinnovo-crea')               inviaRinnovo(leadId, codice, cliente, iva, anno, ivaEs);
+            if      (action === 'rinnovo-crea')               inviaRinnovo(leadId, codice, cliente, iva, anno);
             else if (action === 'rinnovo-invia-email')        inviaEmailRinnovo(id, codiceR, email);
             else if (action === 'rinnovo-segna-firmato')      segnaRinnovoFirmato(id, codiceR);
             else if (action === 'rinnovo-crea-proforma')      creaProformaRinnovo(id, codiceR);
@@ -9400,11 +8923,9 @@ export const data_dashboard = `<!DOCTYPE html>
                 const isSigned = contract.status === 'SIGNED';
                 // rinnovoFiglioFirmato: usato nella logica di step per la riga originale (steps 4+)
                 const rinnovoFiglioFirmato = contract.rinnovo_status === 'SIGNED';
-                const ivaEsente = contract.iva_esente == 1 || contract.iva_esente === true;
-                const ivaAg = !ivaEsente && (contract.iva_agevolata == 1 || contract.iva_agevolata === true);
-                const tooltipIva = ivaEsente ? 'IVA 0% (Esente art. 10 n. 18)' : ivaAg ? 'IVA 4% (Legge 104)' : 'IVA 22%';
+                const ivaAg = contract.iva_agevolata == 1 || contract.iva_agevolata === true;
+                const tooltipIva = ivaAg ? 'IVA 4% (Legge 104)' : 'IVA 22%';
                 const ivaAgSafe = ivaAg ? 'true' : 'false';
-                const ivaEsenteSafe = ivaEsente ? 'true' : 'false';
 
                 // Badge rinnovo — NO backtick, solo concatenazione
                 var _annoR = contract.anno_rinnovo || 2;
@@ -9504,8 +9025,7 @@ export const data_dashboard = `<!DOCTYPE html>
                     var dLeadId  = 'data-lead-id="'  + (contract.leadId || '') + '"';
                     var dCodice  = 'data-codice="'   + (contract.codice_contratto || String(contract.id)).replace(/"/g, '&quot;') + '"';
                     var dCliente = 'data-cliente="'  + clienteNome.trim().replace(/"/g, '&quot;') + '"';
-                    var dIva     = 'data-iva="'       + ivaAgSafe + '"';
-                    var dIvaEs   = 'data-iva-esente="' + ivaEsenteSafe + '"';
+                    var dIva     = 'data-iva="'      + ivaAgSafe + '"';
                     var dAnno    = 'data-anno="'     + annoRinnovoSafe + '"';
                     var rinnovoActId = rinnovoFiglioId || contract.id;
                     var dId      = 'data-id="'       + rinnovoActId + '"';
@@ -9524,7 +9044,7 @@ export const data_dashboard = `<!DOCTYPE html>
                     // btn1: Crea rinnovo — visibile SOLO sulla riga originale (non su righe rinnovo)
                     // Se isRinnovo=true significa che questa riga è già un rinnovo: non si crea un rinnovo di un rinnovo
                     var btn1  = !isRinnovo
-                        ? rinnovoMkBtn('\uD83D\uDD04', 'Crea contratto rinnovo', 'rinnovo-crea', d1, '#2563eb', dLeadId + ' ' + dCodice + ' ' + dCliente + ' ' + dIva + ' ' + dIvaEs + ' ' + dAnno)
+                        ? rinnovoMkBtn('\uD83D\uDD04', 'Crea contratto rinnovo', 'rinnovo-crea', d1, '#2563eb', dLeadId + ' ' + dCodice + ' ' + dCliente + ' ' + dIva + ' ' + dAnno)
                         : '';
                     var btn2  = rinnovoMkBtn('\uD83D\uDCE7', 'Invia email rinnovo',       'rinnovo-invia-email',    d2, '#f97316', dId + ' ' + dCodiceR + ' ' + dEmail);
                     var btn3  = rinnovoMkLink('\u270D\uFE0F', 'Apri link firma rinnovo',  firmaUrlRinnovo,          d3, '#4f46e5');

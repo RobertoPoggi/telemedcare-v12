@@ -264,6 +264,7 @@ export const CONTRATTO_RINNOVO_B2C_TEMPLATE = `<!DOCTYPE html>
                 di seguito denominato/a <em>"<strong>Cliente</strong>"</em>
             </div>
         </div>
+        {{SEZIONE_CONSEGNA}}
 
         <!-- ART. 1 — PREMESSE -->
         <h2>Art. 1 — Premesse</h2>

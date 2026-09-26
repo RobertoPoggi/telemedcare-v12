@@ -442,8 +442,8 @@ async function inviaEmailProforma(proforma: any, env?: any) {
     
     // ✅ FIX: prezzo_totale è IVA ESCLUSA nel DB
     const prezzoBase = parseFloat(proforma.prezzo_totale) || 0
-    // Usa aliquota IVA dalla proforma — priorità: esente 0% > agevolata 4% > standard 22%
-    const ivaRate = proforma.iva_esente ? 0 : proforma.iva_agevolata ? 0.04 : 0.22
+    // Usa aliquota IVA dalla proforma (iva_agevolata) o default 22%
+    const ivaRate = proforma.iva_agevolata ? 0.04 : 0.22
     const ivaLabel = proforma.iva_esente ? '0%' : proforma.iva_agevolata ? '4%' : '22%'
     const iva = Math.round(prezzoBase * ivaRate * 100) / 100
     const prezzoIvaInclusa = Math.round((prezzoBase + iva) * 100) / 100
@@ -460,7 +460,7 @@ async function inviaEmailProforma(proforma: any, env?: any) {
       IMPORTO_CON_IVA: `€${prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,  // IVA INCLUSA (alias)
       PREZZO_SERVIZIO_PIANO: `€${prezzoBase.toFixed(2).replace('.', ',')} + IVA ${ivaLabel} (€${prezzoIvaInclusa.toFixed(2).replace('.', ',')})`,
       IVA_LABEL: `IVA ${ivaLabel}`,
-      IVA_NOTE: proforma.iva_esente ? ' — Operazione esente IVA (art. 10 n. 18 d.P.R. 633/1972)' : proforma.iva_agevolata ? ' — IVA agevolata 4% (Legge 104, disabilità 100%)' : '',
+      IVA_NOTE: proforma.iva_agevolata ? ' — IVA agevolata 4% (Legge 104, disabilità 100%)' : '',
       SCADENZA_PAGAMENTO: proforma.data_scadenza || 'Da concordare',
       CODICE_CLIENTE: proforma.numero_proforma || proforma.id || 'N/A'
     }
@@ -718,9 +718,6 @@ app.use('*', async (c, next) => {
         { name: 'iva_agevolata', def: `INTEGER DEFAULT 0` },
         // IVA esente — Esenzione art. 10 n. 18 d.P.R. 633/1972 (prestazioni sanitarie)
         { name: 'iva_esente', def: `INTEGER DEFAULT 0` },
-        // Indirizzo di spedizione dispositivo: 'assistito' (default) | 'richiedente'
-        // Indipendente da intestatarioContratto (che riguarda contratti/fatture)
-        { name: 'indirizzo_spedizione', def: `TEXT DEFAULT 'assistito'` },
       ]
       for (const col of leadsHubspotColumns) {
         try {
@@ -733,53 +730,6 @@ app.use('*', async (c, next) => {
         }
       }
       
-      // ── Tabella lead_assistiti: relazione 1 lead → N assistiti ──────────────
-      // Ogni riga rappresenta un assistito aggiuntivo collegato al lead.
-      // Il "primo assistito legacy" rimane nei campi flat su leads (backward compat).
-      // ordinamento: sort_order ASC (0 = primo aggiunto, 1 = secondo, ...)
-      try {
-        await c.env.DB.prepare(`
-          CREATE TABLE IF NOT EXISTS lead_assistiti (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            lead_id TEXT NOT NULL,
-            sort_order INTEGER DEFAULT 0,
-            nome TEXT NOT NULL,
-            cognome TEXT NOT NULL,
-            codice_fiscale TEXT,
-            data_nascita TEXT,
-            luogo_nascita TEXT,
-            indirizzo TEXT,
-            cap TEXT,
-            citta TEXT,
-            provincia TEXT,
-            indirizzo_spedizione TEXT DEFAULT 'questo',
-            note TEXT,
-            created_at TEXT DEFAULT (datetime('now')),
-            updated_at TEXT DEFAULT (datetime('now')),
-            FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE CASCADE
-          )
-        `).run()
-        console.log('✅ Tabella lead_assistiti creata')
-      } catch (e: any) {
-        if (!e.message?.includes('already exists')) {
-          console.warn('⚠️ Errore creazione tabella lead_assistiti:', e.message)
-        }
-      }
-      // Migrazione idempotente: aggiunge intestatario_contratto se non esiste
-      try {
-        await c.env.DB.prepare(
-          `ALTER TABLE lead_assistiti ADD COLUMN intestatario_contratto TEXT DEFAULT 'assistito'`
-        ).run()
-        console.log('✅ Colonna intestatario_contratto aggiunta a lead_assistiti')
-      } catch (_) { /* già esiste — ok */ }
-
-      // Indice per lookup veloce per lead
-      try {
-        await c.env.DB.prepare(
-          `CREATE INDEX IF NOT EXISTS idx_lead_assistiti_lead_id ON lead_assistiti(lead_id)`
-        ).run()
-      } catch (_) {}
-
       // Crea tabella lead_interactions per tracciare i contatti
       try {
         await c.env.DB.prepare(`
@@ -10857,7 +10807,7 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
                 c.leadId,
                 l.nomeRichiedente, l.cognomeRichiedente,
                 l.nomeAssistito, l.cognomeAssistito,
-                l.intestatarioContratto, l.indirizzo_spedizione,
+                l.intestatarioContratto,
                 l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
                 l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
                 l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
@@ -10880,7 +10830,7 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
                   c.leadId,
                   l.nomeRichiedente, l.cognomeRichiedente,
                   l.nomeAssistito, l.cognomeAssistito,
-                  l.intestatarioContratto, l.indirizzo_spedizione,
+                  l.intestatarioContratto,
                   l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
                   l.indirizzoIntestatario, l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
                   l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
@@ -10912,20 +10862,9 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
     }
 
     // ── Intestatario ─────────────────────────────────────────────────
-    // indirizzo_spedizione controlla la destinazione FISICA del dispositivo (DDT).
-    // È indipendente da intestatarioContratto (usato per contratti/fatture).
-    const spedDest = contractRow?.indirizzo_spedizione || 'assistito'
+    const intestatario = contractRow?.intestatarioContratto || 'richiedente'
     let nomeInt: string, cognomeInt: string, cfInt: string, indrInt: string, cittaInt: string, capInt: string, provInt: string
-    if (spedDest === 'richiedente') {
-      nomeInt    = contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
-      cognomeInt = contractRow?.cognomeRichiedente || ''
-      cfInt      = contractRow?.cfIntestatario     || contractRow?.codiceFiscaleIntestatario || contractRow?.cfAssistito || ''
-      indrInt    = contractRow?.indirizzoIntestatario || contractRow?.indirizzoAssistito || ddt.destinatario_indirizzo || ''
-      cittaInt   = contractRow?.cittaIntestatario  || contractRow?.cittaAssistito     || ddt.destinatario_citta || ''
-      capInt     = contractRow?.capIntestatario    || contractRow?.capAssistito       || ddt.destinatario_cap || ''
-      provInt    = contractRow?.provinciaIntestatario || contractRow?.provinciaAssistito || ddt.destinatario_provincia || ''
-    } else {
-      // 'assistito' (default)
+    if (intestatario === 'assistito') {
       nomeInt    = contractRow?.nomeAssistito     || contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
       cognomeInt = contractRow?.cognomeAssistito  || contractRow?.cognomeRichiedente || ''
       cfInt      = contractRow?.cfAssistito       || contractRow?.cfIntestatario     || contractRow?.codiceFiscaleIntestatario || ''
@@ -10933,13 +10872,23 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
       cittaInt   = contractRow?.cittaAssistito    || contractRow?.cittaIntestatario   || ddt.destinatario_citta || ''
       capInt     = contractRow?.capAssistito      || contractRow?.capIntestatario     || ddt.destinatario_cap || ''
       provInt    = contractRow?.provinciaAssistito|| contractRow?.provinciaIntestatario || ddt.destinatario_provincia || ''
+    } else {
+      nomeInt    = contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
+      cognomeInt = contractRow?.cognomeRichiedente || ''
+      cfInt      = contractRow?.cfIntestatario     || contractRow?.codiceFiscaleIntestatario || contractRow?.cfAssistito || ''
+      indrInt    = contractRow?.indirizzoIntestatario || contractRow?.indirizzoAssistito || ddt.destinatario_indirizzo || ''
+      cittaInt   = contractRow?.cittaIntestatario  || contractRow?.cittaAssistito     || ddt.destinatario_citta || ''
+      capInt     = contractRow?.capIntestatario    || contractRow?.capAssistito       || ddt.destinatario_cap || ''
+      provInt    = contractRow?.provinciaIntestatario || contractRow?.provinciaAssistito || ddt.destinatario_provincia || ''
     }
     const capCittaProv = [capInt, cittaInt, provInt ? `(${provInt})` : ''].filter(Boolean).join(' ')
 
     // ── Prezzi ────────────────────────────────────────────────────────
     const ivaAgevolata = !!(contractRow?.iva_agevolata)
     const ivaEsente = !!(contractRow?.iva_esente)
-    const ivaPct       = ivaEsente ? 0 : ivaAgevolata ? 4 : 22
+    const ivaPct       = ivaAgevolata ? 4 : 22
+
+    // Usa getPricing per ottenere l'imponibile corretto (IVA escl.)
     const servizioRaw = (contractRow?.servizio || 'PRO').replace(/^eCura\s+/i, '').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'
     const pianoRaw    = (contractRow?.piano    || 'BASE').toUpperCase() as 'BASE'|'AVANZATO'
     const pricingPF   = getPricing(servizioRaw, pianoRaw)
@@ -11261,7 +11210,7 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
         `SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
                 c.prezzo_totale, c.rateizzazione_attiva, c.riserva_dominio,
                 c.leadId,
-                l.intestatarioContratto, l.indirizzo_spedizione,
+                l.intestatarioContratto,
                 l.nomeRichiedente, l.cognomeRichiedente,
                 l.nomeAssistito, l.cognomeAssistito,
                 l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
@@ -11283,7 +11232,7 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
           `SELECT c.id AS cid, c.codice_contratto, c.servizio, c.piano,
                   c.prezzo_totale, c.rateizzazione_attiva, c.riserva_dominio,
                   c.leadId,
-                  l.intestatarioContratto, l.indirizzo_spedizione,
+                  l.intestatarioContratto,
                   l.nomeRichiedente, l.cognomeRichiedente,
                   l.nomeAssistito, l.cognomeAssistito,
                   l.cfIntestatario, l.codiceFiscaleIntestatario, l.cfAssistito,
@@ -11320,7 +11269,7 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
     // ── Prezzi ────────────────────────────────────────────────────────
     const ivaAgevolata = !!(contractRow?.iva_agevolata)
     const ivaEsente = !!(contractRow?.iva_esente)
-    const ivaPct       = ivaEsente ? 0 : ivaAgevolata ? 4 : 22
+    const ivaPct       = ivaAgevolata ? 4 : 22
     const servizioRawP = (contractRow?.servizio || 'PRO').replace(/^eCura\s+/i, '').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'
     const pianoRawP    = (contractRow?.piano    || 'BASE').toUpperCase() as 'BASE'|'AVANZATO'
     const pricingP     = getPricing(servizioRawP, pianoRawP)
@@ -11347,16 +11296,14 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
     const riservaDominioP = !!(contractRow?.riserva_dominio || contractRow?.lead_riserva_dominio)
 
     // ── Intestatario ─────────────────────────────────────────────────
-    // Per la pre-fattura usiamo indirizzo_spedizione (destinazione fisica dispositivo)
-    const spedDestP = contractRow?.indirizzo_spedizione || 'assistito'
+    const intestatario = contractRow?.intestatarioContratto || 'richiedente'
     let nomeIntP: string, cognomeIntP: string
-    if (spedDestP === 'richiedente') {
-      nomeIntP    = contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
-      cognomeIntP = contractRow?.cognomeRichiedente || ''
-    } else {
-      // 'assistito' (default)
+    if (intestatario === 'assistito') {
       nomeIntP    = contractRow?.nomeAssistito    || contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
       cognomeIntP = contractRow?.cognomeAssistito || contractRow?.cognomeRichiedente || ''
+    } else {
+      nomeIntP    = contractRow?.nomeRichiedente    || ddt.destinatario_nome || '—'
+      cognomeIntP = contractRow?.cognomeRichiedente || ''
     }
 
     // ── Numero pre-fattura ────────────────────────────────────────────
@@ -12857,97 +12804,6 @@ app.post('/api/setup-real-contracts', async (c) => {
 // INVIO MANUALE - LEAD ACTIONS
 // ========================================
 
-// ── Helper: costruisce un oggetto leadData dal record lead + override assistito ──
-// Usato sia dal path normale send-contract che da /assistiti/:aid/send-contract.
-// overrides: campi assistito da sovrascrivere (nomeAssistito, cognomeAssistito, ...)
-function _buildLeadDataFromLead(lead: any, overrides: any = {}): any {
-  // intestatarioContratto può essere sovrascritto dagli overrides (per assistiti aggiuntivi
-  // che hanno il proprio campo intestatario_contratto in lead_assistiti)
-  const intestatario = overrides.intestatarioContratto ?? lead.intestatarioContratto ?? 'richiedente'
-  let nomeIntestatario: string, cognomeIntestatario: string
-  let cfIntestatario: string, indirizzoIntestatario: string
-  let cittaIntestatario: string, capIntestatario: string, provinciaIntestatario: string
-  let luogoNascitaIntestatario: string, dataNascitaIntestatario: string
-
-  const nomeAss    = overrides.nomeAssistito    ?? lead.nomeAssistito    ?? lead.nomeRichiedente
-  const cognomeAss = overrides.cognomeAssistito ?? lead.cognomeAssistito ?? lead.cognomeRichiedente
-  const cfAss      = overrides.cfAssistito      ?? lead.cfAssistito      ?? ''
-  const indrAss    = overrides.indirizzoAssistito ?? lead.indirizzoAssistito ?? ''
-  const capAss     = overrides.capAssistito       ?? lead.capAssistito    ?? ''
-  const cittaAss   = overrides.cittaAssistito     ?? lead.cittaAssistito  ?? ''
-  const provAss    = overrides.provinciaAssistito ?? lead.provinciaAssistito ?? ''
-  const dtNascAss  = overrides.dataNascitaAssistito  ?? lead.dataNascitaAssistito  ?? ''
-  const lgNascAss  = overrides.luogoNascitaAssistito ?? lead.luogoNascitaAssistito ?? ''
-
-  if (intestatario === 'assistito') {
-    // Contratto intestato all'assistito:
-    // Per assistiti aggiuntivi (overrides presenti) i dati anagrafici vengono dagli overrides.
-    // Per l'assistito primario (no overrides) dal lead come prima.
-    // NOTA: l'ordine è overrides prima, lead come fallback — così ogni assistito aggiuntivo
-    // ha un contratto con i propri dati legali (nome, CF, indirizzo, nascita).
-    nomeIntestatario        = nomeAss
-    cognomeIntestatario     = cognomeAss
-    cfIntestatario          = cfAss || lead.cfIntestatario || ''
-    indirizzoIntestatario   = indrAss || lead.indirizzoIntestatario || ''
-    cittaIntestatario       = cittaAss || lead.cittaIntestatario || ''
-    capIntestatario         = capAss || lead.capIntestatario || ''
-    provinciaIntestatario   = provAss || lead.provinciaIntestatario || ''
-    luogoNascitaIntestatario= lgNascAss || lead.luogoNascitaIntestatario || ''
-    dataNascitaIntestatario = dtNascAss || lead.dataNascitaIntestatario  || ''
-  } else {
-    // Contratto intestato al richiedente/lead: dati sempre dal lead principale
-    nomeIntestatario        = lead.nomeRichiedente
-    cognomeIntestatario     = lead.cognomeRichiedente
-    cfIntestatario          = lead.cfIntestatario || lead.cfAssistito || ''
-    indirizzoIntestatario   = lead.indirizzoIntestatario || ''
-    cittaIntestatario       = lead.cittaIntestatario     || ''
-    capIntestatario         = lead.capIntestatario       || ''
-    provinciaIntestatario   = lead.provinciaIntestatario || ''
-    luogoNascitaIntestatario= lead.luogoNascitaIntestatario || ''
-    dataNascitaIntestatario = lead.dataNascitaIntestatario  || ''
-  }
-
-  return {
-    id: lead.id,
-    nomeRichiedente:  lead.nomeRichiedente,
-    cognomeRichiedente: lead.cognomeRichiedente,
-    email:    lead.email,
-    telefono: lead.telefono || '',
-    nomeAssistito:    nomeAss,
-    cognomeAssistito: cognomeAss,
-    luogoNascitaAssistito: lgNascAss,
-    dataNascitaAssistito:  dtNascAss,
-    indirizzoAssistito: indrAss,
-    capAssistito:       capAss,
-    cittaAssistito:     cittaAss,
-    provinciaAssistito: provAss,
-    cfAssistito:        cfAss,
-    condizioniSalute:   lead.condizioniSalute || '',
-    pacchetto:          lead.piano  || 'BASE',
-    servizio:           lead.servizio || 'eCura PRO',
-    intestatarioContratto: intestatario,
-    nomeIntestatario,
-    cognomeIntestatario,
-    emailIntestatario:    lead.email,
-    telefonoIntestatario: lead.telefono || '',
-    cfIntestatario,
-    indirizzoIntestatario,
-    cittaIntestatario,
-    capIntestatario,
-    provinciaIntestatario,
-    luogoNascitaIntestatario,
-    dataNascitaIntestatario,
-    vuoleBrochure: true,
-    vuoleManuale:  false,
-    vuoleContratto: true,
-    iva_agevolata: lead.iva_agevolata ? 1 : 0,
-    iva_esente:    lead.iva_esente    ? 1 : 0,
-    indirizzo_spedizione: overrides.indirizzo_spedizione || lead.indirizzo_spedizione || 'assistito',
-    // tag opzionale per identificare assistito nel codice contratto
-    _assistitoTag: overrides._assistitoTag || undefined
-  }
-}
-
 // POST /api/leads/:id/send-contract - Genera contratto HTML e invia email
 app.post('/api/leads/:id/send-contract', async (c) => {
   const leadId = c.req.param('id')
@@ -13084,6 +12940,13 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       luogoNascitaIntestatario = lead.luogoNascitaIntestatario || ''
       dataNascitaIntestatario = lead.dataNascitaIntestatario || ''
     }
+
+    // ⭐ Destinatario FISICO della spedizione dispositivo
+    // indirizzo_spedizione='assistito' (default) | 'richiedente'
+    // Indipendente da intestatarioContratto (che riguarda intestazione/firma del contratto)
+    const spedValContratto = lead.indirizzo_spedizione || 'assistito'
+    const destinatarioSpedizioneContratto: 'richiedente' | 'assistito' =
+      spedValContratto === 'richiedente' ? 'richiedente' : 'assistito'
     
     // Prepara leadData per workflow
     const leadData = {
@@ -13120,11 +12983,25 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       vuoleBrochure: true,  // Include brochure con contratto
       vuoleManuale: false,
       vuoleContratto: true,
-      // ✅ FIX: Passa iva_agevolata e iva_esente al workflow così il contract generator usa l'aliquota corretta
+      // ✅ FIX: Passa iva_agevolata al workflow così il contract generator usa l'aliquota corretta
       iva_agevolata: lead.iva_agevolata ? 1 : 0,
-      iva_esente: lead.iva_esente ? 1 : 0,
-      // Indirizzo spedizione dispositivo (controlla l'indirizzo in contratto e DDT)
-      indirizzo_spedizione: lead.indirizzo_spedizione || 'assistito'
+      // ⭐ Indirizzo di CONSEGNA dispositivo (separato dall'indirizzo dell'intestatario contratto)
+      // Calcolato da indirizzo_spedizione: 'assistito' (default) | 'richiedente'
+      indirizzoConsegna:  destinatarioSpedizioneContratto === 'assistito'
+        ? (lead.indirizzoAssistito || lead.indirizzoIntestatario || '')
+        : (lead.indirizzoIntestatario || lead.indirizzoAssistito || ''),
+      capConsegna: destinatarioSpedizioneContratto === 'assistito'
+        ? (lead.capAssistito || lead.capIntestatario || '')
+        : (lead.capIntestatario || lead.capAssistito || ''),
+      cittaConsegna: destinatarioSpedizioneContratto === 'assistito'
+        ? (lead.cittaAssistito || lead.cittaIntestatario || '')
+        : (lead.cittaIntestatario || lead.cittaAssistito || ''),
+      provinciaConsegna: destinatarioSpedizioneContratto === 'assistito'
+        ? (lead.provinciaAssistito || lead.provinciaIntestatario || '')
+        : (lead.provinciaIntestatario || lead.provinciaAssistito || ''),
+      nomeConsegna: destinatarioSpedizioneContratto === 'assistito'
+        ? `${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`.trim() || nomeIntestatario
+        : `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
     }
     
     // Calcola prezzi corretti
@@ -13723,8 +13600,8 @@ app.post('/api/leads/:id/complete', async (c) => {
             console.log(`   - dispositivo: ${pricing.dispositivo}`)
             
             // Prepara contractData
-            // ✅ FIX IVA: ricalcola prezzoIvaInclusa con aliquota corretta del lead (esente 0% > agevolata 4% > standard 22%)
-            const ivaRateContr12231 = (updatedLead as any).iva_esente ? 0 : (updatedLead as any).iva_agevolata ? 0.04 : 0.22
+            // ✅ FIX IVA AGEVOLATA: ricalcola prezzoIvaInclusa con aliquota corretta del lead
+            const ivaRateContr12231 = (updatedLead as any).iva_agevolata ? 0.04 : 0.22
             const prezzoIvaInclusaContr12231 = Math.round(pricing.setupBase * (1 + ivaRateContr12231) * 100) / 100
             const contractData = {
               contractId,
@@ -14773,8 +14650,8 @@ app.post('/api/lead/:id/complete', async (c) => {
             setupTotale: pricing.setupTotale
           })
           
-          // ✅ FIX IVA: ricalcola prezzoIvaInclusa con aliquota corretta del lead (esente 0% > agevolata 4% > standard 22%)
-          const ivaRateContr13204 = (updatedLead as any).iva_esente ? 0 : (updatedLead as any).iva_agevolata ? 0.04 : 0.22
+          // ✅ FIX IVA AGEVOLATA: ricalcola prezzoIvaInclusa con aliquota corretta del lead
+          const ivaRateContr13204 = (updatedLead as any).iva_agevolata ? 0.04 : 0.22
           const prezzoIvaInclusaContr13204 = Math.round(pricing.setupBase * (1 + ivaRateContr13204) * 100) / 100
           const contractData = {
             contractId,
@@ -14890,12 +14767,13 @@ app.put('/api/leads/:id', async (c) => {
       // IVA agevolata 4% (Legge 104, disabilità 100%)
       iva_agevolata: 'iva_agevolata',
       
-      // Indirizzo di spedizione dispositivo: 'assistito' | 'richiedente'
-      indirizzo_spedizione: 'indirizzo_spedizione',
-      
       // Altri
       condizioniSalute: 'condizioniSalute',
       intestatarioContratto: 'intestatarioContratto',
+      // ⭐ Destinazione spedizione DDT (indipendente dall'intestatario contratto)
+      // Valori: 'assistito' (default) | 'richiedente' | 'intestatario'
+      // NOTA: 'intestatario' = alias per compatibilità UI → il server lo normalizza
+      indirizzo_spedizione: 'indirizzo_spedizione',
       note: 'note',
       status: 'status'
     }
@@ -15346,354 +15224,7 @@ app.patch('/api/leads/:id/iva-esente', async (c) => {
 // RINNOVI CONTRATTUALI
 // ═══════════════════════════════════════════════════════════════════════════
 
-// PATCH /api/leads/:id/indirizzo-spedizione — Imposta indirizzo spedizione dispositivo
-// Valori accettati: 'assistito' (default) | 'richiedente'
-// Questo flag è separato da intestatarioContratto (usato per contratti/fatture)
-// e controlla esclusivamente la destinazione fisica di spedizione del dispositivo (DDT).
-app.patch('/api/leads/:id/indirizzo-spedizione', async (c) => {
-  const leadId = c.req.param('id')
-  try {
-    const body = await c.req.json()
-    const valore = body.indirizzo_spedizione
-
-    if (valore !== 'assistito' && valore !== 'richiedente') {
-      return c.json({ success: false, error: "Valore non valido. Usare 'assistito' o 'richiedente'" }, 400)
-    }
-
-    if (!c.env?.DB) {
-      return c.json({ success: false, error: 'Database non disponibile' }, 500)
-    }
-
-    await c.env.DB.prepare(`
-      UPDATE leads
-      SET indirizzo_spedizione = ?, updated_at = ?
-      WHERE id = ?
-    `).bind(valore, new Date().toISOString(), leadId).run()
-
-    console.log(`✅ indirizzo_spedizione aggiornato per lead ${leadId}: ${valore}`)
-
-    return c.json({
-      success: true,
-      leadId,
-      indirizzo_spedizione: valore,
-      message: valore === 'richiedente'
-        ? "Spedizione impostata all'indirizzo del richiedente/lead"
-        : "Spedizione impostata all'indirizzo dell'assistito (default)"
-    })
-  } catch (error) {
-    console.error('❌ Errore aggiornamento indirizzo_spedizione:', error)
-    return c.json({ success: false, error: 'Errore aggiornamento indirizzo spedizione' }, 500)
-  }
-  })
-
-// ═══════════════════════════════════════════════════════════════════════════
-// LEAD_ASSISTITI — CRUD multi-assistito per lead
-// Un lead può avere N assistiti. Ogni assistito aggiuntivo è una riga in
-// lead_assistiti. Il "primo assistito legacy" resta nei campi flat di leads
-// per backward compatibility con contratti/DDT esistenti.
-// ═══════════════════════════════════════════════════════════════════════════
-
-// GET /api/leads/:id/assistiti — Lista assistiti aggiuntivi del lead
-app.get('/api/leads/:id/assistiti', async (c) => {
-  const leadId = c.req.param('id')
-  try {
-    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
-    const rows = await c.env.DB.prepare(
-      `SELECT * FROM lead_assistiti WHERE lead_id = ? ORDER BY sort_order ASC, id ASC`
-    ).bind(leadId).all()
-    return c.json({ success: true, assistiti: rows.results || [] })
-  } catch (error) {
-    console.error('❌ GET lead_assistiti:', error)
-    return c.json({ success: false, error: 'Errore recupero assistiti' }, 500)
-  }
-})
-
-// POST /api/leads/:id/assistiti — Aggiunge un nuovo assistito al lead
-app.post('/api/leads/:id/assistiti', async (c) => {
-  const leadId = c.req.param('id')
-  try {
-    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
-    const body = await c.req.json() as any
-    if (!body.nome || !body.cognome) {
-      return c.json({ success: false, error: 'nome e cognome sono obbligatori' }, 400)
-    }
-    // Calcola sort_order = MAX esistente + 1
-    const maxRow = await c.env.DB.prepare(
-      `SELECT COALESCE(MAX(sort_order), -1) AS maxord FROM lead_assistiti WHERE lead_id = ?`
-    ).bind(leadId).first() as any
-    const sortOrder = (maxRow?.maxord ?? -1) + 1
-    const now = new Date().toISOString()
-    const result = await c.env.DB.prepare(`
-      INSERT INTO lead_assistiti
-        (lead_id, sort_order, nome, cognome, codice_fiscale, data_nascita, luogo_nascita,
-         indirizzo, cap, citta, provincia, indirizzo_spedizione, intestatario_contratto,
-         note, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      leadId, sortOrder,
-      body.nome.trim(), body.cognome.trim(),
-      body.codice_fiscale || null, body.data_nascita || null, body.luogo_nascita || null,
-      body.indirizzo || null, body.cap || null, body.citta || null, body.provincia || null,
-      body.indirizzo_spedizione || 'questo',
-      body.intestatario_contratto || 'assistito',
-      body.note || null, now, now
-    ).run()
-    const inserted = await c.env.DB.prepare(
-      `SELECT * FROM lead_assistiti WHERE lead_id = ? ORDER BY id DESC LIMIT 1`
-    ).bind(leadId).first()
-    console.log(`✅ Assistito aggiunto a lead ${leadId}: ${body.nome} ${body.cognome}`)
-    return c.json({ success: true, assistito: inserted })
-  } catch (error) {
-    console.error('❌ POST lead_assistiti:', error)
-    return c.json({ success: false, error: 'Errore aggiunta assistito' }, 500)
-  }
-})
-
-// PATCH /api/leads/:id/assistiti/:aid — Aggiorna dati assistito
-app.patch('/api/leads/:id/assistiti/:aid', async (c) => {
-  const leadId = c.req.param('id')
-  const aid    = c.req.param('aid')
-  try {
-    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
-    const body = await c.req.json() as any
-    const allowed = ['nome','cognome','codice_fiscale','data_nascita','luogo_nascita',
-                     'indirizzo','cap','citta','provincia','indirizzo_spedizione',
-                     'intestatario_contratto','note','sort_order']
-    const sets: string[] = []
-    const vals: any[] = []
-    for (const k of allowed) {
-      if (k in body) { sets.push(`${k} = ?`); vals.push(body[k]) }
-    }
-    if (sets.length === 0) return c.json({ success: false, error: 'Nessun campo da aggiornare' }, 400)
-    sets.push('updated_at = ?'); vals.push(new Date().toISOString())
-    vals.push(aid, leadId)
-    await c.env.DB.prepare(
-      `UPDATE lead_assistiti SET ${sets.join(', ')} WHERE id = ? AND lead_id = ?`
-    ).bind(...vals).run()
-    const updated = await c.env.DB.prepare(
-      `SELECT * FROM lead_assistiti WHERE id = ? AND lead_id = ?`
-    ).bind(aid, leadId).first()
-    return c.json({ success: true, assistito: updated })
-  } catch (error) {
-    console.error('❌ PATCH lead_assistiti:', error)
-    return c.json({ success: false, error: 'Errore aggiornamento assistito' }, 500)
-  }
-})
-
-// DELETE /api/leads/:id/assistiti/:aid — Rimuove assistito dal lead
-app.delete('/api/leads/:id/assistiti/:aid', async (c) => {
-  const leadId = c.req.param('id')
-  const aid    = c.req.param('aid')
-  try {
-    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
-    await c.env.DB.prepare(
-      `DELETE FROM lead_assistiti WHERE id = ? AND lead_id = ?`
-    ).bind(aid, leadId).run()
-    console.log(`🗑️ Assistito ${aid} rimosso da lead ${leadId}`)
-    return c.json({ success: true })
-  } catch (error) {
-    console.error('❌ DELETE lead_assistiti:', error)
-    return c.json({ success: false, error: 'Errore rimozione assistito' }, 500)
-  }
-})
-
-// POST /api/leads/:id/assistiti/:aid/send-contract
-// Genera e invia contratto per un assistito specifico da lead_assistiti.
-// Usa i dati del lead (richiedente/intestatario) combinati con i dati dell'assistito scelto.
-app.post('/api/leads/:id/assistiti/:aid/send-contract', async (c) => {
-  const leadId = c.req.param('id')
-  const aid    = c.req.param('aid')
-  try {
-    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
-
-    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
-    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
-
-    const ass = await c.env.DB.prepare(
-      `SELECT * FROM lead_assistiti WHERE id = ? AND lead_id = ?`
-    ).bind(aid, leadId).first() as any
-    if (!ass) return c.json({ success: false, error: 'Assistito non trovato' }, 404)
-
-    // Compone leadData sovrascrivendo i campi assistito con quelli di lead_assistiti
-    // e rispettando indirizzo_spedizione e intestatario_contratto dell'assistito specifico
-    const spedDest = ass.indirizzo_spedizione || 'questo'
-    // intestatario_contratto dell'assistito:
-    //   'assistito'   (default) → contratto intestato all'assistito stesso (Padre, Madre...)
-    //   'richiedente'           → contratto intestato al lead/familiare (Mario il figlio)
-    const intestatarioAss = ass.intestatario_contratto || 'assistito'
-    const leadData = _buildLeadDataFromLead(lead, {
-      nomeAssistito:      ass.nome,
-      cognomeAssistito:   ass.cognome,
-      cfAssistito:        ass.codice_fiscale || '',
-      dataNascitaAssistito: ass.data_nascita || '',
-      luogoNascitaAssistito: ass.luogo_nascita || '',
-      indirizzoAssistito: ass.indirizzo || '',
-      capAssistito:       ass.cap || '',
-      cittaAssistito:     ass.citta || '',
-      provinciaAssistito: ass.provincia || '',
-      // ogni assistito aggiuntivo ha il suo intestatario_contratto indipendente dal lead
-      intestatarioContratto: intestatarioAss,
-      // indirizzo_spedizione: 'questo' → usa indirizzo dell'assistito stesso
-      indirizzo_spedizione: spedDest === 'richiedente' ? 'richiedente' : 'assistito',
-      // tag per distinguere contratti: COGNOME-ASSISTITO nel codice
-      _assistitoTag: `${ass.cognome.toUpperCase().replace(/[^A-Z]/g, '')}`
-    })
-
-    // Delega al path normale send-contract con leadData arricchito
-    const body = await c.req.json().catch(() => ({})) as any
-    const { inviaEmailContratto } = await import('./modules/workflow-email-manager')
-    const { calculatePrice }      = await import('./modules/pricing-calculator')
-
-    const servizio = lead.servizio || 'eCura PRO'
-    const piano    = body.piano || lead.piano || 'BASE'
-    const servizioType = servizio.replace('eCura ', '').trim().toUpperCase()
-    const pianoType    = piano.toUpperCase()
-    const pricing = calculatePrice(servizioType, pianoType)
-    const ivaRate = lead.iva_esente ? 0 : lead.iva_agevolata ? 0.04 : 0.22
-    const prezzoBase = pricing.setupBase || 0
-    const prezzoIvaInclusa = Math.round(prezzoBase * (1 + ivaRate) * 100) / 100
-
-    const anno      = new Date().getFullYear()
-    const ts        = Date.now()
-    const tag       = leadData._assistitoTag || ass.cognome.toUpperCase().replace(/[^A-Z]/g,'').slice(0,8)
-    const contractId   = `CONTRACT_CTR-${tag}-${anno}_${ts}`
-    const contractCode = `CTR-${tag}-${anno}`
-
-    const contractData = {
-      contractId, contractCode,
-      contractPdfUrl: '',
-      tipoServizio: piano,
-      servizio,
-      prezzoBase,
-      prezzoIvaInclusa,
-      isRinnovo: false,
-      annoRinnovo: 1,
-      codiceOriginale: '',
-      riserva_dominio: Boolean(lead.riserva_dominio),
-      rateizzazione_attiva: Boolean(lead.rateizzazione_attiva),
-      rateizzazione_note: lead.rateizzazione_note || '',
-      rate: []
-    }
-
-    const result = await inviaEmailContratto(leadData, contractData, c.env, [], c.env.DB)
-    return c.json({ success: result.success, emailsSent: result.emailsSent, errors: result.errors })
-
-  } catch (error: any) {
-    console.error('❌ send-contract per assistito:', error)
-    return c.json({ success: false, error: error.message || 'Errore invio contratto' }, 500)
-  }
-})
-
-// POST /api/leads/:id/assistiti/:aid/genera-ddt
-// Genera DDT per un assistito specifico da lead_assistiti.
-app.post('/api/leads/:id/assistiti/:aid/genera-ddt', requireAuth, async (c) => {
-  const leadId = c.req.param('id')
-  const aid    = c.req.param('aid')
-  try {
-    if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
-
-    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
-    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
-
-    const ass = await c.env.DB.prepare(
-      `SELECT * FROM lead_assistiti WHERE id = ? AND lead_id = ?`
-    ).bind(aid, leadId).first() as any
-    if (!ass) return c.json({ success: false, error: 'Assistito non trovato' }, 404)
-
-    const body = await c.req.json() as any
-    const { imei: imeiInput, telefonoSim, numeroDdt, dataConsegna, note } = body
-
-    // Determina indirizzo di spedizione per questo assistito specifico
-    const spedDest = ass.indirizzo_spedizione || 'questo'
-    let nomeDestinatario: string, indirizzoDestinatario: string
-    let capDestinatario: string, cittaDestinatario: string, provinciaDestinatario: string
-
-    if (spedDest === 'richiedente') {
-      nomeDestinatario     = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
-      indirizzoDestinatario= lead.indirizzoIntestatario || ''
-      capDestinatario      = lead.capIntestatario || ''
-      cittaDestinatario    = lead.cittaIntestatario || ''
-      provinciaDestinatario= lead.provinciaIntestatario || ''
-    } else {
-      // 'questo' = indirizzo dell'assistito stesso (da lead_assistiti)
-      nomeDestinatario     = `${ass.nome} ${ass.cognome}`.trim()
-      indirizzoDestinatario= ass.indirizzo || lead.indirizzoAssistito || ''
-      capDestinatario      = ass.cap       || lead.capAssistito || ''
-      cittaDestinatario    = ass.citta     || lead.cittaAssistito || ''
-      provinciaDestinatario= ass.provincia || lead.provinciaAssistito || ''
-    }
-
-    // Servizio e dispositivo — cerca prima il contratto specifico di questo assistito
-    // (codice_contratto contiene il cognome-tag dell'assistito), poi fallback all'ultimo firmato del lead
-    const assTag = ass.cognome.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 8)
-    const contractAss = await c.env.DB.prepare(
-      `SELECT * FROM contracts WHERE leadId = ? AND codice_contratto LIKE ? ORDER BY created_at DESC LIMIT 1`
-    ).bind(leadId, `CTR-${assTag}-%`).first() as any
-    const contract = contractAss || await c.env.DB.prepare(
-      `SELECT * FROM contracts WHERE leadId = ? AND status = 'firmato' ORDER BY created_at DESC LIMIT 1`
-    ).bind(leadId).first() as any
-    const servizio    = contract?.servizio || lead.servizio || 'eCura PRO'
-    const piano       = contract?.piano    || lead.piano    || 'BASE'
-    const servizioUpper = servizio.replace(/^eCura\s+/i,'').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'
-    const pianoUpper    = (piano.toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE') as 'BASE'|'AVANZATO'
-    const { getPricing } = await import('./modules/ecura-pricing')
-    const pricing        = getPricing(servizioUpper, pianoUpper)
-    const dispositivo    = pricing?.dispositivo || 'SiDLY Care PRO'
-
-    // Numero DDT auto-incremento
-    const annoCorrente = new Date().getFullYear()
-    const formatNum = (n: number, a: number) => `DDT-${String(n).padStart(3,'0')}-${a}`
-    const allDdts    = await c.env.DB.prepare(`SELECT numero_ddt FROM ddts`).all() as any
-    const nums       = (allDdts?.results || []).map((r: any) => {
-      const m = String(r.numero_ddt).match(/DDT-(\d+)-(\d{4})/i)
-      return m ? parseInt(m[1]) : 0
-    }).filter((n: number) => n > 0)
-    const maxNum     = nums.length > 0 ? Math.max(...nums) : 0
-    let numDdt       = formatNum(maxNum + 1, annoCorrente)
-
-    // Tag per identificare DDT di quale assistito
-    const noteConTag = `LeadID:${leadId}|AssID:${aid}${note ? ' | ' + note : ''}`
-
-    if (!imeiInput) return c.json({ success: false, needsImei: true, error: 'IMEI richiesto' })
-
-    const ddtId  = `DDT-${leadId}-ASS${aid}-${Date.now()}`
-    const baseUrl = new URL(c.req.url).origin
-    const pdfUrl  = `${baseUrl}/api/ddts/${ddtId}/pdf-print`
-    const todayItaly = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' }).format(new Date())
-    const dataDoc    = dataConsegna || todayItaly
-    const codiceCtr  = contract?.codice_contratto || `CTR-${leadId}`
-
-    try { await c.env.DB.prepare(`ALTER TABLE ddts ADD COLUMN sim_number TEXT`).run() } catch (_) {}
-    await c.env.DB.prepare(`
-      INSERT INTO ddts (
-        id, numero_ddt, contract_code,
-        data_spedizione, data_consegna,
-        destinatario_nome, destinatario_indirizzo, destinatario_cap,
-        destinatario_citta, destinatario_provincia,
-        destinatario_email, destinatario_telefono,
-        dispositivo, serial_number, sim_number, quantita,
-        status, pdf_url, pdf_generated, note,
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `).bind(
-      ddtId, numDdt, codiceCtr,
-      dataDoc, dataDoc,
-      nomeDestinatario, indirizzoDestinatario, capDestinatario,
-      cittaDestinatario, provinciaDestinatario,
-      lead.email || '', lead.telefono || '',
-      dispositivo, imeiInput, telefonoSim || null, 1,
-      'CONSEGNATO', pdfUrl, 1, noteConTag
-    ).run()
-
-    console.log(`✅ [GENERA-DDT-ASSISTITO] DDT ${numDdt} per assistito ${aid} (${nomeDestinatario})`)
-    return c.json({ success: true, numeroDdt: numDdt, ddtId, pdfUrl })
-
-  } catch (error: any) {
-    console.error('❌ genera-ddt assistito:', error)
-    return c.json({ success: false, error: error.message || 'Errore generazione DDT' }, 500)
-  }
-})
-
+// Tabella prezzi rinnovo (IVA esclusa) per servizio+piano
 const PREZZI_RINNOVO_BASE: Record<string, Record<string, number>> = {
   'eCura FAMILY': { BASE: 200, AVANZATO: 500 },
   'eCura PRO':    { BASE: 240, AVANZATO: 600 },
@@ -15778,7 +15309,7 @@ app.post('/api/contracts/rinnovo', async (c) => {
     const rinnovoTotale = Math.round((rinnovoBase + ivaImporto) * 100) / 100
 
     const ivaLabel = lead.iva_esente ? 'IVA 0%' : lead.iva_agevolata ? 'IVA 4%' : 'IVA 22%'
-    const ivaNote  = lead.iva_esente ? ' (Operazione esente IVA — art. 10 n. 18 d.P.R. 633/1972)' : lead.iva_agevolata ? ' (IVA agevolata 4% — Legge 104, disabilità 100%)' : ''
+    const ivaNote  = lead.iva_agevolata ? ' (IVA agevolata 4% — Legge 104, disabilità 100%)' : ''
 
     // 5. Date del rinnovo
     // Inizio = giorno successivo alla scadenza del contratto originale
@@ -15825,6 +15356,39 @@ app.post('/api/contracts/rinnovo', async (c) => {
       ? (origContract.prezzo_totale * (1 + ivaRate)).toFixed(2).replace('.', ',')
       : rinnovoTotale.toFixed(2).replace('.', ',')
 
+    // ── Indirizzo spedizione per il contratto rinnovo ──────────────────────────
+    const spedValRinnovo = lead.indirizzo_spedizione || 'assistito'
+    const destSpedRinnovo: 'richiedente' | 'assistito' =
+      spedValRinnovo === 'richiedente' ? 'richiedente' : 'assistito'
+    const nomeConsegnaRinnovo = destSpedRinnovo === 'assistito'
+      ? (`${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`).trim() || (`${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`).trim()
+      : (`${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`).trim()
+    const indirizzoConsegnaRinnovo = destSpedRinnovo === 'assistito'
+      ? (lead.indirizzoAssistito || lead.indirizzoIntestatario || '')
+      : (lead.indirizzoIntestatario || lead.indirizzoAssistito || '')
+    const capConsegnaRinnovo = destSpedRinnovo === 'assistito'
+      ? (lead.capAssistito || lead.capIntestatario || '')
+      : (lead.capIntestatario || lead.capAssistito || '')
+    const cittaConsegnaRinnovo = destSpedRinnovo === 'assistito'
+      ? (lead.cittaAssistito || lead.cittaIntestatario || '')
+      : (lead.cittaIntestatario || lead.cittaAssistito || '')
+    const provinciaConsegnaRinnovo = destSpedRinnovo === 'assistito'
+      ? (lead.provinciaAssistito || lead.provinciaIntestatario || '')
+      : (lead.provinciaIntestatario || lead.provinciaAssistito || '')
+    // Genera sezione HTML spedizione (vuota se indirizzo non disponibile)
+    const sezioneConsegnaRinnovo = (() => {
+      const inC = indirizzoConsegnaRinnovo
+      if (!inC || inC === 'DA COMPLETARE') return ''
+      const nomeInt = (`${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`).trim()
+      const addrLine = [inC, capConsegnaRinnovo, cittaConsegnaRinnovo,
+        provinciaConsegnaRinnovo ? `(${provinciaConsegnaRinnovo})` : ''].filter(Boolean).join(', ')
+      const nomeConsDiff = nomeConsegnaRinnovo && nomeConsegnaRinnovo !== nomeInt
+      return `<p style="margin-top:8px;padding:8px 12px;background:#f0f9ff;border-left:3px solid #2563eb;font-size:10pt;">` +
+        `<strong>&#128230; Indirizzo spedizione dispositivo:</strong> ` +
+        (nomeConsDiff ? `<em>${nomeConsegnaRinnovo}</em> — ` : '') +
+        addrLine + `</p>`
+    })()
+
     const htmlCompiled = varReplace(templateHtml, {
       SERVIZIO:                   servizio.replace('eCura ', ''),
       PIANO:                      piano,
@@ -15848,6 +15412,7 @@ app.post('/api/contracts/rinnovo', async (c) => {
       IVA_NOTE:                   ivaNote,
       PREZZO_RINNOVO:             `€ ${rinnovoTotale.toFixed(2).replace('.', ',')}`,
       PREZZO_TOTALE_PRIMO_ANNO:   `€ ${prezzoTotalePrimoAnnoNum}`,
+      SEZIONE_CONSEGNA:           sezioneConsegnaRinnovo,
     })
 
     // 8. Inserisci contratto rinnovo nel DB
@@ -16175,7 +15740,8 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
         l.cittaIntestatario, l.capIntestatario, l.provinciaIntestatario,
         l.nomeAssistito, l.cognomeAssistito,
         l.cfAssistito, l.indirizzoAssistito,
-        l.cittaAssistito, l.capAssistito, l.provinciaAssistito
+        l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
+        l.indirizzo_spedizione
       FROM contracts c
       LEFT JOIN leads l ON c.leadId = l.id
       WHERE c.id = ?
@@ -16196,8 +15762,8 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
     const rinnovoBase = parseFloat(contract.prezzo_totale || 0)
     const ivaImporto = Math.round(rinnovoBase * ivaRate * 100) / 100
     const rinnovoTotale = Math.round((rinnovoBase + ivaImporto) * 100) / 100
-    const ivaLabel = ivaEsente ? 'IVA 0%' : ivaAgevolata ? 'IVA 4%' : 'IVA 22%'
-    const ivaNote = ivaEsente ? ' (Operazione esente IVA — art. 10 n. 18 d.P.R. 633/1972)' : ivaAgevolata ? ' (IVA agevolata 4%)' : ''
+    const ivaLabel = ivaAgevolata ? 'IVA 4%' : 'IVA 22%'
+    const ivaNote = ivaAgevolata ? ' (IVA agevolata 4%)' : ''
 
     // Date
     // DATA_SCADENZA del rinnovo corrente (dal campo data_scadenza del contratto rinnovo)
@@ -16260,6 +15826,38 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
     if (!capCliente)       capCliente       = '—'
     if (!provinciaCliente) provinciaCliente = '—'
 
+    // ── Indirizzo spedizione per il contratto rigenera-html ───────────────────
+    const spedValRigenera = contract.indirizzo_spedizione || 'assistito'
+    const destSpedRigenera: 'richiedente' | 'assistito' =
+      spedValRigenera === 'richiedente' ? 'richiedente' : 'assistito'
+    const nomeConsegnaRigenera = destSpedRigenera === 'assistito'
+      ? (`${contract.nomeAssistito || ''} ${contract.cognomeAssistito || ''}`).trim() || (`${contract.nomeRichiedente || ''} ${contract.cognomeRichiedente || ''}`).trim()
+      : (`${contract.nomeRichiedente || ''} ${contract.cognomeRichiedente || ''}`).trim()
+    const indirizzoConsegnaRigenera = destSpedRigenera === 'assistito'
+      ? (contract.indirizzoAssistito || contract.indirizzoIntestatario || '')
+      : (contract.indirizzoIntestatario || contract.indirizzoAssistito || '')
+    const capConsegnaRigenera = destSpedRigenera === 'assistito'
+      ? (contract.capAssistito || contract.capIntestatario || '')
+      : (contract.capIntestatario || contract.capAssistito || '')
+    const cittaConsegnaRigenera = destSpedRigenera === 'assistito'
+      ? (contract.cittaAssistito || contract.cittaIntestatario || '')
+      : (contract.cittaIntestatario || contract.cittaAssistito || '')
+    const provinciaConsegnaRigenera = destSpedRigenera === 'assistito'
+      ? (contract.provinciaAssistito || contract.provinciaIntestatario || '')
+      : (contract.provinciaIntestatario || contract.provinciaAssistito || '')
+    const sezioneConsegnaRigenera = (() => {
+      const inC = indirizzoConsegnaRigenera
+      if (!inC || inC === '— da completare —') return ''
+      const nomeInt = (`${contract.nomeRichiedente || ''} ${contract.cognomeRichiedente || ''}`).trim()
+      const addrLine = [inC, capConsegnaRigenera, cittaConsegnaRigenera,
+        provinciaConsegnaRigenera ? `(${provinciaConsegnaRigenera})` : ''].filter(Boolean).join(', ')
+      const nomeConsDiff = nomeConsegnaRigenera && nomeConsegnaRigenera !== nomeInt
+      return `<p style="margin-top:8px;padding:8px 12px;background:#f0f9ff;border-left:3px solid #2563eb;font-size:10pt;">` +
+        `<strong>&#128230; Indirizzo spedizione dispositivo:</strong> ` +
+        (nomeConsDiff ? `<em>${nomeConsegnaRigenera}</em> — ` : '') +
+        addrLine + `</p>`
+    })()
+
     // Template inlinato (Cloudflare Workers non ha accesso al filesystem)
     const templateHtml = CONTRATTO_RINNOVO_B2C_TEMPLATE
 
@@ -16292,6 +15890,7 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
       IVA_NOTE:                   ivaNote,
       PREZZO_RINNOVO:             `€ ${rinnovoTotale.toFixed(2).replace('.', ',')}`,
       PREZZO_TOTALE_PRIMO_ANNO:   `€ ${prezzoTotalePrimoAnnoNum}`,
+      SEZIONE_CONSEGNA:           sezioneConsegnaRigenera,
     }
     const htmlCompiled = templateHtml.replace(/\{\{([A-Z_]+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`)
 
@@ -16350,7 +15949,7 @@ app.post('/api/contracts/:id/send-rinnovo-email', async (c) => {
     const codiceRinnovo = contract.codice_contratto
     const ivaRate = lead.iva_esente ? 0 : lead.iva_agevolata ? 0.04 : 0.22
     const ivaLabel = lead.iva_esente ? 'IVA 0%' : lead.iva_agevolata ? 'IVA 4%' : 'IVA 22%'
-    const ivaNote  = lead.iva_esente ? ' (Operazione esente IVA — art. 10 n. 18 d.P.R. 633/1972)' : lead.iva_agevolata ? ' (IVA agevolata 4% — Legge 104)' : ''
+    const ivaNote  = lead.iva_agevolata ? ' (IVA agevolata 4% — Legge 104)' : ''
     const rinnovoBase   = contract.prezzo_totale || 240
     const ivaImporto    = Math.round(rinnovoBase * ivaRate * 100) / 100
     const rinnovoTotale = Math.round((rinnovoBase + ivaImporto) * 100) / 100
@@ -16482,7 +16081,7 @@ app.post('/api/contracts/:id/crea-proforma-rinnovo', async (c) => {
     // Carica lead + dati intestatario (stessa logica di rigenera-html)
     const lead = await c.env.DB.prepare(
       `SELECT id, intestatarioContratto,
-              nomeRichiedente, cognomeRichiedente, email, telefono, iva_agevolata, iva_esente,
+              nomeRichiedente, cognomeRichiedente, email, telefono, iva_agevolata,
               nomeAssistito, cognomeAssistito,
               cfIntestatario, codiceFiscaleIntestatario, indirizzoIntestatario,
               cittaIntestatario, capIntestatario, provinciaIntestatario,
@@ -16742,7 +16341,7 @@ app.get('/api/contracts/:id/proforma-interna-html', async (c) => {
               cfIntestatario, codiceFiscaleIntestatario, cfAssistito,
               indirizzoIntestatario, cittaIntestatario, capIntestatario, provinciaIntestatario,
               indirizzoAssistito, cittaAssistito, capAssistito, provinciaAssistito,
-              iva_agevolata, iva_esente,
+              iva_agevolata,
               rateizzazione_attiva, riserva_dominio
        FROM leads WHERE id = ?`
     ).bind(contract.leadId).first() as any
@@ -16773,7 +16372,7 @@ app.get('/api/contracts/:id/proforma-interna-html', async (c) => {
     // Prezzi
     const ivaAgevolata = !!(lead.iva_agevolata)
     const ivaEsente = !!(lead.iva_esente)
-    const ivaPct       = ivaEsente ? 0 : ivaAgevolata ? 4 : 22
+    const ivaPct       = ivaAgevolata ? 4 : 22
     const netto        = parseFloat(contract.prezzo_totale) || 0
     const ivaAmt       = Math.round(netto * ivaPct / 100 * 100) / 100
     const totale       = Math.round((netto + ivaAmt) * 100) / 100
@@ -20120,8 +19719,8 @@ app.post('/api/leads', async (c) => {
         addDebugLog(`📋 [LEAD] Contratto richiesto: SI - Procedura attiva`)
         try {
           // Crea contractData
-          // ✅ FIX IVA: ricalcola prezzoIvaInclusa con aliquota corretta del lead (esente 0% > agevolata 4% > standard 22%)
-          const ivaRateContrattoLead17977 = (leadData as any).iva_esente ? 0 : (leadData as any).iva_agevolata ? 0.04 : 0.22
+          // ✅ FIX IVA AGEVOLATA: ricalcola prezzoIvaInclusa con aliquota corretta del lead
+          const ivaRateContrattoLead17977 = (leadData as any).iva_agevolata ? 0.04 : 0.22
           const prezzoIvaInclusaLead17977 = Math.round(pricing.setupBase * (1 + ivaRateContrattoLead17977) * 100) / 100
           const contractData = {
             contractId: `contract-${Date.now()}`,
@@ -23394,7 +22993,6 @@ app.post('/api/cron/rata-reminders', async (c) => {
       cognomeRichiedente: string
       email: string
       iva_agevolata: number
-      iva_esente: number
       // proforma
       proforma_id: string | null
       numero_proforma: string | null
@@ -23415,7 +23013,6 @@ app.post('/api/cron/rata-reminders', async (c) => {
         l.cognomeRichiedente,
         l.email,
         COALESCE(l.iva_agevolata, 0) AS iva_agevolata,
-        COALESCE(l.iva_esente, 0) AS iva_esente,
         p.id           AS proforma_id,
         p.numero_proforma,
         p.tipo_servizio AS servizio,
@@ -23470,8 +23067,7 @@ app.post('/api/cron/rata-reminders', async (c) => {
         nomeRichiedente: primaRata.nomeRichiedente,
         cognomeRichiedente: primaRata.cognomeRichiedente,
         email: primaRata.email,
-        iva_agevolata: primaRata.iva_agevolata,
-        iva_esente: primaRata.iva_esente
+        iva_agevolata: primaRata.iva_agevolata
       }
 
       const proformaInfo = {
@@ -25630,8 +25226,7 @@ app.get('/api/assistiti', async (c) => {
         COALESCE(a.fonte_override, l.fonte) as fonte,
         l.canale_acquisizione as canale_acquisizione,
         l.dettaglio_fonte as dettaglio_fonte,
-        l.iva_agevolata as iva_agevolata,
-        l.iva_esente as iva_esente
+        l.iva_agevolata as iva_agevolata
       FROM assistiti a
       LEFT JOIN contracts c ON c.id = (
         SELECT id FROM contracts
@@ -35498,26 +35093,48 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     const pricing = getPricing(servizioUpper, pianoUpper)
     const dispositivo = pricing?.dispositivo || 'SiDLY Care PRO'
 
-    // --- 3. Determina indirizzo di spedizione dispositivo ---
-    // indirizzo_spedizione è indipendente da intestatarioContratto:
-    //   'assistito'  (default) → spedisce all'assistito
-    //   'richiedente'          → spedisce al richiedente/lead
-    const spedizioneDest = lead.indirizzo_spedizione || 'assistito'
-    const nomeDestinatario = spedizioneDest === 'richiedente'
-      ? `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
-      : `${lead.nomeAssistito || lead.nomeRichiedente || ''} ${lead.cognomeAssistito || lead.cognomeRichiedente || ''}`.trim()
-    const indirizzoDestinatario = spedizioneDest === 'richiedente'
-      ? lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
-      : lead.indirizzoAssistito || lead.indirizzoIntestatario || ''
-    const capDestinatario = spedizioneDest === 'richiedente'
-      ? lead.capIntestatario || lead.capAssistito || ''
-      : lead.capAssistito || lead.capIntestatario || ''
-    const cittaDestinatario = spedizioneDest === 'richiedente'
-      ? lead.cittaIntestatario || lead.cittaAssistito || ''
-      : lead.cittaAssistito || lead.cittaIntestatario || ''
-    const provinciaDestinatario = spedizioneDest === 'richiedente'
-      ? lead.provinciaIntestatario || lead.provinciaAssistito || ''
-      : lead.provinciaAssistito || lead.provinciaIntestatario || ''
+    // --- 3. Determina intestatario contratto e destinatario spedizione ---
+    const intestatario = lead.intestatarioContratto || 'richiedente'
+
+    // ⭐ spedizioneA: campo SEPARATO dall'intestatario contratto.
+    // Valori: 'intestatario' (default) | 'richiedente' | 'assistito'
+    //   'intestatario' → spedisci a chi è intestatario del contratto (comportamento storico)
+    //   'richiedente'  → forza spedizione al richiedente indipendentemente dall'intestatario
+    //   'assistito'    → forza spedizione all'assistito indipendentemente dall'intestatario
+    //
+    // Caso d'uso 1: intestatario=assistito, voglio spedire al richiedente
+    //   → spedizioneA='richiedente'
+    // Caso d'uso 2: intestatario=richiedente, voglio spedire all'assistito
+    //   → spedizioneA='assistito'
+    // ⭐ indirizzo_spedizione: campo SEPARATO dall'intestatario contratto.
+    // Valori: 'assistito' (default) | 'richiedente' | 'intestatario' (alias = segui intestatario)
+    const spedValRaw: string = lead.indirizzo_spedizione || 'assistito'
+
+    // Risolvi il destinatario effettivo della spedizione
+    // 'intestatario' = fallback al valore di intestatarioContratto (backward compat)
+    const destinatarioSpedizione: 'richiedente' | 'assistito' =
+      spedValRaw === 'richiedente' ? 'richiedente'
+      : spedValRaw === 'intestatario' ? (intestatario === 'assistito' ? 'assistito' : 'richiedente')
+      : 'assistito' // 'assistito' è il default
+
+    // Nominativo DDT: segue l'intestatario contratto (non la spedizione)
+    const nomeDestinatario = intestatario === 'assistito'
+      ? `${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`.trim()
+      : `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
+
+    // Indirizzo fisico di spedizione: segue destinatarioSpedizione
+    const indirizzoDestinatario = destinatarioSpedizione === 'assistito'
+      ? lead.indirizzoAssistito || lead.indirizzoIntestatario || ''
+      : lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
+    const capDestinatario = destinatarioSpedizione === 'assistito'
+      ? lead.capAssistito || lead.capIntestatario || ''
+      : lead.capIntestatario || lead.capAssistito || ''
+    const cittaDestinatario = destinatarioSpedizione === 'assistito'
+      ? lead.cittaAssistito || lead.cittaIntestatario || ''
+      : lead.cittaIntestatario || lead.cittaAssistito || ''
+    const provinciaDestinatario = destinatarioSpedizione === 'assistito'
+      ? lead.provinciaAssistito || lead.provinciaIntestatario || ''
+      : lead.provinciaIntestatario || lead.provinciaAssistito || ''
 
     // --- 4. Numero DDT: formato "DDT-NNN-AAAA" (es. DDT-008-2026) ---
     const annoCorrente = new Date().getFullYear()
@@ -35568,18 +35185,10 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     const codiceContratto = contract?.codice_contratto || contract?.id || `CTR-${leadId}`
     const baseUrl = new URL(c.req.url).origin
 
-    // --- 5. Controlla se esiste già un DDT per questo lead (PRIMARIO, non assistiti aggiuntivi) ---
-    // IMPORTANTE: cerchiamo solo DDT del primario, escludendo quelli degli assistiti aggiuntivi
-    // che hanno nota nel formato "LeadID:X|AssID:Y".
-    // Usiamo due pattern OR:
-    //   - note = 'LeadID:X'          → DDT primario senza note extra
-    //   - note LIKE 'LeadID:X | %'   → DDT primario con note extra (il separatore " | " precede le note)
-    // I DDT degli assistiti hanno "LeadID:X|AssID:Y" (| senza spazi), che non corrisponde a nessuno dei due.
+    // --- 5. Controlla se esiste già un DDT per questo lead (note LIKE 'LeadID:X%') ---
     const existingDDT = await c.env.DB.prepare(
-      `SELECT id, numero_ddt, serial_number FROM ddts
-       WHERE (note = ? OR note LIKE ?)
-       ORDER BY created_at DESC LIMIT 1`
-    ).bind(`LeadID:${leadId}`, `LeadID:${leadId} | %`).first() as any
+      `SELECT id, numero_ddt, serial_number FROM ddts WHERE note LIKE ? ORDER BY created_at DESC LIMIT 1`
+    ).bind(`LeadID:${leadId}%`).first() as any
 
     let ddtId: string
     let pdfUrl: string
@@ -35593,7 +35202,22 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
       ddtId = existingDDT.id
       pdfUrl = `${baseUrl}/api/ddts/${ddtId}/pdf-print`
       numDdt = existingDDT.numero_ddt
-      console.log(`ℹ️ [GENERA-DDT] DDT già esistente per LeadID:${leadId} → ${numDdt} (IMEI: ${imei}), skip INSERT`)
+      // ⭐ Aggiorna sempre destinatario/indirizzo in caso indirizzo_spedizione sia cambiato
+      await c.env.DB.prepare(`
+        UPDATE ddts SET
+          destinatario_nome      = ?,
+          destinatario_indirizzo = ?,
+          destinatario_cap       = ?,
+          destinatario_citta     = ?,
+          destinatario_provincia = ?,
+          updated_at             = datetime('now')
+        WHERE id = ?
+      `).bind(
+        nomeDestinatario, indirizzoDestinatario, capDestinatario,
+        cittaDestinatario, provinciaDestinatario,
+        ddtId
+      ).run()
+      console.log(`ℹ️ [GENERA-DDT] DDT già esistente per LeadID:${leadId} → ${numDdt} (IMEI: ${imei}), indirizzo aggiornato`)
     } else {
       // DDT non esiste: serve IMEI — se non fornito, chiedi al frontend
       if (!imei) {
@@ -36569,8 +36193,6 @@ app.post('/api/oneshot-rigenera-html-contratto-9fx2v', async (c) => {
       luogoNascitaIntestatario,
       dataNascitaIntestatario,
       iva_agevolata: lead.iva_agevolata ? 1 : 0,
-      iva_esente: lead.iva_esente ? 1 : 0,
-      indirizzo_spedizione: lead.indirizzo_spedizione || 'assistito',
       vuoleBrochure: false,
       vuoleManuale: false,
       vuoleContratto: true

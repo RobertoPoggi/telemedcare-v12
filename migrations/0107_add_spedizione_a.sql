@@ -1,0 +1,16 @@
+-- Migration 0107: Documentazione — colonna indirizzo_spedizione su leads
+--
+-- NOTA: questa colonna è già aggiunta automaticamente dall'auto-migration
+-- in src/index.tsx (blocco leadsHubspotColumns, riga ~723).
+-- Questo file serve solo come traccia documentale nel repository.
+--
+-- ALTER TABLE leads ADD COLUMN indirizzo_spedizione TEXT DEFAULT 'assistito';
+--
+-- Valori:
+--   'assistito'   (DEFAULT) — spedisci al destinatario assistito
+--   'richiedente'           — forza spedizione al richiedente/lead
+--
+-- Usato da:
+--   POST /api/leads/:id/genera-ddt     — destinatario fisico del DDT
+--   PATCH /api/leads/:id/indirizzo-spedizione — toggle rapido dall'occhio lead
+--   PUT /api/leads/:id                — aggiornamento nel modal Modifica
