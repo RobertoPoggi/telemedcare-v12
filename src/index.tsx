@@ -16287,7 +16287,7 @@ Cosa include il rinnovo:
 - Assistenza tecnica e aggiornamenti software/firmware
 
 Periodo: ${dataInizio} → ${dataScadenza}
-Tariffa rinnovo: € ${rinnovoTotale.toFixed(2)} (${ivaLabel} inclusa)${ivaNote}
+Tariffa rinnovo: € ${rinnovoTotale.toFixed(2)} (${ivaLabel}${ivaNote})
 Codice rinnovo: ${codiceRinnovo}
 
 Firma online: ${firmaUrl}
@@ -16307,7 +16307,7 @@ Medica GB S.r.l. — P.IVA 12435130963`
             <li><strong>Contratto originale:</strong> ${origContract.codice_contratto || contractId}</li>
             <li><strong>Codice rinnovo:</strong> ${codiceRinnovo}</li>
             <li><strong>Anno rinnovo:</strong> ${annoRinnovo}</li>
-            <li><strong>Tariffa:</strong> € ${rinnovoTotale.toFixed(2)} (${ivaLabel} inclusa)</li>
+            <li><strong>Tariffa:</strong> € ${rinnovoTotale.toFixed(2)} (${ivaLabel})</li>
             <li><strong>Link firma:</strong> <a href="${firmaUrl}">${firmaUrl}</a></li>
           </ul>
         `,
@@ -16638,7 +16638,7 @@ app.post('/api/contracts/:id/send-rinnovo-email', async (c) => {
       emailHtml = `<p>Gentile ${lead.nomeRichiedente} ${lead.cognomeRichiedente},<br>
         il rinnovo del Suo servizio eCura è pronto per la firma.<br>
         <a href="${firmaUrl}">✍️ Clicchi qui per firmare il contratto di rinnovo</a><br><br>
-        Tariffa: € ${rinnovoTotale.toFixed(2)} (${ivaLabel} inclusa)<br>
+        Tariffa: € ${rinnovoTotale.toFixed(2)} (${ivaLabel})<br>
         Codice: ${codiceRinnovo}</p>`
     }
 

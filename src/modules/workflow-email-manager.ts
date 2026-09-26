@@ -560,19 +560,19 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
       <strong style="color:#1b5e20;">🔄 CONTRATTO DI RINNOVO — Anno ${annoRinnovo}</strong><br>
       <span style="color:#2e7d32; font-size:13px;">La tariffa di rinnovo è agevolata rispetto alla prima annualità in quanto non comprende il dispositivo e il setup iniziale.${codiceOriginale ? ' Contratto originale: <strong>' + codiceOriginale + '</strong>.' : ''}</span>
     </div>
-    <p>La tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" — Anno ${annoRinnovo} — è pari a <span class="highlight">${importoPrimoAnno} €</span> (${mensileSetup}) + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${prezzoIvaInclusaCorretto} € inclusa iva</span>) e include:</p>
+    <p>La tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" — Anno ${annoRinnovo} — è pari a <span class="highlight">${importoPrimoAnno} €</span> (${mensileSetup}) + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${prezzoIvaInclusaCorretto} € ${ivaEsenteContratto ? 'IVA esente' : 'IVA inclusa'}</span>) e include:</p>
     <ul>
         <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
         <li>SIM multiprovider (prefisso +48 o +33) per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
     </ul>
     ` : `
-    <p>La tariffa annuale per il primo anno di attivazione del "Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'Base' : 'avanzato'}" è pari a <span class="highlight">${importoPrimoAnno} €</span> (${mensileSetup} × 12 mesi) + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${prezzoIvaInclusaCorretto} € inclusa iva</span>) e include:</p>
+    <p>La tariffa annuale per il primo anno di attivazione del "Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'Base' : 'avanzato'}" è pari a <span class="highlight">${importoPrimoAnno} €</span> (${mensileSetup} × 12 mesi) + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${prezzoIvaInclusaCorretto} € ${ivaEsenteContratto ? 'IVA esente' : 'IVA inclusa'}</span>) e include:</p>
     <ul>
         <li>Dispositivo ${dispositivo} (hardware)</li>
         <li>Configurazione del Dispositivo e del Processo di Comunicazione con ${pianoNome === 'AVANZATO' ? 'la Centrale Operativa e uno o più familiari' : 'uno o più familiari'} e Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
         <li>SIM multiprovider (prefisso +48 o +33) in grado di collegarsi automaticamente al provider con migliore copertura e di funzionare in tutta Europa, per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
     </ul>
-    <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" sarà pari a <span class="highlight">${importoAnniSuccessivi} €</span> (${mensileRinnovo}) + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${totaleRinnovoCorretto} € inclusa iva</span>) con inclusi:</p>
+    <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" sarà pari a <span class="highlight">${importoAnniSuccessivi} €</span> (${mensileRinnovo}) + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${totaleRinnovoCorretto} € ${ivaEsenteContratto ? 'IVA esente' : 'IVA inclusa'}</span>) con inclusi:</p>
     <ul>
         <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12mesi</li>
         <li>SIM multiprovider per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
