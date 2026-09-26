@@ -52,7 +52,8 @@ export interface ContractData {
   durataContratto: number // mesi
   prezzoTotale: number
 
-  // IVA agevolata 4% (Legge 104 / disabilità 100%)
+  // IVA: esente art.10 n.18 DPR 633/72 (0%) | agevolata 4% Legge 104 | standard 22%
+  iva_esente?: boolean | number
   iva_agevolata?: boolean | number
 
   // ⭐ Indirizzo di CONSEGNA dispositivo (separato dall'intestatario contratto)
@@ -63,6 +64,7 @@ export interface ContractData {
   cittaConsegna?: string
   provinciaConsegna?: string
   nazioneConsegna?: string
+  nazioneIntestatario?: string
 
   // Rateizzazione e Riserva di Dominio
   riserva_dominio?: boolean | number  // se true: inserisce clausola riserva dominio
@@ -188,11 +190,13 @@ export class ContractGenerator {
     const prezzoAnnoPrimo = data.prezzoTotale
     const prezzoAnniSuccessivi = data.prezzoMensile * 12
     
-    // Aliquota IVA: 4% per Legge 104 (disabilità 100%), 22% standard
-    const ivaAgevolata = !!data.iva_agevolata
-    const ivaRate = ivaAgevolata ? 0.04 : 0.22
-    const ivaLabel = ivaAgevolata ? 'IVA 4%' : 'IVA 22%'
-    const ivaNote = ivaAgevolata ? ' — IVA agevolata 4% (Legge 104, disabilità 100%)' : ''
+    // Aliquota IVA: 0% esente art.10 | 4% Legge 104 | 22% standard
+    const ivaEsente    = !!data.iva_esente
+    const ivaAgevolata = !ivaEsente && !!data.iva_agevolata
+    const ivaRate  = ivaEsente ? 0 : ivaAgevolata ? 0.04 : 0.22
+    const ivaLabel = ivaEsente ? 'IVA esente' : ivaAgevolata ? 'IVA 4%' : 'IVA 22%'
+    const ivaNote  = ivaEsente  ? ' — Operazione esente IVA (art. 10 n. 18 d.P.R. 633/1972)'
+                   : ivaAgevolata ? ' — IVA agevolata 4% (Legge 104, disabilità 100%)' : ''
     const ivaValorePrimoAnno = Math.round(prezzoAnnoPrimo * ivaRate * 100) / 100
     const totalePrimoAnno = Math.round((prezzoAnnoPrimo + ivaValorePrimoAnno) * 100) / 100
     const ivaValoreRinnovo = Math.round(prezzoAnniSuccessivi * ivaRate * 100) / 100
@@ -222,6 +226,12 @@ export class ContractGenerator {
       CAP_CLIENTE: data.capIntestatario || data.capAssistito || 'DA COMPLETARE',
       CITTA_CLIENTE: data.cittaIntestatario || data.cittaAssistito || 'DA COMPLETARE',
       PROVINCIA_CLIENTE: data.provinciaIntestatario || data.provinciaAssistito || 'DA COMPLETARE',
+      NAZIONE_CLIENTE: data.nazioneIntestatario || 'Italia',
+      // Suffisso nazione: appare solo se nazione ≠ Italia (es. " - GERMANIA")
+      NAZIONE_SUFFIX_CLIENTE: (() => {
+        const n = (data.nazioneIntestatario || 'Italia').trim()
+        return n.toLowerCase() !== 'italia' ? ` - ${n.toUpperCase()}` : ''
+      })(),
       CODICE_FISCALE_CLIENTE: data.cfIntestatario || data.cfAssistito || 'DA COMPLETARE',
       TELEFONO_CLIENTE: data.telefono || 'DA COMPLETARE',
       EMAIL_CLIENTE: data.email,
@@ -406,7 +416,7 @@ export class ContractGenerator {
 <p>&nbsp;</p>
 <p class="center">e</p>
 <p>&nbsp;</p>
-<p>Sig./Sig.ra {{NOME_CLIENTE}} {{COGNOME_CLIENTE}} nato/a a {{LUOGO_NASCITA_CLIENTE}} il {{DATA_NASCITA_CLIENTE}}, residente e domiciliato/a in {{INDIRIZZO_CLIENTE}} - {{CAP_CLIENTE}} {{CITTA_CLIENTE}} ({{PROVINCIA_CLIENTE}}) e con codice fiscale {{CODICE_FISCALE_CLIENTE}}.</p>
+<p>Sig./Sig.ra {{NOME_CLIENTE}} {{COGNOME_CLIENTE}} nato/a a {{LUOGO_NASCITA_CLIENTE}} il {{DATA_NASCITA_CLIENTE}}, residente e domiciliato/a in {{INDIRIZZO_CLIENTE}} - {{CAP_CLIENTE}} {{CITTA_CLIENTE}} ({{PROVINCIA_CLIENTE}}){{NAZIONE_SUFFIX_CLIENTE}} e con codice fiscale {{CODICE_FISCALE_CLIENTE}}.</p>
 <p>&nbsp;</p>
 <p>Riferimenti:</p>
 <p>telefono {{TELEFONO_CLIENTE}} – e-mail {{EMAIL_CLIENTE}}</p>

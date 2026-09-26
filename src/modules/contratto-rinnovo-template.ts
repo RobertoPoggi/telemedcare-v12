@@ -256,7 +256,7 @@ export const CONTRATTO_RINNOVO_B2C_TEMPLATE = `<!DOCTYPE html>
                 <div class="party-label">Cliente</div>
                 <strong>{{NOME_CLIENTE}} {{COGNOME_CLIENTE}}</strong><br>
                 {{INDIRIZZO_CLIENTE}}<br>
-                {{CAP_CLIENTE}} {{CITTA_CLIENTE}} ({{PROVINCIA_CLIENTE}})<br>
+                {{CAP_CLIENTE}} {{CITTA_CLIENTE}} ({{PROVINCIA_CLIENTE}}){{NAZIONE_SUFFIX_CLIENTE}}<br>
                 Codice Fiscale: {{CF_CLIENTE}}<br>
                 Email: {{EMAIL_CLIENTE}}<br>
                 Telefono: {{TELEFONO_CLIENTE}}<br>

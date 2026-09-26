@@ -13129,8 +13129,11 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       vuoleBrochure: true,  // Include brochure con contratto
       vuoleManuale: false,
       vuoleContratto: true,
-      // ✅ FIX: Passa iva_agevolata al workflow così il contract generator usa l'aliquota corretta
+      // ✅ FIX: Passa iva_agevolata e iva_esente al workflow così il contract generator usa l'aliquota corretta
       iva_agevolata: lead.iva_agevolata ? 1 : 0,
+      iva_esente:    lead.iva_esente    ? 1 : 0,
+      // ⭐ Nazione intestatario (per contratto)
+      nazioneIntestatario: lead.nazione_intestatario || 'Italia',
       // ⭐ Indirizzo di CONSEGNA dispositivo (separato dall'indirizzo dell'intestatario contratto)
       // Calcolato da indirizzo_spedizione: 'assistito' (default) | 'richiedente' | 'custom'
       indirizzoConsegna: destinatarioSpedizioneContratto === 'custom'
@@ -13244,7 +13247,10 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       rateizzazione_note: lead.rateizzazione_note || '',
       rate: rateContratto,
       // 📅 Data inizio servizio: priorità DB field → today (usata da generateContractHtml)
-      dataInizio: lead.data_inizio_servizio || lead.data_attivazione || null
+      dataInizio: lead.data_inizio_servizio || lead.data_attivazione || null,
+      // ✅ IVA: passati esplicitamente per evitare che generateContractHtml usi sempre 22%
+      iva_agevolata: lead.iva_agevolata ? 1 : 0,
+      iva_esente:    lead.iva_esente    ? 1 : 0,
     }
     
     // Usa workflow per inviare email contratto
@@ -15910,8 +15916,9 @@ app.post('/api/contracts/rinnovo', async (c) => {
     const ivaImporto   = Math.round(rinnovoBase * ivaRate * 100) / 100
     const rinnovoTotale = Math.round((rinnovoBase + ivaImporto) * 100) / 100
 
-    const ivaLabel = lead.iva_esente ? 'IVA 0%' : lead.iva_agevolata ? 'IVA 4%' : 'IVA 22%'
-    const ivaNote  = lead.iva_agevolata ? ' (IVA agevolata 4% — Legge 104, disabilità 100%)' : ''
+    const ivaLabel = lead.iva_esente ? 'IVA esente' : lead.iva_agevolata ? 'IVA 4%' : 'IVA 22%'
+    const ivaNote  = lead.iva_esente  ? ' — Operazione esente IVA (art. 10 n. 18 d.P.R. 633/1972)'
+                   : lead.iva_agevolata ? ' (IVA agevolata 4% — Legge 104, disabilità 100%)' : ''
 
     // 5. Date del rinnovo
     // Inizio = giorno successivo alla scadenza del contratto originale
@@ -16023,7 +16030,12 @@ app.post('/api/contracts/rinnovo', async (c) => {
       COGNOME_CLIENTE:            lead.cognomeRichiedente || '',
       EMAIL_CLIENTE:              lead.email || '',
       TELEFONO_CLIENTE:           lead.telefono || '',
-      DISPOSITIVO:                origContract.servizio?.includes('PRO') ? 'SiDLY Care PRO' : 'SiDLY Care',
+      CF_CLIENTE:                 lead.cfIntestatario || lead.cfAssistito || '',
+      INDIRIZZO_CLIENTE:          lead.indirizzoIntestatario || lead.indirizzoAssistito || '',
+      CAP_CLIENTE:                lead.capIntestatario || lead.capAssistito || '',
+      CITTA_CLIENTE:              lead.cittaIntestatario || lead.cittaAssistito || '',
+      PROVINCIA_CLIENTE:          lead.provinciaIntestatario || lead.provinciaAssistito || '',
+      NAZIONE_SUFFIX_CLIENTE:     (() => { const n = (lead.nazione_intestatario || 'Italia').trim(); return n.toLowerCase() !== 'italia' ? ` - ${n.toUpperCase()}` : '' })(),
       DATA_INIZIO_SERVIZIO:       dataInizio,
       DATA_SCADENZA:              dataScadenza,
       IMPORTO_RINNOVO_NETTO:      rinnovoBase.toFixed(2).replace('.', ','),
@@ -16382,8 +16394,9 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
     const rinnovoBase = parseFloat(contract.prezzo_totale || 0)
     const ivaImporto = Math.round(rinnovoBase * ivaRate * 100) / 100
     const rinnovoTotale = Math.round((rinnovoBase + ivaImporto) * 100) / 100
-    const ivaLabel = ivaAgevolata ? 'IVA 4%' : 'IVA 22%'
-    const ivaNote = ivaAgevolata ? ' (IVA agevolata 4%)' : ''
+    const ivaLabel = ivaEsente ? 'IVA esente' : ivaAgevolata ? 'IVA 4%' : 'IVA 22%'
+    const ivaNote  = ivaEsente  ? ' — Operazione esente IVA (art. 10 n. 18 d.P.R. 633/1972)'
+                   : ivaAgevolata ? ' (IVA agevolata 4%)' : ''
 
     // Date
     // DATA_SCADENZA del rinnovo corrente (dal campo data_scadenza del contratto rinnovo)
@@ -16517,6 +16530,7 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
       CITTA_CLIENTE:              cittaCliente,
       CAP_CLIENTE:                capCliente,
       PROVINCIA_CLIENTE:          provinciaCliente,
+      NAZIONE_SUFFIX_CLIENTE:     (() => { const n = (contract.nazione_intestatario || 'Italia').trim(); return n.toLowerCase() !== 'italia' ? ` - ${n.toUpperCase()}` : '' })(),
       EMAIL_CLIENTE:              contract.email || '',
       TELEFONO_CLIENTE:           contract.telefono || '',
       DISPOSITIVO:                servizio.includes('PRO') ? 'SiDLY Care PRO' : 'SiDLY Care',
