@@ -6193,11 +6193,249 @@ export const leads_dashboard = `<!DOCTYPE html>
                 ivaBtn.onclick = () => toggleIvaAgevolata(lead.id, !ivaAgevolata);
             }
 
-            // Carica lo storico interazioni
+            // ── IVA esente toggle ─────────────────────────────────────────────
+            const ivaEsente = lead.iva_esente == 1 || lead.iva_esente === true;
+            const ivaEsenteBtn = document.getElementById('toggleIvaEsenteBtn');
+            if (ivaEsenteBtn) {
+                ivaEsenteBtn.textContent = ivaEsente ? '🔄 Rimuovi Esenzione IVA' : '🏥 Attiva Esenzione IVA (0%)';
+                ivaEsenteBtn.className = ivaEsente
+                    ? 'px-4 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition font-medium'
+                    : 'px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition font-medium';
+                ivaEsenteBtn.onclick = () => toggleIvaEsente(lead.id, !ivaEsente);
+            }
+
+            // ── Spedizione toggle ─────────────────────────────────────────────
+            const spedBtn = document.getElementById('toggleSpedizioneBtn');
+            if (spedBtn) {
+                spedBtn.textContent = spedIsOverride ? '🔄 Ripristina spedizione → Assistito' : '📦 Spedisci al Richiedente';
+                spedBtn.className = spedIsOverride
+                    ? 'px-4 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition font-medium'
+                    : 'px-4 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition font-medium';
+                spedBtn.onclick = () => toggleIndirizzaSpedizione(lead.id, spedIsOverride ? 'assistito' : 'richiedente');
+            }
+
+            // Carica lo storico interazioni e gli assistiti aggiuntivi
             loadInteractions(leadId);
+            loadLeadAssistiti(leadId);
             
             openModal('viewLeadModal');
         }
+
+        // ═══════════════════════════════════════════════════════════════
+        // ASSISTITI AGGIUNTIVI — gestione lead_assistiti
+        // ═══════════════════════════════════════════════════════════════
+
+        // Contesto corrente per il form assistiti
+        let _currentAssistitiLeadId = null;
+
+        function toggleLeadAssistitiForm() {
+            const panel = document.getElementById('assistitoFormPanel');
+            const title = document.getElementById('assistitoFormTitle');
+            if (!panel) return;
+            if (panel.classList.contains('hidden')) {
+                // Reset per nuova aggiunta
+                document.getElementById('assistitoEditId').value = '';
+                document.getElementById('assNome').value = '';
+                document.getElementById('assCognome').value = '';
+                document.getElementById('assCF').value = '';
+                document.getElementById('assDataNascita').value = '';
+                document.getElementById('assLuogoNascita').value = '';
+                document.getElementById('assIndirizzo').value = '';
+                document.getElementById('assCap').value = '';
+                document.getElementById('assCitta').value = '';
+                document.getElementById('assProvincia').value = '';
+                document.getElementById('assSpedizione').value = 'questo';
+                document.getElementById('assNote').value = '';
+                title.textContent = '➕ Nuovo Assistito';
+                panel.classList.remove('hidden');
+            } else {
+                panel.classList.add('hidden');
+            }
+        }
+
+        function cancelLeadAssistitoForm() {
+            const panel = document.getElementById('assistitoFormPanel');
+            if (panel) panel.classList.add('hidden');
+        }
+
+        function editLeadAssistitoForm(ass) {
+            const panel = document.getElementById('assistitoFormPanel');
+            const title = document.getElementById('assistitoFormTitle');
+            if (!panel) return;
+            document.getElementById('assistitoEditId').value = ass.id;
+            document.getElementById('assNome').value = ass.nome || '';
+            document.getElementById('assCognome').value = ass.cognome || '';
+            document.getElementById('assCF').value = ass.codice_fiscale || '';
+            document.getElementById('assDataNascita').value = ass.data_nascita || '';
+            document.getElementById('assLuogoNascita').value = ass.luogo_nascita || '';
+            document.getElementById('assIndirizzo').value = ass.indirizzo || '';
+            document.getElementById('assCap').value = ass.cap || '';
+            document.getElementById('assCitta').value = ass.citta || '';
+            document.getElementById('assProvincia').value = ass.provincia || '';
+            document.getElementById('assSpedizione').value = ass.indirizzo_spedizione || 'questo';
+            document.getElementById('assNote').value = ass.note || '';
+            title.textContent = \`✏️ Modifica: \${ass.nome} \${ass.cognome}\`;
+            panel.classList.remove('hidden');
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        async function saveLeadAssistito() {
+            const leadId = _currentAssistitiLeadId;
+            if (!leadId) return;
+            const editId = document.getElementById('assistitoEditId').value;
+            const nome    = document.getElementById('assNome').value.trim();
+            const cognome = document.getElementById('assCognome').value.trim();
+            if (!nome || !cognome) {
+                showToast('❌ Nome e Cognome sono obbligatori', 'error');
+                return;
+            }
+            const body = {
+                nome, cognome,
+                codice_fiscale:     document.getElementById('assCF').value.trim().toUpperCase() || null,
+                data_nascita:       document.getElementById('assDataNascita').value || null,
+                luogo_nascita:      document.getElementById('assLuogoNascita').value.trim() || null,
+                indirizzo:          document.getElementById('assIndirizzo').value.trim() || null,
+                cap:                document.getElementById('assCap').value.trim() || null,
+                citta:              document.getElementById('assCitta').value.trim() || null,
+                provincia:          document.getElementById('assProvincia').value.trim().toUpperCase() || null,
+                indirizzo_spedizione: document.getElementById('assSpedizione').value || 'questo',
+                note:               document.getElementById('assNote').value.trim() || null,
+            };
+            try {
+                const isEdit = !!editId;
+                const url    = isEdit
+                    ? \`/api/leads/\${leadId}/assistiti/\${editId}\`
+                    : \`/api/leads/\${leadId}/assistiti\`;
+                const method = isEdit ? 'PATCH' : 'POST';
+                const res  = await fetch(url, {
+                    method, headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    cancelLeadAssistitoForm();
+                    loadLeadAssistiti(leadId);
+                    showToast(isEdit ? '✅ Assistito aggiornato' : '✅ Assistito aggiunto', 'success');
+                } else {
+                    showToast('❌ Errore: ' + (data.error || 'Sconosciuto'), 'error');
+                }
+            } catch (e) {
+                showToast('❌ Errore di rete: ' + e.message, 'error');
+            }
+        }
+
+        async function deleteLeadAssistito(leadId, aid, nomeCompleto) {
+            if (!confirm("Eliminare l'assistito \\\"" + nomeCompleto + "\\\"? L'operazione non pu\u00f2 essere annullata.")) return;
+            try {
+                const res  = await fetch(\`/api/leads/\${leadId}/assistiti/\${aid}\`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    loadLeadAssistiti(leadId);
+                    showToast('✅ Assistito rimosso', 'success');
+                } else {
+                    showToast('❌ Errore: ' + (data.error || 'Sconosciuto'), 'error');
+                }
+            } catch (e) {
+                showToast('❌ Errore di rete: ' + e.message, 'error');
+            }
+        }
+
+        async function sendContractAssistito(leadId, aid, nomeCompleto) {
+            if (!confirm("Inviare contratto per \"" + nomeCompleto + "\"? Il contratto verr\u00e0 generato e inviato via email.")) return;
+            const btn = document.getElementById(\`btnContrattoAss-\${aid}\`);
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Invio...'; }
+            try {
+                const res  = await fetch(\`/api/leads/\${leadId}/assistiti/\${aid}/send-contract\`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(\`✅ Contratto inviato per \${nomeCompleto} (\${data.emailsSent || 0} email)\`, 'success');
+                } else {
+                    showToast('❌ Errore contratto: ' + (data.error || 'Sconosciuto'), 'error');
+                }
+            } catch (e) {
+                showToast('❌ Errore di rete: ' + e.message, 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = '📄 Contratto'; }
+            }
+        }
+
+        async function generaDdtAssistito(leadId, aid, nomeCompleto) {
+            if (!confirm("Generare DDT per \"" + nomeCompleto + "\"?")) return;
+            const btn = document.getElementById(\`btnDdtAss-\${aid}\`);
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Genera...'; }
+            try {
+                const res  = await fetch(\`/api/leads/\${leadId}/assistiti/\${aid}/genera-ddt\`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(\`✅ DDT generato per \${nomeCompleto}\`, 'success');
+                    if (data.ddtId) showToast(\`📦 DDT ID: \${data.ddtId}\`, 'info');
+                } else {
+                    showToast('❌ Errore DDT: ' + (data.error || 'Sconosciuto'), 'error');
+                }
+            } catch (e) {
+                showToast('❌ Errore di rete: ' + e.message, 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = '📦 DDT'; }
+            }
+        }
+
+        async function loadLeadAssistiti(leadId) {
+            _currentAssistitiLeadId = leadId;
+            const container = document.getElementById('leadAssistitiList');
+            if (!container) return;
+            try {
+                const res  = await fetch(\`/api/leads/\${leadId}/assistiti\`);
+                const data = await res.json();
+                if (!data.success) {
+                    container.innerHTML = '<p class="text-red-400 text-xs text-center py-2">Errore caricamento assistiti</p>';
+                    return;
+                }
+                const list = data.assistiti || [];
+                if (list.length === 0) {
+                    container.innerHTML = '<p class="text-gray-400 text-xs text-center py-3 italic">Nessun assistito aggiuntivo — usa il pulsante ➕ per aggiungerne uno.</p>';
+                    return;
+                }
+                container.innerHTML = list.map(ass => {
+                    const sped = ass.indirizzo_spedizione === 'richiedente'
+                        ? '<span class="text-orange-600 font-medium">→ Richiedente</span>'
+                        : '<span class="text-gray-500">→ Indirizzo proprio</span>';
+                    const indirizzoStr = [ass.indirizzo, ass.cap, ass.citta, ass.provincia ? \`(\${ass.provincia})\` : '']
+                        .filter(Boolean).join(' ') || '<span class="text-gray-400 italic">indirizzo non inserito</span>';
+                    const cfStr = ass.codice_fiscale ? \`<span class="font-mono text-gray-600">\${ass.codice_fiscale}</span>\` : '';
+                    return \`
+                    <div class="border border-indigo-200 bg-indigo-50 rounded-lg p-3 flex flex-col gap-1">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex-1 min-w-0">
+                                <p class="font-semibold text-gray-900 text-sm">👤 \${ass.nome} \${ass.cognome} \${cfStr ? '— ' + cfStr : ''}</p>
+                                <p class="text-xs text-gray-600 mt-0.5">\${indirizzoStr}</p>
+                                \${ass.note ? \`<p class="text-xs text-gray-500 mt-0.5 italic">📝 \${ass.note}</p>\` : ''}
+                                <p class="text-xs mt-1">📦 Spedizione: \${sped}</p>
+                            </div>
+                            <div class="flex flex-col gap-1 flex-shrink-0">
+                                <button id="btnContrattoAss-\${ass.id}" onclick="sendContractAssistito('\${leadId}', '\${ass.id}', '\${ass.nome} \${ass.cognome}')"
+                                    class="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition whitespace-nowrap">📄 Contratto</button>
+                                <button id="btnDdtAss-\${ass.id}" onclick="generaDdtAssistito('\${leadId}', '\${ass.id}', '\${ass.nome} \${ass.cognome}')"
+                                    class="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition whitespace-nowrap">📦 DDT</button>
+                                <button onclick='editLeadAssistitoForm(\${JSON.stringify(ass).replace(/\'/g, "\\\\'")})'
+                                    class="px-2 py-1 bg-yellow-500 text-white text-xs rounded hover:bg-yellow-600 transition whitespace-nowrap">✏️ Modifica</button>
+                                <button onclick="deleteLeadAssistito('\${leadId}', '\${ass.id}', '\${ass.nome} \${ass.cognome}')"
+                                    class="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition whitespace-nowrap">🗑️ Elimina</button>
+                            </div>
+                        </div>
+                    </div>\`;
+                }).join('');
+            } catch (e) {
+                container.innerHTML = '<p class="text-red-400 text-xs text-center py-2">Errore di rete</p>';
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
 
         async function toggleIvaAgevolata(leadId, attiva) {
             try {
@@ -6216,6 +6454,54 @@ export const leads_dashboard = `<!DOCTYPE html>
                     showToast(attiva ? '✅ IVA 4% Legge 104 attivata' : '✅ IVA ripristinata al 22%', 'success');
                 } else {
                     showToast('❌ Errore aggiornamento IVA: ' + (data.error || 'Errore sconosciuto'), 'error');
+                }
+            } catch (e) {
+                showToast('❌ Errore di rete: ' + e.message, 'error');
+            }
+        }
+
+        async function toggleIvaEsente(leadId, attiva) {
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/iva-esente\`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ iva_esente: attiva ? 1 : 0 })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const lead = allLeads.find(l => l.id === leadId);
+                    if (lead) {
+                        lead.iva_esente = attiva ? 1 : 0;
+                        if (attiva) lead.iva_agevolata = 0;
+                    }
+                    viewLead(leadId);
+                    showToast(attiva ? '✅ Esenzione IVA 0% (art. 10 n. 18) attivata' : '✅ Esenzione IVA rimossa — IVA ripristinata al 22%', 'success');
+                } else {
+                    showToast('❌ Errore aggiornamento esenzione IVA: ' + (data.error || 'Errore sconosciuto'), 'error');
+                }
+            } catch (e) {
+                showToast('❌ Errore di rete: ' + e.message, 'error');
+            }
+        }
+
+        async function toggleIndirizzaSpedizione(leadId, nuovoValore) {
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/indirizzo-spedizione\`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ indirizzo_spedizione: nuovoValore })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const lead = allLeads.find(l => l.id === leadId);
+                    if (lead) lead.indirizzo_spedizione = nuovoValore;
+                    viewLead(leadId);
+                    const msg = nuovoValore === 'richiedente'
+                        ? '✅ Spedizione impostata all\'indirizzo del richiedente'
+                        : '✅ Spedizione ripristinata all\'indirizzo dell\'assistito';
+                    showToast(msg, 'success');
+                } else {
+                    showToast('❌ Errore aggiornamento spedizione: ' + (data.error || 'Errore sconosciuto'), 'error');
                 }
             } catch (e) {
                 showToast('❌ Errore di rete: ' + e.message, 'error');
@@ -7895,6 +8181,81 @@ export const leads_dashboard = `<!DOCTYPE html>
                     </div>
                 </div>
 
+                <!-- ═══ ASSISTITI AGGIUNTIVI ══════════════════════════════════════ -->
+                <div class="mt-4 mb-4">
+                    <div class="flex items-center justify-between mb-2 border-b pb-2">
+                        <h4 class="text-base font-semibold text-gray-800">👥 Assistiti Aggiuntivi</h4>
+                        <button onclick="toggleLeadAssistitiForm()" class="px-3 py-1 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 transition font-medium">
+                            ➕ Aggiungi Assistito
+                        </button>
+                    </div>
+
+                    <!-- Form aggiunta/modifica assistito (collapsible) -->
+                    <div id="assistitoFormPanel" class="hidden mb-3 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                        <h5 id="assistitoFormTitle" class="text-sm font-semibold text-indigo-800 mb-2">➕ Nuovo Assistito</h5>
+                        <input type="hidden" id="assistitoEditId" value="">
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Nome <span class="text-red-500">*</span></label>
+                                <input id="assNome" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Nome">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Cognome <span class="text-red-500">*</span></label>
+                                <input id="assCognome" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Cognome">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Codice Fiscale</label>
+                                <input id="assCF" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs uppercase" placeholder="RSSMRA80A01H501Z" maxlength="16">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Data Nascita</label>
+                                <input id="assDataNascita" type="date" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Luogo Nascita</label>
+                                <input id="assLuogoNascita" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Città (Prov)">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Indirizzo</label>
+                                <input id="assIndirizzo" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Via/Piazza, Civico">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">CAP</label>
+                                <input id="assCap" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="00000" maxlength="5">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Città</label>
+                                <input id="assCitta" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Città">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Provincia</label>
+                                <input id="assProvincia" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs uppercase" placeholder="RM" maxlength="2">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">📦 Spedizione a</label>
+                                <select id="assSpedizione" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
+                                    <option value="questo">Questo assistito</option>
+                                    <option value="richiedente">Richiedente/Lead</option>
+                                </select>
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Note</label>
+                                <textarea id="assNote" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" rows="2" placeholder="Note aggiuntive..."></textarea>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 justify-end">
+                            <button onclick="cancelLeadAssistitoForm()" class="px-3 py-1 bg-gray-400 text-white text-xs rounded hover:bg-gray-500 transition">Annulla</button>
+                            <button onclick="saveLeadAssistito()" class="px-3 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700 transition font-medium">💾 Salva</button>
+                        </div>
+                    </div>
+
+                    <!-- Lista assistiti -->
+                    <div id="leadAssistitiList" class="space-y-2">
+                        <p class="text-gray-400 text-xs text-center py-3">Caricamento...</p>
+                    </div>
+                </div>
+                <!-- ════════════════════════════════════════════════════════════════ -->
+
                 <!-- Storico Interazioni (SOLO LETTURA) -->
                 <h4 class="text-base font-semibold text-gray-800 mb-3 border-b pb-2 mt-4">💬 Storico Interazioni</h4>
                 <div id="interactionsList" class="mb-4 max-h-96 overflow-y-auto">
@@ -7907,10 +8268,18 @@ export const leads_dashboard = `<!DOCTYPE html>
                     </p>
                 </div>
 
-                <div class="flex justify-between items-center pt-2 border-t">
-                    <button id="toggleIvaBtn" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition font-medium">
-                        ⚕️ Attiva IVA 4% Legge 104
-                    </button>
+                <div class="flex flex-wrap gap-2 justify-between items-center pt-2 border-t">
+                    <div class="flex flex-wrap gap-2">
+                        <button id="toggleIvaBtn" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition font-medium">
+                            ⚕️ Attiva IVA 4% Legge 104
+                        </button>
+                        <button id="toggleIvaEsenteBtn" class="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition font-medium">
+                            🏥 Attiva Esenzione IVA (0%)
+                        </button>
+                        <button id="toggleSpedizioneBtn" class="px-4 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition font-medium">
+                            📦 Spedisci al Richiedente
+                        </button>
+                    </div>
                     <button onclick="closeModal('viewLeadModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm">
                         Chiudi
                     </button>
