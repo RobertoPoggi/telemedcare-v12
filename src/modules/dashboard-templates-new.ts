@@ -6347,18 +6347,23 @@ export const leads_dashboard = `<!DOCTYPE html>
             if (spedEl) {
                 if (spedizione === 'richiedente') {
                     spedEl.innerHTML = '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-300">📦 Spedizione → Richiedente/Lead</span>';
+                } else if (spedizione === 'custom') {
+                    const addr = [lead.sped_indirizzo, lead.sped_cap, lead.sped_citta, lead.sped_provincia ? \`(\${lead.sped_provincia})\` : ''].filter(Boolean).join(' ');
+                    const nome = lead.sped_nome ? \`<strong>\${lead.sped_nome}</strong> — \` : '';
+                    spedEl.innerHTML = \`<span class="inline-flex flex-wrap items-center px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-300">📦 Spedizione → Indirizzo personalizzato: \${nome}\${addr || '(indirizzo non compilato)'}</span>\`;
                 } else {
                     spedEl.innerHTML = '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-600 border border-gray-200">📦 Spedizione → Assistito (default)</span>';
                 }
             }
             if (spedBtn) {
-                spedBtn.textContent = spedizione === 'richiedente'
-                    ? '🔄 Ripristina spedizione → Assistito'
-                    : '📦 Spedisci al Richiedente';
-                spedBtn.className = spedizione === 'richiedente'
-                    ? 'px-4 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition font-medium'
-                    : 'px-4 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition font-medium';
-                spedBtn.onclick = () => toggleIndirizzaSpedizione(lead.id, spedizione === 'richiedente' ? 'assistito' : 'richiedente');
+                if (spedizione === 'assistito') {
+                    spedBtn.textContent = '✏️ Cambia indirizzo spedizione';
+                    spedBtn.className = 'px-3 py-1 bg-orange-600 text-white text-xs rounded-lg hover:bg-orange-700 transition font-medium whitespace-nowrap';
+                } else {
+                    spedBtn.textContent = '🔄 Ripristina → Assistito';
+                    spedBtn.className = 'px-3 py-1 bg-gray-500 text-white text-xs rounded-lg hover:bg-gray-600 transition font-medium whitespace-nowrap';
+                }
+                spedBtn.onclick = () => openSpedModal(lead);
             }
 
             // Carica lo storico interazioni e gli assistiti aggiuntivi
@@ -6418,23 +6423,34 @@ export const leads_dashboard = `<!DOCTYPE html>
             }
         }
 
-        async function toggleIndirizzaSpedizione(leadId, nuovoValore) {
+        async function toggleIndirizzaSpedizione(leadId, nuovoValore, extraData = {}) {
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/indirizzo-spedizione\`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ indirizzo_spedizione: nuovoValore })
+                    body: JSON.stringify({ indirizzo_spedizione: nuovoValore, ...extraData })
                 });
                 const data = await response.json();
                 if (data.success) {
                     // Aggiorna il lead in memoria
                     const lead = allLeads.find(l => l.id === leadId);
-                    if (lead) lead.indirizzo_spedizione = nuovoValore;
+                    if (lead) {
+                        lead.indirizzo_spedizione = nuovoValore;
+                        if (nuovoValore === 'custom') {
+                            lead.sped_nome      = extraData.sped_nome      || null;
+                            lead.sped_indirizzo = extraData.sped_indirizzo || null;
+                            lead.sped_cap       = extraData.sped_cap       || null;
+                            lead.sped_citta     = extraData.sped_citta     || null;
+                            lead.sped_provincia = extraData.sped_provincia || null;
+                        }
+                    }
                     // Riapri il modal aggiornato
                     viewLead(leadId);
                     const msg = nuovoValore === 'richiedente'
-                        ? "✅ Spedizione impostata all'indirizzo del richiedente"
-                        : "✅ Spedizione ripristinata all'indirizzo dell'assistito";
+                        ? "✅ Spedizione → Richiedente/Lead"
+                        : nuovoValore === 'custom'
+                          ? "✅ Spedizione → Indirizzo personalizzato salvato"
+                          : "✅ Spedizione → Assistito (default)";
                     showToast(msg, 'success');
                 } else {
                     showToast('❌ Errore aggiornamento spedizione: ' + (data.error || 'Errore sconosciuto'), 'error');
@@ -6442,6 +6458,43 @@ export const leads_dashboard = `<!DOCTYPE html>
             } catch (e) {
                 showToast('❌ Errore di rete: ' + e.message, 'error');
             }
+        }
+
+        function openSpedModal(lead) {
+            // Popola il mini-modal spedizione con i dati attuali del lead
+            document.getElementById('spedLeadId').value        = lead.id;
+            document.getElementById('spedModalNome').value     = lead.sped_nome      || '';
+            document.getElementById('spedModalIndirizzo').value= lead.sped_indirizzo || '';
+            document.getElementById('spedModalCap').value      = lead.sped_cap       || '';
+            document.getElementById('spedModalCitta').value    = lead.sped_citta     || '';
+            document.getElementById('spedModalProvincia').value= lead.sped_provincia || '';
+            // Pre-seleziona l'opzione attuale
+            const cur = lead.indirizzo_spedizione || 'assistito';
+            document.querySelectorAll('input[name="spedScelta"]').forEach(r => {
+                r.checked = (r.value === cur);
+            });
+            toggleSpedCustomFields();
+            openModal('spedModal');
+        }
+
+        function toggleSpedCustomFields() {
+            const sel = document.querySelector('input[name="spedScelta"]:checked')?.value;
+            const customDiv = document.getElementById('spedCustomFields');
+            if (customDiv) customDiv.classList.toggle('hidden', sel !== 'custom');
+        }
+
+        async function saveSpedizione() {
+            const leadId = document.getElementById('spedLeadId').value;
+            const scelta = document.querySelector('input[name="spedScelta"]:checked')?.value || 'assistito';
+            const extraData = scelta === 'custom' ? {
+                sped_nome:      document.getElementById('spedModalNome').value.trim(),
+                sped_indirizzo: document.getElementById('spedModalIndirizzo').value.trim(),
+                sped_cap:       document.getElementById('spedModalCap').value.trim(),
+                sped_citta:     document.getElementById('spedModalCitta').value.trim(),
+                sped_provincia: document.getElementById('spedModalProvincia').value.trim().toUpperCase(),
+            } : {};
+            closeModal('spedModal');
+            await toggleIndirizzaSpedizione(leadId, scelta, extraData);
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -6833,6 +6886,13 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('newCodiceFiscale').value = lead.cfAssistito || lead.cfAssistito || '';
             document.getElementById('newCondizioniSalute').value = lead.condizioniSalute || '';
             
+            // Indirizzo spedizione personalizzato
+            document.getElementById('newSpedNome').value      = lead.sped_nome      || '';
+            document.getElementById('newSpedIndirizzo').value = lead.sped_indirizzo || '';
+            document.getElementById('newSpedCap').value       = lead.sped_cap       || '';
+            document.getElementById('newSpedCitta').value     = lead.sped_citta     || '';
+            document.getElementById('newSpedProvincia').value = lead.sped_provincia || '';
+
             // Intestatario contratto
             const intestatario = lead.intestatarioContratto || 'richiedente';
             if (intestatario === 'richiedente') {
@@ -7559,6 +7619,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                 provinciaAssistito: document.getElementById('newProvinciaAssistito').value.toUpperCase(),
                 cfAssistito: document.getElementById('newCodiceFiscale').value.toUpperCase(),
                 
+                // Indirizzo di spedizione personalizzato (sped_*)
+                sped_nome:      document.getElementById('newSpedNome')?.value?.trim()       || '',
+                sped_indirizzo: document.getElementById('newSpedIndirizzo')?.value?.trim()  || '',
+                sped_cap:       document.getElementById('newSpedCap')?.value?.trim()        || '',
+                sped_citta:     document.getElementById('newSpedCitta')?.value?.trim()      || '',
+                sped_provincia: document.getElementById('newSpedProvincia')?.value?.trim()?.toUpperCase() || '',
+
                 // Intestatario contratto
                 intestatarioContratto: document.querySelector('input[name="intestatario"]:checked').value,
                 
@@ -8034,6 +8101,47 @@ export const leads_dashboard = `<!DOCTYPE html>
                         </div>
                     </div>
 
+                    <!-- INDIRIZZO DI SPEDIZIONE DISPOSITIVO -->
+                    <div class="mt-6 p-4 bg-orange-50 border-2 border-orange-200 rounded-lg" id="spedSectionForm">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3">
+                            📦 Indirizzo di Spedizione Dispositivo
+                            <span class="block text-xs text-gray-500 font-normal mt-0.5">Dove vuoi ricevere il dispositivo? (lascia vuoto = indirizzo assistito)</span>
+                        </label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="col-span-2">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Nome destinatario spedizione</label>
+                                <input type="text" id="newSpedNome"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                                    placeholder="Es: Mario Rossi (se diverso dall'assistito)">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Indirizzo</label>
+                                <input type="text" id="newSpedIndirizzo"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                                    placeholder="Via / Piazza / Corso...">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">CAP</label>
+                                <input type="text" id="newSpedCap" maxlength="5"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                                    placeholder="00000">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Città</label>
+                                <input type="text" id="newSpedCitta"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                                    placeholder="Città">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Provincia</label>
+                                <input type="text" id="newSpedProvincia" maxlength="2"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 uppercase"
+                                    placeholder="MI">
+                            </div>
+                        </div>
+                        <p class="text-xs text-orange-700 mt-2">⚠️ Compilare solo se l'indirizzo di spedizione è diverso dall'indirizzo dell'assistito e dal richiedente già presenti nel sistema.</p>
+                    </div>
+
                     <!-- STEP 3: QUALE SERVIZIO VUOI -->
                     <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 border-l-4 border-purple-500">
                         <h3 class="text-xl font-bold text-gray-800 mb-1 flex items-center">
@@ -8450,6 +8558,76 @@ export const leads_dashboard = `<!DOCTYPE html>
                     <button onclick="closeModal('viewLeadModal')" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm">
                         Chiudi
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: SPEDIZIONE DISPOSITIVO -->
+    <div id="spedModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div class="bg-orange-600 text-white px-6 py-4 rounded-t-xl flex justify-between items-center">
+                <h3 class="text-lg font-bold">📦 Indirizzo di Spedizione Dispositivo</h3>
+                <button onclick="closeModal('spedModal')" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+            </div>
+            <div class="p-6">
+                <input type="hidden" id="spedLeadId">
+                <p class="text-sm text-gray-600 mb-4">Scegli dove spedire il dispositivo. Questa impostazione è indipendente dall'intestatario del contratto.</p>
+
+                <!-- Opzioni radio -->
+                <div class="space-y-3 mb-4">
+                    <label class="flex items-start gap-3 p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-orange-300 transition">
+                        <input type="radio" name="spedScelta" value="assistito" class="mt-0.5 text-orange-600" onchange="toggleSpedCustomFields()" checked>
+                        <span>
+                            <span class="block font-medium text-gray-800 text-sm">👴 Indirizzo Assistito <span class="text-xs text-gray-500 font-normal">(default)</span></span>
+                            <span class="block text-xs text-gray-500">Usa l'indirizzo dell'assistito già presente nel sistema</span>
+                        </span>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-orange-300 transition">
+                        <input type="radio" name="spedScelta" value="richiedente" class="mt-0.5 text-orange-600" onchange="toggleSpedCustomFields()">
+                        <span>
+                            <span class="block font-medium text-gray-800 text-sm">👤 Indirizzo Richiedente/Lead</span>
+                            <span class="block text-xs text-gray-500">Usa l'indirizzo del richiedente già presente nel sistema</span>
+                        </span>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-orange-300 transition">
+                        <input type="radio" name="spedScelta" value="custom" class="mt-0.5 text-orange-600" onchange="toggleSpedCustomFields()">
+                        <span>
+                            <span class="block font-medium text-gray-800 text-sm">📝 Altro indirizzo</span>
+                            <span class="block text-xs text-gray-500">Inserisci un indirizzo di spedizione diverso</span>
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Campi indirizzo custom (visibili solo se "Altro") -->
+                <div id="spedCustomFields" class="hidden space-y-3 p-3 bg-orange-50 border border-orange-200 rounded-lg mb-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Nome destinatario</label>
+                        <input type="text" id="spedModalNome" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400" placeholder="Nome e Cognome">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Indirizzo <span class="text-red-500">*</span></label>
+                        <input type="text" id="spedModalIndirizzo" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400" placeholder="Via / Piazza...">
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">CAP</label>
+                            <input type="text" id="spedModalCap" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400" placeholder="00000">
+                        </div>
+                        <div class="col-span-1">
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Città</label>
+                            <input type="text" id="spedModalCitta" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400" placeholder="Città">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Prov.</label>
+                            <input type="text" id="spedModalProvincia" maxlength="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 uppercase" placeholder="MI">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 justify-end">
+                    <button onclick="closeModal('spedModal')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">Annulla</button>
+                    <button onclick="saveSpedizione()" class="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium">💾 Salva</button>
                 </div>
             </div>
         </div>

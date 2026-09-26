@@ -718,6 +718,13 @@ app.use('*', async (c, next) => {
         { name: 'iva_agevolata', def: `INTEGER DEFAULT 0` },
         // IVA esente — Esenzione art. 10 n. 18 d.P.R. 633/1972 (prestazioni sanitarie)
         { name: 'iva_esente', def: `INTEGER DEFAULT 0` },
+        // ⭐ Indirizzo di spedizione personalizzato (usato solo quando indirizzo_spedizione='custom')
+        // Completamente separato dall'indirizzo assistito e dall'indirizzo intestatario contratto
+        { name: 'sped_nome',      def: `TEXT DEFAULT NULL` },
+        { name: 'sped_indirizzo', def: `TEXT DEFAULT NULL` },
+        { name: 'sped_cap',       def: `TEXT DEFAULT NULL` },
+        { name: 'sped_citta',     def: `TEXT DEFAULT NULL` },
+        { name: 'sped_provincia', def: `TEXT DEFAULT NULL` },
       ]
       for (const col of leadsHubspotColumns) {
         try {
@@ -13074,11 +13081,13 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     }
 
     // ⭐ Destinatario FISICO della spedizione dispositivo
-    // indirizzo_spedizione='assistito' (default) | 'richiedente'
+    // indirizzo_spedizione='assistito' (default) | 'richiedente' | 'custom'
     // Indipendente da intestatarioContratto (che riguarda intestazione/firma del contratto)
     const spedValContratto = lead.indirizzo_spedizione || 'assistito'
-    const destinatarioSpedizioneContratto: 'richiedente' | 'assistito' =
-      spedValContratto === 'richiedente' ? 'richiedente' : 'assistito'
+    const destinatarioSpedizioneContratto: 'richiedente' | 'assistito' | 'custom' =
+      spedValContratto === 'richiedente' ? 'richiedente'
+      : spedValContratto === 'custom'    ? 'custom'
+      : 'assistito'
     
     // Prepara leadData per workflow
     const leadData = {
@@ -13118,20 +13127,30 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       // ✅ FIX: Passa iva_agevolata al workflow così il contract generator usa l'aliquota corretta
       iva_agevolata: lead.iva_agevolata ? 1 : 0,
       // ⭐ Indirizzo di CONSEGNA dispositivo (separato dall'indirizzo dell'intestatario contratto)
-      // Calcolato da indirizzo_spedizione: 'assistito' (default) | 'richiedente'
-      indirizzoConsegna:  destinatarioSpedizioneContratto === 'assistito'
-        ? (lead.indirizzoAssistito || lead.indirizzoIntestatario || '')
-        : (lead.indirizzoIntestatario || lead.indirizzoAssistito || ''),
-      capConsegna: destinatarioSpedizioneContratto === 'assistito'
-        ? (lead.capAssistito || lead.capIntestatario || '')
-        : (lead.capIntestatario || lead.capAssistito || ''),
-      cittaConsegna: destinatarioSpedizioneContratto === 'assistito'
-        ? (lead.cittaAssistito || lead.cittaIntestatario || '')
-        : (lead.cittaIntestatario || lead.cittaAssistito || ''),
-      provinciaConsegna: destinatarioSpedizioneContratto === 'assistito'
-        ? (lead.provinciaAssistito || lead.provinciaIntestatario || '')
-        : (lead.provinciaIntestatario || lead.provinciaAssistito || ''),
-      nomeConsegna: destinatarioSpedizioneContratto === 'assistito'
+      // Calcolato da indirizzo_spedizione: 'assistito' (default) | 'richiedente' | 'custom'
+      indirizzoConsegna: destinatarioSpedizioneContratto === 'custom'
+        ? (lead.sped_indirizzo || lead.indirizzoAssistito || '')
+        : destinatarioSpedizioneContratto === 'assistito'
+          ? (lead.indirizzoAssistito || lead.indirizzoIntestatario || '')
+          : (lead.indirizzoIntestatario || lead.indirizzoAssistito || ''),
+      capConsegna: destinatarioSpedizioneContratto === 'custom'
+        ? (lead.sped_cap || lead.capAssistito || '')
+        : destinatarioSpedizioneContratto === 'assistito'
+          ? (lead.capAssistito || lead.capIntestatario || '')
+          : (lead.capIntestatario || lead.capAssistito || ''),
+      cittaConsegna: destinatarioSpedizioneContratto === 'custom'
+        ? (lead.sped_citta || lead.cittaAssistito || '')
+        : destinatarioSpedizioneContratto === 'assistito'
+          ? (lead.cittaAssistito || lead.cittaIntestatario || '')
+          : (lead.cittaIntestatario || lead.cittaAssistito || ''),
+      provinciaConsegna: destinatarioSpedizioneContratto === 'custom'
+        ? (lead.sped_provincia || lead.provinciaAssistito || '')
+        : destinatarioSpedizioneContratto === 'assistito'
+          ? (lead.provinciaAssistito || lead.provinciaIntestatario || '')
+          : (lead.provinciaIntestatario || lead.provinciaAssistito || ''),
+      nomeConsegna: destinatarioSpedizioneContratto === 'custom'
+        ? (lead.sped_nome || `${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`.trim() || nomeIntestatario)
+        : destinatarioSpedizioneContratto === 'assistito'
         ? `${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`.trim() || nomeIntestatario
         : `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
     }
@@ -14921,6 +14940,14 @@ app.put('/api/leads/:id', async (c) => {
       // Temperatura lead (calcolata da stato o sovrascritta manualmente)
       temperatura: 'temperatura',
       
+      // ⭐ Indirizzo di spedizione personalizzato (sped_*)
+      // Usato solo quando indirizzo_spedizione='custom'
+      sped_nome:      'sped_nome',
+      sped_indirizzo: 'sped_indirizzo',
+      sped_cap:       'sped_cap',
+      sped_citta:     'sped_citta',
+      sped_provincia: 'sped_provincia',
+
       // HubSpot integration
       external_source_id: 'external_source_id',
       
@@ -15381,28 +15408,54 @@ app.patch('/api/leads/:id/iva-esente', async (c) => {
 })
 
 // PATCH /api/leads/:id/indirizzo-spedizione — Imposta indirizzo spedizione dispositivo
-// Valori accettati: 'assistito' (default) | 'richiedente'
+// Valori accettati: 'assistito' (default) | 'richiedente' | 'custom'
 // Questo flag è separato da intestatarioContratto (usato per contratti/fatture)
 // e controlla esclusivamente la destinazione fisica di spedizione del dispositivo (DDT).
+// Quando valore='custom', i campi sped_nome/sped_indirizzo/sped_cap/sped_citta/sped_provincia
+// vengono salvati contestualmente.
 app.patch('/api/leads/:id/indirizzo-spedizione', async (c) => {
   const leadId = c.req.param('id')
   try {
     const body = await c.req.json()
     const valore = body.indirizzo_spedizione || body.valore
 
-    if (valore !== 'assistito' && valore !== 'richiedente') {
-      return c.json({ success: false, error: "Valore non valido. Usare 'assistito' o 'richiedente'" }, 400)
+    if (valore !== 'assistito' && valore !== 'richiedente' && valore !== 'custom') {
+      return c.json({ success: false, error: "Valore non valido. Usare 'assistito', 'richiedente' o 'custom'" }, 400)
     }
 
     if (!c.env?.DB) {
       return c.json({ success: false, error: 'Database non disponibile' }, 500)
     }
 
-    await c.env.DB.prepare(`
-      UPDATE leads
-      SET indirizzo_spedizione = ?, updated_at = ?
-      WHERE id = ?
-    `).bind(valore, new Date().toISOString(), leadId).run()
+    if (valore === 'custom') {
+      // Salva indirizzo_spedizione='custom' + i campi sped_*
+      await c.env.DB.prepare(`
+        UPDATE leads
+        SET indirizzo_spedizione = ?,
+            sped_nome      = ?,
+            sped_indirizzo = ?,
+            sped_cap       = ?,
+            sped_citta     = ?,
+            sped_provincia = ?,
+            updated_at     = ?
+        WHERE id = ?
+      `).bind(
+        'custom',
+        body.sped_nome      || null,
+        body.sped_indirizzo || null,
+        body.sped_cap       || null,
+        body.sped_citta     || null,
+        body.sped_provincia || null,
+        new Date().toISOString(),
+        leadId
+      ).run()
+    } else {
+      await c.env.DB.prepare(`
+        UPDATE leads
+        SET indirizzo_spedizione = ?, updated_at = ?
+        WHERE id = ?
+      `).bind(valore, new Date().toISOString(), leadId).run()
+    }
 
     console.log(`✅ indirizzo_spedizione aggiornato per lead ${leadId}: ${valore}`)
 
@@ -15412,7 +15465,9 @@ app.patch('/api/leads/:id/indirizzo-spedizione', async (c) => {
       indirizzo_spedizione: valore,
       message: valore === 'richiedente'
         ? "Spedizione impostata all'indirizzo del richiedente/lead"
-        : "Spedizione impostata all'indirizzo dell'assistito (default)"
+        : valore === 'custom'
+          ? "Spedizione impostata all'indirizzo personalizzato"
+          : "Spedizione impostata all'indirizzo dell'assistito (default)"
     })
   } catch (error) {
     console.error('❌ Errore aggiornamento indirizzo_spedizione:', error)
