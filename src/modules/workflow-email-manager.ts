@@ -273,6 +273,13 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
     ? (leadData.provinciaIntestatario || '')
     : (leadData.provinciaAssistito || leadData.provinciaIntestatario || '')
 
+  // Nazione intestatario: già calcolata correttamente in index.tsx (usa nazione_assistito quando intestatario='assistito')
+  // Suffisso nazione: appare solo se nazione ≠ Italia (es. " - SVIZZERA")
+  const nazioneIntestatario = (leadData.nazioneIntestatario || 'Italia').trim()
+  const nazioneSuffixIntestatario = nazioneIntestatario.toLowerCase() !== 'italia'
+    ? ` - ${nazioneIntestatario.toUpperCase()}`
+    : ''
+
   // CF: dai campi *Intestatario o *Assistito secondo chi è intestatario
   const cfIntestatario = isIntestatarioRichiedente
     ? (leadData.cfIntestatario || 'N/A')                               // CF del richiedente
@@ -287,27 +294,18 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
   const emailCareGiver = leadData.email || 'N/A'
 
   // ── Indirizzo spedizione dispositivo ──────────────────────────────────────
-  // Flag indirizzo_spedizione: 'assistito' (default) | 'richiedente'
-  // Indipendente da intestatarioContratto — controlla solo la destinazione fisica del dispositivo.
-  const spedDest = (leadData as any).indirizzo_spedizione || 'assistito'
-  const nomeAssistitoSpedizione = spedDest === 'richiedente'
-    ? (leadData.nomeRichiedente || '')
-    : (leadData.nomeAssistito || leadData.nomeRichiedente || '')
-  const cognomeAssistitoSpedizione = spedDest === 'richiedente'
-    ? (leadData.cognomeRichiedente || '')
-    : ((leadData as any).cognomeAssistito || leadData.cognomeRichiedente || '')
-  const indirizzoSpedizione = spedDest === 'richiedente'
-    ? ((leadData as any).indirizzoIntestatario || (leadData as any).indirizzoAssistito || 'N/A')
-    : (leadData.indirizzoAssistito || (leadData as any).indirizzoIntestatario || 'N/A')
-  const capSpedizione = spedDest === 'richiedente'
-    ? ((leadData as any).capIntestatario || (leadData as any).capAssistito || 'N/A')
-    : ((leadData as any).capAssistito || (leadData as any).capIntestatario || 'N/A')
-  const cittaSpedizione = spedDest === 'richiedente'
-    ? ((leadData as any).cittaIntestatario || (leadData as any).cittaAssistito || 'N/A')
-    : ((leadData as any).cittaAssistito || (leadData as any).cittaIntestatario || 'N/A')
-  const provinciaSpedizione = spedDest === 'richiedente'
-    ? ((leadData as any).provinciaIntestatario || (leadData as any).provinciaAssistito || '')
-    : ((leadData as any).provinciaAssistito || (leadData as any).provinciaIntestatario || '')
+  // ✅ Usa i campi pre-calcolati di leadData (calcolati in index.tsx da indirizzo_spedizione)
+  // Questo garantisce che: richiedente → indirizzo richiedente, custom → sped_*, assistito → indirizzo assistito
+  const nomeAssistitoSpedizione  = (leadData as any).nomeConsegna    || leadData.nomeAssistito || leadData.nomeRichiedente || ''
+  const cognomeAssistitoSpedizione = '' // già incluso in nomeConsegna (nomeConsegna = nome+cognome)
+  const indirizzoSpedizione = (leadData as any).indirizzoConsegna || leadData.indirizzoAssistito || (leadData as any).indirizzoIntestatario || 'N/A'
+  const capSpedizione       = (leadData as any).capConsegna       || (leadData as any).capAssistito       || (leadData as any).capIntestatario       || ''
+  const cittaSpedizione     = (leadData as any).cittaConsegna     || (leadData as any).cittaAssistito     || (leadData as any).cittaIntestatario     || ''
+  const provinciaSpedizione = (leadData as any).provinciaConsegna || (leadData as any).provinciaAssistito || (leadData as any).provinciaIntestatario || ''
+  const nazioneConsegna     = (leadData as any).nazioneConsegna   || 'Italia'
+  const nazioneSuffixConsegna = nazioneConsegna.trim().toLowerCase() !== 'italia'
+    ? ` - ${nazioneConsegna.trim().toUpperCase()}`
+    : ''
   
   // Template HTML completo ufficiale da Template_Contratto_eCura.html
   return `
@@ -503,18 +501,18 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
     <div class="party">
         ${intestatarioDiversoDaAssistito ? `
             <!-- CASO 1: Intestatario = Richiedente (il lead/careGiver firma il contratto) -->
-            <p>Sig./Sig.ra <span class="highlight">${nomeIntestatario} ${cognomeIntestatario}</span>${luogoNascitaIntestatario ? ` nato/a a <span class="highlight">${luogoNascitaIntestatario}</span>` : ''}${dataNascitaIntestatario ? ` il <span class="highlight">${dataNascitaIntestatario}</span>` : ''}, residente e domiciliato/a in <span class="highlight">${indirizzoIntestatario} - ${capIntestatario} ${cittaIntestatario} (${provinciaIntestatario})</span> e con codice fiscale <span class="highlight">${cfIntestatario}</span>.</p>
+            <p>Sig./Sig.ra <span class="highlight">${nomeIntestatario} ${cognomeIntestatario}</span>${luogoNascitaIntestatario ? ` nato/a a <span class="highlight">${luogoNascitaIntestatario}</span>` : ''}${dataNascitaIntestatario ? ` il <span class="highlight">${dataNascitaIntestatario}</span>` : ''}, residente e domiciliato/a in <span class="highlight">${indirizzoIntestatario} - ${capIntestatario} ${cittaIntestatario} (${provinciaIntestatario})${nazioneSuffixIntestatario}</span> e con codice fiscale <span class="highlight">${cfIntestatario}</span>.</p>
             
             <p><strong>Riferimenti:</strong> telefono <span class="highlight">${telefonoCareGiver}</span> – e-mail <span class="highlight">${emailCareGiver}</span></p>
         ` : `
             <!-- CASO 2: Intestatario = Assistito (l'anziano è intestatario del contratto) -->
-            <p>Sig./Sig.ra <span class="highlight">${nomeIntestatario} ${cognomeIntestatario}</span>${luogoNascitaIntestatario ? ` nato/a a <span class="highlight">${luogoNascitaIntestatario}</span>` : ''}${dataNascitaIntestatario ? ` il <span class="highlight">${dataNascitaIntestatario}</span>` : ''}, residente e domiciliato/a in <span class="highlight">${indirizzoIntestatario} - ${capIntestatario} ${cittaIntestatario} (${provinciaIntestatario})</span> e con codice fiscale <span class="highlight">${cfIntestatario}</span>.</p>
+            <p>Sig./Sig.ra <span class="highlight">${nomeIntestatario} ${cognomeIntestatario}</span>${luogoNascitaIntestatario ? ` nato/a a <span class="highlight">${luogoNascitaIntestatario}</span>` : ''}${dataNascitaIntestatario ? ` il <span class="highlight">${dataNascitaIntestatario}</span>` : ''}, residente e domiciliato/a in <span class="highlight">${indirizzoIntestatario} - ${capIntestatario} ${cittaIntestatario} (${provinciaIntestatario})${nazioneSuffixIntestatario}</span> e con codice fiscale <span class="highlight">${cfIntestatario}</span>.</p>
             
             <p><strong>Riferimenti:</strong><br>
             Signor/a <span class="highlight">${nomeCareGiver} ${cognomeCareGiver}</span> – telefono <span class="highlight">${telefonoCareGiver}</span> – e-mail <span class="highlight">${emailCareGiver}</span></p>
         `}
         
-        <p><strong>Indirizzo di spedizione:</strong> <span class="highlight">${nomeAssistitoSpedizione} ${cognomeAssistitoSpedizione} - ${indirizzoSpedizione} - ${capSpedizione} ${cittaSpedizione} (${provinciaSpedizione})</span></p>
+        <p><strong>Indirizzo di spedizione:</strong> <span class="highlight">${nomeAssistitoSpedizione} - ${indirizzoSpedizione} - ${capSpedizione} ${cittaSpedizione}${provinciaSpedizione ? ` (${provinciaSpedizione})` : ''}${nazioneSuffixConsegna}</span></p>
         
         <p class="breviter">(breviter Il Cliente)</p>
     </div>

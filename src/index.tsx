@@ -13133,7 +13133,10 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       iva_agevolata: lead.iva_agevolata ? 1 : 0,
       iva_esente:    lead.iva_esente    ? 1 : 0,
       // ⭐ Nazione intestatario (per contratto)
-      nazioneIntestatario: lead.nazione_intestatario || 'Italia',
+      // Quando intestatario='assistito', la nazione del cliente nel contratto è quella dell'assistito
+      nazioneIntestatario: intestatario === 'assistito'
+        ? (lead.nazione_assistito || lead.nazione_intestatario || 'Italia')
+        : (lead.nazione_intestatario || 'Italia'),
       // ⭐ Indirizzo di CONSEGNA dispositivo (separato dall'indirizzo dell'intestatario contratto)
       // Calcolato da indirizzo_spedizione: 'assistito' (default) | 'richiedente' | 'custom'
       indirizzoConsegna: destinatarioSpedizioneContratto === 'custom'
