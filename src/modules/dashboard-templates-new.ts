@@ -6468,6 +6468,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('spedModalCap').value      = lead.sped_cap       || '';
             document.getElementById('spedModalCitta').value    = lead.sped_citta     || '';
             document.getElementById('spedModalProvincia').value= lead.sped_provincia || '';
+            document.getElementById('spedModalNazione').value  = lead.sped_nazione   || '';
             // Pre-seleziona l'opzione attuale
             const cur = lead.indirizzo_spedizione || 'assistito';
             document.querySelectorAll('input[name="spedScelta"]').forEach(r => {
@@ -6492,6 +6493,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 sped_cap:       document.getElementById('spedModalCap').value.trim(),
                 sped_citta:     document.getElementById('spedModalCitta').value.trim(),
                 sped_provincia: document.getElementById('spedModalProvincia').value.trim().toUpperCase(),
+                sped_nazione:   document.getElementById('spedModalNazione').value.trim(),
             } : {};
             closeModal('spedModal');
             await toggleIndirizzaSpedizione(leadId, scelta, extraData);
@@ -6512,6 +6514,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 // Reset per nuova aggiunta
                 document.getElementById('assistitoEditId').value = '';
                 document.getElementById('assNome').value = '';
+                document.getElementById('assNazione').value = '';
                 document.getElementById('assCognome').value = '';
                 document.getElementById('assCF').value = '';
                 document.getElementById('assDataNascita').value = '';
@@ -6548,7 +6551,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('assIndirizzo').value = ass.indirizzo || '';
             document.getElementById('assCap').value = ass.cap || '';
             document.getElementById('assCitta').value = ass.citta || '';
-            document.getElementById('assProvincia').value = ass.provincia || '';
+                document.getElementById('assProvincia').value = ass.provincia || '';
+            document.getElementById('assNazione').value    = ass.nazione    || '';
             document.getElementById('assSpedizione').value = ass.indirizzo_spedizione || 'questo';
             document.getElementById('assIntestatario').value = ass.intestatario_contratto || 'assistito';
             document.getElementById('assNote').value = ass.note || '';
@@ -6576,6 +6580,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 cap:                document.getElementById('assCap').value.trim() || null,
                 citta:              document.getElementById('assCitta').value.trim() || null,
                 provincia:          document.getElementById('assProvincia').value.trim().toUpperCase() || null,
+                nazione:            document.getElementById('assNazione').value.trim() || null,
                 indirizzo_spedizione: document.getElementById('assSpedizione').value || 'questo',
                 intestatario_contratto: document.getElementById('assIntestatario').value || 'assistito',
                 note:               document.getElementById('assNote').value.trim() || null,
@@ -6892,6 +6897,8 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('newSpedCap').value       = lead.sped_cap       || '';
             document.getElementById('newSpedCitta').value     = lead.sped_citta     || '';
             document.getElementById('newSpedProvincia').value = lead.sped_provincia || '';
+            document.getElementById('newSpedNazione').value   = lead.sped_nazione   || '';
+            document.getElementById('newNazioneAssistito').value = lead.nazione_assistito || '';
 
             // Intestatario contratto
             const intestatario = lead.intestatarioContratto || 'richiedente';
@@ -7625,6 +7632,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                 sped_cap:       document.getElementById('newSpedCap')?.value?.trim()        || '',
                 sped_citta:     document.getElementById('newSpedCitta')?.value?.trim()      || '',
                 sped_provincia: document.getElementById('newSpedProvincia')?.value?.trim()?.toUpperCase() || '',
+                sped_nazione:   document.getElementById('newSpedNazione')?.value?.trim()    || '',
+                nazione_assistito: document.getElementById('newNazioneAssistito')?.value?.trim() || '',
 
                 // Intestatario contratto
                 intestatarioContratto: document.querySelector('input[name="intestatario"]:checked').value,
@@ -8053,6 +8062,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     placeholder="MI">
                             </div>
                             <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Nazione</label>
+                                <input type="text" id="newNazioneAssistito"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                                    placeholder="Italia (lascia vuoto se Italia)">
+                            </div>
+                            <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Codice Fiscale</label>
                                 <input type="text" id="newCodiceFiscale" maxlength="16"
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition uppercase"
@@ -8137,6 +8152,12 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <input type="text" id="newSpedProvincia" maxlength="2"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 uppercase"
                                     placeholder="MI">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Nazione</label>
+                                <input type="text" id="newSpedNazione"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                                    placeholder="Italia (lascia vuoto se Italia)">
                             </div>
                         </div>
                         <p class="text-xs text-orange-700 mt-2">⚠️ Compilare solo se l'indirizzo di spedizione è diverso dall'indirizzo dell'assistito e dal richiedente già presenti nel sistema.</p>
@@ -8503,6 +8524,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <input id="assProvincia" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs uppercase" placeholder="RM" maxlength="2">
                             </div>
                             <div>
+                                <label class="block text-xs font-medium text-gray-700 mb-1">Nazione</label>
+                                <input id="assNazione" type="text" class="w-full border border-gray-300 rounded px-2 py-1 text-xs" placeholder="Italia (vuoto = Italia)">
+                            </div>
+                            <div>
                                 <label class="block text-xs font-medium text-gray-700 mb-1">📦 Spedizione a</label>
                                 <select id="assSpedizione" class="w-full border border-gray-300 rounded px-2 py-1 text-xs">
                                     <option value="questo">Questo assistito</option>
@@ -8622,6 +8647,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <label class="block text-xs font-medium text-gray-700 mb-1">Prov.</label>
                             <input type="text" id="spedModalProvincia" maxlength="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400 uppercase" placeholder="MI">
                         </div>
+                    </div>
+                    <div class="mt-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Nazione</label>
+                        <input type="text" id="spedModalNazione" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-400" placeholder="Italia (lascia vuoto se Italia)">
                     </div>
                 </div>
 

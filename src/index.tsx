@@ -725,6 +725,11 @@ app.use('*', async (c, next) => {
         { name: 'sped_cap',       def: `TEXT DEFAULT NULL` },
         { name: 'sped_citta',     def: `TEXT DEFAULT NULL` },
         { name: 'sped_provincia', def: `TEXT DEFAULT NULL` },
+        { name: 'sped_nazione',   def: `TEXT DEFAULT NULL` },
+        // ⭐ Nazione per indirizzi esteri (assistito e intestatario/richiedente)
+        // NULL o vuoto = Italia (default); compilare solo per residenti all'estero
+        { name: 'nazione_assistito',    def: `TEXT DEFAULT NULL` },
+        { name: 'nazione_intestatario', def: `TEXT DEFAULT NULL` },
       ]
       for (const col of leadsHubspotColumns) {
         try {
@@ -756,6 +761,7 @@ app.use('*', async (c, next) => {
             cap TEXT,
             citta TEXT,
             provincia TEXT,
+            nazione TEXT,
             indirizzo_spedizione TEXT DEFAULT 'questo',
             note TEXT,
             created_at TEXT DEFAULT (datetime('now')),
@@ -770,11 +776,9 @@ app.use('*', async (c, next) => {
         }
       }
       // Indice per lookup veloce per lead
-      try {
-        await c.env.DB.prepare(
-          `CREATE INDEX IF NOT EXISTS idx_lead_assistiti_lead_id ON lead_assistiti(lead_id)`
-        ).run()
-      } catch (_) {}
+      try { await c.env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_lead_assistiti_lead_id ON lead_assistiti(lead_id)`).run() } catch (_) {}
+      // Migrazione idempotente: aggiunge colonna nazione se non esiste
+      try { await c.env.DB.prepare(`ALTER TABLE lead_assistiti ADD COLUMN nazione TEXT`).run() } catch (_) {}
 
       // Migrazione idempotente: aggiunge lead_assistiti_id a configurations
       // Collega una configurazione a uno specifico assistito aggiuntivo (lead_assistiti.id)
@@ -1337,6 +1341,7 @@ app.use('*', async (c, next) => {
             destinatario_cap TEXT,
             destinatario_citta TEXT,
             destinatario_provincia TEXT,
+            destinatario_nazione TEXT,
             destinatario_telefono TEXT,
             destinatario_email TEXT,
             corriere TEXT,
@@ -10572,7 +10577,7 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
 
     const destinatario = ddt.destinatario_nome || '—'
     const indirizzoRiga1 = ddt.destinatario_indirizzo || ''
-    const indirizzoRiga2 = [ddt.destinatario_cap, ddt.destinatario_citta, ddt.destinatario_provincia ? `(${ddt.destinatario_provincia})` : ''].filter(Boolean).join(' ')
+    const indirizzoRiga2 = [ddt.destinatario_cap, ddt.destinatario_citta, ddt.destinatario_provincia ? `(${ddt.destinatario_provincia})` : '', ddt.destinatario_nazione ? ddt.destinatario_nazione.toUpperCase() : ''].filter(Boolean).join(' ')
 
     const dispositivo = ddt.dispositivo || 'SiDLY Care PRO'
     const serialNumber = ddt.serial_number || '—'
@@ -13151,8 +13156,13 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       nomeConsegna: destinatarioSpedizioneContratto === 'custom'
         ? (lead.sped_nome || `${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`.trim() || nomeIntestatario)
         : destinatarioSpedizioneContratto === 'assistito'
-        ? `${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`.trim() || nomeIntestatario
-        : `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
+          ? `${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`.trim() || nomeIntestatario
+          : `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim(),
+      nazioneConsegna: destinatarioSpedizioneContratto === 'custom'
+        ? (lead.sped_nazione || '')
+        : destinatarioSpedizioneContratto === 'assistito'
+          ? (lead.nazione_assistito || '')
+          : (lead.nazione_intestatario || ''),
     }
     
     // Calcola prezzi corretti
@@ -14947,6 +14957,10 @@ app.put('/api/leads/:id', async (c) => {
       sped_cap:       'sped_cap',
       sped_citta:     'sped_citta',
       sped_provincia: 'sped_provincia',
+      sped_nazione:   'sped_nazione',
+      // ⭐ Nazione per indirizzi esteri
+      nazione_assistito:    'nazione_assistito',
+      nazione_intestatario: 'nazione_intestatario',
 
       // HubSpot integration
       external_source_id: 'external_source_id',
@@ -15437,6 +15451,7 @@ app.patch('/api/leads/:id/indirizzo-spedizione', async (c) => {
             sped_cap       = ?,
             sped_citta     = ?,
             sped_provincia = ?,
+            sped_nazione   = ?,
             updated_at     = ?
         WHERE id = ?
       `).bind(
@@ -15446,6 +15461,7 @@ app.patch('/api/leads/:id/indirizzo-spedizione', async (c) => {
         body.sped_cap       || null,
         body.sped_citta     || null,
         body.sped_provincia || null,
+        body.sped_nazione   || null,
         new Date().toISOString(),
         leadId
       ).run()
@@ -15515,13 +15531,14 @@ app.post('/api/leads/:id/assistiti', async (c) => {
     await c.env.DB.prepare(`
       INSERT INTO lead_assistiti
         (lead_id, sort_order, nome, cognome, codice_fiscale, data_nascita, luogo_nascita,
-         indirizzo, cap, citta, provincia, indirizzo_spedizione, note, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         indirizzo, cap, citta, provincia, nazione, indirizzo_spedizione, note, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       leadId, sortOrder,
       body.nome.trim(), body.cognome.trim(),
       body.codice_fiscale || null, body.data_nascita || null, body.luogo_nascita || null,
       body.indirizzo || null, body.cap || null, body.citta || null, body.provincia || null,
+      body.nazione || null,
       body.indirizzo_spedizione || 'questo',
       body.note || null, now, now
     ).run()
@@ -15544,7 +15561,7 @@ app.patch('/api/leads/:id/assistiti/:aid', async (c) => {
     if (!c.env?.DB) return c.json({ success: false, error: 'Database non disponibile' }, 500)
     const body = await c.req.json() as any
     const allowed = ['nome','cognome','codice_fiscale','data_nascita','luogo_nascita',
-                     'indirizzo','cap','citta','provincia','indirizzo_spedizione','note','sort_order']
+                     'indirizzo','cap','citta','provincia','nazione','indirizzo_spedizione','note','sort_order']
     const sets: string[] = []
     const vals: any[] = []
     for (const k of allowed) {
@@ -15719,6 +15736,7 @@ app.post('/api/leads/:id/assistiti/:aid/genera-ddt', requireAuth, async (c) => {
     const spedDest = ass.indirizzo_spedizione || 'questo'
     let nomeDestinatario: string, indirizzoDestinatario: string
     let capDestinatario: string, cittaDestinatario: string, provinciaDestinatario: string
+    let nazioneDestinatario: string = ''
 
     if (spedDest === 'richiedente') {
       nomeDestinatario     = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
@@ -15726,6 +15744,7 @@ app.post('/api/leads/:id/assistiti/:aid/genera-ddt', requireAuth, async (c) => {
       capDestinatario      = lead.capIntestatario || ''
       cittaDestinatario    = lead.cittaIntestatario || ''
       provinciaDestinatario= lead.provinciaIntestatario || ''
+      nazioneDestinatario  = lead.nazione_intestatario || ''
     } else {
       // 'questo' = indirizzo dell'assistito stesso (da lead_assistiti)
       nomeDestinatario     = `${ass.nome} ${ass.cognome}`.trim()
@@ -15733,6 +15752,7 @@ app.post('/api/leads/:id/assistiti/:aid/genera-ddt', requireAuth, async (c) => {
       capDestinatario      = ass.cap       || lead.capAssistito || ''
       cittaDestinatario    = ass.citta     || lead.cittaAssistito || ''
       provinciaDestinatario= ass.provincia || lead.provinciaAssistito || ''
+      nazioneDestinatario  = ass.nazione   || lead.nazione_assistito || ''
     }
 
     // Servizio e dispositivo
@@ -15771,22 +15791,23 @@ app.post('/api/leads/:id/assistiti/:aid/genera-ddt', requireAuth, async (c) => {
     const codiceCtr  = contract?.codice_contratto || `CTR-${leadId}`
 
     try { await c.env.DB.prepare(`ALTER TABLE ddts ADD COLUMN sim_number TEXT`).run() } catch (_) {}
+    try { await c.env.DB.prepare(`ALTER TABLE ddts ADD COLUMN destinatario_nazione TEXT`).run() } catch (_) {}
     await c.env.DB.prepare(`
       INSERT INTO ddts (
         id, numero_ddt, contract_code,
         data_spedizione, data_consegna,
         destinatario_nome, destinatario_indirizzo, destinatario_cap,
-        destinatario_citta, destinatario_provincia,
+        destinatario_citta, destinatario_provincia, destinatario_nazione,
         destinatario_email, destinatario_telefono,
         dispositivo, serial_number, sim_number, quantita,
         status, pdf_url, pdf_generated, note,
         created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `).bind(
       ddtId, numDdt, codiceCtr,
       dataDoc, dataDoc,
       nomeDestinatario, indirizzoDestinatario, capDestinatario,
-      cittaDestinatario, provinciaDestinatario,
+      cittaDestinatario, provinciaDestinatario, nazioneDestinatario || null,
       lead.email || '', lead.telefono || '',
       dispositivo, imeiInput, telefonoSim || null, 1,
       'CONSEGNATO', pdfUrl, 1, noteConTag
@@ -15939,30 +15960,48 @@ app.post('/api/contracts/rinnovo', async (c) => {
 
     // ── Indirizzo spedizione per il contratto rinnovo ──────────────────────────
     const spedValRinnovo = lead.indirizzo_spedizione || 'assistito'
-    const destSpedRinnovo: 'richiedente' | 'assistito' =
-      spedValRinnovo === 'richiedente' ? 'richiedente' : 'assistito'
-    const nomeConsegnaRinnovo = destSpedRinnovo === 'assistito'
-      ? (`${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`).trim() || (`${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`).trim()
-      : (`${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`).trim()
-    const indirizzoConsegnaRinnovo = destSpedRinnovo === 'assistito'
-      ? (lead.indirizzoAssistito || lead.indirizzoIntestatario || '')
-      : (lead.indirizzoIntestatario || lead.indirizzoAssistito || '')
-    const capConsegnaRinnovo = destSpedRinnovo === 'assistito'
-      ? (lead.capAssistito || lead.capIntestatario || '')
-      : (lead.capIntestatario || lead.capAssistito || '')
-    const cittaConsegnaRinnovo = destSpedRinnovo === 'assistito'
-      ? (lead.cittaAssistito || lead.cittaIntestatario || '')
-      : (lead.cittaIntestatario || lead.cittaAssistito || '')
-    const provinciaConsegnaRinnovo = destSpedRinnovo === 'assistito'
-      ? (lead.provinciaAssistito || lead.provinciaIntestatario || '')
-      : (lead.provinciaIntestatario || lead.provinciaAssistito || '')
+    const destSpedRinnovo: 'richiedente' | 'assistito' | 'custom' =
+      spedValRinnovo === 'richiedente' ? 'richiedente'
+      : spedValRinnovo === 'custom'    ? 'custom'
+      : 'assistito'
+    const nomeConsegnaRinnovo = destSpedRinnovo === 'custom'
+      ? (lead.sped_nome || (`${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`).trim())
+      : destSpedRinnovo === 'assistito'
+        ? (`${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`).trim() || (`${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`).trim()
+        : (`${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`).trim()
+    const indirizzoConsegnaRinnovo = destSpedRinnovo === 'custom'
+      ? (lead.sped_indirizzo || lead.indirizzoAssistito || '')
+      : destSpedRinnovo === 'assistito'
+        ? (lead.indirizzoAssistito || lead.indirizzoIntestatario || '')
+        : (lead.indirizzoIntestatario || lead.indirizzoAssistito || '')
+    const capConsegnaRinnovo = destSpedRinnovo === 'custom'
+      ? (lead.sped_cap || lead.capAssistito || '')
+      : destSpedRinnovo === 'assistito'
+        ? (lead.capAssistito || lead.capIntestatario || '')
+        : (lead.capIntestatario || lead.capAssistito || '')
+    const cittaConsegnaRinnovo = destSpedRinnovo === 'custom'
+      ? (lead.sped_citta || lead.cittaAssistito || '')
+      : destSpedRinnovo === 'assistito'
+        ? (lead.cittaAssistito || lead.cittaIntestatario || '')
+        : (lead.cittaIntestatario || lead.cittaAssistito || '')
+    const provinciaConsegnaRinnovo = destSpedRinnovo === 'custom'
+      ? (lead.sped_provincia || lead.provinciaAssistito || '')
+      : destSpedRinnovo === 'assistito'
+        ? (lead.provinciaAssistito || lead.provinciaIntestatario || '')
+        : (lead.provinciaIntestatario || lead.provinciaAssistito || '')
+    const nazioneConsegnaRinnovo = destSpedRinnovo === 'custom'
+      ? (lead.sped_nazione || '')
+      : destSpedRinnovo === 'assistito'
+        ? (lead.nazione_assistito || '')
+        : (lead.nazione_intestatario || '')
     // Genera sezione HTML spedizione (vuota se indirizzo non disponibile)
     const sezioneConsegnaRinnovo = (() => {
       const inC = indirizzoConsegnaRinnovo
       if (!inC || inC === 'DA COMPLETARE') return ''
       const nomeInt = (`${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`).trim()
       const addrLine = [inC, capConsegnaRinnovo, cittaConsegnaRinnovo,
-        provinciaConsegnaRinnovo ? `(${provinciaConsegnaRinnovo})` : ''].filter(Boolean).join(', ')
+        provinciaConsegnaRinnovo ? `(${provinciaConsegnaRinnovo})` : '',
+        nazioneConsegnaRinnovo ? nazioneConsegnaRinnovo.toUpperCase() : ''].filter(Boolean).join(', ')
       const nomeConsDiff = nomeConsegnaRinnovo && nomeConsegnaRinnovo !== nomeInt
       return `<p style="margin-top:8px;padding:8px 12px;background:#f0f9ff;border-left:3px solid #2563eb;font-size:10pt;">` +
         `<strong>&#128230; Indirizzo spedizione dispositivo:</strong> ` +
@@ -16409,29 +16448,47 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
 
     // ── Indirizzo spedizione per il contratto rigenera-html ───────────────────
     const spedValRigenera = contract.indirizzo_spedizione || 'assistito'
-    const destSpedRigenera: 'richiedente' | 'assistito' =
-      spedValRigenera === 'richiedente' ? 'richiedente' : 'assistito'
-    const nomeConsegnaRigenera = destSpedRigenera === 'assistito'
-      ? (`${contract.nomeAssistito || ''} ${contract.cognomeAssistito || ''}`).trim() || (`${contract.nomeRichiedente || ''} ${contract.cognomeRichiedente || ''}`).trim()
-      : (`${contract.nomeRichiedente || ''} ${contract.cognomeRichiedente || ''}`).trim()
-    const indirizzoConsegnaRigenera = destSpedRigenera === 'assistito'
-      ? (contract.indirizzoAssistito || contract.indirizzoIntestatario || '')
-      : (contract.indirizzoIntestatario || contract.indirizzoAssistito || '')
-    const capConsegnaRigenera = destSpedRigenera === 'assistito'
-      ? (contract.capAssistito || contract.capIntestatario || '')
-      : (contract.capIntestatario || contract.capAssistito || '')
-    const cittaConsegnaRigenera = destSpedRigenera === 'assistito'
-      ? (contract.cittaAssistito || contract.cittaIntestatario || '')
-      : (contract.cittaIntestatario || contract.cittaAssistito || '')
-    const provinciaConsegnaRigenera = destSpedRigenera === 'assistito'
-      ? (contract.provinciaAssistito || contract.provinciaIntestatario || '')
-      : (contract.provinciaIntestatario || contract.provinciaAssistito || '')
+    const destSpedRigenera: 'richiedente' | 'assistito' | 'custom' =
+      spedValRigenera === 'richiedente' ? 'richiedente'
+      : spedValRigenera === 'custom'    ? 'custom'
+      : 'assistito'
+    const nomeConsegnaRigenera = destSpedRigenera === 'custom'
+      ? (contract.sped_nome || (`${contract.nomeAssistito || ''} ${contract.cognomeAssistito || ''}`).trim())
+      : destSpedRigenera === 'assistito'
+        ? (`${contract.nomeAssistito || ''} ${contract.cognomeAssistito || ''}`).trim() || (`${contract.nomeRichiedente || ''} ${contract.cognomeRichiedente || ''}`).trim()
+        : (`${contract.nomeRichiedente || ''} ${contract.cognomeRichiedente || ''}`).trim()
+    const indirizzoConsegnaRigenera = destSpedRigenera === 'custom'
+      ? (contract.sped_indirizzo || contract.indirizzoAssistito || '')
+      : destSpedRigenera === 'assistito'
+        ? (contract.indirizzoAssistito || contract.indirizzoIntestatario || '')
+        : (contract.indirizzoIntestatario || contract.indirizzoAssistito || '')
+    const capConsegnaRigenera = destSpedRigenera === 'custom'
+      ? (contract.sped_cap || contract.capAssistito || '')
+      : destSpedRigenera === 'assistito'
+        ? (contract.capAssistito || contract.capIntestatario || '')
+        : (contract.capIntestatario || contract.capAssistito || '')
+    const cittaConsegnaRigenera = destSpedRigenera === 'custom'
+      ? (contract.sped_citta || contract.cittaAssistito || '')
+      : destSpedRigenera === 'assistito'
+        ? (contract.cittaAssistito || contract.cittaIntestatario || '')
+        : (contract.cittaIntestatario || contract.cittaAssistito || '')
+    const provinciaConsegnaRigenera = destSpedRigenera === 'custom'
+      ? (contract.sped_provincia || contract.provinciaAssistito || '')
+      : destSpedRigenera === 'assistito'
+        ? (contract.provinciaAssistito || contract.provinciaIntestatario || '')
+        : (contract.provinciaIntestatario || contract.provinciaAssistito || '')
+    const nazioneConsegnaRigenera = destSpedRigenera === 'custom'
+      ? (contract.sped_nazione || '')
+      : destSpedRigenera === 'assistito'
+        ? (contract.nazione_assistito || '')
+        : (contract.nazione_intestatario || '')
     const sezioneConsegnaRigenera = (() => {
       const inC = indirizzoConsegnaRigenera
       if (!inC || inC === '— da completare —') return ''
       const nomeInt = (`${contract.nomeRichiedente || ''} ${contract.cognomeRichiedente || ''}`).trim()
       const addrLine = [inC, capConsegnaRigenera, cittaConsegnaRigenera,
-        provinciaConsegnaRigenera ? `(${provinciaConsegnaRigenera})` : ''].filter(Boolean).join(', ')
+        provinciaConsegnaRigenera ? `(${provinciaConsegnaRigenera})` : '',
+        nazioneConsegnaRigenera ? nazioneConsegnaRigenera.toUpperCase() : ''].filter(Boolean).join(', ')
       const nomeConsDiff = nomeConsegnaRigenera && nomeConsegnaRigenera !== nomeInt
       return `<p style="margin-top:8px;padding:8px 12px;background:#f0f9ff;border-left:3px solid #2563eb;font-size:10pt;">` +
         `<strong>&#128230; Indirizzo spedizione dispositivo:</strong> ` +
@@ -35696,8 +35753,9 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
 
     // Risolvi il destinatario effettivo della spedizione
     // 'intestatario' = fallback al valore di intestatarioContratto (backward compat)
-    const destinatarioSpedizione: 'richiedente' | 'assistito' =
-      spedValRaw === 'richiedente' ? 'richiedente'
+    const destinatarioSpedizione: 'richiedente' | 'assistito' | 'custom' =
+      spedValRaw === 'richiedente'   ? 'richiedente'
+      : spedValRaw === 'custom'      ? 'custom'
       : spedValRaw === 'intestatario' ? (intestatario === 'assistito' ? 'assistito' : 'richiedente')
       : 'assistito' // 'assistito' è il default
 
@@ -35707,18 +35765,31 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
       : `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
 
     // Indirizzo fisico di spedizione: segue destinatarioSpedizione
-    const indirizzoDestinatario = destinatarioSpedizione === 'assistito'
-      ? lead.indirizzoAssistito || lead.indirizzoIntestatario || ''
-      : lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
-    const capDestinatario = destinatarioSpedizione === 'assistito'
-      ? lead.capAssistito || lead.capIntestatario || ''
-      : lead.capIntestatario || lead.capAssistito || ''
-    const cittaDestinatario = destinatarioSpedizione === 'assistito'
-      ? lead.cittaAssistito || lead.cittaIntestatario || ''
-      : lead.cittaIntestatario || lead.cittaAssistito || ''
-    const provinciaDestinatario = destinatarioSpedizione === 'assistito'
-      ? lead.provinciaAssistito || lead.provinciaIntestatario || ''
-      : lead.provinciaIntestatario || lead.provinciaAssistito || ''
+    const indirizzoDestinatario = destinatarioSpedizione === 'custom'
+      ? lead.sped_indirizzo || lead.indirizzoAssistito || ''
+      : destinatarioSpedizione === 'assistito'
+        ? lead.indirizzoAssistito || lead.indirizzoIntestatario || ''
+        : lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
+    const capDestinatario = destinatarioSpedizione === 'custom'
+      ? lead.sped_cap || lead.capAssistito || ''
+      : destinatarioSpedizione === 'assistito'
+        ? lead.capAssistito || lead.capIntestatario || ''
+        : lead.capIntestatario || lead.capAssistito || ''
+    const cittaDestinatario = destinatarioSpedizione === 'custom'
+      ? lead.sped_citta || lead.cittaAssistito || ''
+      : destinatarioSpedizione === 'assistito'
+        ? lead.cittaAssistito || lead.cittaIntestatario || ''
+        : lead.cittaIntestatario || lead.cittaAssistito || ''
+    const provinciaDestinatario = destinatarioSpedizione === 'custom'
+      ? lead.sped_provincia || lead.provinciaAssistito || ''
+      : destinatarioSpedizione === 'assistito'
+        ? lead.provinciaAssistito || lead.provinciaIntestatario || ''
+        : lead.provinciaIntestatario || lead.provinciaAssistito || ''
+    const nazioneDestinatario = destinatarioSpedizione === 'custom'
+      ? lead.sped_nazione || ''
+      : destinatarioSpedizione === 'assistito'
+        ? lead.nazione_assistito || ''
+        : lead.nazione_intestatario || ''
 
     // --- 4. Numero DDT: formato "DDT-NNN-AAAA" (es. DDT-008-2026) ---
     const annoCorrente = new Date().getFullYear()
@@ -35810,14 +35881,15 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
       ddtId = `DDT-${leadId}-${Date.now()}`
       pdfUrl = `${baseUrl}/api/ddts/${ddtId}/pdf-print`
       const noteConLeadId = `LeadID:${leadId}${note ? ' | ' + note : ''}`
-      // Esegui migration sim_number se non esiste (idempotente)
+      // Esegui migration sim_number e destinatario_nazione se non esistono (idempotente)
       try { await c.env.DB.prepare(`ALTER TABLE ddts ADD COLUMN sim_number TEXT`).run() } catch (_) {}
+      try { await c.env.DB.prepare(`ALTER TABLE ddts ADD COLUMN destinatario_nazione TEXT`).run() } catch (_) {}
       await c.env.DB.prepare(`
         INSERT INTO ddts (
           id, numero_ddt, contract_code,
           data_spedizione, data_consegna,
           destinatario_nome, destinatario_indirizzo, destinatario_cap,
-          destinatario_citta, destinatario_provincia,
+          destinatario_citta, destinatario_provincia, destinatario_nazione,
           destinatario_email, destinatario_telefono,
           dispositivo, serial_number, sim_number, quantita,
           status, pdf_url, pdf_generated, note,
@@ -35827,7 +35899,7 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
         ddtId, numDdt, codiceContratto,
         dataDoc, dataDoc,
         nomeDestinatario, indirizzoDestinatario, capDestinatario,
-        cittaDestinatario, provinciaDestinatario,
+        cittaDestinatario, provinciaDestinatario, nazioneDestinatario || null,
         lead.email || '', lead.telefono || '',
         dispositivo, imei, telefonoSim || null, 1,
         'CONSEGNATO', pdfUrl, 1, noteConLeadId

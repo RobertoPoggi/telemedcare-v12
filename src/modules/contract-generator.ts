@@ -56,12 +56,13 @@ export interface ContractData {
   iva_agevolata?: boolean | number
 
   // ⭐ Indirizzo di CONSEGNA dispositivo (separato dall'intestatario contratto)
-  // Calcolato da lead.indirizzo_spedizione: 'assistito' (default) | 'richiedente'
+  // Calcolato da lead.indirizzo_spedizione: 'assistito' (default) | 'richiedente' | 'custom'
   nomeConsegna?: string
   indirizzoConsegna?: string
   capConsegna?: string
   cittaConsegna?: string
   provinciaConsegna?: string
+  nazioneConsegna?: string
 
   // Rateizzazione e Riserva di Dominio
   riserva_dominio?: boolean | number  // se true: inserisce clausola riserva dominio
@@ -279,15 +280,17 @@ export class ContractGenerator {
       CAP_CONSEGNA:       data.capConsegna || data.capIntestatario || data.capAssistito || '',
       CITTA_CONSEGNA:     data.cittaConsegna || data.cittaIntestatario || data.cittaAssistito || '',
       PROVINCIA_CONSEGNA: data.provinciaConsegna || data.provinciaIntestatario || data.provinciaAssistito || '',
+      NAZIONE_CONSEGNA:   data.nazioneConsegna || '',
       // Sezione completa di consegna (mostrata nel contratto solo se indirizzo è disponibile)
       SEZIONE_CONSEGNA: (() => {
-        const nC  = data.nomeConsegna      || data.nomeIntestatario    || data.nomeRichiedente    || ''
-        const inC = data.indirizzoConsegna || data.indirizzoIntestatario || data.indirizzoAssistito || ''
+        const nC   = data.nomeConsegna      || data.nomeIntestatario    || data.nomeRichiedente    || ''
+        const inC  = data.indirizzoConsegna || data.indirizzoIntestatario || data.indirizzoAssistito || ''
         const capC = data.capConsegna  || data.capIntestatario  || data.capAssistito  || ''
         const citC = data.cittaConsegna || data.cittaIntestatario || data.cittaAssistito || ''
         const prC  = data.provinciaConsegna || data.provinciaIntestatario || data.provinciaAssistito || ''
+        const nazC = data.nazioneConsegna || ''
         if (!inC || inC === 'DA COMPLETARE') return ''
-        const addrLine = [inC, capC, citC, prC ? `(${prC})` : ''].filter(Boolean).join(', ')
+        const addrLine = [inC, capC, citC, prC ? `(${prC})` : '', nazC ? nazC.toUpperCase() : ''].filter(Boolean).join(', ')
         const nomeInt = (data.nomeIntestatario || data.nomeRichiedente || '').trim()
         const nomeConsDiff = nC && nC !== nomeInt
         return `<p style="margin-top:8px;padding:8px 12px;background:#f0f9ff;border-left:3px solid #2563eb;font-size:10pt;">` +
