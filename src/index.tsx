@@ -15380,6 +15380,45 @@ app.patch('/api/leads/:id/iva-esente', async (c) => {
   }
 })
 
+// PATCH /api/leads/:id/indirizzo-spedizione — Imposta indirizzo spedizione dispositivo
+// Valori accettati: 'assistito' (default) | 'richiedente'
+// Questo flag è separato da intestatarioContratto (usato per contratti/fatture)
+// e controlla esclusivamente la destinazione fisica di spedizione del dispositivo (DDT).
+app.patch('/api/leads/:id/indirizzo-spedizione', async (c) => {
+  const leadId = c.req.param('id')
+  try {
+    const body = await c.req.json()
+    const valore = body.indirizzo_spedizione || body.valore
+
+    if (valore !== 'assistito' && valore !== 'richiedente') {
+      return c.json({ success: false, error: "Valore non valido. Usare 'assistito' o 'richiedente'" }, 400)
+    }
+
+    if (!c.env?.DB) {
+      return c.json({ success: false, error: 'Database non disponibile' }, 500)
+    }
+
+    await c.env.DB.prepare(`
+      UPDATE leads
+      SET indirizzo_spedizione = ?, updated_at = ?
+      WHERE id = ?
+    `).bind(valore, new Date().toISOString(), leadId).run()
+
+    console.log(`✅ indirizzo_spedizione aggiornato per lead ${leadId}: ${valore}`)
+
+    return c.json({
+      success: true,
+      leadId,
+      indirizzo_spedizione: valore,
+      message: valore === 'richiedente'
+        ? "Spedizione impostata all'indirizzo del richiedente/lead"
+        : "Spedizione impostata all'indirizzo dell'assistito (default)"
+    })
+  } catch (error) {
+    console.error('❌ Errore aggiornamento indirizzo_spedizione:', error)
+    return c.json({ success: false, error: 'Errore aggiornamento indirizzo spedizione' }, 500)
+  }
+})
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LEAD_ASSISTITI — CRUD multi-assistito per lead
