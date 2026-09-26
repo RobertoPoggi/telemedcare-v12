@@ -4235,6 +4235,24 @@ export const leads_dashboard = `<!DOCTYPE html>
         // Calcolata una volta al caricamento; usata da renderLeadsTable per numerazione corretta.
         let leadGlobalRank = new Map();
 
+        // ─── Fetch interceptor globale: invia sempre session cookie alle API ──
+        // Senza credentials:'include' il browser non manda il cookie di sessione
+        // nelle richieste same-origin su Cloudflare Pages → middleware auth → 503.
+        (function patchFetchCredentials() {
+            const _origFetch = window.fetch.bind(window);
+            window.fetch = function(input, init) {
+                const url = (typeof input === 'string') ? input
+                          : (input instanceof Request) ? input.url
+                          : String(input);
+                // Solo per le nostre API interne: aggiunge credentials:'include'
+                if (url.startsWith('/api/') || url.startsWith(location.origin + '/api/')) {
+                    init = Object.assign({}, init);
+                    if (!init.credentials) init.credentials = 'include';
+                }
+                return _origFetch(input, init);
+            };
+        })();
+
         // ─── Persistenza filtri via localStorage ─────────────────────────────
         // Salva i filtri attivi ogni volta che cambiano
         function saveFilters() {
