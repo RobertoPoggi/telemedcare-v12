@@ -6879,6 +6879,11 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('newCognome').value = lead.cognomeRichiedente || '';
             document.getElementById('newEmail').value = lead.email || lead.email || '';
             document.getElementById('newTelefono').value = lead.telefono || lead.telefono || '';
+            document.getElementById('newIndirizzoIntestatario').value = lead.indirizzoIntestatario || '';
+            document.getElementById('newCapIntestatario').value       = lead.capIntestatario       || '';
+            document.getElementById('newCittaIntestatario').value     = lead.cittaIntestatario     || '';
+            document.getElementById('newProvinciaIntestatario').value = lead.provinciaIntestatario || '';
+            document.getElementById('newNazioneIntestatario').value   = lead.nazione_intestatario  || 'Italia';
             
             document.getElementById('newNomeAssistito').value = lead.nomeAssistito || '';
             document.getElementById('newCognomeAssistito').value = lead.cognomeAssistito || '';
@@ -7614,6 +7619,11 @@ export const leads_dashboard = `<!DOCTYPE html>
                 cognomeRichiedente: document.getElementById('newCognome').value,
                 email: document.getElementById('newEmail').value,
                 telefono: document.getElementById('newTelefono').value,
+                indirizzoIntestatario: document.getElementById('newIndirizzoIntestatario')?.value?.trim() || '',
+                capIntestatario:       document.getElementById('newCapIntestatario')?.value?.trim()       || '',
+                cittaIntestatario:     document.getElementById('newCittaIntestatario')?.value?.trim()     || '',
+                provinciaIntestatario: document.getElementById('newProvinciaIntestatario')?.value?.trim()?.toUpperCase() || '',
+                nazione_intestatario:  document.getElementById('newNazioneIntestatario')?.value?.trim()  || 'Italia',
                 
                 // Dati assistito
                 nomeAssistito: document.getElementById('newNomeAssistito').value,
@@ -7998,6 +8008,36 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <input type="tel" id="newTelefono" required 
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                                     placeholder="+39 333 1234567">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Indirizzo Richiedente</label>
+                                <input type="text" id="newIndirizzoIntestatario"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                    placeholder="Via Roma 123">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">CAP</label>
+                                <input type="text" id="newCapIntestatario" maxlength="5"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                    placeholder="20121">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Città</label>
+                                <input type="text" id="newCittaIntestatario"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                    placeholder="Milano">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Provincia</label>
+                                <input type="text" id="newProvinciaIntestatario" maxlength="2"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition uppercase"
+                                    placeholder="MI">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Nazione</label>
+                                <input type="text" id="newNazioneIntestatario"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                    placeholder="Italia" value="Italia">
                             </div>
                         </div>
                     </div>
