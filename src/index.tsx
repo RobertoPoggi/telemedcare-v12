@@ -32203,8 +32203,10 @@ app.post('/api/auth/login', async (c) => {
     `).bind(new Date().toISOString(), user.id).run()
     
     // Imposta cookie sessione (httpOnly, secure)
+    // ⚠️ IMPORTANTE: encodeURIComponent obbligatorio — JSON contiene " e : vietati in cookie (RFC 6265)
+    // Il middleware auth usa già decodeURIComponent() → compatibile
     c.header('Set-Cookie', 
-      `session=${JSON.stringify(session)}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=28800`)
+      `session=${encodeURIComponent(JSON.stringify(session))}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=28800`)
     
     console.log('✅ [AUTH] Login riuscito:', username, 'Ruolo:', user.role)
     
@@ -32229,7 +32231,7 @@ app.post('/api/auth/login', async (c) => {
 
 // Logout API
 app.post('/api/auth/logout', (c) => {
-  c.header('Set-Cookie', 'session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0')
+  c.header('Set-Cookie', 'session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0')
   return c.json({ success: true })
 })
 
