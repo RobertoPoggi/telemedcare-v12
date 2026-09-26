@@ -10577,7 +10577,7 @@ app.get('/api/ddts/:id/pdf-print', async (c) => {
 
     const destinatario = ddt.destinatario_nome || '—'
     const indirizzoRiga1 = ddt.destinatario_indirizzo || ''
-    const indirizzoRiga2 = [ddt.destinatario_cap, ddt.destinatario_citta, ddt.destinatario_provincia ? `(${ddt.destinatario_provincia})` : '', ddt.destinatario_nazione ? ddt.destinatario_nazione.toUpperCase() : ''].filter(Boolean).join(' ')
+    const indirizzoRiga2 = [ddt.destinatario_cap, ddt.destinatario_citta, ddt.destinatario_provincia ? `(${ddt.destinatario_provincia})` : '', (ddt.destinatario_nazione || 'ITALIA').toUpperCase()].filter(Boolean).join(' ')
 
     const dispositivo = ddt.dispositivo || 'SiDLY Care PRO'
     const serialNumber = ddt.serial_number || '—'
@@ -13159,10 +13159,10 @@ app.post('/api/leads/:id/send-contract', async (c) => {
           ? `${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`.trim() || nomeIntestatario
           : `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim(),
       nazioneConsegna: destinatarioSpedizioneContratto === 'custom'
-        ? (lead.sped_nazione || '')
+        ? (lead.sped_nazione || 'Italia')
         : destinatarioSpedizioneContratto === 'assistito'
-          ? (lead.nazione_assistito || '')
-          : (lead.nazione_intestatario || ''),
+          ? (lead.nazione_assistito || 'Italia')
+          : (lead.nazione_intestatario || 'Italia'),
     }
     
     // Calcola prezzi corretti
@@ -15744,7 +15744,7 @@ app.post('/api/leads/:id/assistiti/:aid/genera-ddt', requireAuth, async (c) => {
       capDestinatario      = lead.capIntestatario || ''
       cittaDestinatario    = lead.cittaIntestatario || ''
       provinciaDestinatario= lead.provinciaIntestatario || ''
-      nazioneDestinatario  = lead.nazione_intestatario || ''
+      nazioneDestinatario  = lead.nazione_intestatario || 'Italia'
     } else {
       // 'questo' = indirizzo dell'assistito stesso (da lead_assistiti)
       nomeDestinatario     = `${ass.nome} ${ass.cognome}`.trim()
@@ -15752,7 +15752,7 @@ app.post('/api/leads/:id/assistiti/:aid/genera-ddt', requireAuth, async (c) => {
       capDestinatario      = ass.cap       || lead.capAssistito || ''
       cittaDestinatario    = ass.citta     || lead.cittaAssistito || ''
       provinciaDestinatario= ass.provincia || lead.provinciaAssistito || ''
-      nazioneDestinatario  = ass.nazione   || lead.nazione_assistito || ''
+      nazioneDestinatario  = ass.nazione   || lead.nazione_assistito || 'Italia'
     }
 
     // Servizio e dispositivo
@@ -15990,10 +15990,10 @@ app.post('/api/contracts/rinnovo', async (c) => {
         ? (lead.provinciaAssistito || lead.provinciaIntestatario || '')
         : (lead.provinciaIntestatario || lead.provinciaAssistito || '')
     const nazioneConsegnaRinnovo = destSpedRinnovo === 'custom'
-      ? (lead.sped_nazione || '')
+      ? (lead.sped_nazione || 'Italia')
       : destSpedRinnovo === 'assistito'
-        ? (lead.nazione_assistito || '')
-        : (lead.nazione_intestatario || '')
+        ? (lead.nazione_assistito || 'Italia')
+        : (lead.nazione_intestatario || 'Italia')
     // Genera sezione HTML spedizione (vuota se indirizzo non disponibile)
     const sezioneConsegnaRinnovo = (() => {
       const inC = indirizzoConsegnaRinnovo
@@ -16478,10 +16478,10 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
         ? (contract.provinciaAssistito || contract.provinciaIntestatario || '')
         : (contract.provinciaIntestatario || contract.provinciaAssistito || '')
     const nazioneConsegnaRigenera = destSpedRigenera === 'custom'
-      ? (contract.sped_nazione || '')
+      ? (contract.sped_nazione || 'Italia')
       : destSpedRigenera === 'assistito'
-        ? (contract.nazione_assistito || '')
-        : (contract.nazione_intestatario || '')
+        ? (contract.nazione_assistito || 'Italia')
+        : (contract.nazione_intestatario || 'Italia')
     const sezioneConsegnaRigenera = (() => {
       const inC = indirizzoConsegnaRigenera
       if (!inC || inC === '— da completare —') return ''
@@ -35786,10 +35786,10 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
         ? lead.provinciaAssistito || lead.provinciaIntestatario || ''
         : lead.provinciaIntestatario || lead.provinciaAssistito || ''
     const nazioneDestinatario = destinatarioSpedizione === 'custom'
-      ? lead.sped_nazione || ''
+      ? lead.sped_nazione || 'Italia'
       : destinatarioSpedizione === 'assistito'
-        ? lead.nazione_assistito || ''
-        : lead.nazione_intestatario || ''
+        ? lead.nazione_assistito || 'Italia'
+        : lead.nazione_intestatario || 'Italia'
 
     // --- 4. Numero DDT: formato "DDT-NNN-AAAA" (es. DDT-008-2026) ---
     const annoCorrente = new Date().getFullYear()

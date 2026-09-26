@@ -280,7 +280,7 @@ export class ContractGenerator {
       CAP_CONSEGNA:       data.capConsegna || data.capIntestatario || data.capAssistito || '',
       CITTA_CONSEGNA:     data.cittaConsegna || data.cittaIntestatario || data.cittaAssistito || '',
       PROVINCIA_CONSEGNA: data.provinciaConsegna || data.provinciaIntestatario || data.provinciaAssistito || '',
-      NAZIONE_CONSEGNA:   data.nazioneConsegna || '',
+      NAZIONE_CONSEGNA:   data.nazioneConsegna || 'Italia',
       // Sezione completa di consegna (mostrata nel contratto solo se indirizzo è disponibile)
       SEZIONE_CONSEGNA: (() => {
         const nC   = data.nomeConsegna      || data.nomeIntestatario    || data.nomeRichiedente    || ''
@@ -288,9 +288,9 @@ export class ContractGenerator {
         const capC = data.capConsegna  || data.capIntestatario  || data.capAssistito  || ''
         const citC = data.cittaConsegna || data.cittaIntestatario || data.cittaAssistito || ''
         const prC  = data.provinciaConsegna || data.provinciaIntestatario || data.provinciaAssistito || ''
-        const nazC = data.nazioneConsegna || ''
+        const nazC = data.nazioneConsegna || 'Italia'
         if (!inC || inC === 'DA COMPLETARE') return ''
-        const addrLine = [inC, capC, citC, prC ? `(${prC})` : '', nazC ? nazC.toUpperCase() : ''].filter(Boolean).join(', ')
+        const addrLine = [inC, capC, citC, prC ? `(${prC})` : '', nazC.toUpperCase()].filter(Boolean).join(', ')
         const nomeInt = (data.nomeIntestatario || data.nomeRichiedente || '').trim()
         const nomeConsDiff = nC && nC !== nomeInt
         return `<p style="margin-top:8px;padding:8px 12px;background:#f0f9ff;border-left:3px solid #2563eb;font-size:10pt;">` +
