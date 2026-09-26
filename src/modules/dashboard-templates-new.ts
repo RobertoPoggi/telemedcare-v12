@@ -1820,6 +1820,21 @@ export const dashboard = `<!DOCTYPE html>
         let refreshInterval;
         let isLoading = false;
 
+        // ─── Fetch interceptor globale: invia sempre session cookie alle API ──
+        (function patchFetchCredentials() {
+            const _origFetch = window.fetch.bind(window);
+            window.fetch = function(input, init) {
+                const url = (typeof input === 'string') ? input
+                          : (input instanceof Request) ? input.url
+                          : String(input);
+                if (url.startsWith('/api/') || url.startsWith(location.origin + '/api/')) {
+                    init = Object.assign({}, init);
+                    if (!init.credentials) init.credentials = 'include';
+                }
+                return _origFetch(input, init);
+            };
+        })();
+
         // ── DDT TABLE ────────────────────────────────────────────────
         let allDDTs = [];
         let allDevices = [];
@@ -9896,6 +9911,21 @@ export const workflow_manager = `<!DOCTYPE html>
     <script>
         let allLeads = [];
         let isLoading = false; // Previene chiamate multiple simultanee
+
+        // ─── Fetch interceptor globale: invia sempre session cookie alle API ──
+        (function patchFetchCredentials() {
+            const _origFetch = window.fetch.bind(window);
+            window.fetch = function(input, init) {
+                const url = (typeof input === 'string') ? input
+                          : (input instanceof Request) ? input.url
+                          : String(input);
+                if (url.startsWith('/api/') || url.startsWith(location.origin + '/api/')) {
+                    init = Object.assign({}, init);
+                    if (!init.credentials) init.credentials = 'include';
+                }
+                return _origFetch(input, init);
+            };
+        })();
         
         // Helper: escape HTML
         function escapeHtml(text) {

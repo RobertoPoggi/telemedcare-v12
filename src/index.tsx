@@ -33349,7 +33349,7 @@ app.get('/api/diag-auth', async (c) => {
     } catch(e) { sessionInfo = 'parse error' }
   }
   return c.json({
-    commit: 'a553ecb',
+    commit: (c.env as any)?.CF_PAGES_COMMIT_SHA?.slice(0,7) || 'local',
     hasCookie: hasSession,
     hasAuthHeader: !!auth,
     authHeaderValue: auth ? auth.substring(0, 20) + '...' : null,
