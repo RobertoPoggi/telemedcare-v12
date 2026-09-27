@@ -269,6 +269,8 @@ export class ContractGenerator {
       // IVA
       IVA_LABEL: ivaLabel,
       IVA_NOTE: ivaNote,
+      // Blocco IVA nella frase tariffa: per esente → 'Esente IVA'; per altri → '+ IVA X%<note>'
+      IVA_TARIFFA: ivaEsente ? 'Esente IVA' : `+ ${ivaLabel}${ivaNote}`,
       IVA: ivaValorePrimoAnno.toFixed(2),
       TOTALE_PRIMO_ANNO: totalePrimoAnno.toFixed(2),
       PREZZO_RINNOVO: totaleRinnovo.toFixed(2),
@@ -456,7 +458,7 @@ export class ContractGenerator {
 <p>Il Contratto sarà prorogabile su richiesta scritta del Cliente e su accettazione di Medica GB.</p>
 <p>&nbsp;</p>
 <h2>Tariffa del Servizio</h2>
-<p>La tariffa annuale per il primo anno di attivazione del Servizio {{Servizio}} è pari a Euro {{IMPORTO_PRIMO_ANNO}} + {{IVA_LABEL}}{{IVA_NOTE}} e include:</p>
+<p>La tariffa annuale per il primo anno di attivazione del Servizio {{Servizio}} è pari a Euro {{IMPORTO_PRIMO_ANNO}} {{IVA_TARIFFA}} e include:</p>
 <p>&nbsp;</p>
 <ul>
 <li>Dispositivo {{Dispositivo}}</li>
@@ -465,7 +467,7 @@ export class ContractGenerator {
 <li>Piano {{Piano}}</li>
 </ul>
 <p>&nbsp;</p>
-<p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il Servizio {{Servizio}} sarà pari a Euro {{IMPORTO_ANNI_SUCCESSIVI}} + {{IVA_LABEL}} con inclusi:</p>
+<p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il Servizio {{Servizio}} sarà pari a Euro {{IMPORTO_ANNI_SUCCESSIVI}} {{IVA_TARIFFA}} con inclusi:</p>
 <p>&nbsp;</p>
 <ul>
 <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>

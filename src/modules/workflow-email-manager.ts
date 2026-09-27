@@ -558,19 +558,19 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
       <strong style="color:#1b5e20;">🔄 CONTRATTO DI RINNOVO — Anno ${annoRinnovo}</strong><br>
       <span style="color:#2e7d32; font-size:13px;">La tariffa di rinnovo è agevolata rispetto alla prima annualità in quanto non comprende il dispositivo e il setup iniziale.${codiceOriginale ? ' Contratto originale: <strong>' + codiceOriginale + '</strong>.' : ''}</span>
     </div>
-    <p>La tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" — Anno ${annoRinnovo} — è pari a <span class="highlight">${importoPrimoAnno} €</span> (${mensileSetup}) + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${prezzoIvaInclusaCorretto} € ${ivaEsenteContratto ? 'IVA esente' : 'IVA inclusa'}</span>) e include:</p>
+    <p>La tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" — Anno ${annoRinnovo} — è pari a <span class="highlight">${importoPrimoAnno} €</span> (${mensileSetup}) ${ivaEsenteContratto ? 'Esente IVA' : `+ IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${prezzoIvaInclusaCorretto} € IVA inclusa</span>)`} e include:</p>
     <ul>
         <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
         <li>SIM multiprovider (prefisso +48 o +33) per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
     </ul>
     ` : `
-    <p>La tariffa annuale per il primo anno di attivazione del "Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'Base' : 'avanzato'}" è pari a <span class="highlight">${importoPrimoAnno} €</span> (${mensileSetup} × 12 mesi) + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${prezzoIvaInclusaCorretto} € ${ivaEsenteContratto ? 'IVA esente' : 'IVA inclusa'}</span>) e include:</p>
+    <p>La tariffa annuale per il primo anno di attivazione del "Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'Base' : 'avanzato'}" è pari a <span class="highlight">${importoPrimoAnno} €</span> (${mensileSetup} × 12 mesi) ${ivaEsenteContratto ? 'Esente IVA' : `+ IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${prezzoIvaInclusaCorretto} € IVA inclusa</span>)`} e include:</p>
     <ul>
         <li>Dispositivo ${dispositivo} (hardware)</li>
         <li>Configurazione del Dispositivo e del Processo di Comunicazione con ${pianoNome === 'AVANZATO' ? 'la Centrale Operativa e uno o più familiari' : 'uno o più familiari'} e Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
         <li>SIM multiprovider (prefisso +48 o +33) in grado di collegarsi automaticamente al provider con migliore copertura e di funzionare in tutta Europa, per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
     </ul>
-    <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" sarà pari a <span class="highlight">${importoAnniSuccessivi} €</span> (${mensileRinnovo}) + IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${totaleRinnovoCorretto} € ${ivaEsenteContratto ? 'IVA esente' : 'IVA inclusa'}</span>) con inclusi:</p>
+    <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" sarà pari a <span class="highlight">${importoAnniSuccessivi} €</span> (${mensileRinnovo}) ${ivaEsenteContratto ? 'Esente IVA' : `+ IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${totaleRinnovoCorretto} € IVA inclusa</span>)`} con inclusi:</p>
     <ul>
         <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12mesi</li>
         <li>SIM multiprovider per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
@@ -1290,7 +1290,7 @@ export async function inviaEmailContratto(
     
     // ✅ FIX: calcola IVA e totale con aliquota corretta per l'email di riepilogo
     const ivaRateEmailTemplate = (leadData as any).iva_esente ? 0 : (leadData as any).iva_agevolata ? 0.04 : 0.22
-    const ivaLabelEmailTemplate = (leadData as any).iva_esente ? '0%' : (leadData as any).iva_agevolata ? '4%' : '22%'
+    const ivaLabelEmailTemplate = (leadData as any).iva_esente ? 'Esente IVA' : (leadData as any).iva_agevolata ? '4%' : '22%'
     const prezzoTotaleEmail = contractData.prezzoIvaInclusa || Math.round(contractData.prezzoBase * (1 + ivaRateEmailTemplate) * 100) / 100
     const ivaImportoEmail = Math.round((prezzoTotaleEmail - contractData.prezzoBase) * 100) / 100
 
@@ -1304,7 +1304,7 @@ export async function inviaEmailContratto(
       PREZZO_PIANO: `€${contractData.prezzoBase.toFixed(2)}`,
       PREZZO_SERVIZIO_PIANO: `€${contractData.prezzoBase.toFixed(2)}/anno`,
       PREZZO_BASE: `€${contractData.prezzoBase.toFixed(2)}`,
-      IVA_LABEL: `IVA ${ivaLabelEmailTemplate}`,
+      IVA_LABEL: (leadData as any).iva_esente ? 'Esente IVA' : `IVA ${ivaLabelEmailTemplate}`,
       IVA_IMPORTO: `€${ivaImportoEmail.toFixed(2)}`,
       PREZZO_TOTALE: `€${prezzoTotaleEmail.toFixed(2)}`,
       PREZZO_IVA_INCLUSA: `€${prezzoTotaleEmail.toFixed(2)}`,
@@ -1460,7 +1460,7 @@ export async function inviaEmailProforma(
     const ivaEsente    = !!(leadData as any).iva_esente
     const ivaAgevolata = !ivaEsente && !!(leadData as any).iva_agevolata
     const ivaRate = ivaEsente ? 0 : ivaAgevolata ? 0.04 : 0.22
-    const ivaLabel = ivaEsente ? '0%' : ivaAgevolata ? '4%' : '22%'
+    const ivaLabel = ivaEsente ? 'Esente IVA' : ivaAgevolata ? '4%' : '22%'
 
     // 🏷️ Sconto applicato (passato da send-proforma endpoint)
     const codiceSconto = proformaData.codiceSconto || ''
@@ -1534,7 +1534,7 @@ export async function inviaEmailProforma(
       IMPORTO_IVA: `€${importoIvaEmail.toFixed(2).replace('.', ',')}`,
       IMPORTO_CON_IVA: labelTotale,
       IMPORTO_TOTALE: labelTotale,
-      IVA_LABEL: `IVA ${ivaLabel}`,
+      IVA_LABEL: ivaEsente ? 'Esente IVA' : `IVA ${ivaLabel}`,
       IVA_NOTE: ivaEsente ? ' — Operazione esente IVA (art. 10 n. 18 d.P.R. 633/1972)' : ivaAgevolata ? ' — IVA agevolata 4% (Legge 104, disabilità 100%)' : '',
       SCADENZA_PAGAMENTO: new Date(proformaData.dataScadenza).toLocaleDateString('it-IT'),
       IBAN: 'IT97L0503401727000000003519',
@@ -1747,11 +1747,13 @@ export async function inviaEmailBenvenuto(
     const ivaEsenteBenvenuto    = !!(clientData as any).iva_esente
     const ivaAgevolataBenvenuto = !ivaEsenteBenvenuto && !!(clientData as any).iva_agevolata
     const ivaRateBenvenuto = ivaEsenteBenvenuto ? 0 : ivaAgevolataBenvenuto ? 0.04 : 0.22
-    const ivaPercBenvenuto = ivaEsenteBenvenuto ? '0%' : ivaAgevolataBenvenuto ? '4%' : '22%'
+    const ivaPercBenvenuto = ivaEsenteBenvenuto ? 'Esente IVA' : ivaAgevolataBenvenuto ? '4%' : '22%'
     const prezzoIvaInclusaBenvenuto = pricing
       ? Math.round(pricing.setupBase * (1 + ivaRateBenvenuto) * 100) / 100
       : 585.60
-    const costoServizio = `€${prezzoIvaInclusaBenvenuto.toFixed(2).replace('.', ',')}/anno (IVA ${ivaPercBenvenuto} inclusa)`
+    const costoServizio = ivaEsenteBenvenuto
+      ? `€${prezzoIvaInclusaBenvenuto.toFixed(2).replace('.', ',')}/anno Esente IVA`
+      : `€${prezzoIvaInclusaBenvenuto.toFixed(2).replace('.', ',')}/anno (IVA ${ivaPercBenvenuto} inclusa)`
     
     const prezzoBase = pricing
       ? `€${pricing.setupBase.toFixed(2).replace('.', ',')}/anno`
@@ -2400,7 +2402,7 @@ export async function sendRataReminderEmail(
     const ivaEsente    = !!(leadData.iva_esente)
     const ivaAgevolata = !ivaEsente && !!(leadData.iva_agevolata)
     const ivaRate      = ivaEsente ? 0 : ivaAgevolata ? 0.04 : 0.22
-    const ivaLabel     = ivaEsente ? '0%' : ivaAgevolata ? '4%' : '22%'
+    const ivaLabel     = ivaEsente ? 'Esente IVA' : ivaAgevolata ? '4%' : '22%'
 
     const imponibile = Number(rataData.importo) || 0
     const importoIva = Math.round(imponibile * ivaRate * 100) / 100
@@ -2430,7 +2432,7 @@ export async function sendRataReminderEmail(
       IMPORTO_BASE:        fmt(imponibile),
       IMPORTO_IVA:         fmt(importoIva),
       IMPORTO_RATA_IVA:    fmt(totaleRata),
-      IVA_LABEL:           `IVA ${ivaLabel}`,
+      IVA_LABEL:           ivaEsente ? 'Esente IVA' : `IVA ${ivaLabel}`,
       IVA_NOTE:            ivaEsente ? ' — Operazione esente IVA (art. 10 n. 18 d.P.R. 633/1972)' : ivaAgevolata ? ' — IVA agevolata 4% (Legge 104)' : '',
       SCADENZA_RATA:       scadenzaFmt,
       LINK_PAGAMENTO_RATA: linkPagamento,

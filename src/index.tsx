@@ -443,7 +443,7 @@ async function inviaEmailProforma(proforma: any, env?: any) {
     // ✅ FIX: prezzo_totale è IVA ESCLUSA nel DB
     const prezzoBase = parseFloat(proforma.prezzo_totale) || 0
     // Usa aliquota IVA dalla proforma (iva_agevolata) o default 22%
-    const ivaRate = proforma.iva_agevolata ? 0.04 : 0.22
+    const ivaRate = proforma.iva_esente ? 0 : proforma.iva_agevolata ? 0.04 : 0.22
     const ivaLabel = proforma.iva_esente ? '0%' : proforma.iva_agevolata ? '4%' : '22%'
     const iva = Math.round(prezzoBase * ivaRate * 100) / 100
     const prezzoIvaInclusa = Math.round((prezzoBase + iva) * 100) / 100
@@ -458,9 +458,11 @@ async function inviaEmailProforma(proforma: any, env?: any) {
       IMPORTO_IVA: `€${iva.toFixed(2).replace('.', ',')}`,
       IMPORTO_TOTALE: `€${prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,  // IVA INCLUSA
       IMPORTO_CON_IVA: `€${prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,  // IVA INCLUSA (alias)
-      PREZZO_SERVIZIO_PIANO: `€${prezzoBase.toFixed(2).replace('.', ',')} + IVA ${ivaLabel} (€${prezzoIvaInclusa.toFixed(2).replace('.', ',')})`,
-      IVA_LABEL: `IVA ${ivaLabel}`,
-      IVA_NOTE: proforma.iva_agevolata ? ' — IVA agevolata 4% (Legge 104, disabilità 100%)' : '',
+      PREZZO_SERVIZIO_PIANO: proforma.iva_esente
+        ? `€${prezzoBase.toFixed(2).replace('.', ',')} / anno Esente IVA`
+        : `€${prezzoBase.toFixed(2).replace('.', ',')} + IVA ${ivaLabel} (€${prezzoIvaInclusa.toFixed(2).replace('.', ',')})`,
+      IVA_LABEL: proforma.iva_esente ? 'Esente IVA' : `IVA ${ivaLabel}`,
+      IVA_NOTE: proforma.iva_esente ? ' — Operazione esente IVA (art. 10 n. 18 d.P.R. 633/1972)' : proforma.iva_agevolata ? ' — IVA agevolata 4% (Legge 104, disabilità 100%)' : '',
       SCADENZA_PAGAMENTO: proforma.data_scadenza || 'Da concordare',
       CODICE_CLIENTE: proforma.numero_proforma || proforma.id || 'N/A'
     }
@@ -959,7 +961,7 @@ app.use('*', async (c, next) => {
           if (!existing) {
             const ivaImporto   = Math.round(r.rinnovoBase * r.ivaRate * 100) / 100
             const rinnovoTotale = Math.round((r.rinnovoBase + ivaImporto) * 100) / 100
-            const ivaLabel     = r.ivaRate === 0.04 ? 'IVA 4%' : 'IVA 22%'
+            const ivaLabel     = r.ivaRate === 0 ? 'Esente IVA' : r.ivaRate === 0.04 ? 'IVA 4%' : 'IVA 22%'
             const dataScadenza = new Date(r.dataScadenzaRinnovo).toISOString()
             const periodo      = r.periodoTesto
 
@@ -969,7 +971,7 @@ app.use('*', async (c, next) => {
                 <span style="color:#2e7d32">Rinnovo del contratto <strong>${r.codiceOriginale}</strong></span>
               </div>
               <h2>Rinnovo Contratto ${r.servizio} ${r.piano} — ${r.codiceRinnovo}</h2>
-              <p>Tariffa annuale di rinnovo: <strong>€${rinnovoTotale.toFixed(2)}</strong> (${ivaLabel} inclusa)</p>
+              <p>Tariffa annuale di rinnovo: <strong>€${rinnovoTotale.toFixed(2)}</strong> ${r.ivaRate === 0 ? '— Esente IVA' : `(${ivaLabel} inclusa)`}</p>
               <p>Periodo: ${periodo}</p>
               <p>La tariffa di rinnovo è agevolata rispetto alla prima annualità in quanto non comprende il dispositivo.</p>
             </body></html>`
@@ -10077,7 +10079,7 @@ app.get('/api/proforma/:id', async (c) => {
     const ivaAgevolataEffettiva = proforma.iva_agevolata || proforma.lead_iva_agevolata || 0
     const ivaEsenteEffettiva    = proforma.iva_esente    || proforma.lead_iva_esente    || 0
     const ivaRateProforma = ivaEsenteEffettiva ? 0 : ivaAgevolataEffettiva ? 0.04 : 0.22
-    const ivaLabelProforma = ivaEsenteEffettiva ? '0% (Esente art. 10)' : ivaAgevolataEffettiva ? '4% (Legge 104)' : '22%'
+    const ivaLabelProforma = ivaEsenteEffettiva ? 'Esente IVA (art. 10 n. 18)' : ivaAgevolataEffettiva ? '4% (Legge 104)' : '22%'
     const importoIva = Math.round((prezzoBaseIvaEsclusa * ivaRateProforma) * 100) / 100
     const importoTotaleIvaInclusa = Math.round((prezzoBaseIvaEsclusa + importoIva) * 100) / 100
     console.log(`📊 [API/proforma] IVA: agevolata=${ivaAgevolataEffettiva}, rate=${ivaRateProforma*100}%, base=€${prezzoBaseIvaEsclusa}, iva=€${importoIva}, totale=€${importoTotaleIvaInclusa}`)
@@ -10087,7 +10089,7 @@ app.get('/api/proforma/:id', async (c) => {
       importo_totale: importoTotaleIvaInclusa.toFixed(2),  // Totale IVA INCLUSA
       prezzo_base: prezzoBaseIvaEsclusa.toFixed(2),  // Base IVA ESCLUSA (da DB)
       importo_iva: importoIva.toFixed(2),  // IVA calcolata
-      iva_label: `IVA ${ivaLabelProforma}`,  // es. "IVA 4% (Legge 104)" o "IVA 22%"
+      iva_label: ivaEsenteEffettiva ? ivaLabelProforma : `IVA ${ivaLabelProforma}`,  // es. "Esente IVA" o "IVA 4% (Legge 104)" o "IVA 22%"
       
       // Servizio
       servizio: proforma.tipo_servizio || 'eCura PRO',
@@ -15919,7 +15921,7 @@ app.post('/api/contracts/rinnovo', async (c) => {
     const ivaImporto   = Math.round(rinnovoBase * ivaRate * 100) / 100
     const rinnovoTotale = Math.round((rinnovoBase + ivaImporto) * 100) / 100
 
-    const ivaLabel = lead.iva_esente ? 'IVA esente' : lead.iva_agevolata ? 'IVA 4%' : 'IVA 22%'
+    const ivaLabel = lead.iva_esente ? 'Esente IVA' : lead.iva_agevolata ? 'IVA 4%' : 'IVA 22%'
     const ivaNote  = lead.iva_esente  ? ' — Operazione esente IVA (art. 10 n. 18 d.P.R. 633/1972)'
                    : lead.iva_agevolata ? ' (IVA agevolata 4% — Legge 104, disabilità 100%)' : ''
 
@@ -16290,7 +16292,7 @@ Cosa include il rinnovo:
 - Assistenza tecnica e aggiornamenti software/firmware
 
 Periodo: ${dataInizio} → ${dataScadenza}
-Tariffa rinnovo: € ${rinnovoTotale.toFixed(2)} (${ivaLabel}${ivaNote})
+Tariffa rinnovo: € ${rinnovoTotale.toFixed(2)} ${lead.iva_esente ? '— Esente IVA (art. 10 n. 18 d.P.R. 633/1972)' : `(${ivaLabel}${ivaNote})`}
 Codice rinnovo: ${codiceRinnovo}
 
 Firma online: ${firmaUrl}
@@ -16310,7 +16312,7 @@ Medica GB S.r.l. — P.IVA 12435130963`
             <li><strong>Contratto originale:</strong> ${origContract.codice_contratto || contractId}</li>
             <li><strong>Codice rinnovo:</strong> ${codiceRinnovo}</li>
             <li><strong>Anno rinnovo:</strong> ${annoRinnovo}</li>
-            <li><strong>Tariffa:</strong> € ${rinnovoTotale.toFixed(2)} (${ivaLabel})</li>
+            <li><strong>Tariffa:</strong> € ${rinnovoTotale.toFixed(2)} ${lead.iva_esente ? '— Esente IVA' : `(${ivaLabel})`}</li>
             <li><strong>Link firma:</strong> <a href="${firmaUrl}">${firmaUrl}</a></li>
           </ul>
         `,
@@ -16603,8 +16605,8 @@ app.post('/api/contracts/:id/send-rinnovo-email', async (c) => {
     const annoRinnovo  = contract.anno_rinnovo || 2
     const codiceRinnovo = contract.codice_contratto
     const ivaRate = lead.iva_esente ? 0 : lead.iva_agevolata ? 0.04 : 0.22
-    const ivaLabel = lead.iva_esente ? 'IVA 0%' : lead.iva_agevolata ? 'IVA 4%' : 'IVA 22%'
-    const ivaNote  = lead.iva_agevolata ? ' (IVA agevolata 4% — Legge 104)' : ''
+    const ivaLabel = lead.iva_esente ? 'Esente IVA' : lead.iva_agevolata ? 'IVA 4%' : 'IVA 22%'
+    const ivaNote  = lead.iva_esente ? ' — Operazione esente IVA (art. 10 n. 18 d.P.R. 633/1972)' : lead.iva_agevolata ? ' (IVA agevolata 4% — Legge 104)' : ''
     const rinnovoBase   = contract.prezzo_totale || 240
     const ivaImporto    = Math.round(rinnovoBase * ivaRate * 100) / 100
     const rinnovoTotale = Math.round((rinnovoBase + ivaImporto) * 100) / 100
@@ -16641,7 +16643,7 @@ app.post('/api/contracts/:id/send-rinnovo-email', async (c) => {
       emailHtml = `<p>Gentile ${lead.nomeRichiedente} ${lead.cognomeRichiedente},<br>
         il rinnovo del Suo servizio eCura è pronto per la firma.<br>
         <a href="${firmaUrl}">✍️ Clicchi qui per firmare il contratto di rinnovo</a><br><br>
-        Tariffa: € ${rinnovoTotale.toFixed(2)} (${ivaLabel})<br>
+        Tariffa: € ${rinnovoTotale.toFixed(2)} ${lead.iva_esente ? '— Esente IVA' : `(${ivaLabel})`}<br>
         Codice: ${codiceRinnovo}</p>`
     }
 
@@ -16864,7 +16866,7 @@ app.post('/api/contracts/:id/invia-proforma-rinnovo', async (c) => {
     const ivaAgevolata  = !!(lead.iva_agevolata)
     const ivaEsente    = !!(lead.iva_esente)
     const ivaRate       = ivaEsente ? 0 : ivaAgevolata ? 0.04 : 0.22
-    const ivaLabel      = ivaEsente ? '0%' : ivaAgevolata ? '4%' : '22%'
+    const ivaLabel      = ivaEsente ? 'Esente IVA' : ivaAgevolata ? '4%' : '22%'
     const imponibile    = parseFloat(proforma.prezzo_totale ?? contract.prezzo_totale ?? 0)
     const importoIva    = Math.round(imponibile * ivaRate * 100) / 100
     const totaleConIva  = Math.round((imponibile + importoIva) * 100) / 100
@@ -16914,8 +16916,8 @@ app.post('/api/contracts/:id/invia-proforma-rinnovo', async (c) => {
       IMPORTO_IVA:           `€${importoIva.toFixed(2).replace('.', ',')}`,
       IMPORTO_CON_IVA:       `€${totaleConIva.toFixed(2).replace('.', ',')}`,
       IMPORTO_TOTALE:        `€${totaleConIva.toFixed(2).replace('.', ',')}`,
-      IVA_LABEL:             `IVA ${ivaLabel}`,
-      IVA_NOTE:              ivaAgevolata ? ' — IVA agevolata 4% (Legge 104)' : '',
+      IVA_LABEL:             ivaEsente ? 'Esente IVA' : `IVA ${ivaLabel}`,
+      IVA_NOTE:              ivaEsente ? ' — Operazione esente IVA (art. 10 n. 18 d.P.R. 633/1972)' : ivaAgevolata ? ' — IVA agevolata 4% (Legge 104)' : '',
       SCADENZA_PAGAMENTO:    scadenzaStr,
       IBAN:                  'IT97L0503401727000000003519',
       CAUSALE:               causale,
@@ -17205,7 +17207,7 @@ app.get('/api/contracts/:id/preview-proforma-email', async (c) => {
     const ivaAgevolata = !!(lead.iva_agevolata)
     const ivaEsente = !!(lead.iva_esente)
     const ivaRate      = ivaEsente ? 0 : ivaAgevolata ? 0.04 : 0.22
-    const ivaLabel     = ivaEsente ? '0%' : ivaAgevolata ? '4%' : '22%'
+    const ivaLabel     = ivaEsente ? 'Esente IVA' : ivaAgevolata ? '4%' : '22%'
     const imponibile   = proforma.prezzo_totale ?? contract.prezzo_totale ?? 0
     const importoIva   = Math.round(imponibile * ivaRate * 100) / 100
     const totaleConIva = Math.round((imponibile + importoIva) * 100) / 100
@@ -17252,8 +17254,8 @@ app.get('/api/contracts/:id/preview-proforma-email', async (c) => {
       IMPORTO_IVA:             `€${importoIva.toFixed(2).replace('.', ',')}`,
       IMPORTO_CON_IVA:         `€${totaleConIva.toFixed(2).replace('.', ',')}`,
       IMPORTO_TOTALE:          `€${totaleConIva.toFixed(2).replace('.', ',')}`,
-      IVA_LABEL:               `IVA ${ivaLabel}`,
-      IVA_NOTE:                ivaAgevolata ? ' — IVA agevolata 4% (Legge 104)' : '',
+      IVA_LABEL:               ivaEsente ? 'Esente IVA' : `IVA ${ivaLabel}`,
+      IVA_NOTE:                ivaEsente ? ' — Operazione esente IVA (art. 10 n. 18 d.P.R. 633/1972)' : ivaAgevolata ? ' — IVA agevolata 4% (Legge 104)' : '',
       SCADENZA_PAGAMENTO:      scadenzaStr,
       IBAN:                    'IT97L0503401727000000003519',
       CAUSALE:                 causale,
@@ -17275,7 +17277,7 @@ app.get('/api/contracts/:id/preview-proforma-email', async (c) => {
       // Fallback minimale se template non caricato
       emailHtml = `<p>Gentile ${lead.nomeRichiedente} ${lead.cognomeRichiedente},</p>
         <p>La proforma <strong>${proforma.numero_proforma}</strong> è pronta.</p>
-        <p><strong>Importo totale (IVA ${ivaLabel} inclusa): ${totaleConIva.toFixed(2).replace('.', ',')} €</strong></p>
+        <p><strong>Importo totale ${ivaEsente ? 'Esente IVA' : `(IVA ${ivaLabel} inclusa)`}: ${totaleConIva.toFixed(2).replace('.', ',')} €</strong></p>
         <p>Causale bonifico: ${causale}</p>
         <p>IBAN: IT97L0503401727000000003519</p>`
     }
@@ -19599,7 +19601,9 @@ app.get('/api/contracts/:id', async (c) => {
       servizio: contract.servizio || 'eCura PRO',
       piano: contract.tipo_contratto || contract.piano || 'BASE',
       dispositivo: (contract.servizio?.includes('PREMIUM') ? 'SiDLY Vital Care' : 'SiDLY Care PRO'),
-      prezzo: `€${prezzoBase.toFixed(2)} + IVA ${ivaAgevolataContratto ? '4%' : '22%'} (€${totaleIvaInclusa.toFixed(2)}) / anno`,
+      prezzo: ivaEsenteContratto
+        ? `€${prezzoBase.toFixed(2)} / anno Esente IVA`
+        : `€${prezzoBase.toFixed(2)} + IVA ${ivaAgevolataContratto ? '4%' : '22%'} (€${totaleIvaInclusa.toFixed(2)}) / anno`,
       status: contract.status || 'PENDING'
     })
   } catch (error) {
