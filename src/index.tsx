@@ -10947,15 +10947,15 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
 
     // ── Prezzi ────────────────────────────────────────────────────────
     const ivaAgevolata = !!(contractRow?.iva_agevolata)
-    const ivaEsente = !!(contractRow?.iva_esente)
-    const ivaPct       = ivaAgevolata ? 4 : 22
+    const ivaEsente    = !!(contractRow?.iva_esente)
+    const ivaPct       = ivaEsente ? 0 : ivaAgevolata ? 4 : 22
 
     // Usa getPricing per ottenere l'imponibile corretto (IVA escl.)
     const servizioRaw = (contractRow?.servizio || 'PRO').replace(/^eCura\s+/i, '').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'
     const pianoRaw    = (contractRow?.piano    || 'BASE').toUpperCase() as 'BASE'|'AVANZATO'
     const pricingPF   = getPricing(servizioRaw, pianoRaw)
     const imponibile  = pricingPF ? pricingPF.setupBase : (parseFloat(contractRow?.prezzo_totale) || 0)
-    const ivaAmt      = Math.round(imponibile * ivaPct / 100 * 100) / 100
+    const ivaAmt      = ivaEsente ? 0 : Math.round(imponibile * ivaPct / 100 * 100) / 100
     const totale      = Math.round((imponibile + ivaAmt) * 100) / 100
     const fmt         = (n: number) => n.toFixed(2).replace('.', ',')
 
@@ -11132,7 +11132,7 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
         <tr><td class="lbl">Data</td><td class="val">${oggi}</td></tr>
         <tr><td class="lbl">Rif. DDT N°</td><td class="val">${numProgressivoPF} del ${dataDDT}</td></tr>
         <tr><td class="lbl">Contratto</td><td class="val">${codiceContratto}</td></tr>
-        <tr><td class="lbl">IVA applicata</td><td class="val">${ivaPct}%${ivaAgevolata ? ' (agevolata Legge 104)' : ''}</td></tr>
+        <tr><td class="lbl">IVA applicata</td><td class="val">${ivaEsente ? 'Esente (art. 10 n. 18 d.P.R. 633/1972)' : ivaPct + '%' + (ivaAgevolata ? ' (agevolata Legge 104)' : '')}</td></tr>
       </table>
     </div>
     <div class="meta-dest-right">
@@ -11159,8 +11159,10 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
     </thead>
     <tbody>
       <tr>
-        <td class="cod">${dispositivo}</td>
-        <td>${descDispositivoPF}</td>
+        <td class="cod">${ivaEsente ? 'Servizi di TeleAssistenza e TeleMonitoraggio con Dispositivo Medicale' : dispositivo}</td>
+        <td>${ivaEsente
+          ? `Servizi di TeleAssistenza e TeleMonitoraggio con Dispositivo Medicale mobile di piccole dimensioni ed indossabile, progettato per monitorare e proteggere le persone. In caso di emergenza, la persona può attivarlo premendo un pulsante SOS sull'unità e la funzione di comunicazione vocale bidirezionale consente di parlare con i familiari e i care giver configurati in Piattaforma. È integrato con sensori che consentono la geolocalizzazione, il geo-fencing, il rilevamento cadute, il reminder dei farmaci e il monitoraggio continuo dei parametri vitali (FC e SpO2). Dispositivo Medico certificato in classe IIA con codice CND V0399 e codice BD/RDM ${bdRdm} S/N ${serialNumber !== '—' ? serialNumber : '......................'}. Consente la rilevazione della Frequenza Cardiaca (FC) e della Saturazione (SpO2). Inclusa basetta per la ricarica, alimentatore e cavo. Installazione e collaudo inclusi. SIM inclusa (n. ${simNumberPF !== '—' ? simNumberPF : '..............'}) per comunicazione e trasmissione dati.`
+          : descDispositivoPF}</td>
         <td class="um">NR</td>
         <td class="qty">1</td>
       </tr>
@@ -11187,12 +11189,12 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
       <td class="val">€ ${fmt(imponibile)}</td>
     </tr>
     <tr>
-      <td class="lbl">IVA ${ivaPct}%${ivaAgevolata ? ' <span class="iva-badge">Legge 104</span>' : ''}:</td>
-      <td class="val">€ ${fmt(ivaAmt)}</td>
+      <td class="lbl">${ivaEsente ? 'IVA <span class="iva-badge">Esente art. 10 n. 18</span>:' : `IVA ${ivaPct}%${ivaAgevolata ? ' <span class="iva-badge">Legge 104</span>' : ''}:`}</td>
+      <td class="val">${ivaEsente ? '€ 0,00' : `€ ${fmt(ivaAmt)}`}</td>
     </tr>
     <tr class="totale-row">
-      <td class="lbl" style="color:#fff;">TOTALE IVA INCLUSA:</td>
-      <td class="val" style="color:#fff;">€ ${fmt(totale)}</td>
+      <td class="lbl" style="color:#fff;">${ivaEsente ? 'TOTALE (ESENTE IVA):' : 'TOTALE IVA INCLUSA:'}</td>
+      <td class="val" style="color:#fff;">€ ${fmt(ivaEsente ? imponibile : totale)}</td>
     </tr>
   </table>
 
@@ -16998,7 +17000,7 @@ app.get('/api/contracts/:id/proforma-interna-html', async (c) => {
               cfIntestatario, codiceFiscaleIntestatario, cfAssistito,
               indirizzoIntestatario, cittaIntestatario, capIntestatario, provinciaIntestatario,
               indirizzoAssistito, cittaAssistito, capAssistito, provinciaAssistito,
-              iva_agevolata,
+              iva_agevolata, iva_esente,
               rateizzazione_attiva, riserva_dominio
        FROM leads WHERE id = ?`
     ).bind(contract.leadId).first() as any
@@ -17029,9 +17031,9 @@ app.get('/api/contracts/:id/proforma-interna-html', async (c) => {
     // Prezzi
     const ivaAgevolata = !!(lead.iva_agevolata)
     const ivaEsente = !!(lead.iva_esente)
-    const ivaPct       = ivaAgevolata ? 4 : 22
+    const ivaPct       = ivaEsente ? 0 : ivaAgevolata ? 4 : 22
     const netto        = parseFloat(contract.prezzo_totale) || 0
-    const ivaAmt       = Math.round(netto * ivaPct / 100 * 100) / 100
+    const ivaAmt       = ivaEsente ? 0 : Math.round(netto * ivaPct / 100 * 100) / 100
     const totale       = Math.round((netto + ivaAmt) * 100) / 100
     const fmt          = (n: number) => n.toFixed(2).replace('.', ',')
 
@@ -17148,12 +17150,18 @@ app.get('/api/contracts/:id/proforma-interna-html', async (c) => {
       : `Pro Forma ${codiceProforma} – ${nome} ${cognome} – Attivazione eCura ${servizio.replace(/^eCura\s*/i,'').toUpperCase()} ${piano}`
 
     // Sostituisci placeholder
+    const totaleBoxLine = ivaEsente
+      ? `Imponibile: € {{NETTO}} &nbsp;<strong>— Esente IVA (art. 10 n. 18 d.P.R. 633/1972)</strong> &nbsp;=&nbsp; <span style="font-size:15pt;">TOTALE: € {{TOTALE}}</span>`
+          .replace('{{NETTO}}', fmt(netto)).replace('{{TOTALE}}', fmt(netto))
+      : `IMPONIBILE: € ${fmt(netto)} &nbsp;+&nbsp; IVA ${ivaPct}% (€ ${fmt(ivaAmt)}) &nbsp;=&nbsp; <span style="font-size:15pt;">TOTALE: € ${fmt(totale)}</span>`
     const vars: Record<string, string> = {
       NOME: nome.toUpperCase(), COGNOME: cognome.toUpperCase(),
       CF: cf.toUpperCase(),
       INDIRIZZO: indirizzo, CAP_CITTA: capCitta,
       DATA_ATTIVAZIONE: dataAttivazione,
-      NETTO: fmt(netto), IVA_PCT: String(ivaPct), IVA_AMT: fmt(ivaAmt), TOTALE: fmt(totale),
+      NETTO: fmt(netto), IVA_PCT: String(ivaPct), IVA_AMT: fmt(ivaAmt), TOTALE: fmt(ivaEsente ? netto : totale),
+      IVA_ESENTE: ivaEsente ? '1' : '',
+      TOTALE_BOX_LINE: totaleBoxLine,
       SIM: sim, SN_DISPOSITIVO: snDev, DISPOSITIVO: dispositivo, BD_RDM: bdRdm,
       CODICE_PROFORMA: codiceProforma,
       DATA_DOC: `Milano, ${oggi}`,

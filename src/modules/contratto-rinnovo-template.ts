@@ -484,6 +484,8 @@ export const CONTRATTO_RINNOVO_B2C_TEMPLATE = `<!DOCTYPE html>
  * l'endpoint /api/contracts/:id/genera-proforma-interna-html.
  * Variabili: {{NOME}}, {{COGNOME}}, {{CF}}, {{INDIRIZZO}}, {{CAP_CITTA}},
  *            {{DATA_ATTIVAZIONE}}, {{NETTO}}, {{IVA_PCT}}, {{IVA_AMT}}, {{TOTALE}},
+ *            {{IVA_ESENTE}} ("1" se esente, "" altrimenti),
+ *            {{TOTALE_BOX_LINE}} (HTML completo della riga imponibile+IVA+totale),
  *            {{SIM}}, {{SN_DISPOSITIVO}}, {{DISPOSITIVO}}, {{BD_RDM}},
  *            {{CODICE_PROFORMA}}, {{DATA_DOC}},
  *            {{TIPO_PRESTAZIONE_TESTO}}, {{TITOLO_PRESTAZIONE}},
@@ -538,8 +540,7 @@ body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #111; 
 <div class="prestazione-box">{{TIPO_PRESTAZIONE_TESTO}}</div>
 
 <div class="totale-box">
-  IMPONIBILE: € {{NETTO}} &nbsp;+&nbsp; IVA {{IVA_PCT}}% (€ {{IVA_AMT}}) &nbsp;=&nbsp;
-  <span style="font-size:15pt;">TOTALE: € {{TOTALE}}</span>
+  {{TOTALE_BOX_LINE}}
 </div>
 
 <div class="section-title">PAGAMENTO CON BONIFICO</div>
