@@ -32340,7 +32340,7 @@ app.post('/api/auth/login', async (c) => {
     // ⚠️ IMPORTANTE: encodeURIComponent obbligatorio — JSON contiene " e : vietati in cookie (RFC 6265)
     // Il middleware auth usa già decodeURIComponent() → compatibile
     c.header('Set-Cookie', 
-      `session=${encodeURIComponent(JSON.stringify(session))}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=28800`)
+      `session=${encodeURIComponent(JSON.stringify(session))}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`)
     
     console.log('✅ [AUTH] Login riuscito:', username, 'Ruolo:', user.role)
     
