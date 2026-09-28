@@ -25,7 +25,7 @@ import EmailService from './email-service'
 import { loadEmailTemplate, renderTemplate } from './template-loader-clean'
 import { D1Database } from '@cloudflare/workers-types'
 import { loadBrochurePDF, getBrochureForService } from './brochure-manager'
-import { formatServiceName } from './ecura-pricing'
+import { formatServiceName, ECURA_PRICING } from './ecura-pricing'
 import { getMissingFields, isLeadComplete } from './lead-completion'
 import { getSetting } from './settings-api'
 
@@ -296,8 +296,15 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
   // ── Indirizzo spedizione dispositivo ──────────────────────────────────────
   // ✅ Usa i campi pre-calcolati di leadData (calcolati in index.tsx da indirizzo_spedizione)
   // Questo garantisce che: richiedente → indirizzo richiedente, custom → sped_*, assistito → indirizzo assistito
-  const nomeAssistitoSpedizione  = (leadData as any).nomeConsegna    || leadData.nomeAssistito || leadData.nomeRichiedente || ''
-  const cognomeAssistitoSpedizione = '' // già incluso in nomeConsegna (nomeConsegna = nome+cognome)
+  // ✅ FIX: nomeConsegna include solo il nome — aggiungiamo cognome se separato
+  const _nomeBaseConsegna = (leadData as any).nomeConsegna || leadData.nomeAssistito || leadData.nomeRichiedente || ''
+  const _cognomeBaseConsegna = (leadData as any).nomeConsegna
+    ? '' // nomeConsegna già contiene nome+cognome concatenati
+    : (leadData.cognomeAssistito || leadData.cognomeRichiedente || '')
+  const nomeAssistitoSpedizione = _cognomeBaseConsegna
+    ? `${_nomeBaseConsegna} ${_cognomeBaseConsegna}`.trim()
+    : _nomeBaseConsegna
+  const cognomeAssistitoSpedizione = '' // già incluso in nomeAssistitoSpedizione
   const indirizzoSpedizione = (leadData as any).indirizzoConsegna || leadData.indirizzoAssistito || (leadData as any).indirizzoIntestatario || 'N/A'
   const capSpedizione       = (leadData as any).capConsegna       || (leadData as any).capAssistito       || (leadData as any).capIntestatario       || ''
   const cittaSpedizione     = (leadData as any).cittaConsegna     || (leadData as any).cittaAssistito     || (leadData as any).cittaIntestatario     || ''
@@ -531,7 +538,7 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
     <p>La premessa che precede costituisce parte integrante del presente Contratto.</p>
     
     <h2>Oggetto del Contratto</h2>
-    <p>L'oggetto del presente Contratto è l'erogazione del "Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" mediante l'utilizzo del Dispositivo ${dispositivo}. Le funzioni del Dispositivo ${dispositivo} sono le seguenti:</p>
+    <p>L'oggetto del presente Contratto è l'erogazione del "Servizio di TeleAssistenza ${servizioTipo !== 'PRO' ? `eCura ${servizioTipo.charAt(0) + servizioTipo.slice(1).toLowerCase()} ` : ''}${pianoNome === 'BASE' ? 'base' : 'avanzato'}" mediante l'utilizzo del Dispositivo ${dispositivo}. Le funzioni del Dispositivo ${dispositivo} sono le seguenti:</p>
     
     <div class="feature-list">
         ${funzioniDispositivoHtml}
@@ -540,7 +547,7 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
     <p>L'integrazione di queste funzioni consente l'elaborazione di consigli sanitari personalizzati per le esigenze dell'Assistito da parte del Medico di Medicina Generale.</p>
     
     <h2>Durata del Servizio</h2>
-    <p>${isRinnovo ? `Il Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'} — Anno ${annoRinnovo} — ha una durata di 12 mesi a partire da <span class="highlight">${dataInizioServizio}</span> fino al <span class="highlight">${dataScadenza}</span>. Il Contratto sarà prorogabile su richiesta scritta del Cliente e su accettazione di Medica GB.` : `Il Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'} ha una durata di 12 mesi a partire da <span class="highlight">${dataInizioServizio}</span> fino al <span class="highlight">${dataScadenza}</span>. Il Contratto sarà prorogabile su richiesta scritta del Cliente e su accettazione di Medica GB.`}</p>
+    <p>${isRinnovo ? `Il Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'} — Anno ${annoRinnovo} — ha una durata di 12 mesi a partire da <span class="highlight">${dataInizioServizio}</span> fino al <span class="highlight">${dataScadenza}</span>. Il Contratto sarà prorogabile su richiesta scritta del Cliente e su accettazione di Medica GB.` : `Il Servizio di TeleAssistenza ${servizioTipo !== 'PRO' ? `eCura ${servizioTipo.charAt(0) + servizioTipo.slice(1).toLowerCase()} ` : ''}${pianoNome === 'BASE' ? 'base' : 'avanzato'} ha una durata di 12 mesi a partire da <span class="highlight">${dataInizioServizio}</span> fino al <span class="highlight">${dataScadenza}</span>. Il Contratto sarà prorogabile su richiesta scritta del Cliente e su accettazione di Medica GB.`}</p>
     
     <h2>Tariffa del Servizio</h2>
     ${hasScontoContratto ? `
@@ -558,19 +565,19 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
       <strong style="color:#1b5e20;">🔄 CONTRATTO DI RINNOVO — Anno ${annoRinnovo}</strong><br>
       <span style="color:#2e7d32; font-size:13px;">La tariffa di rinnovo è agevolata rispetto alla prima annualità in quanto non comprende il dispositivo e il setup iniziale.${codiceOriginale ? ' Contratto originale: <strong>' + codiceOriginale + '</strong>.' : ''}</span>
     </div>
-    <p>La tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" — Anno ${annoRinnovo} — è pari a <span class="highlight">${importoPrimoAnno} €</span> (${mensileSetup}) ${ivaEsenteContratto ? 'Esente IVA' : `+ IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${prezzoIvaInclusaCorretto} € IVA inclusa</span>)`} e include:</p>
+    <p>La tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${servizioTipo !== 'PRO' ? `eCura ${servizioTipo.charAt(0) + servizioTipo.slice(1).toLowerCase()} ` : ''}${pianoNome === 'BASE' ? 'base' : 'avanzato'}" — Anno ${annoRinnovo} — è pari a <span class="highlight">${importoPrimoAnno} €</span> (${mensileSetup}) ${ivaEsenteContratto ? 'Esente IVA' : `+ IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${prezzoIvaInclusaCorretto} € IVA inclusa</span>)`} e include:</p>
     <ul>
         <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
         <li>SIM multiprovider (prefisso +48 o +33) per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
     </ul>
     ` : `
-    <p>La tariffa annuale per il primo anno di attivazione del "Servizio di TeleAssistenza ${pianoNome === 'BASE' ? 'Base' : 'avanzato'}" è pari a <span class="highlight">${importoPrimoAnno} €</span> (${mensileSetup} × 12 mesi) ${ivaEsenteContratto ? 'Esente IVA' : `+ IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${prezzoIvaInclusaCorretto} € IVA inclusa</span>)`} e include:</p>
+    <p>La tariffa annuale per il primo anno di attivazione del "Servizio di TeleAssistenza ${servizioTipo !== 'PRO' ? `eCura ${servizioTipo.charAt(0) + servizioTipo.slice(1).toLowerCase()} ` : ''}${pianoNome === 'BASE' ? 'Base' : 'avanzato'}" è pari a <span class="highlight">${importoPrimoAnno} €</span> (${mensileSetup} × 12 mesi) ${ivaEsenteContratto ? 'Esente IVA' : `+ IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${prezzoIvaInclusaCorretto} € IVA inclusa</span>)`} e include:</p>
     <ul>
         <li>Dispositivo ${dispositivo} (hardware)</li>
         <li>Configurazione del Dispositivo e del Processo di Comunicazione con ${pianoNome === 'AVANZATO' ? 'la Centrale Operativa e uno o più familiari' : 'uno o più familiari'} e Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
         <li>SIM multiprovider (prefisso +48 o +33) in grado di collegarsi automaticamente al provider con migliore copertura e di funzionare in tutta Europa, per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
     </ul>
-    <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${pianoNome === 'BASE' ? 'base' : 'avanzato'}" sarà pari a <span class="highlight">${importoAnniSuccessivi} €</span> (${mensileRinnovo}) ${ivaEsenteContratto ? 'Esente IVA' : `+ IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${totaleRinnovoCorretto} € IVA inclusa</span>)`} con inclusi:</p>
+    <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${servizioTipo !== 'PRO' ? `eCura ${servizioTipo.charAt(0) + servizioTipo.slice(1).toLowerCase()} ` : ''}${pianoNome === 'BASE' ? 'base' : 'avanzato'}" sarà pari a <span class="highlight">${importoAnniSuccessivi} €</span> (${mensileRinnovo}) ${ivaEsenteContratto ? 'Esente IVA' : `+ IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${totaleRinnovoCorretto} € IVA inclusa</span>)`} con inclusi:</p>
     <ul>
         <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12mesi</li>
         <li>SIM multiprovider per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
@@ -757,7 +764,7 @@ export async function inviaEmailNotificaInfo(
       PIANO_SERVIZIO: formatServiceName(leadData.servizio || 'PRO', leadData.pacchetto),
       SERVIZIO: leadData.servizio || 'eCura PRO',
       PIANO: leadData.pacchetto || 'BASE',
-      PREZZO_PIANO: leadData.pacchetto === 'BASE' ? '€585,60' : '€1.024,80',
+      PREZZO_PIANO: (() => { const _sv = (leadData.servizio || 'PRO').replace(/^eCura\s+/i,'').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'; const _p = (leadData.pacchetto === 'BASE' ? 'BASE' : 'AVANZATO') as 'BASE'|'AVANZATO'; const _pr = ECURA_PRICING[_sv]?.[_p]; return _pr ? `€${_pr.setupTotale.toFixed(2).replace('.',',')}` : (leadData.pacchetto === 'BASE' ? '€585,60' : '€1.024,80'); })(),
       DATA_RICHIESTA: now.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' }),
       ORA_RICHIESTA: now.toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome' }),
       TIMESTAMP_COMPLETO: now.toLocaleString('it-IT', { timeZone: 'Europe/Rome' }),
@@ -923,8 +930,8 @@ export async function inviaEmailDocumentiInformativi(
       BROCHURE_URL: brochureUrl,
       DATA_RICHIESTA: new Date().toLocaleDateString('it-IT'),
       PACCHETTO: leadData.pacchetto || 'BASE',
-      PREZZO_PIANO: leadData.pacchetto === 'BASE' ? '€480/anno' : '€840/anno',
-      PREZZO_SERVIZIO_PIANO: leadData.pacchetto === 'BASE' ? '€480/anno' : '€840/anno',
+      PREZZO_PIANO: (() => { const _sv = (leadData.servizio || 'PRO').replace(/^eCura\s+/i,'').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'; const _p = (leadData.pacchetto === 'BASE' ? 'BASE' : 'AVANZATO') as 'BASE'|'AVANZATO'; const _pr = ECURA_PRICING[_sv]?.[_p]; return _pr ? `€${_pr.setupBase.toFixed(2).replace('.',',')}/anno` : (leadData.pacchetto === 'BASE' ? '€480/anno' : '€840/anno'); })(),
+      PREZZO_SERVIZIO_PIANO: (() => { const _sv = (leadData.servizio || 'PRO').replace(/^eCura\s+/i,'').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'; const _p = (leadData.pacchetto === 'BASE' ? 'BASE' : 'AVANZATO') as 'BASE'|'AVANZATO'; const _pr = ECURA_PRICING[_sv]?.[_p]; return _pr ? `€${_pr.setupBase.toFixed(2).replace('.',',')}/anno` : (leadData.pacchetto === 'BASE' ? '€480/anno' : '€840/anno'); })(),
       
       // Sezione completamento (HTML renderizzato)
       COMPLETION_SECTION: completionSection

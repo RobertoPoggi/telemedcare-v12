@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manuale Operatore CRM TeleMedCare V12 — 2026</title>
+<style>
+  :root {
+    --blue: #2563eb; --blue-light: #dbeafe;
+    --green: #16a34a; --green-light: #dcfce7;
+    --orange: #ea580c; --orange-light: #ffedd5;
+    --red: #dc2626; --red-light: #fee2e2;
+    --purple: #7c3aed; --purple-light: #ede9fe;
+    --indigo: #4338ca; --indigo-light: #e0e7ff;
+    --teal: #0d9488; --teal-light: #ccfbf1;
+    --gray: #374151; --gray-light: #f3f4f6;
+    --yellow: #ca8a04; --yellow-light: #fef9c3;
+    --bg: #f8fafc; --text: #1e293b; --border: #e2e8f0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.6; }
+  
+  /* HEADER */
+  .header { background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); color: white; padding: 36px 48px; }
+  .header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 6px; }
+  .header .subtitle { font-size: 1rem; opacity: 0.85; margin-bottom: 4px; }
+  .header .meta { font-size: 0.82rem; opacity: 0.65; margin-top: 10px; }
+  
+  /* LAYOUT */
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+  
+  /* TOC */
+  .toc { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 24px 28px; margin-bottom: 36px; }
+  .toc h2 { font-size: 1.05rem; font-weight: 700; margin-bottom: 14px; color: var(--blue); }
+  .toc ol { padding-left: 20px; column-count: 2; column-gap: 32px; }
+  .toc li { margin-bottom: 6px; font-size: 0.9rem; }
+  .toc a { color: var(--blue); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  
+  /* SECTIONS */
+  .section { background: white; border: 1px solid var(--border); border-radius: 10px; padding: 28px 32px; margin-bottom: 28px; }
+  .section h2 { font-size: 1.25rem; font-weight: 700; color: var(--blue); border-bottom: 2px solid var(--blue-light); padding-bottom: 10px; margin-bottom: 20px; }
+  .section h3 { font-size: 1.05rem; font-weight: 700; color: var(--gray); margin: 22px 0 10px; }
+  .section h4 { font-size: 0.95rem; font-weight: 600; color: var(--indigo); margin: 16px 0 8px; }
+  p { margin-bottom: 10px; }
+  
+  /* STEP BLOCKS */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 14px; margin-bottom: 14px; align-items: flex-start; }
+  .step-num { background: var(--blue); color: white; border-radius: 50%; width: 26px; height: 26px; min-width: 26px; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; margin-top: 2px; }
+  .step-body { flex: 1; }
+  
+  /* BUTTON PILLS */
+  .btn { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 5px; font-size: 0.82rem; font-weight: 600; white-space: nowrap; }
+  .btn-blue { background: var(--blue-light); color: var(--blue); border: 1px solid #93c5fd; }
+  .btn-green { background: var(--green-light); color: var(--green); border: 1px solid #86efac; }
+  .btn-orange { background: var(--orange-light); color: var(--orange); border: 1px solid #fdba74; }
+  .btn-red { background: var(--red-light); color: var(--red); border: 1px solid #fca5a5; }
+  .btn-purple { background: var(--purple-light); color: var(--purple); border: 1px solid #c4b5fd; }
+  .btn-indigo { background: var(--indigo-light); color: var(--indigo); border: 1px solid #a5b4fc; }
+  .btn-teal { background: var(--teal-light); color: var(--teal); border: 1px solid #5eead4; }
+  .btn-gray { background: var(--gray-light); color: var(--gray); border: 1px solid #d1d5db; }
+  .btn-yellow { background: var(--yellow-light); color: var(--yellow); border: 1px solid #fde047; }
+  
+  /* CALLOUTS */
+  .note { background: var(--blue-light); border-left: 4px solid var(--blue); border-radius: 0 6px 6px 0; padding: 12px 16px; margin: 14px 0; font-size: 0.9rem; }
+  .warning { background: var(--orange-light); border-left: 4px solid var(--orange); border-radius: 0 6px 6px 0; padding: 12px 16px; margin: 14px 0; font-size: 0.9rem; }
+  .success { background: var(--green-light); border-left: 4px solid var(--green); border-radius: 0 6px 6px 0; padding: 12px 16px; margin: 14px 0; font-size: 0.9rem; }
+  .danger { background: var(--red-light); border-left: 4px solid var(--red); border-radius: 0 6px 6px 0; padding: 12px 16px; margin: 14px 0; font-size: 0.9rem; }
+  
+  /* TABLES */
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.88rem; }
+  th { background: var(--indigo-light); color: var(--indigo); text-align: left; padding: 9px 12px; font-weight: 700; border: 1px solid var(--border); }
+  td { padding: 8px 12px; border: 1px solid var(--border); vertical-align: top; }
+  tr:nth-child(even) td { background: var(--gray-light); }
+  
+  /* BADGE */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; }
+  .badge-admin { background: #fef3c7; color: #92400e; }
+  .badge-op { background: #e0e7ff; color: #3730a3; }
+  
+  /* ICON REF TABLE */
+  .icon-table td:first-child { font-size: 1.1rem; text-align: center; width: 42px; }
+  .icon-table td:nth-child(2) { font-weight: 600; }
+  
+  /* FLOW DIAGRAM */
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0; }
+  .flow-step { background: var(--blue-light); border: 1px solid #93c5fd; border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; font-weight: 600; color: var(--blue); }
+  .flow-arrow { color: #94a3b8; font-size: 1.1rem; }
+  .flow-step.green { background: var(--green-light); border-color: #86efac; color: var(--green); }
+  .flow-step.orange { background: var(--orange-light); border-color: #fdba74; color: var(--orange); }
+  .flow-step.purple { background: var(--purple-light); border-color: #c4b5fd; color: var(--purple); }
+  .flow-step.indigo { background: var(--indigo-light); border-color: #a5b4fc; color: var(--indigo); }
+  .flow-step.teal { background: var(--teal-light); border-color: #5eead4; color: var(--teal); }
+  
+  /* PRINT */
+  @media print {
+    .header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .section { page-break-inside: avoid; }
+  }
+  
+  @media (max-width: 700px) {
+    .toc ol { column-count: 1; }
+    .header { padding: 24px 20px; }
+    .section { padding: 18px 16px; }
+    .container { padding: 16px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📋 Manuale Operatore CRM TeleMedCare V12</h1>
+  <div class="subtitle">Guida operativa completa per l'uso quotidiano del CRM — Versione 12</div>
+  <div class="meta">Redatto il 27 settembre 2026 · Solo uso interno · Riservato agli operatori autorizzati</div>
+</div>
+
+<div class="container">
+
+<!-- ========== INDICE ========== -->
+<div class="toc" id="toc">
+  <h2>📑 Indice</h2>
+  <ol>
+    <li><a href="#s1">Accesso e sessione</a></li>
+    <li><a href="#s2">Panoramica dashboard e ruoli</a></li>
+    <li><a href="#s3">Lista lead: orientarsi nella schermata</a></li>
+    <li><a href="#s4">Creare un nuovo lead</a></li>
+    <li><a href="#s5">Modificare un lead (✏️ Modifica)</a></li>
+    <li><a href="#s6">Visualizzare un lead (👁️ Visualizza)</a></li>
+    <li><a href="#s7">Gestire le interazioni (💬)</a></li>
+    <li><a href="#s8">Gestire gli assistiti</a></li>
+    <li><a href="#s9">Inviare il contratto (📄)</a></li>
+    <li><a href="#s10">Firma digitale e firma manuale (🖊️)</a></li>
+    <li><a href="#s11">Inviare brochure ed email (📗 ✉️)</a></li>
+    <li><a href="#s12">Inviare la proforma (💰)</a></li>
+    <li><a href="#s13">Registrare il pagamento e invio automatico form configurazione (✅)</a></li>
+    <li><a href="#s14">Re-invio manuale form configurazione (⚙️)</a></li>
+    <li><a href="#s15">Email di benvenuto (🎉)</a></li>
+    <li><a href="#s16">Generare DDT (📦)</a></li>
+    <li><a href="#s17">Gestione IVA agevolata ed esenzione</a></li>
+    <li><a href="#s18">Sconti e codici promozionali (🏷️)</a></li>
+    <li><a href="#s19">Rateizzazione (📅)</a></li>
+    <li><a href="#s20">Gestione DDT e pre-fatture (/admin/ddt)</a></li>
+  </ol>
+</div>
+
+<!-- ========== 1. ACCESSO ========== -->
+<div class="section" id="s1">
+  <h2>1. Accesso e sessione</h2>
+  <h3>Come effettuare il login</h3>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Apri il browser e vai all'URL del CRM (es. <code>https://telemedcare-v12.workers.dev</code>).</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Inserisci il tuo <strong>nome utente</strong> e la tua <strong>password</strong> nei campi appositi.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Clicca il pulsante <strong>Accedi</strong>. Se le credenziali sono corrette, verrai reindirizzato alla dashboard.</div></div>
+  </div>
+  <div class="note">⏱️ <strong>Durata sessione:</strong> la sessione rimane attiva per <strong>7 giorni</strong> senza necessità di rifare il login. Dopo 7 giorni di inattività, o dopo un logout esplicito, dovrai rieseguire l'accesso.</div>
+
+  <h3>Come effettuare il logout</h3>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">In alto a destra nella dashboard, clicca il pulsante <strong>Logout</strong>.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Verrai reindirizzato alla pagina di login. La sessione è terminata.</div></div>
+  </div>
+
+  <h3>Utenti del sistema</h3>
+  <table>
+    <tr><th>Nome</th><th>Ruolo</th><th>Codice CM</th><th>Accesso</th></tr>
+    <tr><td>Roberto Poggi</td><td><span class="badge badge-admin">ADMIN</span></td><td>RP</td><td>Completo</td></tr>
+    <tr><td>Stefania Rocca</td><td><span class="badge badge-admin">ADMIN</span></td><td>SR</td><td>Completo</td></tr>
+    <tr><td>Operatore Commerciale</td><td><span class="badge badge-op">OPERATOR</span></td><td>OC</td><td>Senza eliminazione lead</td></tr>
+  </table>
+  <div class="warning">⚠️ Il ruolo <strong>OPERATOR</strong> non può eliminare i lead (il pulsante 🗑️ è visibile solo agli ADMIN). Tutte le altre operazioni sono disponibili a entrambi i ruoli.</div>
+</div>
+
+<!-- ========== 2. DASHBOARD ========== -->
+<div class="section" id="s2">
+  <h2>2. Panoramica dashboard e ruoli</h2>
+  <p>Dopo il login vedi la <strong>lista lead</strong> come schermata principale. Ogni riga rappresenta un lead/cliente con tutte le sue azioni disponibili direttamente nella riga.</p>
+  <h3>Struttura della riga lead</h3>
+  <p>Ogni riga è divisa in tre zone principali:</p>
+  <table>
+    <tr><th>Zona</th><th>Cosa contiene</th></tr>
+    <tr><td><strong>Colonna sinistra/centro</strong></td><td>Dati anagrafici: nome, cognome, telefono, email, servizio, piano, stato pipeline, temperatura, CM</td></tr>
+    <tr><td><strong>Colonna azioni</strong> (ampia, al centro)</td><td>13 pulsanti di azione rapida (💬 📄 📗 ecc.) — descritti nel dettaglio nella sezione 3</td></tr>
+    <tr><td><strong>Colonna CRUD</strong> (destra)</td><td>3 pulsanti: 👁️ Visualizza, ✏️ Modifica, 🗑️ Elimina</td></tr>
+  </table>
+  <h3>Dropdown di stato e temperatura</h3>
+  <p>Direttamente nella riga puoi cambiare lo stato pipeline e la temperatura del lead senza aprire alcun modal: clicca sui rispettivi <strong>dropdown</strong> e seleziona il nuovo valore. Il salvataggio è immediato.</p>
+</div>
+
+<!-- ========== 3. LISTA LEAD ========== -->
+<div class="section" id="s3">
+  <h2>3. Lista lead: orientarsi nella schermata</h2>
+  <h3>Tabella dei pulsanti azione (colonna centrale)</h3>
+  <p>I 13 pulsanti azione si trovano nella colonna centrale di ogni riga, in questo ordine da sinistra a destra:</p>
+  <table class="icon-table">
+    <tr><th>#</th><th>Icona</th><th>Colore</th><th>Nome</th><th>Cosa fa</th></tr>
+    <tr><td>1</td><td>💬</td><td>Viola</td><td>Gestisci Interazioni</td><td>Apre lo storico interazioni (telefonate, email, note, ecc.)</td></tr>
+    <tr><td>2</td><td>📄 <small>(fa-file-contract)</small></td><td>Blu</td><td>Invia Contratto</td><td>Invia il contratto via email (piano BASE o AVANZATO)</td></tr>
+    <tr><td>3</td><td>📗 <small>(fa-book)</small></td><td>Verde</td><td>Invia Brochure</td><td>Invia la brochure via email</td></tr>
+    <tr><td>4</td><td>💬 <small>(fa-whatsapp)</small></td><td>Verde scuro</td><td>WhatsApp Brochure</td><td>Apre WhatsApp con messaggio precompilato contenente la brochure</td></tr>
+    <tr><td>5</td><td>✉️ <small>(fa-paper-plane)</small></td><td>Viola</td><td>Richiedi Completamento</td><td>Invia email al lead per richiedere il completamento dei dati mancanti</td></tr>
+    <tr><td>6</td><td>🖊️</td><td>Giallo-marrone</td><td>Firma Manuale</td><td>Registra la firma del contratto manualmente (es. firmato su carta)</td></tr>
+    <tr><td>7</td><td>💰</td><td>Arancione</td><td>Invia Proforma</td><td>Genera e invia la proforma (fattura pro-forma) al cliente</td></tr>
+    <tr><td>8</td><td>✅</td><td>Verde</td><td>Pagamento OK</td><td>Registra il pagamento. <strong>Invia automaticamente il form configurazione</strong> sia per pagamento unico che per rateizzazione (Rata 1)</td></tr>
+    <tr><td>9</td><td>⚙️</td><td>Indigo</td><td>Form Configurazione</td><td>Re-invia manualmente l'email con il form di configurazione</td></tr>
+    <tr><td>10</td><td>🎉</td><td>Teal</td><td>Email Benvenuto</td><td>Invia l'email di benvenuto al nuovo cliente</td></tr>
+    <tr><td>11</td><td>📦</td><td>Grigio scuro</td><td>Genera DDT</td><td>Genera il DDT, il dispositivo e l'assistito</td></tr>
+    <tr><td>12</td><td>🏷️</td><td>Giallo / Arancione</td><td>Applica/Rimuovi Sconto</td><td>Giallo = nessuno sconto attivo. Arancione = sconto applicato (clicca per rimuovere o cambiare)</td></tr>
+    <tr><td>13</td><td>📅</td><td>Indigo / Giallo / Verde</td><td>Rateizzazione</td><td>Indigo = rateizzazione non attiva. Giallo = rateizzato in corso. Verde = saldato completamente</td></tr>
+  </table>
+
+  <h3>Pulsanti CRUD (colonna destra)</h3>
+  <table class="icon-table">
+    <tr><th>Icona</th><th>Nome</th><th>Disponibile a</th><th>Cosa fa</th></tr>
+    <tr><td>👁️ <small>(fa-eye)</small></td><td>Visualizza</td><td>ADMIN + OPERATOR</td><td>Apre il modal di sola lettura con tutti i dettagli del lead</td></tr>
+    <tr><td>✏️ <small>(fa-edit)</small></td><td>Modifica</td><td>ADMIN + OPERATOR</td><td>Apre il modal di modifica per aggiornare i dati del lead</td></tr>
+    <tr><td>🗑️ <small>(fa-trash)</small></td><td>Elimina</td><td>Solo ADMIN</td><td>Elimina definitivamente il lead dopo conferma</td></tr>
+  </table>
+
+  <h3>Dropdown di stato nella riga</h3>
+  <table>
+    <tr><th>Emoji</th><th>Stato</th></tr>
+    <tr><td>🆕</td><td>Nuovo</td></tr>
+    <tr><td>📞</td><td>Contattato</td></tr>
+    <tr><td>✨</td><td>Interessato</td></tr>
+    <tr><td>💼</td><td>In Trattativa</td></tr>
+    <tr><td>✅</td><td>Convertito</td></tr>
+    <tr><td>❌</td><td>Perso</td></tr>
+    <tr><td>⛔</td><td>Non Interessato</td></tr>
+    <tr><td>🔄</td><td>Da Ricontattare</td></tr>
+    <tr><td>📵</td><td>Non Risponde</td></tr>
+    <tr><td>🚫</td><td>Numero Non Attivo</td></tr>
+    <tr><td>🏛️</td><td>INPS</td></tr>
+    <tr><td>💰</td><td>Problemi Economici</td></tr>
+  </table>
+
+  <h3>Dropdown temperatura</h3>
+  <table>
+    <tr><th>Emoji</th><th>Significato</th></tr>
+    <tr><td>🔥</td><td>Caldo — lead molto propenso all'acquisto</td></tr>
+    <tr><td>🌡️</td><td>Tiepido — interesse parziale, da lavorare</td></tr>
+    <tr><td>❄️</td><td>Freddo — poco interessato o non risponde</td></tr>
+  </table>
+</div>
+
+<!-- ========== 4. CREARE LEAD ========== -->
+<div class="section" id="s4">
+  <h2>4. Creare un nuovo lead</h2>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Nella dashboard, clicca il pulsante <span class="btn btn-blue">➕ Nuovo Lead</span> (in alto a destra o sopra la tabella).</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Si apre il modal <strong>Crea nuovo lead</strong>. Compila i campi obbligatori: <strong>Nome richiedente</strong>, <strong>Cognome</strong>, <strong>Telefono</strong>, <strong>Email</strong>.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Seleziona il <strong>Servizio</strong> (es. eCura, TeleMedCare), il <strong>Piano</strong> (BASE / AVANZATO), il <strong>CM</strong> (SR / OC / RP), lo <strong>Stato</strong> e la <strong>Temperatura</strong>.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Inserisci eventuali note e gli altri dati disponibili (indirizzo, dati dell'assistito, ecc.).</div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-body">Clicca <span class="btn btn-green">💾 Salva</span>. Il lead appare immediatamente nella lista.</div></div>
+  </div>
+  <div class="note">💡 È possibile completare i dati in un secondo momento aprendo il lead con ✏️ Modifica. Non è necessario avere tutti i dati subito.</div>
+</div>
+
+<!-- ========== 5. MODIFICARE ========== -->
+<div class="section" id="s5">
+  <h2>5. Modificare un lead (✏️ Modifica)</h2>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Individua il lead nella lista e clicca il pulsante <span class="btn btn-green">✏️</span> (fa-edit, verde) nella colonna CRUD a destra.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Si apre il modal <strong>Modifica Lead</strong> con tutti i campi precompilati con i dati attuali.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Modifica i campi che vuoi aggiornare: dati anagrafici, contatti, servizio/piano, stato, temperatura, CM, note, indirizzi.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Clicca <span class="btn btn-green">💾 Salva Modifiche</span>. La lista si aggiorna immediatamente.</div></div>
+  </div>
+  <div class="warning">⚠️ La modifica sovrascrive i dati precedenti. Verifica i campi prima di salvare, in particolare telefono ed email che vengono utilizzati per le comunicazioni automatiche.</div>
+</div>
+
+<!-- ========== 6. VISUALIZZARE ========== -->
+<div class="section" id="s6">
+  <h2>6. Visualizzare un lead (👁️ Visualizza)</h2>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Clicca il pulsante <span class="btn btn-blue">👁️</span> (fa-eye, blu) nella colonna CRUD a destra del lead.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Si apre il modal <strong>Dettaglio Lead</strong> (sola lettura) con tutte le informazioni: anagrafica, stato pipeline, IVA applicata, indirizzo di spedizione, storico interazioni, assistiti aggiuntivi.</div></div>
+  </div>
+
+  <h3>Cosa puoi fare dal modal Visualizza (oltre alla sola lettura)</h3>
+  <p>Il modal di visualizzazione contiene anche <strong>pulsanti di azione rapida</strong> per IVA e spedizione:</p>
+
+  <h4>Gestione IVA</h4>
+  <table>
+    <tr><th>Pulsante</th><th>Quando appare</th><th>Effetto</th></tr>
+    <tr><td><span class="btn btn-blue">⚕️ Attiva IVA 4% Legge 104</span></td><td>IVA è al 22% standard</td><td>Passa l'aliquota IVA al 4% (disabilità 100% Legge 104)</td></tr>
+    <tr><td><span class="btn btn-gray">🔄 Ripristina IVA 22%</span></td><td>IVA agevolata 4% attiva</td><td>Riporta l'aliquota al 22% standard</td></tr>
+    <tr><td><span class="btn btn-green">🏥 Attiva Esenzione IVA (0%)</span></td><td>IVA non esente</td><td>Attiva l'esenzione IVA 0% art. 10 n. 18 d.P.R. 633/1972</td></tr>
+    <tr><td><span class="btn btn-gray">🔄 Rimuovi Esenzione IVA</span></td><td>IVA esente 0% attiva</td><td>Rimuove l'esenzione e riporta al 22% standard</td></tr>
+  </table>
+  <div class="note">ℹ️ Le tre aliquote sono mutualmente esclusive: Esente 0% ha priorità su Agevolata 4%, che a sua volta ha priorità su Standard 22%. Attivare l'esenzione disattiva automaticamente l'agevolata.</div>
+
+  <h4>Gestione indirizzo di spedizione</h4>
+  <p>Il dispositivo viene spedito a uno di tre indirizzi possibili. Lo stato attuale è sempre visibile nel modal:</p>
+  <table>
+    <tr><th>Modalità</th><th>Indicatore</th><th>Pulsante disponibile</th></tr>
+    <tr><td><strong>Assistito</strong> (default)</td><td>📦 Spedizione → Assistito (default)</td><td><span class="btn btn-orange">✏️ Cambia indirizzo spedizione</span></td></tr>
+    <tr><td><strong>Richiedente/Lead</strong></td><td>📦 Spedizione → Richiedente/Lead</td><td><span class="btn btn-gray">🔄 Ripristina → Assistito</span></td></tr>
+    <tr><td><strong>Personalizzato</strong></td><td>📦 Spedizione → Indirizzo personalizzato: …</td><td><span class="btn btn-gray">🔄 Ripristina → Assistito</span></td></tr>
+  </table>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Se la spedizione è verso l'Assistito (default), clicca <span class="btn btn-orange">✏️ Cambia indirizzo spedizione</span> per aprire il modal di modifica indirizzo.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Nel modal di modifica spedizione puoi scegliere: inviare al <strong>Richiedente</strong>, oppure inserire un <strong>indirizzo personalizzato</strong> (nome, via, CAP, città, provincia).</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Se la spedizione è già impostata su Richiedente o Personalizzato, clicca <span class="btn btn-gray">🔄 Ripristina → Assistito</span> per tornare all'indirizzo dell'assistito.</div></div>
+  </div>
+</div>
+
+<!-- ========== 7. INTERAZIONI ========== -->
+<div class="section" id="s7">
+  <h2>7. Gestire le interazioni (💬)</h2>
+  <p>Le interazioni registrano ogni contatto con il lead: telefonate, email, WhatsApp, note interne, follow-up, ecc. Sono fondamentali per tracciare la storia commerciale.</p>
+
+  <h3>Aprire il pannello interazioni</h3>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Nella riga del lead, clicca il pulsante <span class="btn btn-purple">💬</span> (viola, primo pulsante a sinistra nella colonna azioni). Se ci sono interazioni registrate, vedrai un <strong>bollino rosso</strong> con il conteggio sopra il pulsante.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Si apre il pannello <strong>Gestisci Interazioni</strong> con lo storico di tutte le interazioni passate e il form per aggiungerne una nuova.</div></div>
+  </div>
+
+  <h3>Aggiungere una nuova interazione</h3>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Nel form di nuova interazione, seleziona il <strong>Tipo</strong> dal dropdown:</div></div>
+  </div>
+  <table>
+    <tr><th>Emoji</th><th>Tipo</th><th>Quando usarlo</th></tr>
+    <tr><td>📞</td><td>Telefono</td><td>Chiamata telefonica effettuata o ricevuta</td></tr>
+    <tr><td>📧</td><td>Email</td><td>Email inviata o ricevuta (non automatica)</td></tr>
+    <tr><td>💬</td><td>WhatsApp</td><td>Messaggio WhatsApp</td></tr>
+    <tr><td>📱</td><td>SMS</td><td>SMS inviato</td></tr>
+    <tr><td>🤝</td><td>Meeting</td><td>Incontro fisico o appuntamento</td></tr>
+    <tr><td>📹</td><td>Videocall</td><td>Videochiamata</td></tr>
+    <tr><td>📝</td><td>Nota</td><td>Nota interna, promemoria, informazione</td></tr>
+    <tr><td>🔔</td><td>Follow-up</td><td>Promemoria per ricontattare</td></tr>
+  </table>
+  <div class="steps">
+    <div class="step"><div class="step-num">2</div><div class="step-body">Seleziona l'<strong>Operatore</strong> che ha effettuato l'interazione: <strong>SR</strong> (Stefania Rocca), <strong>OC</strong> (Operatore Commerciale), <strong>RP</strong> (Roberto Poggi).</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Inserisci la <strong>Nota</strong> (campo obbligatorio): descrivi cosa è avvenuto, es. "Cliente interessato, richiede preventivo per piano AVANZATO".</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Inserisci l'<strong>Azione</strong> (campo opzionale): descrive il passo successivo da fare, es. "Richiamare giovedì 1 ottobre alle 15:00".</div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-body">Clicca <span class="btn btn-green">💾 Salva Interazione</span>. L'interazione viene aggiunta allo storico immediatamente.</div></div>
+  </div>
+  <div class="note">💡 Usa sempre il campo <strong>Azione</strong> per indicare il prossimo passo. Questo permette a qualsiasi operatore che riprende il lead di sapere cosa fare senza dover leggere tutto lo storico.</div>
+</div>
+
+<!-- ========== 8. ASSISTITI ========== -->
+<div class="section" id="s8">
+  <h2>8. Gestire gli assistiti</h2>
+  <p>Il <strong>Richiedente</strong> è la persona che ha contattato il CRM (il lead principale). L'<strong>Assistito</strong> è la persona che utilizzerà effettivamente il dispositivo (spesso anziano o non autosufficiente). Possono essere la stessa persona oppure persone diverse.</p>
+  <p>È possibile aggiungere <strong>più assistiti</strong> per lo stesso lead (es. una famiglia con più persone da assistere).</p>
+
+  <h3>Aggiungere un assistito</h3>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Apri il modal di visualizzazione del lead cliccando <span class="btn btn-blue">👁️</span> nella colonna CRUD.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Scorri fino alla sezione <strong>Assistiti</strong> in fondo al modal. Clicca il pulsante <span class="btn btn-green">➕ Aggiungi Assistito</span>.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Si apre un form con i seguenti campi:</div></div>
+  </div>
+  <table>
+    <tr><th>Campo</th><th>Note</th></tr>
+    <tr><td>Nome</td><td>Nome dell'assistito</td></tr>
+    <tr><td>Cognome</td><td>Cognome dell'assistito</td></tr>
+    <tr><td>Codice Fiscale (CF)</td><td>Necessario per la documentazione</td></tr>
+    <tr><td>Data di Nascita</td><td>Formato gg/mm/aaaa</td></tr>
+    <tr><td>Luogo di Nascita</td><td>Comune di nascita</td></tr>
+    <tr><td>Indirizzo, CAP, Città, Provincia, Nazione</td><td>Indirizzo di residenza dell'assistito</td></tr>
+    <tr><td>Spedizione a</td><td>Scegli: <em>questo assistito</em> oppure <em>richiedente</em></td></tr>
+    <tr><td>Intestatario contratto</td><td>Scegli: <em>questo assistito</em> oppure <em>richiedente</em></td></tr>
+    <tr><td>Note</td><td>Eventuali note specifiche sull'assistito</td></tr>
+  </table>
+  <div class="steps">
+    <div class="step"><div class="step-num">4</div><div class="step-body">Clicca <span class="btn btn-green">💾 Salva</span>. L'assistito viene aggiunto all'elenco.</div></div>
+  </div>
+  <div class="note">💡 Il campo <strong>Intestatario contratto</strong> determina a chi viene intestato il contratto di assistenza: all'assistito stesso o al richiedente (es. figlio che paga per il genitore).</div>
+</div>
+
+<!-- ========== 9. CONTRATTO ========== -->
+<div class="section" id="s9">
+  <h2>9. Inviare il contratto (📄)</h2>
+  <p>Il contratto viene inviato via email al lead e contiene un link per la firma digitale.</p>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Nella riga del lead, clicca il pulsante <span class="btn btn-blue">📄</span> (fa-file-contract, blu, secondo pulsante). Sul tooltip vedrai il piano associato al lead (es. "Invia Contratto BASE").</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Il sistema genera automaticamente il contratto in base al piano configurato nel lead (BASE o AVANZATO) e lo invia via email all'indirizzo del lead.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Il lead riceve un'email con un <strong>link univoco per la firma digitale</strong> (pagina pubblica <code>/firma-contratto?token=XXX</code>).</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Il sistema mostra una notifica di conferma o di errore. In caso di successo lo stato pipeline del lead viene aggiornato automaticamente.</div></div>
+  </div>
+  <div class="note">📧 Il sistema usa <strong>Brevo</strong> come provider email principale. In caso di problemi di consegna, passa automaticamente a <strong>Resend</strong> come fallback.</div>
+  <div class="warning">⚠️ Prima di inviare il contratto, assicurati che i dati del lead siano completi e corretti (nome, cognome, email, piano). Un contratto inviato con dati errati non può essere modificato retroattivamente.</div>
+</div>
+
+<!-- ========== 10. FIRMA ========== -->
+<div class="section" id="s10">
+  <h2>10. Firma digitale e firma manuale (🖊️)</h2>
+
+  <h3>Firma digitale (percorso normale)</h3>
+  <p>Quando il contratto viene inviato via email (sezione 9), il lead riceve un link alla pagina pubblica di firma:</p>
+  <div class="flow">
+    <div class="flow-step">Email inviata con link firma</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">Lead apre link su qualsiasi device</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">Firma sul canvas touchscreen o mouse</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step green">Sistema registra IP + timestamp + hash</div>
+  </div>
+  <p>La firma digitale è giuridicamente opponibile: il sistema registra automaticamente <strong>indirizzo IP</strong>, <strong>data/ora</strong> e <strong>hash crittografico</strong> della firma.</p>
+
+  <h3>Firma manuale (quando il lead non firma digitalmente)</h3>
+  <p>Se il lead ha firmato su carta o via fax, o se non riesce a usare il link digitale, usa la firma manuale:</p>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Nella riga del lead, clicca il pulsante <span class="btn btn-yellow">🖊️</span> (giallo-marrone, sesto pulsante nella colonna azioni).</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Apparirà una finestra di conferma che chiede di confermare la firma manuale del contratto.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Conferma l'operazione. Il sistema registra la firma come "manuale" con la data e l'operatore che ha effettuato la registrazione.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Lo stato del lead viene aggiornato automaticamente per riflettere la firma avvenuta.</div></div>
+  </div>
+  <div class="warning">⚠️ Usa la firma manuale solo se hai effettivamente in mano una firma fisica del cliente (carta firmata, fax, ecc.). Non usarla per "saltare" il processo di firma.</div>
+</div>
+
+<!-- ========== 11. BROCHURE / EMAIL ========== -->
+<div class="section" id="s11">
+  <h2>11. Inviare brochure ed email di completamento (📗 💬 ✉️)</h2>
+
+  <h3>Invia Brochure via email (📗)</h3>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Nella riga del lead, clicca il pulsante <span class="btn btn-green">📗</span> (fa-book, verde, terzo pulsante).</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Il sistema invia la brochure del servizio all'indirizzo email del lead.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Una notifica conferma l'invio avvenuto.</div></div>
+  </div>
+
+  <h3>Invia Brochure via WhatsApp (💬 verde scuro)</h3>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Nella riga del lead, clicca il pulsante <span class="btn btn-green">💬</span> WhatsApp (fa-whatsapp, verde scuro, quarto pulsante).</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Si apre WhatsApp Web (o l'app WhatsApp) con un messaggio precompilato indirizzato al numero di telefono del lead, contenente il link alla brochure e il nome del servizio/piano.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Verifica il messaggio precompilato e clicca <strong>Invia</strong> in WhatsApp.</div></div>
+  </div>
+  <div class="note">📱 Per usare il pulsante WhatsApp è necessario che il tuo browser sia collegato a WhatsApp Web, o che tu stia usando un dispositivo mobile con WhatsApp installato.</div>
+
+  <h3>Richiedi Completamento dati (✉️ fa-paper-plane)</h3>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Nella riga del lead, clicca il pulsante <span class="btn btn-purple">✉️</span> (fa-paper-plane, viola, quinto pulsante).</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Il sistema invia un'email al lead chiedendogli di completare i dati mancanti nel suo profilo (es. dati assistito, indirizzo, codice fiscale).</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Una notifica conferma l'invio avvenuto.</div></div>
+  </div>
+  <div class="note">💡 Usa questo pulsante quando hai registrato un lead con dati incompleti e vuoi che sia il cliente stesso a fornire le informazioni mancanti tramite un form online.</div>
+</div>
+
+<!-- ========== 12. PROFORMA ========== -->
+<div class="section" id="s12">
+  <h2>12. Inviare la proforma (💰)</h2>
+  <p>La <strong>proforma</strong> (fattura pro-forma, numerata <code>PF-AAAA-NNNN</code>) è il documento che il cliente paga prima che venga emessa la fattura definitiva.</p>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Nella riga del lead, clicca il pulsante <span class="btn btn-orange">💰</span> (arancione, settimo pulsante).</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Il sistema genera automaticamente la proforma con l'importo corretto (tenendo conto del piano, dell'IVA applicata e di eventuali sconti attivi).</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">La proforma viene inviata via email al lead con l'importo da pagare, le coordinate bancarie e le istruzioni di pagamento.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Una notifica conferma l'invio. La proforma è ora visibile anche nella sezione <strong>/admin/ddt</strong> (tab Pre-Fatture).</div></div>
+  </div>
+  <div class="warning">⚠️ Prima di inviare la proforma, verifica che l'<strong>IVA</strong> sia impostata correttamente (22% standard, 4% Legge 104, o 0% esente) tramite il pulsante 👁️ Visualizza → sezione IVA. La proforma viene generata con l'aliquota attualmente attiva sul lead.</div>
+  <div class="note">📋 Se il lead ha uno sconto attivo (🏷️ arancione), l'importo della proforma rifletterà automaticamente il prezzo scontato.</div>
+</div>
+
+<!-- ========== 13. PAGAMENTO ========== -->
+<div class="section" id="s13">
+  <h2>13. Registrare il pagamento e invio automatico form configurazione (✅)</h2>
+  <p>Questa è l'operazione più importante del flusso post-vendita. Cliccando ✅ si registra il pagamento <strong>e automaticamente</strong> il sistema invia al cliente l'email con il link al form di configurazione del dispositivo.</p>
+
+  <div class="warning">⚠️ <strong>ATTENZIONE — Due percorsi distinti, stesso pulsante:</strong> il pulsante ✅ si comporta in modo diverso a seconda che il lead abbia la rateizzazione attiva o meno. In entrambi i casi l'email di configurazione viene inviata automaticamente.</div>
+
+  <h3>PERCORSO B — Pagamento unico (caso più frequente)</h3>
+  <p>Il cliente paga l'intero importo in una soluzione unica. <strong>È il percorso più comune.</strong></p>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Ricevi conferma del pagamento dal cliente (bonifico ricevuto, POS, altro metodo).</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Nella riga del lead, clicca il pulsante <span class="btn btn-green">✅</span> (verde, ottavo pulsante — titolo "Pagamento OK").</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Appare una finestra di conferma. Puoi inserire (facoltativamente): <strong>metodo di pagamento</strong>, <strong>data pagamento</strong>, <strong>riferimento</strong> (es. numero bonifico), <strong>codice promo</strong> (se non ancora applicato).</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Conferma l'operazione. Il sistema automaticamente:
+      <ul style="margin-top:6px; padding-left:18px;">
+        <li>Marca la proforma come <strong>PAID</strong></li>
+        <li>Aggiorna lo stato del lead a <strong>PAYMENT_RECEIVED</strong> e poi a <strong>CONFIGURATION_SENT</strong></li>
+        <li>Invia automaticamente l'email con il <strong>form di configurazione</strong> all'indirizzo email del lead</li>
+      </ul>
+    </div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-body">Una notifica di successo conferma: <em>"Pagamento confermato ed email configurazione inviata a [email]"</em>.</div></div>
+  </div>
+
+  <h3>PERCORSO A — Rateizzazione (registrazione Rata 1)</h3>
+  <p>Il cliente ha un piano di pagamento rateizzato attivo (📅 giallo nella riga). Quando ricevi il pagamento della <strong>prima rata</strong>:</p>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Ricevi conferma del pagamento della Rata 1 da parte del cliente.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Nella riga del lead, clicca il pulsante <span class="btn btn-green">✅</span> (verde, ottavo pulsante).</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Appare la finestra di conferma. Il sistema rileva automaticamente che il lead è rateizzato.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Conferma l'operazione. Il sistema automaticamente:
+      <ul style="margin-top:6px; padding-left:18px;">
+        <li>Marca la <strong>Rata 1</strong> come <strong>PAGATA</strong> nella tabella rate_pagamento</li>
+        <li>Aggiorna lo stato del lead a <strong>PAYMENT_RECEIVED</strong> e poi <strong>CONFIGURATION_SENT</strong></li>
+        <li>Invia l'email con il <strong>form di configurazione</strong> (il dispositivo parte dopo il pagamento della Rata 1)</li>
+        <li>La proforma rimane aperta (le rate successive devono ancora essere pagate)</li>
+      </ul>
+    </div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-body">Una notifica di successo conferma: <em>"Rata 1/N segnata PAGATA. Email configurazione inviata a [email]. Rate rimanenti: N-1."</em></div></div>
+  </div>
+
+  <div class="success">✅ <strong>Caso speciale rateizzazione — saldo completo:</strong> se tutte le rate vengono pagate (es. piano a 1 rata unica, o tutte le rate già precedentemente segnate), il sistema marca anche la proforma come PAID e aggiorna <code>rateizzazione_saldo = 1</code>. Il pulsante 📅 diventa verde a indicare il saldo completo.</div>
+
+  <h3>Riepilogo visivo — cosa succede dopo ✅</h3>
+  <div class="flow">
+    <div class="flow-step">Clicca ✅</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step orange">Proforma → PAID<br><small>(pagamento unico)</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step indigo">Lead → PAYMENT_RECEIVED</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step teal">Email configurazione inviata</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step green">Lead → CONFIGURATION_SENT</div>
+  </div>
+  <div class="flow">
+    <div class="flow-step">Clicca ✅ (rateizzato)</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step orange">Rata 1 → PAGATA</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step indigo">Lead → PAYMENT_RECEIVED</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step teal">Email configurazione inviata</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step green">Lead → CONFIGURATION_SENT</div>
+  </div>
+</div>
+
+<!-- ========== 14. RE-INVIO CONFIG ========== -->
+<div class="section" id="s14">
+  <h2>14. Re-invio manuale del form configurazione (⚙️)</h2>
+  <p>Il pulsante ⚙️ serve per <strong>reinviare manualmente</strong> l'email del form di configurazione, senza toccare lo stato del pagamento. È utile quando:</p>
+  <ul style="padding-left:20px; margin-bottom:12px;">
+    <li>Il cliente non ha ricevuto l'email automatica (spam, errore di consegna)</li>
+    <li>Il cliente ha perso il link e ne chiede uno nuovo</li>
+    <li>Vuoi reinviare il form dopo aver corretto l'email del cliente</li>
+  </ul>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Nella riga del lead, clicca il pulsante <span class="btn btn-indigo">⚙️</span> (indigo, nono pulsante — titolo "Form Configurazione").</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Appare una finestra di conferma che chiede se vuoi re-inviare l'email con il form di configurazione.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Conferma. Il sistema invia l'email con un nuovo link al form di configurazione (<code>/form-configurazione?token=XXX&leadId=YYY</code>).</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Lo stato del lead viene aggiornato a <strong>CONFIGURATION_SENT</strong>.</div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-body">Una notifica di successo conferma: <em>"Email configurazione inviata a [email]"</em>.</div></div>
+  </div>
+  <div class="note">💡 <strong>Differenza tra ✅ e ⚙️:</strong><br>
+  • <strong>✅</strong> = registra il pagamento + invia config email (cambia lo stato finanziario del lead)<br>
+  • <strong>⚙️</strong> = reinvia solo l'email di configurazione (non tocca il pagamento)</div>
+  <div class="warning">⚠️ Non cliccare ⚙️ prima di aver registrato il pagamento con ✅. Il form di configurazione ha senso solo dopo che il pagamento è confermato.</div>
+</div>
+
+<!-- ========== 15. BENVENUTO ========== -->
+<div class="section" id="s15">
+  <h2>15. Email di benvenuto (🎉)</h2>
+  <p>L'email di benvenuto viene inviata al nuovo cliente come conferma ufficiale dell'attivazione del servizio, tipicamente dopo che il dispositivo è stato spedito e configurato.</p>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Nella riga del lead, clicca il pulsante <span class="btn btn-teal">🎉</span> (teal, decimo pulsante — titolo "Invia Email Benvenuto").</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Appare una finestra di conferma.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Conferma l'operazione. Il sistema invia l'email di benvenuto all'indirizzo email del lead.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Una notifica di successo conferma l'avvenuto invio.</div></div>
+  </div>
+  <div class="note">💡 L'email di benvenuto va inviata <strong>dopo</strong> che il DDT è stato generato (📦) e il dispositivo è in partenza o è già stato consegnato. Rappresenta il completamento del processo di onboarding del cliente.</div>
+</div>
+
+<!-- ========== 16. DDT ========== -->
+<div class="section" id="s16">
+  <h2>16. Generare il DDT (📦)</h2>
+  <p>Il <strong>DDT</strong> (Documento di Trasporto, numerato <code>DDT-AAAA-NNN</code>) è il documento che accompagna la spedizione del dispositivo al cliente. La generazione del DDT crea simultaneamente il record del dispositivo e dell'assistito nel sistema.</p>
+
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Assicurati che il lead abbia: pagamento registrato (✅ completato), dati assistito completi, indirizzo di spedizione corretto.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Nella riga del lead, clicca il pulsante <span class="btn btn-gray">📦</span> (grigio scuro, undicesimo pulsante — titolo "Genera DDT + Dispositivo + Assistito").</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Si apre un modal con i dati precompilati: dati assistito, indirizzo di spedizione, dispositivo associato al piano.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Verifica che tutti i dati siano corretti, in particolare:<br>
+      — <strong>Nome e indirizzo di spedizione</strong> (assistito, richiedente o personalizzato)<br>
+      — <strong>Tipo dispositivo</strong> associato al piano (BASE o AVANZATO)<br>
+      — <strong>Numero seriale</strong> del dispositivo (se disponibile)
+    </div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-body">Clicca <span class="btn btn-green">💾 Genera DDT</span>. Il sistema crea il DDT e lo salva nel database.</div></div>
+    <div class="step"><div class="step-num">6</div><div class="step-body">Il DDT generato è ora disponibile nella sezione <strong>/admin/ddt</strong> dove puoi stamparlo.</div></div>
+  </div>
+
+  <div class="warning">⚠️ La generazione DDT è un'operazione importante: crea il record fisico della spedizione. Verificare sempre l'indirizzo prima di generare, perché correggerlo dopo richiede l'intervento dell'amministratore.</div>
+  <div class="note">💡 Dopo aver generato il DDT, vai su <strong>/admin/ddt</strong>, trova il DDT appena creato e clicca 🖨️ per stamparlo e allegarlo al pacco.</div>
+</div>
+
+<!-- ========== 17. IVA ========== -->
+<div class="section" id="s17">
+  <h2>17. Gestione IVA agevolata ed esenzione</h2>
+  <p>TeleMedCare gestisce tre aliquote IVA distinte, in base alla condizione del cliente:</p>
+  <table>
+    <tr><th>Aliquota</th><th>Norma</th><th>Quando si applica</th></tr>
+    <tr><td><strong>22% standard</strong></td><td>—</td><td>Caso predefinito per tutti i clienti</td></tr>
+    <tr><td><strong>4% agevolata</strong></td><td>Legge 104 (disabilità 100%)</td><td>Cliente con disabilità grave riconosciuta al 100%</td></tr>
+    <tr><td><strong>0% esente</strong></td><td>Art. 10 n. 18 d.P.R. 633/1972</td><td>Prestazioni di carattere sanitario/assistenziale esenti IVA</td></tr>
+  </table>
+
+  <h3>Come modificare l'IVA</h3>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Apri il modal di visualizzazione del lead cliccando <span class="btn btn-blue">👁️</span> nella colonna CRUD.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Individua la sezione <strong>IVA</strong> nel modal. Vedrai lo stato attuale (es. "IVA 22% standard" o "⚕️ IVA 4% — Legge 104 ATTIVA").</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Clicca il pulsante appropriato:
+      <ul style="margin-top:6px; padding-left:18px;">
+        <li>Per attivare il 4%: clicca <span class="btn btn-blue">⚕️ Attiva IVA 4% Legge 104</span></li>
+        <li>Per attivare il 0%: clicca <span class="btn btn-green">🏥 Attiva Esenzione IVA (0%)</span></li>
+        <li>Per tornare al 22%: clicca <span class="btn btn-gray">🔄 Ripristina IVA 22%</span> o <span class="btn btn-gray">🔄 Rimuovi Esenzione IVA</span></li>
+      </ul>
+    </div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Il modal si aggiorna immediatamente per mostrare la nuova aliquota attiva. Un toast di conferma appare in basso.</div></div>
+  </div>
+  <div class="danger">🔴 <strong>Importante:</strong> la modifica dell'IVA deve avvenire <strong>prima</strong> dell'invio della proforma (💰). Se modifichi l'IVA dopo aver già inviato la proforma, quella proforma resta con l'IVA originale. Dovrai inviare una nuova proforma corretta.</div>
+</div>
+
+<!-- ========== 18. SCONTI ========== -->
+<div class="section" id="s18">
+  <h2>18. Sconti e codici promozionali (🏷️)</h2>
+  <p>Il sistema supporta l'applicazione di codici sconto ai lead, che riducono l'importo della proforma e del contratto.</p>
+
+  <h3>Stato del pulsante 🏷️</h3>
+  <table>
+    <tr><th>Colore pulsante</th><th>Significato</th></tr>
+    <tr><td>🏷️ <span style="background:#fef9c3; padding:2px 8px; border-radius:4px; font-size:0.85rem;">Giallo</span></td><td>Nessuno sconto applicato</td></tr>
+    <tr><td>🏷️ <span style="background:#ffedd5; padding:2px 8px; border-radius:4px; font-size:0.85rem;">Arancione</span></td><td>Sconto attivo — il tooltip mostra il codice (es. "Sconto: PROMO20 — clicca per rimuovere o cambiare")</td></tr>
+  </table>
+
+  <h3>Applicare uno sconto</h3>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Nella riga del lead, clicca il pulsante <span class="btn btn-yellow">🏷️</span> (giallo, dodicesimo pulsante).</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Si apre un modal dove inserire il <strong>codice sconto</strong>.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Inserisci il codice promozionale e clicca <span class="btn btn-green">Applica</span>.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Il sistema verifica il codice. Se valido, lo sconto viene applicato e il pulsante diventa arancione.</div></div>
+  </div>
+
+  <h3>Rimuovere uno sconto</h3>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Clicca il pulsante 🏷️ arancione (sconto attivo).</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Nel modal, scegli di rimuovere lo sconto corrente oppure sostituirlo con un nuovo codice.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Conferma. Il pulsante torna giallo se lo sconto viene rimosso.</div></div>
+  </div>
+
+  <h3>Applicare uno sconto al momento del pagamento</h3>
+  <p>È possibile applicare un codice promozionale anche direttamente al momento di registrare il pagamento (pulsante ✅), inserendolo nel campo <strong>"Codice promo"</strong> della finestra di conferma pagamento. Questo è utile per applicare sconti last-minute che non erano stati inseriti prima.</p>
+  <div class="note">💡 Lo sconto applicato al momento del pagamento ha effetto solo se sul lead non è già stato applicato uno sconto precedente.</div>
+</div>
+
+<!-- ========== 19. RATEIZZAZIONE ========== -->
+<div class="section" id="s19">
+  <h2>19. Rateizzazione (📅)</h2>
+  <p>La rateizzazione permette al cliente di pagare il servizio in più rate nel tempo invece che in un'unica soluzione.</p>
+
+  <h3>Stato del pulsante 📅</h3>
+  <table>
+    <tr><th>Colore</th><th>Significato</th></tr>
+    <tr><td>📅 <span style="background:#e0e7ff; padding:2px 8px; border-radius:4px; font-size:0.85rem; color:#4338ca;">Indigo</span></td><td>Rateizzazione non attiva — pagamento unico</td></tr>
+    <tr><td>📅 <span style="background:#fef9c3; padding:2px 8px; border-radius:4px; font-size:0.85rem; color:#ca8a04;">Giallo</span></td><td>Rateizzazione attiva — ancora rate in sospeso</td></tr>
+    <tr><td>📅 <span style="background:#dcfce7; padding:2px 8px; border-radius:4px; font-size:0.85rem; color:#16a34a;">Verde</span></td><td>Rateizzazione completamente saldata</td></tr>
+  </table>
+
+  <h3>Impostare una rateizzazione</h3>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Nella riga del lead, clicca il pulsante <span class="btn btn-indigo">📅</span> (indigo se non ancora rateizzato).</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Si apre il modal di rateizzazione con i dati del cliente e l'importo totale.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Definisci: <strong>numero di rate</strong>, <strong>importo di ciascuna rata</strong>, <strong>date di scadenza</strong> per ogni rata.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Clicca <span class="btn btn-green">💾 Salva Piano Rate</span>. Il pulsante 📅 diventa giallo a indicare rateizzazione attiva.</div></div>
+  </div>
+
+  <h3>Gestire le rate successive (Rata 2, 3, …)</h3>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Clicca il pulsante <span class="btn btn-yellow">📅</span> (giallo) per aprire il modal di gestione rateizzazione.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Vedrai l'elenco di tutte le rate con il loro stato (IN ATTESA / PAGATA) e le date di scadenza.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Per registrare il pagamento di una rata successiva (Rata 2 in poi), clicca il pulsante apposito accanto alla rata nella lista del modal.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Quando tutte le rate sono PAGATE, il pulsante 📅 diventa verde e la proforma viene marcata come PAID.</div></div>
+  </div>
+
+  <div class="warning">⚠️ <strong>Ricorda:</strong> il pulsante ✅ "Pagamento OK" nella riga lead registra <em>la prima rata</em> (Rata 1) e invia automaticamente l'email di configurazione. Le rate successive (Rata 2, 3, …) si gestiscono dal modal 📅, non dal pulsante ✅.</div>
+
+  <div class="note">💡 <strong>Flusso rateizzazione completo:</strong>
+    <ol style="margin-top:6px; padding-left:18px;">
+      <li>Clicca 📅 (indigo) → imposta il piano rate</li>
+      <li>Clicca ✅ quando arriva il pagamento della Rata 1 → il sistema invia l'email di configurazione</li>
+      <li>Clicca 📅 (giallo) → registra pagamento Rata 2, 3, ecc. man mano che arrivano</li>
+      <li>Quando tutte le rate sono saldate → 📅 diventa verde</li>
+    </ol>
+  </div>
+</div>
+
+<!-- ========== 20. DDT ADMIN ========== -->
+<div class="section" id="s20">
+  <h2>20. Gestione DDT e pre-fatture (/admin/ddt)</h2>
+  <p>La pagina <strong>/admin/ddt</strong> è la sezione dedicata alla gestione dei documenti di trasporto e delle pre-fatture. Accedivi dal menu principale.</p>
+
+  <h3>Tab DDT</h3>
+  <p>Il tab <strong>DDT</strong> mostra l'elenco di tutti i DDT generati con numero, data, assistito destinatario e stato. Per ogni DDT sono disponibili le seguenti azioni:</p>
+  <table class="icon-table">
+    <tr><th>Icona</th><th>Nome</th><th>Cosa fa</th></tr>
+    <tr><td>🖨️ <small>(fa-print)</small></td><td>Stampa DDT</td><td>Apre la versione PDF del DDT pronta per la stampa. Stampala e allegala al pacco di spedizione.</td></tr>
+    <tr><td>📄 <small>(fa-file-invoice)</small></td><td>Genera Pre-Fattura</td><td>Genera la pre-fattura (bozza di fattura) associata al DDT, da usare per la contabilità.</td></tr>
+    <tr><td>ℹ️ <small>(fa-info-circle)</small></td><td>Dettaglio DDT</td><td>Mostra il dettaglio completo del DDT: articoli, quantità, assistito, indirizzo, note.</td></tr>
+  </table>
+
+  <h3>Come stampare un DDT</h3>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Vai su <strong>/admin/ddt</strong> dal menu principale.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">Assicurati di essere sul tab <strong>DDT</strong>.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Individua il DDT da stampare (filtra per nome o data se necessario).</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Clicca <span class="btn btn-gray">🖨️</span> (fa-print) nella riga del DDT. Si apre la versione PDF.</div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-body">Stampa il PDF con Ctrl+P (o Cmd+P su Mac) e allega il foglio al pacco.</div></div>
+  </div>
+
+  <h3>Tab Pre-Fatture</h3>
+  <p>Il tab <strong>Pre-Fatture</strong> mostra le pre-fatture generate. Per ogni pre-fattura è disponibile:</p>
+  <table class="icon-table">
+    <tr><th>Icona</th><th>Nome</th><th>Cosa fa</th></tr>
+    <tr><td>🖨️ <small>(fa-print)</small></td><td>Stampa Pre-Fattura</td><td>Apre la versione HTML stampabile della pre-fattura.</td></tr>
+  </table>
+
+  <h3>Come generare e stampare una pre-fattura</h3>
+  <div class="steps">
+    <div class="step"><div class="step-num">1</div><div class="step-body">Nel tab <strong>DDT</strong>, trova il DDT per cui vuoi la pre-fattura e clicca <span class="btn btn-gray">📄</span> (fa-file-invoice, "Genera Pre-Fattura").</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body">La pre-fattura viene generata e appare nel tab <strong>Pre-Fatture</strong>.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body">Clicca il tab <strong>Pre-Fatture</strong>, trova la pre-fattura appena generata.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body">Clicca <span class="btn btn-gray">🖨️</span> per aprirla e stamparla.</div></div>
+  </div>
+
+  <h3>Numerazione documenti</h3>
+  <table>
+    <tr><th>Tipo</th><th>Formato</th><th>Esempio</th></tr>
+    <tr><td>DDT</td><td>DDT-AAAA-NNN</td><td>DDT-2026-001</td></tr>
+    <tr><td>Proforma</td><td>PF-AAAA-NNNN</td><td>PF-2026-0001</td></tr>
+  </table>
+</div>
+
+<!-- ========== APPENDICE RAPIDA ========== -->
+<div class="section" id="appendice">
+  <h2>📌 Appendice — Flusso operativo standard (riepilogo rapido)</h2>
+  <p>Di seguito il flusso tipico dall'acquisizione di un nuovo lead all'attivazione del servizio:</p>
+  <table>
+    <tr><th>#</th><th>Operazione</th><th>Pulsante/Azione</th><th>Risultato</th></tr>
+    <tr><td>1</td><td>Creare il lead</td><td>➕ Nuovo Lead</td><td>Lead 🆕 Nuovo in lista</td></tr>
+    <tr><td>2</td><td>Primo contatto telefonico → registra interazione</td><td>💬 (viola)</td><td>Interazione 📞 salvata</td></tr>
+    <tr><td>3</td><td>Aggiornare stato a Contattato/Interessato</td><td>Dropdown stato nella riga</td><td>Stato aggiornato</td></tr>
+    <tr><td>4</td><td>Inviare brochure</td><td>📗 o 💬 WhatsApp</td><td>Brochure inviata</td></tr>
+    <tr><td>5</td><td>Impostare IVA se necessario</td><td>👁️ → ⚕️ o 🏥</td><td>Aliquota corretta applicata</td></tr>
+    <tr><td>6</td><td>Inviare il contratto per firma</td><td>📄 (blu)</td><td>Email con link firma inviata</td></tr>
+    <tr><td>7</td><td>Firmare (digitale o manuale)</td><td>Firma digitale online / 🖊️</td><td>Contratto firmato</td></tr>
+    <tr><td>8</td><td>Inviare la proforma</td><td>💰 (arancione)</td><td>Proforma PF-AAAA-NNNN inviata</td></tr>
+    <tr><td>9</td><td>Ricevere il pagamento → registrarlo</td><td>✅ (verde)</td><td>Pagamento OK + email config inviata automaticamente</td></tr>
+    <tr><td>10</td><td>Re-inviare config se necessario</td><td>⚙️ (indigo)</td><td>Email config re-inviata</td></tr>
+    <tr><td>11</td><td>Generare DDT per spedizione</td><td>📦 (grigio)</td><td>DDT-AAAA-NNN generato</td></tr>
+    <tr><td>12</td><td>Stampare DDT</td><td>/admin/ddt → 🖨️</td><td>DDT stampato e allegato al pacco</td></tr>
+    <tr><td>13</td><td>Inviare email benvenuto</td><td>🎉 (teal)</td><td>Email benvenuto inviata</td></tr>
+    <tr><td>14</td><td>Aggiornare stato a Convertito</td><td>Dropdown stato → ✅ Convertito</td><td>Lead completato</td></tr>
+  </table>
+</div>
+
+<!-- FOOTER -->
+<div style="text-align:center; color:#94a3b8; font-size:0.8rem; margin-top:32px; padding-bottom:32px;">
+  Manuale Operatore CRM TeleMedCare V12 · Versione del 27 settembre 2026 · Solo uso interno
+</div>
+
+</div><!-- /container -->
+</body>
+</html>

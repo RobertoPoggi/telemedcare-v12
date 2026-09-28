@@ -10992,13 +10992,23 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
     const rateizzazioneAttiva = isRateizzatoGET || ratePagamentoRows.length > 0
     let rateRows = ''
     if (ratePagamentoRows.length > 0) {
-      rateRows = ratePagamentoRows.map((r: any, i: number) => `
+      // ✅ FIX: l'IVA va tutta sull'ultima rata (le rate nel DB sono IVA esclusa)
+      const lastIdxGET = ratePagamentoRows.length - 1
+      rateRows = ratePagamentoRows.map((r: any, i: number) => {
+        const importoRata = Number(r.importo ?? 0)
+        // Aggiunge ivaAmt solo all'ultima rata (se IVA > 0)
+        const importoConIva = (i === lastIdxGET && !ivaEsente) ? Math.round((importoRata + ivaAmt) * 100) / 100 : importoRata
+        const noteRata = i === lastIdxGET && !ivaEsente
+          ? `${r.note ? r.note + ' — ' : ''}IVA ${ivaPct}% inclusa (€ ${fmt(ivaAmt)})`
+          : (r.note ?? '')
+        return `
             <tr>
               <td style="border:1px solid #999;padding:4px 8px;text-align:center;">${r.numero_rata ?? i + 1}</td>
-              <td style="border:1px solid #999;padding:4px 8px;text-align:right;">€ ${fmt(Number(r.importo ?? 0))}</td>
+              <td style="border:1px solid #999;padding:4px 8px;text-align:right;">€ ${fmt(importoConIva)}</td>
               <td style="border:1px solid #999;padding:4px 8px;text-align:center;">${r.data_scadenza ?? '—'}</td>
-              <td style="border:1px solid #999;padding:4px 8px;">${r.note ?? ''}</td>
-            </tr>`).join('')
+              <td style="border:1px solid #999;padding:4px 8px;">${noteRata}</td>
+            </tr>`
+      }).join('')
     }
 
     // ── Riserva di dominio ────────────────────────────────────────────
@@ -17076,13 +17086,25 @@ app.get('/api/contracts/:id/proforma-interna-html', async (c) => {
     const fmtPI = (n: number) => n.toFixed(2).replace('.', ',')
     let rateBlockPI = ''
     if (hasRatePI && ratePagamentoRowsPI.length > 0) {
-      const righe = ratePagamentoRowsPI.map((r: any, i: number) => `
+      // ✅ FIX: l'IVA va tutta sull'ultima rata (le rate nel DB sono IVA esclusa)
+      const lastIdxPI = ratePagamentoRowsPI.length - 1
+      const ivaEsentePI = !!(lead.iva_esente)
+      const ivaPctPI = ivaEsentePI ? 0 : !!(lead.iva_agevolata) ? 4 : 22
+      const ivaAmtPI = ivaEsentePI ? 0 : Math.round(netto * ivaPctPI / 100 * 100) / 100
+      const righe = ratePagamentoRowsPI.map((r: any, i: number) => {
+        const importoRata = Number(r.importo ?? 0)
+        const importoConIva = (i === lastIdxPI && !ivaEsentePI) ? Math.round((importoRata + ivaAmtPI) * 100) / 100 : importoRata
+        const noteRata = i === lastIdxPI && !ivaEsentePI
+          ? `${r.note ? r.note + ' — ' : ''}IVA ${ivaPctPI}% inclusa (€ ${fmtPI(ivaAmtPI)})`
+          : (r.note ?? '')
+        return `
         <tr>
           <td style="border:1px solid #aaa;padding:4px 8px;text-align:center;">${r.numero_rata ?? i+1}</td>
-          <td style="border:1px solid #aaa;padding:4px 8px;text-align:right;">€ ${fmtPI(Number(r.importo ?? 0))}</td>
+          <td style="border:1px solid #aaa;padding:4px 8px;text-align:right;">€ ${fmtPI(importoConIva)}</td>
           <td style="border:1px solid #aaa;padding:4px 8px;text-align:center;">${r.data_scadenza ?? '—'}</td>
-          <td style="border:1px solid #aaa;padding:4px 8px;">${r.note ?? ''}</td>
-        </tr>`).join('')
+          <td style="border:1px solid #aaa;padding:4px 8px;">${noteRata}</td>
+        </tr>`
+      }).join('')
       rateBlockPI = `
 <div style="margin-top:14px;">
   <div style="font-size:10.5pt;font-weight:bold;border-bottom:1px solid #555;margin-bottom:6px;padding-bottom:2px;">PIANO DI RATEIZZAZIONE</div>
@@ -35923,7 +35945,7 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
           dispositivo, serial_number, sim_number, quantita,
           status, pdf_url, pdf_generated, note,
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
       `).bind(
         ddtId, numDdt, codiceContratto,
         dataDoc, dataDoc,
