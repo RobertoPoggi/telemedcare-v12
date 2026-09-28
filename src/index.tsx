@@ -13603,7 +13603,8 @@ app.post('/api/leads/:id/complete', async (c) => {
       note: 'note',
       gdprConsent: 'gdprConsent',
       iva_agevolata: 'iva_agevolata',  // 1 = IVA 4% Legge 104 (disabilità 100%), 0 = IVA 22% standard
-      iva_esente: 'iva_esente'          // 1 = Esente IVA art. 10 n. 18 d.P.R. 633/1972 (0% IVA)
+      iva_esente: 'iva_esente',         // 1 = Esente IVA art. 10 n. 18 d.P.R. 633/1972 (0% IVA)
+      intestatarioContratto: 'intestatarioContratto'  // 'richiedente' | 'assistito' — scelto dal cliente nel form
     }
     
     for (const [formField, dbField] of Object.entries(fieldMapping)) {
@@ -13660,24 +13661,23 @@ app.post('/api/leads/:id/complete', async (c) => {
     updateFields.push('status = ?')
     binds.push('COMPLETED')
 
-    // ✅ FIX ALLA FONTE: imposta intestatarioContratto in base ai dati ricevuti.
-    // Se il form invia nomeAssistito/cognomeAssistito diversi dal richiedente → 'assistito'.
-    // Se identici o assenti → 'richiedente'.
-    // Questo corregge il default 'richiedente' che veniva assegnato ai lead HubSpot.
-    {
+    // Se il form NON ha inviato intestatarioContratto esplicitamente, derivalo dai nomi
+    // (fallback per link email vecchi o form senza la sezione scelta intestatario)
+    if (!data.intestatarioContratto) {
       const currentLead = await c.env.DB.prepare('SELECT nomeRichiedente, cognomeRichiedente, intestatarioContratto FROM leads WHERE id = ?').bind(id).first() as any
-      const nomeAss = (data.nomeAssistito || currentLead?.nomeRichiedente || '').trim().toLowerCase()
-      const cogAss  = (data.cognomeAssistito || currentLead?.cognomeRichiedente || '').trim().toLowerCase()
+      const nomeAss = (data.nomeAssistito || '').trim().toLowerCase()
+      const cogAss  = (data.cognomeAssistito || '').trim().toLowerCase()
       const nomeRic = (currentLead?.nomeRichiedente || '').trim().toLowerCase()
       const cogRic  = (currentLead?.cognomeRichiedente || '').trim().toLowerCase()
       const isAssistitoDiverso = nomeAss && cogAss && (nomeAss !== nomeRic || cogAss !== cogRic)
       const nuovoIntestario = isAssistitoDiverso ? 'assistito' : 'richiedente'
-      // Aggiorna solo se non già impostato correttamente
-      if (!currentLead?.intestatarioContratto || currentLead.intestatarioContratto === 'richiedente' && isAssistitoDiverso) {
+      if (!currentLead?.intestatarioContratto || (currentLead.intestatarioContratto === 'richiedente' && isAssistitoDiverso)) {
         updateFields.push('intestatarioContratto = ?')
         binds.push(nuovoIntestario)
-        console.log(`📋 [COMPLETE] intestatarioContratto → '${nuovoIntestario}' (assistito diverso da richiedente: ${isAssistitoDiverso})`)
+        console.log(`📋 [COMPLETE] intestatarioContratto derivato → '${nuovoIntestario}'`)
       }
+    } else {
+      console.log(`📋 [COMPLETE] intestatarioContratto dal form → '${data.intestatarioContratto}'`)
     }
 
     if (updateFields.length === 0) {

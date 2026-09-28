@@ -573,6 +573,27 @@
             container.innerHTML = html;
         }
         
+        function toggleIntestatario(valore) {
+            const radio = document.getElementById(valore === 'richiedente' ? 'intRichiedente' : 'intAssistito');
+            if (radio) radio.checked = true;
+
+            const lR = document.getElementById('labelIntRichiedente');
+            const lA = document.getElementById('labelIntAssistito');
+            if (lR) {
+                lR.style.borderColor = valore === 'richiedente' ? '#667eea' : '#e2e8f0';
+                lR.style.background  = valore === 'richiedente' ? '#f0f0ff' : 'white';
+            }
+            if (lA) {
+                lA.style.borderColor = valore === 'assistito' ? '#667eea' : '#e2e8f0';
+                lA.style.background  = valore === 'assistito' ? '#f0f0ff' : 'white';
+            }
+
+            const cfBlock = document.getElementById('cfRichiedenteBlock');
+            const cfInput = document.getElementById('cfIntestatario');
+            if (cfBlock) cfBlock.style.display = valore === 'richiedente' ? 'block' : 'none';
+            if (cfInput && valore !== 'richiedente') cfInput.value = '';
+        }
+
         async function submitForm(event) {
             event.preventDefault();
             
