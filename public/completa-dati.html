@@ -41,7 +41,7 @@
             <div class="flex justify-between items-center">
                 <div class="flex flex-col items-center flex-1">
                     <div id="step1Indicator" class="step-indicator active w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg mb-2">1</div>
-                    <span class="text-sm text-gray-600">Dati personali</span>
+                    <span class="text-sm text-gray-600">Dati richiedente</span>
                 </div>
                 <div class="flex-1 h-1 bg-gray-300 mx-2"></div>
                 <div class="flex flex-col items-center flex-1">
@@ -58,9 +58,9 @@
 
         <!-- Form -->
         <form id="completaForm" class="bg-white rounded-lg shadow-lg p-8">
-            <!-- Step 1: Dati Personali -->
+            <!-- Step 1: Dati Richiedente -->
             <div id="step1" class="step-content">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">📋 Dati Personali</h2>
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">📋 Dati Richiedente</h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -113,17 +113,6 @@
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent uppercase"
                             placeholder="RM" style="text-transform: uppercase;">
                     </div>
-                </div>
-
-                <!-- CF Richiedente — mostrato solo quando intestatarioContratto='richiedente' -->
-                <div id="cfRichiedenteBlock" class="hidden mt-6">
-                    <label class="block text-gray-700 font-semibold mb-2" for="cfIntestatario">
-                        Codice Fiscale <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" id="cfIntestatario" name="cfIntestatario" maxlength="16"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent uppercase"
-                        placeholder="RSSMRA85M01H501X" style="text-transform: uppercase;">
-                    <p class="text-xs text-gray-500 mt-1">Obbligatorio per intestare il contratto a tuo nome</p>
                 </div>
 
                 <div class="flex justify-end mt-8">
@@ -206,6 +195,43 @@
                         <input type="text" id="provinciaAssistito" name="provinciaAssistito" maxlength="2"
                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent uppercase"
                             placeholder="RM" style="text-transform: uppercase;">
+                    </div>
+                </div>
+
+                <!-- Intestazione contratto -->
+                <div class="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 class="text-lg font-bold text-gray-800 mb-1">📄 Intestazione contratto</h3>
+                    <p class="text-sm text-gray-500 mb-4">A chi verrà intestato il contratto?</p>
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <label class="flex-1 flex items-start gap-3 border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-purple-400 transition-colors" id="labelIntestatarioRichiedente">
+                            <input type="radio" name="intestatarioContratto" value="richiedente" id="intestatarioRichiedente"
+                                class="mt-1 w-4 h-4 text-purple-600 focus:ring-purple-500"
+                                onchange="toggleIntestatario()">
+                            <div>
+                                <span class="block font-semibold text-gray-800">Richiedente</span>
+                                <span class="block text-xs text-gray-500 mt-0.5">Il contratto sarà a tuo nome</span>
+                            </div>
+                        </label>
+                        <label class="flex-1 flex items-start gap-3 border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:border-purple-400 transition-colors" id="labelIntestatarioAssistito">
+                            <input type="radio" name="intestatarioContratto" value="assistito" id="intestatarioAssistito"
+                                class="mt-1 w-4 h-4 text-purple-600 focus:ring-purple-500"
+                                onchange="toggleIntestatario()">
+                            <div>
+                                <span class="block font-semibold text-gray-800">Assistito</span>
+                                <span class="block text-xs text-gray-500 mt-0.5">Il contratto sarà a nome dell'assistito</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- CF Richiedente — visibile solo se intestatario=richiedente -->
+                    <div id="cfRichiedenteBlock" class="hidden mt-4">
+                        <label class="block text-gray-700 font-semibold mb-2" for="cfIntestatario">
+                            Codice Fiscale Richiedente <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="cfIntestatario" name="cfIntestatario" maxlength="16"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent uppercase"
+                            placeholder="RSSMRA85M01H501X" style="text-transform: uppercase;">
+                        <p class="text-xs text-gray-500 mt-1">Necessario per intestare il contratto a tuo nome</p>
                     </div>
                 </div>
 
@@ -352,14 +378,17 @@
                 document.getElementById('telefono').value = lead.telefono || '';
                 document.getElementById('citta').value = lead.cittaRichiedente || '';
 
-                // CF Richiedente: mostra il blocco e pre-popola se intestatario=richiedente
-                const intestatario = lead.intestatarioContratto || 'richiedente';
+                // Pre-seleziona intestatario contratto e CF
+                const intestatario = lead.intestatarioContratto || '';
                 if (intestatario === 'richiedente') {
-                    document.getElementById('cfRichiedenteBlock').classList.remove('hidden');
+                    document.getElementById('intestatarioRichiedente').checked = true;
                     document.getElementById('cfIntestatario').value = (lead.cfIntestatario || '').toUpperCase();
-                } else {
-                    document.getElementById('cfRichiedenteBlock').classList.add('hidden');
+                    toggleIntestatario();
+                } else if (intestatario === 'assistito') {
+                    document.getElementById('intestatarioAssistito').checked = true;
+                    toggleIntestatario();
                 }
+                // Se intestatario non ancora definito, nessun radio pre-selezionato (utente deve scegliere)
                 
                 if (lead.nomeAssistito) {
                     document.getElementById('nomeAssistito').value = lead.nomeAssistito;
@@ -428,20 +457,6 @@
                     alert('⚠️ Compila tutti i campi obbligatori');
                     return false;
                 }
-
-                // Valida CF Richiedente se il blocco è visibile
-                const cfBlock = document.getElementById('cfRichiedenteBlock');
-                if (cfBlock && !cfBlock.classList.contains('hidden')) {
-                    const cf = document.getElementById('cfIntestatario').value.trim();
-                    if (!cf) {
-                        alert('⚠️ Il Codice Fiscale è obbligatorio quando il contratto è intestato a te');
-                        return false;
-                    }
-                    if (!/^[A-Z0-9]{16}$/i.test(cf)) {
-                        alert('⚠️ Il Codice Fiscale deve essere composto da 16 caratteri alfanumerici');
-                        return false;
-                    }
-                }
                 
                 // Valida CAP (5 cifre)
                 if (!/^[0-9]{5}$/.test(cap)) {
@@ -481,8 +496,49 @@
                         return false;
                     }
                 }
+
+                // Valida intestazione contratto
+                const intestatarioScelto = document.querySelector('[name="intestatarioContratto"]:checked');
+                if (!intestatarioScelto) {
+                    alert('⚠️ Scegli a chi intestare il contratto (Richiedente o Assistito)');
+                    return false;
+                }
+
+                // Se intestatario=richiedente, CF obbligatorio
+                if (intestatarioScelto.value === 'richiedente') {
+                    const cf = document.getElementById('cfIntestatario').value.trim();
+                    if (!cf) {
+                        alert('⚠️ Il Codice Fiscale Richiedente è obbligatorio quando il contratto è intestato a te');
+                        return false;
+                    }
+                    if (!/^[A-Z0-9]{16}$/i.test(cf)) {
+                        alert('⚠️ Il Codice Fiscale deve essere composto da 16 caratteri alfanumerici');
+                        return false;
+                    }
+                }
             }
             return true;
+        }
+
+        function toggleIntestatario() {
+            const sel = document.querySelector('[name="intestatarioContratto"]:checked');
+            const cfBlock = document.getElementById('cfRichiedenteBlock');
+            const labelR = document.getElementById('labelIntestatarioRichiedente');
+            const labelA = document.getElementById('labelIntestatarioAssistito');
+
+            // Evidenzia la card selezionata
+            if (labelR) labelR.classList.toggle('border-purple-500', sel && sel.value === 'richiedente');
+            if (labelR) labelR.classList.toggle('bg-purple-50', sel && sel.value === 'richiedente');
+            if (labelA) labelA.classList.toggle('border-purple-500', sel && sel.value === 'assistito');
+            if (labelA) labelA.classList.toggle('bg-purple-50', sel && sel.value === 'assistito');
+
+            // Mostra/nasconde il campo CF Richiedente
+            if (sel && sel.value === 'richiedente') {
+                cfBlock.classList.remove('hidden');
+            } else {
+                cfBlock.classList.add('hidden');
+                document.getElementById('cfIntestatario').value = '';
+            }
         }
 
         function toggleAssistitoFields() {
@@ -530,6 +586,9 @@
                 return;
             }
 
+            const intestatarioScelto = document.querySelector('[name="intestatarioContratto"]:checked');
+            const intestatarioContratto = intestatarioScelto ? intestatarioScelto.value : 'richiedente';
+
             const formData = {
                 nomeRichiedente: document.getElementById('nome').value.trim(),
                 cognomeRichiedente: document.getElementById('cognome').value.trim(),
@@ -537,7 +596,10 @@
                 cittaRichiedente: document.getElementById('citta').value.trim(),
                 capIntestatario: document.getElementById('cap').value.trim(),
                 provinciaIntestatario: document.getElementById('provincia').value.trim().toUpperCase(),
-                cfIntestatario: (document.getElementById('cfIntestatario')?.value?.trim() || '').toUpperCase(),
+                intestatarioContratto: intestatarioContratto,
+                cfIntestatario: intestatarioContratto === 'richiedente'
+                    ? (document.getElementById('cfIntestatario')?.value?.trim() || '').toUpperCase()
+                    : '',
                 servizio: servizio.value,
                 piano: document.getElementById('piano').value,
                 note: document.getElementById('note').value.trim(),
