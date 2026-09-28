@@ -7,6 +7,15 @@ import { D1Database } from '@cloudflare/workers-types'
 import { getBaseUrl } from './url-helper'
 
 /**
+ * Per-template required placeholders — se il template DB non li contiene,
+ * viene considerato "obsoleto" e si usa il file statico aggiornato.
+ */
+const REQUIRED_PLACEHOLDERS: Record<string, string[]> = {
+  email_invio_proforma: ['LINK_PROFORMA_PDF', 'NUMERO_PROFORMA', 'PIANO_SERVIZIO'],
+  email_invio_contratto: ['PIANO_SERVIZIO', 'NUMERO_PROFORMA'],
+}
+
+/**
  * Load email template from file system (public/templates/email/)
  */
 export async function loadEmailTemplate(
@@ -22,11 +31,22 @@ export async function loadEmailTemplate(
       .first()
     
     if (dbTemplate && (dbTemplate as any).html_content) {
-      console.log(`✅ [TEMPLATE] Caricato dal DB: "${templateName}" (${((dbTemplate as any).html_content as string).length} chars)`)
-      return (dbTemplate as any).html_content as string
+      const dbHtml = (dbTemplate as any).html_content as string
+
+      // ✅ Validazione qualità: verifica che il template DB contenga i placeholder richiesti
+      const requiredPlaceholders = REQUIRED_PLACEHOLDERS[templateName] || []
+      const missingPlaceholders = requiredPlaceholders.filter(ph => !dbHtml.includes(`{{${ph}}}`))
+
+      if (missingPlaceholders.length > 0) {
+        console.warn(`⚠️ [TEMPLATE] Template DB "${templateName}" obsoleto — mancano: {{${missingPlaceholders.join('}}, {{')}}} — uso file statico aggiornato`)
+        // Non ritornare il template DB obsoleto, cadere al file statico
+      } else {
+        console.log(`✅ [TEMPLATE] Caricato dal DB: "${templateName}" (${dbHtml.length} chars)`)
+        return dbHtml
+      }
+    } else {
+      console.log(`⚠️ [TEMPLATE] Template "${templateName}" non trovato nel DB, provo file statico...`)
     }
-    
-    console.log(`⚠️ [TEMPLATE] Template "${templateName}" non trovato nel DB, provo file statico...`)
   } catch (dbError) {
     console.error(`❌ [TEMPLATE] Errore caricamento DB:`, dbError)
     console.log(`⚠️ [TEMPLATE] Fallback a file statico...`)

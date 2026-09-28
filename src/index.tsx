@@ -9954,12 +9954,13 @@ app.get('/api/proforma', async (c) => {
     const proforma = await c.env.DB.prepare(`
       SELECT 
         p.*,
-        l.nomeRichiedente,
-        l.cognomeRichiedente,
-        l.email as cliente_email
+        COALESCE(l.nomeRichiedente, l2.nomeRichiedente) as nomeRichiedente,
+        COALESCE(l.cognomeRichiedente, l2.cognomeRichiedente) as cognomeRichiedente,
+        COALESCE(l.email, l2.email) as cliente_email
       FROM proforma p
-      LEFT JOIN contracts c ON p.contract_id = c.id
+      LEFT JOIN contracts c ON p.contract_id = c.id AND p.contract_id != 'MANUAL'
       LEFT JOIN leads l ON c.leadId = l.id
+      LEFT JOIN leads l2 ON p.leadId = l2.id
       ORDER BY p.created_at DESC
       LIMIT 100
     `).all()
@@ -15834,12 +15835,26 @@ app.post('/api/leads/:id/assistiti/:aid/genera-ddt', requireAuth, async (c) => {
       nazioneDestinatario  = ass.nazione   || lead.nazione_assistito || 'Italia'
     }
 
-    // Servizio e dispositivo
+    // Servizio e dispositivo — FIX: include sia 'SIGNED' che 'firmato' per compatibilità
     const contract = await c.env.DB.prepare(
-      `SELECT * FROM contracts WHERE leadId = ? AND status = 'firmato' ORDER BY created_at DESC LIMIT 1`
+      `SELECT * FROM contracts WHERE leadId = ? AND status IN ('SIGNED','firmato') ORDER BY created_at DESC LIMIT 1`
     ).bind(leadId).first() as any
-    const servizio    = contract?.servizio || lead.servizio || 'eCura PRO'
-    const piano       = contract?.piano    || lead.piano    || 'BASE'
+    const _srvRaw15 = contract?.servizio || lead.servizio || ''
+    const _tipoRaw15 = (lead.tipoServizio || '').toString()
+    const _validTypes15 = ['FAMILY','PRO','PREMIUM']
+    const _extracted15 = _srvRaw15.replace(/^eCura\s+/i,'').trim().toUpperCase()
+    let _servizioResolved15: string
+    if (_validTypes15.includes(_extracted15)) {
+      _servizioResolved15 = _srvRaw15
+    } else if (_tipoRaw15.toUpperCase().includes('FAMILY')) {
+      _servizioResolved15 = 'eCura FAMILY'
+    } else if (_tipoRaw15.toUpperCase().includes('PREMIUM')) {
+      _servizioResolved15 = 'eCura PREMIUM'
+    } else {
+      _servizioResolved15 = 'eCura PRO'
+    }
+    const servizio    = _servizioResolved15
+    const piano       = (contract?.piano || lead.piano || 'BASE').toString()
     const servizioUpper = servizio.replace(/^eCura\s+/i,'').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'
     const pianoUpper    = (piano.toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE') as 'BASE'|'AVANZATO'
     const { getPricing } = await import('./modules/ecura-pricing')
@@ -35518,46 +35533,55 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
     console.log(`💰 [SEND-PROFORMA] Invio proforma manuale per lead ${leadId}`)
     
     // ✅ STEP 1: Cerca contratto firmato per questo lead (fonte primaria)
+    // FIX: status 'SIGNED' (DB attuale) — include anche 'firmato' per retrocompatibilità
     const contract = await c.env.DB.prepare(`
       SELECT servizio, piano 
       FROM contracts 
-      WHERE leadId = ? AND status = 'firmato'
+      WHERE leadId = ? AND status IN ('SIGNED', 'firmato')
       ORDER BY created_at DESC 
       LIMIT 1
     `).bind(leadId).first() as any
     
-    // ✅ STEP 2: Determina servizio e piano dalla fonte corretta
+    // ✅ STEP 2: Determina servizio e piano con multi-fallback robusto
+    // Stesso pattern usato in send-contract per evitare il bug NULL→PRO
+    const _validServizioTypesSP = ['FAMILY', 'PRO', 'PREMIUM']
+
     let servizio: string
     let piano: string
-    
-    if (contract && contract.servizio && contract.piano) {
-      // Usa dati dal contratto firmato (priorità massima)
-      servizio = contract.servizio
-      piano = contract.piano
-      console.log(`✅ [PRICING] Dati da CONTRATTO: ${servizio} - ${piano}`)
-    } else if (lead.servizio && lead.piano) {
-      // Fallback: usa dati dal lead
-      servizio = lead.servizio
-      piano = lead.piano
-      console.log(`⚠️ [PRICING] Dati da LEAD (no contratto): ${servizio} - ${piano}`)
-    } else {
-      // Ultimo fallback: usa default più comune
-      servizio = 'eCura PRO'
-      piano = 'BASE'
-      console.warn(`⚠️ [PRICING] ATTENZIONE: usando default PRO BASE (nessun dato trovato in DB)`)
+
+    // Piano: contratto → lead.piano → 'BASE'
+    const _pianoCandidates = [contract?.piano, lead.piano, lead.tipoServizio]
+    const _pianoRaw = _pianoCandidates.find(v => v && v.toString().trim() !== '') || 'BASE'
+    piano = _pianoRaw.toString().toUpperCase().includes('AVANZAT') ? 'AVANZATO' : 'BASE'
+
+    // Servizio: prova contratto.servizio → lead.servizio → lead.tipoServizio → default
+    const _srvCandidatesSP = [contract?.servizio, lead.servizio, lead.tipoServizio]
+    let _servizioResolvedSP = 'eCura PRO' // safe default
+
+    for (const _candidate of _srvCandidatesSP) {
+      if (!_candidate) continue
+      const _c = _candidate.toString()
+      const _extracted = _c.replace(/^eCura\s+/i, '').trim().toUpperCase()
+      if (_validServizioTypesSP.includes(_extracted)) {
+        _servizioResolvedSP = _c  // es. "eCura FAMILY", "eCura PRO"
+        break
+      }
+      // tipoServizio può contenere la parola FAMILY/PREMIUM nel testo
+      if (_c.toUpperCase().includes('FAMILY')) { _servizioResolvedSP = 'eCura FAMILY'; break }
+      if (_c.toUpperCase().includes('PREMIUM')) { _servizioResolvedSP = 'eCura PREMIUM'; break }
     }
-    
-    console.log(`📊 [PRICING] FINALE - Servizio: "${servizio}", Piano: "${piano}"`)
+    servizio = _servizioResolvedSP
+    const _servizioTypeSP = servizio.replace(/^eCura\s+/i, '').trim().toUpperCase()
+
+    console.log(`🔧 [SEND-PROFORMA SERVIZIO] contract.servizio="${contract?.servizio}" lead.servizio="${lead.servizio}" lead.tipoServizio="${lead.tipoServizio}" → risolto="${servizio}" tipo="${_servizioTypeSP}" piano="${piano}"`)
     
     // Calcola prezzi
-    const servizioType = servizio.replace(/^eCura\s+/i, '').trim().toUpperCase()
-    console.log(`📊 [PRICING] Tipo servizio calcolato: "${servizioType}"`)
+    const servizioType = _validServizioTypesSP.includes(_servizioTypeSP) ? _servizioTypeSP : 'PRO'
     
     const { calculatePrice } = await import('./modules/pricing-calculator')
     const pricing = calculatePrice(servizioType, piano.toUpperCase())
     
-    console.log(`💰 [PRICING] Prezzo calcolato: ${servizioType} ${piano.toUpperCase()} = €${pricing.setupTotale.toFixed(2)}`)
-    console.log(`💰 [PRICING] Dettaglio: base €${pricing.setupBase} + IVA €${pricing.setupIva} = TOT €${pricing.setupTotale}`)
+    console.log(`💰 [PRICING] calculatePrice('${servizioType}', '${piano.toUpperCase()}') → base=€${pricing?.setupBase}, iva=€${pricing?.setupIva}, tot=€${pricing?.setupTotale}`)
 
     
     // Genera numero proforma (l'ID sarà auto-generato da SQLite)
@@ -35828,12 +35852,21 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     ).bind(leadId).first() as any
 
     const contract = await c.env.DB.prepare(
-      `SELECT * FROM contracts WHERE leadId = ? AND status = 'firmato' ORDER BY created_at DESC LIMIT 1`
+      `SELECT * FROM contracts WHERE leadId = ? AND status IN ('SIGNED','firmato') ORDER BY created_at DESC LIMIT 1`
     ).bind(leadId).first() as any
 
-    // --- 2. Determina servizio/piano e dispositivo ---
-    const servizio = contract?.servizio || lead.servizio || 'eCura PRO'
-    const piano    = contract?.piano    || lead.piano    || 'BASE'
+    // --- 2. Determina servizio/piano e dispositivo --- FIX: multi-fallback robusto
+    const _srvRaw35b = (contract?.servizio || lead.servizio || '').toString()
+    const _tipoRaw35b = (lead.tipoServizio || '').toString()
+    const _validTypes35b = ['FAMILY','PRO','PREMIUM']
+    const _ext35b = _srvRaw35b.replace(/^eCura\s+/i,'').trim().toUpperCase()
+    let _srvResolved35b: string
+    if (_validTypes35b.includes(_ext35b)) { _srvResolved35b = _srvRaw35b }
+    else if (_tipoRaw35b.toUpperCase().includes('FAMILY')) { _srvResolved35b = 'eCura FAMILY' }
+    else if (_tipoRaw35b.toUpperCase().includes('PREMIUM')) { _srvResolved35b = 'eCura PREMIUM' }
+    else { _srvResolved35b = 'eCura PRO' }
+    const servizio = _srvResolved35b
+    const piano    = (contract?.piano || lead.piano || 'BASE').toString()
     const servizioUpper = servizio.replace(/^eCura\s+/i,'').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'
     const pianoUpper    = (piano.toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE') as 'BASE'|'AVANZATO'
 
