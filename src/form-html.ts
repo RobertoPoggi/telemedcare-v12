@@ -334,8 +334,37 @@ export const FORM_HTML = `<!DOCTYPE html>
                 items.push({ label: 'Assistito', value: [lead.nomeAssistito, lead.cognomeAssistito].filter(Boolean).join(' ') });
             if (lead.cittaAssistito)
                 items.push({ label: 'Città assistito', value: lead.cittaAssistito });
-            if (lead.tipoServizio || lead.servizio)
-                items.push({ label: 'Servizio richiesto', value: lead.tipoServizio || lead.servizio });
+            // ✅ FIX DISPLAY SERVIZIO: costruisci etichetta completa "eCura FAMILY BASE"
+            // lead.tipoServizio può contenere: 'eCura FAMILY', 'eCura PRO', 'BASE', 'AVANZATO', 'eCura'
+            // lead.servizio può contenere: 'eCura FAMILY', 'eCura PRO', null
+            // Strategia: usa servizio come fonte del TIPO, tipoServizio solo se contiene il tipo completo
+            if (lead.tipoServizio || lead.servizio) {
+                const _validTypes = ['FAMILY', 'PRO', 'PREMIUM'];
+                const _srvRaw = (lead.servizio || '').toString();
+                const _tipoRaw = (lead.tipoServizio || '').toString();
+                // Determina il tipo servizio (FAMILY/PRO/PREMIUM)
+                let _tipoStr = '';
+                const _srvExtracted = _srvRaw.replace(/^eCura\s+/i, '').trim().toUpperCase();
+                if (_validTypes.includes(_srvExtracted)) {
+                    _tipoStr = _srvExtracted; // da lead.servizio
+                } else {
+                    const _tipoExtracted = _tipoRaw.replace(/^eCura\s+/i, '').trim().toUpperCase();
+                    if (_validTypes.includes(_tipoExtracted)) {
+                        _tipoStr = _tipoExtracted; // da lead.tipoServizio completo
+                    } else if (_tipoRaw.toUpperCase().includes('FAMILY')) {
+                        _tipoStr = 'FAMILY';
+                    } else if (_tipoRaw.toUpperCase().includes('PREMIUM')) {
+                        _tipoStr = 'PREMIUM';
+                    } else {
+                        _tipoStr = 'PRO'; // default
+                    }
+                }
+                // Determina piano (BASE/AVANZATO)
+                const _pianoRaw = (lead.piano || '').toString().toUpperCase();
+                const _pianoStr = _pianoRaw.includes('AVANZAT') ? 'AVANZATO' : 'BASE';
+                const _servizioLabel = 'eCura ' + _tipoStr.charAt(0).toUpperCase() + _tipoStr.slice(1).toLowerCase() + ' ' + _pianoStr.charAt(0).toUpperCase() + _pianoStr.slice(1).toLowerCase();
+                items.push({ label: 'Servizio richiesto', value: _servizioLabel });
+            }
 
             if (items.length === 0) return;
 

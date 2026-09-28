@@ -13055,7 +13055,42 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       : `CTR-${cognome}-${anno}`
     
     // Determina servizio e piano (usa quello richiesto se presente, altrimenti quello del lead)
-    const servizio = lead.servizio || 'eCura PRO'
+    // ✅ FIX PRICING: usa lead.servizio come fonte primaria; se NULL o non contiene
+    // un tipo valido (FAMILY/PRO/PREMIUM), prova a ricostruirlo da tipoServizio.
+    // tipoServizio può contenere 'eCura FAMILY', 'eCura PRO', 'BASE', 'AVANZATO', 'eCura' — gestisci tutti i casi.
+    const _servizioRaw  = lead.servizio || ''
+    const _tipoServizioRaw = (lead.tipoServizio || '').toString()
+
+    // Estrai il tipo dal campo servizio (es. 'eCura FAMILY' → 'FAMILY')
+    const _servizioExtracted = _servizioRaw.replace(/^eCura\s+/i, '').trim().toUpperCase()
+    const _validServizioTypes = ['FAMILY', 'PRO', 'PREMIUM']
+
+    let servizio: string
+    if (_validServizioTypes.includes(_servizioExtracted)) {
+      // lead.servizio ha un tipo valido (es. 'eCura FAMILY', 'eCura PRO')
+      servizio = _servizioRaw
+    } else {
+      // lead.servizio è NULL/empty/default errato — prova tipoServizio
+      // tipoServizio può essere: 'eCura FAMILY', 'eCura PRO', 'BASE', 'AVANZATO', 'eCura'
+      const _tipoExtracted = _tipoServizioRaw.replace(/^eCura\s+/i, '').trim().toUpperCase()
+      if (_validServizioTypes.includes(_tipoExtracted)) {
+        // tipoServizio contiene il tipo completo (es. 'eCura FAMILY')
+        servizio = _tipoServizioRaw
+      } else if (_tipoServizioRaw.toUpperCase().includes('FAMILY')) {
+        servizio = 'eCura FAMILY'
+      } else if (_tipoServizioRaw.toUpperCase().includes('PREMIUM')) {
+        servizio = 'eCura PREMIUM'
+      } else {
+        // Nessuna info utile → default PRO (comportamento precedente)
+        servizio = 'eCura PRO'
+      }
+    }
+
+    // ✅ Estrai servizioType in modo robusto (usato per calculatePrice più in basso)
+    const _servizioTypeFinal = servizio.replace(/^eCura\s+/i, '').trim().toUpperCase()
+    // (servizioType viene ridichiarato più in basso — vedi riga ~13191; qui logghiamo per debug)
+    console.log(`🔧 [SERVIZIO] raw="${_servizioRaw}" tipoRaw="${_tipoServizioRaw}" → risolto="${servizio}" tipo="${_servizioTypeFinal}"`)
+
     const piano = pianoRichiesto || lead.piano || 'BASE'
     
     console.log('📄 Piano contratto:', piano, '(richiesto:', pianoRichiesto, 'lead:', lead.piano, ')')
@@ -13188,10 +13223,13 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     }
     
     // Calcola prezzi corretti
-    const servizioType = servizio.replace('eCura ', '').trim().toUpperCase()
-    const pianoType = piano.toUpperCase()
+    // ✅ FIX: usa la stessa logica robusta di estrazione già applicata sopra
+    // _servizioTypeFinal è già stato calcolato nel blocco di risoluzione servizio
+    const servizioType = (_validServizioTypes.includes(_servizioTypeFinal) ? _servizioTypeFinal : 'PRO') as 'FAMILY' | 'PRO' | 'PREMIUM'
+    const pianoType = piano.toUpperCase().includes('AVANZAT') ? 'AVANZATO' : 'BASE'
     const { calculatePrice } = await import('./modules/pricing-calculator')
     const pricing = calculatePrice(servizioType, pianoType)
+    console.log(`💰 [PRICING] calculatePrice('${servizioType}', '${pianoType}') → setupBase=€${pricing?.setupBase}, rinnovoBase=€${pricing?.rinnovoBase}`)
 
     // ✅ FIX: calcola prezzoIvaInclusa con l'aliquota corretta del lead
     // pricing.setupTotale usa sempre 22% — dobbiamo ricalcolarlo se iva_agevolata
