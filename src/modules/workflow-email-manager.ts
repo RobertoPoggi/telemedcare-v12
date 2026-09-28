@@ -260,18 +260,20 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
     : (leadData.dataNascitaAssistito || leadData.dataNascitaIntestatario || '')
 
   // Indirizzo: dai campi *Intestatario o *Assistito secondo chi è intestatario
+  // ✅ FIX: quando intestatario='richiedente', fallback su indirizzoRichiedente se indirizzoIntestatario è vuoto
+  // (il form invia indirizzoRichiedente; alcuni lead hanno il DB con indirizzoIntestatario vuoto)
   const indirizzoIntestatario = isIntestatarioRichiedente
-    ? (leadData.indirizzoIntestatario || 'N/A')
-    : (leadData.indirizzoAssistito || leadData.indirizzoIntestatario || 'N/A')
+    ? (leadData.indirizzoIntestatario || (leadData as any).indirizzoRichiedente || 'N/A')
+    : (leadData.indirizzoAssistito || leadData.indirizzoIntestatario || (leadData as any).indirizzoRichiedente || 'N/A')
   const capIntestatario = isIntestatarioRichiedente
-    ? (leadData.capIntestatario || 'N/A')
-    : (leadData.capAssistito || leadData.capIntestatario || 'N/A')
+    ? (leadData.capIntestatario || (leadData as any).capRichiedente || 'N/A')
+    : (leadData.capAssistito || leadData.capIntestatario || (leadData as any).capRichiedente || 'N/A')
   const cittaIntestatario = isIntestatarioRichiedente
-    ? (leadData.cittaIntestatario || 'N/A')
-    : (leadData.cittaAssistito || leadData.cittaIntestatario || 'N/A')
+    ? (leadData.cittaIntestatario || (leadData as any).cittaRichiedente || 'N/A')
+    : (leadData.cittaAssistito || leadData.cittaIntestatario || (leadData as any).cittaRichiedente || 'N/A')
   const provinciaIntestatario = isIntestatarioRichiedente
-    ? (leadData.provinciaIntestatario || '')
-    : (leadData.provinciaAssistito || leadData.provinciaIntestatario || '')
+    ? (leadData.provinciaIntestatario || (leadData as any).provinciaRichiedente || '')
+    : (leadData.provinciaAssistito || leadData.provinciaIntestatario || (leadData as any).provinciaRichiedente || '')
 
   // Nazione intestatario: già calcolata correttamente in index.tsx (usa nazione_assistito quando intestatario='assistito')
   // Suffisso nazione: appare solo se nazione ≠ Italia (es. " - SVIZZERA")

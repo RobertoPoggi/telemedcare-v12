@@ -13091,10 +13091,12 @@ app.post('/api/leads/:id/send-contract', async (c) => {
       // ✅ FIX: Fallback su cfAssistito quando cfIntestatario è vuoto
       // Caso Badano Littardi: richiedente = assistito, cfIntestatario vuoto ma cfAssistito valorizzato
       cfIntestatario = lead.cfIntestatario || lead.cfAssistito || ''
-      indirizzoIntestatario = lead.indirizzoIntestatario || ''
-      cittaIntestatario = lead.cittaIntestatario || ''
-      capIntestatario = lead.capIntestatario || ''
-      provinciaIntestatario = lead.provinciaIntestatario || ''
+      // ✅ FIX: Fallback su indirizzoRichiedente — il form invia indirizzoRichiedente, il DB lo salva
+      // in indirizzoIntestatario, ma per lead già esistenti il campo può essere vuoto
+      indirizzoIntestatario = lead.indirizzoIntestatario || lead.indirizzoRichiedente || ''
+      cittaIntestatario = lead.cittaIntestatario || lead.cittaRichiedente || ''
+      capIntestatario = lead.capIntestatario || lead.capRichiedente || ''
+      provinciaIntestatario = lead.provinciaIntestatario || lead.provinciaRichiedente || ''
       luogoNascitaIntestatario = lead.luogoNascitaIntestatario || ''
       dataNascitaIntestatario = lead.dataNascitaIntestatario || ''
     }
@@ -13607,6 +13609,22 @@ app.post('/api/leads/:id/complete', async (c) => {
       intestatarioContratto: 'intestatarioContratto'  // 'richiedente' | 'assistito' — scelto dal cliente nel form
     }
     
+    // ✅ FIX: Copia richiedente → intestatario per i campi indirizzo
+    // Il form "completa-dati-minimal.html" invia indirizzoRichiedente/capRichiedente/cittaRichiedente/provinciaRichiedente
+    // ma il DB li salva in indirizzoIntestatario/capIntestatario/cittaIntestatario/provinciaIntestatario
+    if (data.indirizzoRichiedente && !data.indirizzoIntestatario) {
+      data.indirizzoIntestatario = data.indirizzoRichiedente
+    }
+    if (data.capRichiedente && !data.capIntestatario) {
+      data.capIntestatario = data.capRichiedente
+    }
+    if (data.cittaRichiedente && !data.cittaIntestatario) {
+      data.cittaIntestatario = data.cittaRichiedente
+    }
+    if (data.provinciaRichiedente && !data.provinciaIntestatario) {
+      data.provinciaIntestatario = data.provinciaRichiedente
+    }
+
     for (const [formField, dbField] of Object.entries(fieldMapping)) {
       if (data[formField] !== undefined && data[formField] !== '') {
         updateFields.push(`${dbField} = ?`)
