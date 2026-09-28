@@ -449,22 +449,38 @@ async function inviaEmailProforma(proforma: any, env?: any) {
     const prezzoIvaInclusa = Math.round((prezzoBase + iva) * 100) / 100
     
     const variables = {
-      NOME_CLIENTE: proforma.cliente_nome || 'Cliente',
+      NOME_CLIENTE: proforma.cliente_nome || proforma.nomeRichiedente || 'Cliente',
+      COGNOME_CLIENTE: proforma.cliente_cognome || proforma.cognomeRichiedente || '',
       SERVIZIO: proforma.tipo_servizio || 'eCura Premium',
       PIANO: proforma.piano || 'AVANZATO',
       NUMERO_PROFORMA: proforma.numero_proforma || proforma.id || 'N/A',
-      PIANO_SERVIZIO: proforma.servizio || 'eCura PRO',
-      IMPORTO_BASE: `€${prezzoBase.toFixed(2).replace('.', ',')}`,  // IVA ESCLUSA
+      PIANO_SERVIZIO: proforma.tipo_servizio || proforma.servizio || 'eCura PRO',
+      DATA_INVIO: new Date().toLocaleDateString('it-IT'),
+      IMPORTO_BASE: `€${prezzoBase.toFixed(2).replace('.', ',')}`,
       IMPORTO_IVA: `€${iva.toFixed(2).replace('.', ',')}`,
-      IMPORTO_TOTALE: `€${prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,  // IVA INCLUSA
-      IMPORTO_CON_IVA: `€${prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,  // IVA INCLUSA (alias)
+      IMPORTO_TOTALE: `€${prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,
+      IMPORTO_CON_IVA: `€${prezzoIvaInclusa.toFixed(2).replace('.', ',')}`,
+      IVA_LABEL: proforma.iva_esente ? 'Esente IVA' : `IVA ${ivaLabel}`,
+      IVA_NOTE: proforma.iva_esente ? ' — Operazione esente IVA (art. 10 n. 18 d.P.R. 633/1972)' : proforma.iva_agevolata ? ' — IVA agevolata 4% (Legge 104, disabilità 100%)' : '',
       PREZZO_SERVIZIO_PIANO: proforma.iva_esente
         ? `€${prezzoBase.toFixed(2).replace('.', ',')} / anno Esente IVA`
         : `€${prezzoBase.toFixed(2).replace('.', ',')} + IVA ${ivaLabel} (€${prezzoIvaInclusa.toFixed(2).replace('.', ',')})`,
-      IVA_LABEL: proforma.iva_esente ? 'Esente IVA' : `IVA ${ivaLabel}`,
-      IVA_NOTE: proforma.iva_esente ? ' — Operazione esente IVA (art. 10 n. 18 d.P.R. 633/1972)' : proforma.iva_agevolata ? ' — IVA agevolata 4% (Legge 104, disabilità 100%)' : '',
-      SCADENZA_PAGAMENTO: proforma.data_scadenza || 'Da concordare',
-      CODICE_CLIENTE: proforma.numero_proforma || proforma.id || 'N/A'
+      SCADENZA_PAGAMENTO: proforma.data_scadenza
+        ? new Date(proforma.data_scadenza).toLocaleDateString('it-IT')
+        : 'Da concordare',
+      CODICE_CLIENTE: proforma.numero_proforma || proforma.id || 'N/A',
+      IBAN: 'IT97L0503401727000000003519',
+      CAUSALE: `Proforma ${proforma.numero_proforma || proforma.id} - ${proforma.cliente_nome || ''} ${proforma.cliente_cognome || ''}`.trim(),
+      LINK_PROFORMA_PDF: '',  // non disponibile in questo path legacy
+      LINK_PAGAMENTO: '',
+      NOTA_RINNOVO: '',
+      PIANO_RATEIZZAZIONE: '',
+      PASSI_DOPO_PAGAMENTO: `<ol style="margin:0;padding-left:20px;font-size:14px;line-height:1.8;">
+  <li>Riceverai la fattura fiscale definitiva via email</li>
+  <li>Ti invieremo il dispositivo entro 10 giorni lavorativi</li>
+  <li>Riceverai le istruzioni per la configurazione e l'attivazione</li>
+  <li>Il nostro team ti contatterà per programmare l'attivazione del servizio</li>
+</ol>`
     }
     
     // Invia email reale con template e environment context
@@ -5365,6 +5381,81 @@ app.get('/admin/devices', (c) => {
 })
 
 
+
+/**
+ * Genera e invia proforma dopo completamento form / workflow automatico.
+ * Chiama WorkflowEmailManager.inviaEmailProforma con servizio/piano/IVA corretti.
+ */
+async function generaEInviaProforma(leadData: any, leadId: string, db: D1Database, env?: any): Promise<{ success: boolean; linkPagamento?: string; error?: string }> {
+  try {
+    if (!db) return { success: false, error: 'Database non disponibile' }
+
+    // Risolvi servizio con multi-fallback
+    const _validSrv = ['FAMILY', 'PRO', 'PREMIUM']
+    let _srvTypeGEIP = 'PRO'
+    for (const _src of [leadData.servizio, leadData.tipoServizio, leadData.service_type]) {
+      if (_src) {
+        const _raw = String(_src).replace(/^eCura\s+/i, '').trim().toUpperCase()
+        const _r = _raw.includes('PREMIUM') ? 'PREMIUM' : _raw.includes('FAMILY') ? 'FAMILY' : _validSrv.includes(_raw) ? _raw : ''
+        if (_r) { _srvTypeGEIP = _r; break }
+      }
+    }
+    const pianoGEIP = (leadData.piano || leadData.pacchetto || 'BASE').toString().toUpperCase() === 'AVANZATO' ? 'AVANZATO' : 'BASE'
+
+    const { calculatePrice } = await import('./modules/pricing-calculator')
+    const pricingGEIP = calculatePrice(_srvTypeGEIP, pianoGEIP)
+    const ivaRateGEIP = leadData.iva_esente ? 0 : leadData.iva_agevolata ? 0.04 : 0.22
+    const prezzoBaseGEIP = pricingGEIP.setupBase
+    const prezzoIvaGEIP  = Math.round(prezzoBaseGEIP * (1 + ivaRateGEIP) * 100) / 100
+
+    const year  = new Date().getFullYear()
+    const month = String(new Date().getMonth() + 1).padStart(2, '0')
+    const rnd   = Math.random().toString(36).substring(2, 6).toUpperCase()
+    const numeroProformaGEIP = `PRF${year}${month}-${rnd}`
+
+    // Salva proforma nel DB
+    await db.prepare(`
+      INSERT INTO proforma (
+        contract_id, leadId, numero_proforma,
+        data_emissione, data_scadenza,
+        cliente_nome, cliente_cognome, cliente_email,
+        tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
+        iva_agevolata, iva_esente, status, created_at, updated_at
+      ) VALUES ('MANUAL', ?, ?, ?, ?, ?, ?, ?, ?, ?, 12, ?, ?, ?, 'SENT', ?, ?)
+    `).bind(
+      leadId, numeroProformaGEIP,
+      new Date().toISOString().split('T')[0],
+      new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      leadData.nomeRichiedente || '', leadData.cognomeRichiedente || '',
+      leadData.email || '',
+      `eCura ${_srvTypeGEIP}`,
+      (prezzoBaseGEIP / 12).toFixed(2), prezzoBaseGEIP,
+      leadData.iva_agevolata ? 1 : 0, leadData.iva_esente ? 1 : 0,
+      new Date().toISOString(), new Date().toISOString()
+    ).run()
+
+    // Invia email tramite WorkflowEmailManager
+    const proformaDataGEIP = {
+      proformaId: numeroProformaGEIP,
+      numeroProforma: numeroProformaGEIP,
+      proformaPdfUrl: '',
+      tipoServizio: pianoGEIP,
+      servizio: `eCura ${_srvTypeGEIP}`,
+      prezzoBase: prezzoBaseGEIP,
+      prezzoIvaInclusa: prezzoIvaGEIP,
+      dataScadenza: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+      rateizzazione_attiva: Boolean(leadData.rateizzazione_attiva),
+      rateizzazione_note: leadData.rateizzazione_note || '',
+      rate: []
+    }
+    await WorkflowEmailManager.inviaEmailProforma(leadData, proformaDataGEIP, env, db)
+
+    return { success: true, linkPagamento: '' }
+  } catch (err: any) {
+    console.error('❌ [generaEInviaProforma] Errore:', err)
+    return { success: false, error: err.message }
+  }
+}
 
 /**
  * ELABORAZIONE WORKFLOW EMAIL AUTOMATICO
@@ -16995,6 +17086,7 @@ app.post('/api/contracts/:id/invia-proforma-rinnovo', async (c) => {
       COGNOME_CLIENTE:       lead.cognomeRichiedente || '',
       PIANO_SERVIZIO:        titoloProforma,
       NUMERO_PROFORMA:       proforma.numero_proforma || '',
+      DATA_INVIO:            new Date().toLocaleDateString('it-IT'),
       IMPORTO_BASE:          `€${imponibile.toFixed(2).replace('.', ',')}`,
       IMPORTO_IVA:           `€${importoIva.toFixed(2).replace('.', ',')}`,
       IMPORTO_CON_IVA:       `€${totaleConIva.toFixed(2).replace('.', ',')}`,
@@ -17007,7 +17099,6 @@ app.post('/api/contracts/:id/invia-proforma-rinnovo', async (c) => {
       NOTA_RINNOVO:          notaRinnovo,
       LINK_PROFORMA_PDF:     `${baseUrl}/proforma-view?id=${contract.proforma_rinnovo_id}`,
       LINK_PAGAMENTO:        `${baseUrl}/pagamento.html?proformaId=${contract.proforma_rinnovo_id}`,
-      DATA_INVIO:            new Date().toLocaleDateString('it-IT'),
       PIANO_RATEIZZAZIONE:   '',
       PASSI_DOPO_PAGAMENTO:  isRinnovo ? passiDopoRinnovo : passiDopoNuovo,
     }
@@ -35315,15 +35406,28 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
     const contractId = `CONTRACT_CTR-${cognome}-${anno}_${timestamp}`
     const contractCode = `CTR-${cognome}-${anno}`
     
-    // Determina servizio e piano
-    const servizio = lead.servizio || 'eCura PRO'
-    const piano = lead.piano || 'BASE'
-    
-    // Calcola prezzi — normalizza servizioType: 'eCura FAMILY PRO' → 'FAMILY', 'eCura PREMIUM' → 'PREMIUM', ecc.
-    const rawType = servizio.replace(/^eCura\s+/i, '').trim().toUpperCase()
-    const servizioType = rawType.includes('PREMIUM') ? 'PREMIUM'
-      : rawType.includes('FAMILY') ? 'FAMILY'
-      : 'PRO'
+    // Determina servizio e piano — multi-fallback: cerca contratto firmato prima di usare lead.servizio
+    const existingContractMS = await c.env.DB.prepare(
+      `SELECT servizio, piano FROM contracts WHERE leadId = ? AND status IN ('SIGNED','firmato') ORDER BY created_at DESC LIMIT 1`
+    ).bind(leadId).first() as any
+
+    const piano = (existingContractMS?.piano || lead.piano || 'BASE').toString()
+
+    // Risoluzione servizio: contract → lead.servizio → lead.tipoServizio → 'PRO'
+    const _validServizioTypesMS = ['FAMILY', 'PRO', 'PREMIUM']
+    let _servizioTypeMS = 'PRO'
+    for (const _src of [existingContractMS?.servizio, lead.servizio, lead.tipoServizio]) {
+      if (_src) {
+        const _raw = String(_src).replace(/^eCura\s+/i, '').trim().toUpperCase()
+        const _resolved = _raw.includes('PREMIUM') ? 'PREMIUM' : _raw.includes('FAMILY') ? 'FAMILY' : _validServizioTypesMS.includes(_raw) ? _raw : ''
+        if (_resolved) { _servizioTypeMS = _resolved; break }
+      }
+    }
+    const servizioType = _servizioTypeMS
+    // Ricostruisci nome completo servizio per uso nei template
+    const servizio = existingContractMS?.servizio || lead.servizio || `eCura ${servizioType}`
+
+    // Calcola prezzi
     const pricing = calculatePrice(servizioType, piano.toUpperCase())
     
     // Genera HTML contratto (semplificato)
