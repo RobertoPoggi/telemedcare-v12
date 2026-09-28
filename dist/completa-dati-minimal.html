@@ -319,99 +319,65 @@
             const container = document.getElementById('formFieldsContainer');
             let html = '';
             
-            // SEZIONE 1: Dati Intestatario (per il contratto)
-            // ✅ FIX: Controlla ENTRAMBI richiedente E intestatario (per import HubSpot)
-            const needsIntestatario = 
-                (!lead.cfRichiedente && !lead.cfIntestatario) ||
-                (!lead.indirizzoRichiedente && !lead.indirizzoIntestatario) || 
-                (!lead.capRichiedente && !lead.capIntestatario) || 
-                (!lead.cittaRichiedente && !lead.cittaIntestatario) || 
-                !lead.provinciaIntestatario ||  // Provincia SEMPRE manca (non esiste in form eCura)
-                !lead.nomeIntestatario || !lead.cognomeIntestatario;
-            
+            // SEZIONE 1: Dati Richiedente (indirizzo per il contratto)
+            // Controlla se manca almeno uno dei campi indirizzo intestatario
+            const needsIntestatario =
+                !lead.cfIntestatario ||
+                !lead.indirizzoIntestatario ||
+                !lead.capIntestatario ||
+                !lead.cittaIntestatario ||
+                !lead.provinciaIntestatario;
+
             if (needsIntestatario) {
-                html += '<h3 class="section-header">📋 Dati Intestatario Contratto</h3>';
-                html += '<p style="color: #6b7280; margin-bottom: 20px;">Chi deve intestare il contratto e ricevere la fattura?</p>';
-                
-                // Nome e Cognome intestatario (se diverso da richiedente)
-                const needsNomeIntestatario = !lead.nomeIntestatario || !lead.cognomeIntestatario;
-                if (needsNomeIntestatario) {
-                    html += '<div class="form-row cols-2">';
+                html += '<h3 class="section-header">📋 Dati Richiedente</h3>';
+
+                // CF del richiedente (= intestatario contratto)
+                if (!lead.cfIntestatario) {
                     html += `
                         <div class="form-group">
-                            <label for="nomeIntestatario">Nome Intestatario <span class="required">*</span></label>
-                            <input type="text" id="nomeIntestatario" name="nomeIntestatario" 
-                                   placeholder="Nome" required
-                                   value="${lead.nomeIntestatario || lead.nomeRichiedente || ''}">
-                        </div>
-                        <div class="form-group">
-                            <label for="cognomeIntestatario">Cognome Intestatario <span class="required">*</span></label>
-                            <input type="text" id="cognomeIntestatario" name="cognomeIntestatario" 
-                                   placeholder="Cognome" required
-                                   value="${lead.cognomeIntestatario || lead.cognomeRichiedente || ''}">
-                        </div>
-                    `;
-                    html += '</div>';
-                }
-                
-                if (!lead.cfRichiedente) {
-                    html += `
-                        <div class="form-group">
-                            <label for="cfRichiedente">Codice Fiscale <span class="required">*</span></label>
-                            <input type="text" id="cfRichiedente" name="cfRichiedente" 
-                                   placeholder="Es. RSSMRA80A01F205K" required 
-                                   maxlength="16" style="text-transform: uppercase;">
+                            <label for="cfIntestatario">Codice Fiscale Richiedente <span class="required">*</span></label>
+                            <input type="text" id="cfIntestatario" name="cfIntestatario"
+                                   placeholder="Es. RSSMRA80A01F205K" required
+                                   maxlength="16" style="text-transform: uppercase;"
+                                   oninput="this.value=this.value.toUpperCase()"
+                                   value="${lead.cfIntestatario || ''}">
                         </div>
                     `;
                 }
-                
-                // Indirizzo, CAP, Città, Provincia sulla stessa riga
-                // ✅ FIX: Controlla ENTRAMBI richiedente E intestatario (per import HubSpot)
-                const needsIndirizzo = !lead.indirizzoRichiedente && !lead.indirizzoIntestatario;
-                const needsCap = !lead.capRichiedente && !lead.capIntestatario;
-                const needsCitta = !lead.cittaRichiedente && !lead.cittaIntestatario;
-                const needsProvincia = !lead.provinciaIntestatario && !lead.provinciaRichiedente;
-                
-                // Mostra griglia solo se almeno UN campo manca
-                if (needsIndirizzo || needsCap || needsCitta || needsProvincia) {
-                    html += '<div class="form-row cols-4">';
-                    
-                    // Mostra SEMPRE tutti i 4 campi se la griglia è aperta
-                    // Questo garantisce che la provincia sia sempre visibile
-                    html += `
-                        <div class="form-group">
-                            <label for="indirizzoRichiedente">Indirizzo <span class="required">*</span></label>
-                            <input type="text" id="indirizzoRichiedente" name="indirizzoRichiedente" 
-                                   placeholder="Via/Piazza Nome, N." required
-                                   value="${lead.indirizzoRichiedente || lead.indirizzoIntestatario || ''}">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="capRichiedente">CAP <span class="required">*</span></label>
-                            <input type="text" id="capRichiedente" name="capRichiedente" 
-                                   placeholder="00000" required maxlength="5" 
-                                   pattern="[0-9]*" inputmode="numeric"
-                                   value="${lead.capRichiedente || lead.capIntestatario || ''}">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="cittaRichiedente">Città <span class="required">*</span></label>
-                            <input type="text" id="cittaRichiedente" name="cittaRichiedente" 
-                                   placeholder="Es. Milano" required
-                                   value="${lead.cittaRichiedente || lead.cittaIntestatario || ''}">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="provinciaIntestatario">Provincia <span class="required">*</span></label>
-                            <input type="text" id="provinciaIntestatario" name="provinciaIntestatario" 
-                                   placeholder="MI" required maxlength="2" 
-                                   style="text-transform: uppercase;"
-                                   value="${lead.provinciaIntestatario || lead.provinciaRichiedente || ''}">
-                        </div>
-                    `;
-                    
-                    html += '</div>';
-                }
+
+                // Indirizzo, CAP, Città, Provincia — sempre mostrati con pre-fill
+                // I campi usano direttamente i nomi colonna DB (*Intestatario) per salvataggio diretto
+                html += '<div class="form-row cols-4">';
+                html += `
+                    <div class="form-group">
+                        <label for="indirizzoIntestatario">Indirizzo <span class="required">*</span></label>
+                        <input type="text" id="indirizzoIntestatario" name="indirizzoIntestatario"
+                               placeholder="Via/Piazza Nome, N." required
+                               value="${lead.indirizzoIntestatario || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label for="capIntestatario">CAP <span class="required">*</span></label>
+                        <input type="text" id="capIntestatario" name="capIntestatario"
+                               placeholder="00000" required maxlength="5"
+                               pattern="[0-9]*" inputmode="numeric"
+                               value="${lead.capIntestatario || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label for="cittaIntestatario">Città <span class="required">*</span></label>
+                        <input type="text" id="cittaIntestatario" name="cittaIntestatario"
+                               placeholder="Es. Milano" required
+                               value="${lead.cittaIntestatario || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label for="provinciaIntestatario">Provincia <span class="required">*</span></label>
+                        <input type="text" id="provinciaIntestatario" name="provinciaIntestatario"
+                               placeholder="MI" required maxlength="2"
+                               style="text-transform: uppercase;"
+                               oninput="this.value=this.value.toUpperCase()"
+                               value="${lead.provinciaIntestatario || ''}">
+                    </div>
+                `;
+                html += '</div>';
             }
             
             // SEZIONE 2: Dati Assistito

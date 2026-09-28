@@ -111,12 +111,27 @@ export function getMissingFields(leadData: any): { missing: string[]; available:
     condizioniSalute: 'Condizioni di Salute',
   }
 
-  // ⭐ Se il contratto è intestato al RICHIEDENTE, il suo CF è obbligatorio
+  // ⭐ Se il contratto è intestato al RICHIEDENTE, il suo CF e indirizzo sono obbligatori
   // Controlla sia cfIntestatario che codiceFiscaleIntestatario (alias)
   const intestatario = leadData.intestatarioContratto || 'richiedente'
   const cfRichiedente = leadData.cfIntestatario || leadData.codiceFiscaleIntestatario || ''
-  if (intestatario === 'richiedente' && !cfRichiedente) {
-    requiredFields['cfIntestatario'] = 'Codice Fiscale Richiedente'
+  if (intestatario === 'richiedente') {
+    if (!cfRichiedente) {
+      requiredFields['cfIntestatario'] = 'Codice Fiscale Richiedente'
+    }
+    // ✅ FIX: indirizzo intestatario obbligatorio per evitare contratto con N/A
+    if (!leadData.indirizzoIntestatario) {
+      requiredFields['indirizzoIntestatario'] = 'Indirizzo Richiedente'
+    }
+    if (!leadData.capIntestatario) {
+      requiredFields['capIntestatario'] = 'CAP Richiedente'
+    }
+    if (!leadData.cittaIntestatario) {
+      requiredFields['cittaIntestatario'] = 'Città Richiedente'
+    }
+    if (!leadData.provinciaIntestatario) {
+      requiredFields['provinciaIntestatario'] = 'Provincia Richiedente'
+    }
   }
   
   const missing: string[] = []

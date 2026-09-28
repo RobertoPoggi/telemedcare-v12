@@ -357,38 +357,39 @@ export const FORM_HTML = `<!DOCTYPE html>
             const container = document.getElementById('formFieldsContainer');
             let html = '';
             
-            // SEZIONE 1: Dati Richiedente (indirizzo, se mancante)
-            const needsIndirizzoRichiedente =
-                (!lead.indirizzoRichiedente && !lead.indirizzoIntestatario) ||
-                (!lead.capRichiedente && !lead.capIntestatario) ||
-                (!lead.cittaRichiedente && !lead.cittaIntestatario) ||
-                (!lead.provinciaIntestatario && !lead.provinciaRichiedente);
+            // SEZIONE 1: Dati Richiedente (indirizzo per il contratto)
+            // Controlla se manca almeno uno dei campi indirizzo intestatario (nomi = colonne DB)
+            const needsIntestatario =
+                !lead.indirizzoIntestatario ||
+                !lead.capIntestatario ||
+                !lead.cittaIntestatario ||
+                !lead.provinciaIntestatario;
 
-            const needsIntestatario = needsIndirizzoRichiedente;
-
-            if (needsIndirizzoRichiedente) {
+            if (needsIntestatario) {
                 html += '<h3 class="section-header">📋 Dati Richiedente</h3>';
 
+                // Indirizzo, CAP, Città, Provincia — sempre mostrati con pre-fill
+                // I campi usano direttamente i nomi colonna DB (*Intestatario) per salvataggio diretto
                 html += '<div class="form-row cols-4">';
                 html += \`
                     <div class="form-group">
-                        <label for="indirizzoRichiedente">Indirizzo <span class="required">*</span></label>
-                        <input type="text" id="indirizzoRichiedente" name="indirizzoRichiedente"
+                        <label for="indirizzoIntestatario">Indirizzo <span class="required">*</span></label>
+                        <input type="text" id="indirizzoIntestatario" name="indirizzoIntestatario"
                                placeholder="Via/Piazza Nome, N." required
-                               value="\${lead.indirizzoRichiedente || lead.indirizzoIntestatario || ''}">
+                               value="\${lead.indirizzoIntestatario || ''}">
                     </div>
                     <div class="form-group">
-                        <label for="capRichiedente">CAP <span class="required">*</span></label>
-                        <input type="text" id="capRichiedente" name="capRichiedente"
+                        <label for="capIntestatario">CAP <span class="required">*</span></label>
+                        <input type="text" id="capIntestatario" name="capIntestatario"
                                placeholder="00000" required maxlength="5"
                                pattern="[0-9]*" inputmode="numeric"
-                               value="\${lead.capRichiedente || lead.capIntestatario || ''}">
+                               value="\${lead.capIntestatario || ''}">
                     </div>
                     <div class="form-group">
-                        <label for="cittaRichiedente">Città <span class="required">*</span></label>
-                        <input type="text" id="cittaRichiedente" name="cittaRichiedente"
+                        <label for="cittaIntestatario">Città <span class="required">*</span></label>
+                        <input type="text" id="cittaIntestatario" name="cittaIntestatario"
                                placeholder="Es. Milano" required
-                               value="\${lead.cittaRichiedente || lead.cittaIntestatario || ''}">
+                               value="\${lead.cittaIntestatario || ''}">
                     </div>
                     <div class="form-group">
                         <label for="provinciaIntestatario">Provincia <span class="required">*</span></label>
@@ -396,7 +397,7 @@ export const FORM_HTML = `<!DOCTYPE html>
                                placeholder="MI" required maxlength="2"
                                style="text-transform: uppercase;"
                                oninput="this.value=this.value.toUpperCase()"
-                               value="\${lead.provinciaIntestatario || lead.provinciaRichiedente || ''}">
+                               value="\${lead.provinciaIntestatario || ''}">
                     </div>
                 \`;
                 html += '</div>';
