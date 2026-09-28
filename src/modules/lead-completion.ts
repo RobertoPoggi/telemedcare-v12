@@ -92,7 +92,7 @@ export function calculateExpiryDate(days: number): string {
  * Basato sui campi obbligatori per il contratto
  */
 export function getMissingFields(leadData: any): { missing: string[]; available: Record<string, any> } {
-  const requiredFields = {
+  const requiredFields: Record<string, string> = {
     // Dati richiedente (per contratto)
     telefono: 'Telefono',
     
@@ -101,7 +101,7 @@ export function getMissingFields(leadData: any): { missing: string[]; available:
     cognomeAssistito: 'Cognome Assistito',
     dataNascitaAssistito: 'Data di Nascita Assistito',
     luogoNascitaAssistito: 'Luogo di Nascita Assistito',
-    cfAssistito: 'Codice Fiscale Assistito',  // DB usa cfAssistito, non cfAssistito
+    cfAssistito: 'Codice Fiscale Assistito',
     indirizzoAssistito: 'Indirizzo Assistito',
     capAssistito: 'CAP Assistito',
     cittaAssistito: 'Città Assistito',
@@ -109,6 +109,14 @@ export function getMissingFields(leadData: any): { missing: string[]; available:
     
     // Condizioni salute (importante per servizio)
     condizioniSalute: 'Condizioni di Salute',
+  }
+
+  // ⭐ Se il contratto è intestato al RICHIEDENTE, il suo CF è obbligatorio
+  // Controlla sia cfIntestatario che codiceFiscaleIntestatario (alias)
+  const intestatario = leadData.intestatarioContratto || 'richiedente'
+  const cfRichiedente = leadData.cfIntestatario || leadData.codiceFiscaleIntestatario || ''
+  if (intestatario === 'richiedente' && !cfRichiedente) {
+    requiredFields['cfIntestatario'] = 'Codice Fiscale Richiedente'
   }
   
   const missing: string[] = []
@@ -122,6 +130,11 @@ export function getMissingFields(leadData: any): { missing: string[]; available:
       available[fieldLabel] = value
     }
   })
+
+  // Se CF richiedente è già presente, mostrarlo tra i disponibili
+  if (intestatario === 'richiedente' && cfRichiedente) {
+    available['Codice Fiscale Richiedente'] = cfRichiedente
+  }
   
   // Aggiungi campi sempre disponibili (già inseriti)
   if (leadData.nomeRichiedente) available['Nome Richiedente'] = leadData.nomeRichiedente

@@ -115,6 +115,17 @@
                     </div>
                 </div>
 
+                <!-- CF Richiedente — mostrato solo quando intestatarioContratto='richiedente' -->
+                <div id="cfRichiedenteBlock" class="hidden mt-6">
+                    <label class="block text-gray-700 font-semibold mb-2" for="cfIntestatario">
+                        Codice Fiscale <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="cfIntestatario" name="cfIntestatario" maxlength="16"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent uppercase"
+                        placeholder="RSSMRA85M01H501X" style="text-transform: uppercase;">
+                    <p class="text-xs text-gray-500 mt-1">Obbligatorio per intestare il contratto a tuo nome</p>
+                </div>
+
                 <div class="flex justify-end mt-8">
                     <button type="button" onclick="nextStep(2)"
                         class="gradient-bg text-white px-8 py-3 rounded-lg font-semibold hover:shadow-lg transition-shadow">
@@ -340,6 +351,15 @@
                 document.getElementById('cognome').value = lead.cognomeRichiedente || '';
                 document.getElementById('telefono').value = lead.telefono || '';
                 document.getElementById('citta').value = lead.cittaRichiedente || '';
+
+                // CF Richiedente: mostra il blocco e pre-popola se intestatario=richiedente
+                const intestatario = lead.intestatarioContratto || 'richiedente';
+                if (intestatario === 'richiedente') {
+                    document.getElementById('cfRichiedenteBlock').classList.remove('hidden');
+                    document.getElementById('cfIntestatario').value = (lead.cfIntestatario || '').toUpperCase();
+                } else {
+                    document.getElementById('cfRichiedenteBlock').classList.add('hidden');
+                }
                 
                 if (lead.nomeAssistito) {
                     document.getElementById('nomeAssistito').value = lead.nomeAssistito;
@@ -407,6 +427,20 @@
                 if (!nome || !cognome || !telefono || !citta || !cap || !provincia) {
                     alert('⚠️ Compila tutti i campi obbligatori');
                     return false;
+                }
+
+                // Valida CF Richiedente se il blocco è visibile
+                const cfBlock = document.getElementById('cfRichiedenteBlock');
+                if (cfBlock && !cfBlock.classList.contains('hidden')) {
+                    const cf = document.getElementById('cfIntestatario').value.trim();
+                    if (!cf) {
+                        alert('⚠️ Il Codice Fiscale è obbligatorio quando il contratto è intestato a te');
+                        return false;
+                    }
+                    if (!/^[A-Z0-9]{16}$/i.test(cf)) {
+                        alert('⚠️ Il Codice Fiscale deve essere composto da 16 caratteri alfanumerici');
+                        return false;
+                    }
                 }
                 
                 // Valida CAP (5 cifre)
@@ -503,6 +537,7 @@
                 cittaRichiedente: document.getElementById('citta').value.trim(),
                 capIntestatario: document.getElementById('cap').value.trim(),
                 provinciaIntestatario: document.getElementById('provincia').value.trim().toUpperCase(),
+                cfIntestatario: (document.getElementById('cfIntestatario')?.value?.trim() || '').toUpperCase(),
                 servizio: servizio.value,
                 piano: document.getElementById('piano').value,
                 note: document.getElementById('note').value.trim(),
