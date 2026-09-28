@@ -593,7 +593,7 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
     
     <div class="payment-details">
         <p><strong>Intestato a:</strong> Medica GB Srl</p>
-        <p><strong>Causale:</strong> ${cognomeIntestatario} ${nomeIntestatario} - ${isRinnovo ? `SERVIZIO DI CONTINUITA' ANNO ${annoRinnovo} - ${codiceOriginale || contractData.contractCode}` : `SERVIZI PER ${dispositivo.toUpperCase()}`}</p>
+        <p><strong>Causale:</strong> ${cognomeIntestatario} ${nomeIntestatario} - ${isRinnovo ? `SERVIZIO DI CONTINUITA' ANNO ${annoRinnovo} - ${codiceOriginale || contractData.contractCode}` : `SERVIZIO ${servizioNome.replace(/^eCura\s*/i, 'eCura ').trim().toUpperCase()} ${pianoNome.toUpperCase()}`}</p>
         <p><strong>Banca Popolare di Milano - Iban:</strong> IT97L0503401727000000003519</p>
     </div>
 

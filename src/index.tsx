@@ -12909,10 +12909,10 @@ function _buildLeadDataFromLead(lead: any, overrides: any = {}): any {
     nomeIntestatario        = lead.nomeRichiedente
     cognomeIntestatario     = lead.cognomeRichiedente
     cfIntestatario          = lead.cfIntestatario || lead.cfAssistito || ''
-    indirizzoIntestatario   = lead.indirizzoIntestatario || ''
-    cittaIntestatario       = lead.cittaIntestatario     || ''
-    capIntestatario         = lead.capIntestatario       || ''
-    provinciaIntestatario   = lead.provinciaIntestatario || ''
+    indirizzoIntestatario   = lead.indirizzoIntestatario || lead.indirizzoRichiedente || ''
+    cittaIntestatario       = lead.cittaIntestatario     || lead.cittaRichiedente     || ''
+    capIntestatario         = lead.capIntestatario       || lead.capRichiedente       || ''
+    provinciaIntestatario   = lead.provinciaIntestatario || lead.provinciaRichiedente || ''
     luogoNascitaIntestatario= lead.luogoNascitaIntestatario || ''
     dataNascitaIntestatario = lead.dataNascitaIntestatario  || ''
   }
