@@ -6884,6 +6884,7 @@ export const leads_dashboard = `<!DOCTYPE html>
             document.getElementById('newCittaIntestatario').value     = lead.cittaIntestatario     || '';
             document.getElementById('newProvinciaIntestatario').value = lead.provinciaIntestatario || '';
             document.getElementById('newNazioneIntestatario').value   = lead.nazione_intestatario  || 'Italia';
+            document.getElementById('newCFRichiedente').value         = (lead.cfIntestatario || lead.codiceFiscaleIntestatario || '').toUpperCase();
             
             document.getElementById('newNomeAssistito').value = lead.nomeAssistito || '';
             document.getElementById('newCognomeAssistito').value = lead.cognomeAssistito || '';
@@ -7619,6 +7620,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 cognomeRichiedente: document.getElementById('newCognome').value,
                 email: document.getElementById('newEmail').value,
                 telefono: document.getElementById('newTelefono').value,
+                cfIntestatario:        document.getElementById('newCFRichiedente')?.value?.trim()?.toUpperCase() || '',
                 indirizzoIntestatario: document.getElementById('newIndirizzoIntestatario')?.value?.trim() || '',
                 capIntestatario:       document.getElementById('newCapIntestatario')?.value?.trim()       || '',
                 cittaIntestatario:     document.getElementById('newCittaIntestatario')?.value?.trim()     || '',
@@ -8038,6 +8040,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <input type="text" id="newNazioneIntestatario"
                                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                                     placeholder="Italia" value="Italia">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Codice Fiscale Richiedente</label>
+                                <input type="text" id="newCFRichiedente" maxlength="16"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition uppercase"
+                                    placeholder="RSSMRA85M01H501X">
+                                <p class="text-xs text-gray-500 mt-1">Obbligatorio quando il contratto è intestato al richiedente</p>
                             </div>
                         </div>
                     </div>
