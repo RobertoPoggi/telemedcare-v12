@@ -30225,124 +30225,49 @@ new Chart(document.getElementById('tempPieChart'), {
             const container = document.getElementById('formFieldsContainer');
             let html = '';
             
-            // ── Prefill intelligente: usa dati richiedente come default per intestatario ──
-            // Per lead inseriti manualmente o da landing, intestatario = richiedente di default
-            const prefNome     = lead.nomeIntestatario     || lead.nomeRichiedente     || '';
-            const prefCognome  = lead.cognomeIntestatario  || lead.cognomeRichiedente  || '';
-            const prefCF       = lead.cfIntestatario       || '';
-            const prefInd      = lead.indirizzoIntestatario || '';
-            const prefCAP      = lead.capIntestatario      || '';
-            const prefCitta    = lead.cittaIntestatario    || '';
-            const prefProv     = lead.provinciaIntestatario || '';
+            // SEZIONE 1: Dati Richiedente (indirizzo, se mancante)
+            const needsIndirizzoRichiedente =
+                (!lead.indirizzoRichiedente && !lead.indirizzoIntestatario) ||
+                (!lead.capRichiedente && !lead.capIntestatario) ||
+                (!lead.cittaRichiedente && !lead.cittaIntestatario) ||
+                (!lead.provinciaIntestatario && !lead.provinciaRichiedente);
 
-            // SEZIONE 1: Dati Intestatario (per il contratto)
-            const needsIntestatario = !lead.nomeIntestatario || !lead.cognomeIntestatario ||
-                                     !lead.cfIntestatario || !lead.indirizzoIntestatario || 
-                                     !lead.capIntestatario || !lead.cittaIntestatario || !lead.provinciaIntestatario;
-            
-            if (needsIntestatario) {
-                html += '<h3 class="section-header">📋 Dati Intestatario (per la proposta)</h3>';
-                
-                // Nome e Cognome intestatario
-                const needsNameIntestatario = !lead.nomeIntestatario || !lead.cognomeIntestatario;
-                if (needsNameIntestatario) {
-                    html += '<div class="form-row cols-2">';
-                    
-                    if (!lead.nomeIntestatario) {
-                        html += \`
-                            <div class="form-group">
-                                <label for="nomeIntestatario">Nome <span class="required">*</span></label>
-                                <input type="text" id="nomeIntestatario" name="nomeIntestatario" 
-                                       value="\${prefNome}"
-                                       placeholder="Nome" required>
-                            </div>
-                        \`;
-                    }
-                    
-                    if (!lead.cognomeIntestatario) {
-                        html += \`
-                            <div class="form-group">
-                                <label for="cognomeIntestatario">Cognome <span class="required">*</span></label>
-                                <input type="text" id="cognomeIntestatario" name="cognomeIntestatario" 
-                                       value="\${prefCognome}"
-                                       placeholder="Cognome" required>
-                            </div>
-                        \`;
-                    }
-                    
-                    html += '</div>';
-                }
-                
-                if (!lead.cfIntestatario) {
-                    html += \`
-                        <div class="form-group">
-                            <label for="cfIntestatario">Codice Fiscale <span class="required">*</span></label>
-                            <input type="text" id="cfIntestatario" name="cfIntestatario" 
-                                   value="\${prefCF}"
-                                   placeholder="Es. RSSMRA80A01F205K" required 
-                                   maxlength="16" style="text-transform: uppercase;"
-                                   oninput="this.value=this.value.toUpperCase()"
-                                   autocorrect="off" autocapitalize="characters" spellcheck="false">
-                        </div>
-                    \`;
-                }
-                
-                // Indirizzo, CAP, Città sulla stessa riga
-                const hasAddressGaps = !lead.indirizzoIntestatario || !lead.capIntestatario || !lead.cittaIntestatario || !lead.provinciaIntestatario;
-                if (hasAddressGaps) {
-                    html += '<div class="form-row cols-3">';
-                    
-                    if (!lead.indirizzoIntestatario) {
-                        html += \`
-                            <div class="form-group">
-                                <label for="indirizzoIntestatario">Indirizzo <span class="required">*</span></label>
-                                <input type="text" id="indirizzoIntestatario" name="indirizzoIntestatario" 
-                                       value="\${prefInd}"
-                                       placeholder="Via/Piazza Nome, N." required>
-                            </div>
-                        \`;
-                    }
-                    
-                    if (!lead.capIntestatario) {
-                        html += \`
-                            <div class="form-group">
-                                <label for="capIntestatario">CAP <span class="required">*</span></label>
-                                <input type="text" id="capIntestatario" name="capIntestatario" 
-                                       value="\${prefCAP}"
-                                       placeholder="00000" required maxlength="5" 
-                                       pattern="[0-9]*" inputmode="numeric">
-                            </div>
-                        \`;
-                    }
-                    
-                    if (!lead.cittaIntestatario) {
-                        html += \`
-                            <div class="form-group">
-                                <label for="cittaIntestatario">Città <span class="required">*</span></label>
-                                <input type="text" id="cittaIntestatario" name="cittaIntestatario" 
-                                       value="\${prefCitta}"
-                                       placeholder="Es. Milano" required>
-                            </div>
-                        \`;
-                    }
-                    
-                    html += '</div>';
-                }
-                
-                // ✅ PROVINCIA INTESTATARIO (sigla 2 caratteri)
-                if (!lead.provinciaIntestatario) {
-                    html += \`
-                        <div class="form-group">
-                            <label for="provinciaIntestatario">Provincia <span class="required">*</span></label>
-                            <input type="text" id="provinciaIntestatario" name="provinciaIntestatario" 
-                                   value="\${prefProv}"
-                                   placeholder="Es. MI" required maxlength="2" 
-                                   pattern="[A-Za-z]{2}" style="text-transform: uppercase;"
-                                   oninput="this.value=this.value.toUpperCase()"
-                                   autocomplete="address-level1" autocorrect="off" autocapitalize="characters">
-                        </div>
-                    \`;
-                }
+            const needsIntestatario = needsIndirizzoRichiedente;
+
+            if (needsIndirizzoRichiedente) {
+                html += '<h3 class="section-header">📋 Dati Richiedente</h3>';
+
+                html += '<div class="form-row cols-4">';
+                html += \`
+                    <div class="form-group">
+                        <label for="indirizzoRichiedente">Indirizzo <span class="required">*</span></label>
+                        <input type="text" id="indirizzoRichiedente" name="indirizzoRichiedente"
+                               placeholder="Via/Piazza Nome, N." required
+                               value="\${lead.indirizzoRichiedente || lead.indirizzoIntestatario || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label for="capRichiedente">CAP <span class="required">*</span></label>
+                        <input type="text" id="capRichiedente" name="capRichiedente"
+                               placeholder="00000" required maxlength="5"
+                               pattern="[0-9]*" inputmode="numeric"
+                               value="\${lead.capRichiedente || lead.capIntestatario || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label for="cittaRichiedente">Città <span class="required">*</span></label>
+                        <input type="text" id="cittaRichiedente" name="cittaRichiedente"
+                               placeholder="Es. Milano" required
+                               value="\${lead.cittaRichiedente || lead.cittaIntestatario || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label for="provinciaIntestatario">Provincia <span class="required">*</span></label>
+                        <input type="text" id="provinciaIntestatario" name="provinciaIntestatario"
+                               placeholder="MI" required maxlength="2"
+                               style="text-transform: uppercase;"
+                               oninput="this.value=this.value.toUpperCase()"
+                               value="\${lead.provinciaIntestatario || lead.provinciaRichiedente || ''}">
+                    </div>
+                \`;
+                html += '</div>';
             }
             
             // SEZIONE 2: Dati Assistito
@@ -30502,7 +30427,54 @@ new Chart(document.getElementById('tempPieChart'), {
                 }
             }
             
-            if (!needsIntestatario && !needsAssistito) {
+            // SEZIONE 3: Intestazione contratto
+            const intestatarioGiaDefinito = lead.intestatarioContratto === 'richiedente' || lead.intestatarioContratto === 'assistito';
+            const cfRichiedenteGiaPresente = !!lead.cfIntestatario;
+            const showIntestatarioSection = !intestatarioGiaDefinito ||
+                (lead.intestatarioContratto === 'richiedente' && !cfRichiedenteGiaPresente);
+
+            if (showIntestatarioSection) {
+                const selRichiedente = lead.intestatarioContratto === 'richiedente';
+                const selAssistito   = lead.intestatarioContratto === 'assistito';
+
+                html += \`
+                <div style="margin-top: 30px; padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <h3 class="section-header" style="margin-top: 0;">📄 Intestazione contratto</h3>
+                    <p style="color: #6b7280; margin-bottom: 16px;">A chi verrà intestato il contratto?</p>
+
+                    <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px;">
+                        <label id="labelIntRichiedente" style="flex: 1; min-width: 160px; display: flex; align-items: flex-start; gap: 10px; border: 2px solid \${selRichiedente ? '#667eea' : '#e2e8f0'}; border-radius: 10px; padding: 14px; cursor: pointer; background: \${selRichiedente ? '#f0f0ff' : 'white'};" onclick="toggleIntestatario('richiedente')">
+                            <input type="radio" name="intestatarioContratto" id="intRichiedente" value="richiedente" \${selRichiedente ? 'checked' : ''} style="margin-top: 3px; accent-color: #667eea;" onchange="toggleIntestatario('richiedente')">
+                            <div>
+                                <strong style="display: block; color: #1e293b;">Richiedente</strong>
+                                <span style="font-size: 13px; color: #6b7280;">Il contratto sarà a tuo nome</span>
+                            </div>
+                        </label>
+                        <label id="labelIntAssistito" style="flex: 1; min-width: 160px; display: flex; align-items: flex-start; gap: 10px; border: 2px solid \${selAssistito ? '#667eea' : '#e2e8f0'}; border-radius: 10px; padding: 14px; cursor: pointer; background: \${selAssistito ? '#f0f0ff' : 'white'};" onclick="toggleIntestatario('assistito')">
+                            <input type="radio" name="intestatarioContratto" id="intAssistito" value="assistito" \${selAssistito ? 'checked' : ''} style="margin-top: 3px; accent-color: #667eea;" onchange="toggleIntestatario('assistito')">
+                            <div>
+                                <strong style="display: block; color: #1e293b;">Assistito</strong>
+                                <span style="font-size: 13px; color: #6b7280;">Il contratto sarà a nome dell'assistito</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div id="cfRichiedenteBlock" style="display: \${selRichiedente ? 'block' : 'none'};">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="cfIntestatario">Codice Fiscale Richiedente <span class="required">*</span></label>
+                            <input type="text" id="cfIntestatario" name="cfIntestatario"
+                                   placeholder="Es. RSSMRA80A01F205K"
+                                   maxlength="16" style="text-transform: uppercase;"
+                                   oninput="this.value=this.value.toUpperCase()"
+                                   value="\${lead.cfIntestatario || ''}">
+                            <p style="font-size: 12px; color: #6b7280; margin-top: 4px;">Necessario per intestare il contratto a tuo nome</p>
+                        </div>
+                    </div>
+                </div>
+                \`;
+            }
+
+            if (!needsIntestatario && !needsAssistito && !showIntestatarioSection) {
                 showError('Tutti i dati sono già completi!');
                 return;
             }
@@ -30510,6 +30482,27 @@ new Chart(document.getElementById('tempPieChart'), {
             container.innerHTML = html;
         }
         
+        function toggleIntestatario(valore) {
+            const radio = document.getElementById(valore === 'richiedente' ? 'intRichiedente' : 'intAssistito');
+            if (radio) radio.checked = true;
+
+            const lR = document.getElementById('labelIntRichiedente');
+            const lA = document.getElementById('labelIntAssistito');
+            if (lR) {
+                lR.style.borderColor = valore === 'richiedente' ? '#667eea' : '#e2e8f0';
+                lR.style.background  = valore === 'richiedente' ? '#f0f0ff' : 'white';
+            }
+            if (lA) {
+                lA.style.borderColor = valore === 'assistito' ? '#667eea' : '#e2e8f0';
+                lA.style.background  = valore === 'assistito' ? '#f0f0ff' : 'white';
+            }
+
+            const cfBlock = document.getElementById('cfRichiedenteBlock');
+            const cfInput = document.getElementById('cfIntestatario');
+            if (cfBlock) cfBlock.style.display = valore === 'richiedente' ? 'block' : 'none';
+            if (cfInput && valore !== 'richiedente') cfInput.value = '';
+        }
+
         async function submitForm(event) {
             event.preventDefault();
             
