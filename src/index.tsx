@@ -19614,62 +19614,6 @@ function addDebugLog(message: string) {
   console.log(message) // Log anche in console normale
 }
 
-// GET /api/debug/assistiti-sconto — Diagnostica: mostra cosa vede la CTE per ogni assistito
-app.get('/api/debug/assistiti-sconto', async (c) => {
-  try {
-    if (!c.env?.DB) return c.json({ error: 'no DB' }, 500)
-    const rows = await c.env.DB.prepare(`
-      SELECT
-        a.id, a.nome_assistito, a.cognome_assistito,
-        a.imei, a.email, a.lead_id,
-        a.servizio, a.piano,
-        -- Priorità 1: contratto diretto da lead_id
-        (SELECT id FROM contracts WHERE leadId = a.lead_id
-          AND (is_rinnovo IS NULL OR is_rinnovo = 0)
-          ORDER BY created_at DESC LIMIT 1) AS ctr_via_lead_id,
-        -- Priorità 2: contratto via IMEI
-        (SELECT id FROM contracts WHERE imei_dispositivo = a.imei
-          AND a.imei IS NOT NULL AND a.imei != '' AND a.imei != 'N/A'
-          AND (is_rinnovo IS NULL OR is_rinnovo = 0)
-          ORDER BY created_at DESC LIMIT 1) AS ctr_via_imei,
-        -- Priorità 3: contratto via email
-        (SELECT co.id FROM contracts co JOIN leads le ON le.id = co.leadId
-          WHERE le.email = a.email
-            AND a.email IS NOT NULL AND a.email != ''
-            AND (co.is_rinnovo IS NULL OR co.is_rinnovo = 0)
-          ORDER BY co.created_at DESC LIMIT 1) AS ctr_via_email
-      FROM assistiti a
-      WHERE a.status = 'ATTIVO'
-      ORDER BY a.created_at DESC
-      LIMIT 30
-    `).all()
-
-    // Per ogni assistito, mostra anche il lead collegato e il suo sconto
-    const out = await Promise.all((rows.results || []).map(async (a: any) => {
-      const contractId = a.ctr_via_lead_id || a.ctr_via_imei || a.ctr_via_email || null
-      let leadId = null, codiceSconto = null, prezzoScontato = null, prezzoAnno = null
-      if (contractId) {
-        const ctr = await c.env.DB.prepare('SELECT leadId FROM contracts WHERE id = ?').bind(contractId).first() as any
-        if (ctr?.leadId) {
-          const lead = await c.env.DB.prepare('SELECT id, codice_sconto, prezzo_scontato, prezzo_anno FROM leads WHERE id = ?').bind(ctr.leadId).first() as any
-          leadId = ctr.leadId; codiceSconto = lead?.codice_sconto; prezzoScontato = lead?.prezzo_scontato; prezzoAnno = lead?.prezzo_anno
-        }
-      }
-      return {
-        assistito: `${a.nome_assistito} ${a.cognome_assistito}`,
-        imei: a.imei, email: a.email, lead_id_diretto: a.lead_id,
-        ctr_via: a.ctr_via_lead_id ? 'lead_id' : a.ctr_via_imei ? 'imei' : a.ctr_via_email ? 'email' : '❌ NESSUNO',
-        contract_id: contractId, lead_id_risolto: leadId,
-        codice_sconto: codiceSconto, prezzo_scontato: prezzoScontato, prezzo_anno: prezzoAnno,
-        servizio: a.servizio, piano: a.piano
-      }
-    }))
-    return c.json({ success: true, count: out.length, assistiti: out })
-  } catch (e: any) {
-    return c.json({ success: false, error: e.message }, 500)
-  }
-})
-
 // GET /api/debug/logs - Visualizza ultimi log
 app.get('/api/debug/logs', async (c) => {
   return c.json({
