@@ -19650,37 +19650,6 @@ function addDebugLog(message: string) {
 }
 
 // GET /api/debug/logs - Visualizza ultimi log
-// GET /api/debug/assistiti-prezzi — verifica che /api/assistiti ritorni sconto correttamente
-app.get('/api/debug/assistiti-prezzi', async (c) => {
-  try {
-    if (!c.env?.DB) return c.json({ error: 'no DB' }, 500)
-    const rows = await c.env.DB.prepare(`
-      SELECT
-        a.nome_assistito, a.cognome_assistito, a.servizio, a.piano,
-        l.codice_sconto, l.prezzo_scontato, l.prezzo_anno,
-        l.id AS lead_id_risolto
-      FROM assistiti a
-      LEFT JOIN contracts c ON c.id = COALESCE(
-        (SELECT id FROM contracts WHERE leadId = a.lead_id AND (is_rinnovo IS NULL OR is_rinnovo = 0) ORDER BY created_at DESC LIMIT 1),
-        (SELECT id FROM contracts WHERE imei_dispositivo = a.imei AND a.imei IS NOT NULL AND a.imei != '' AND (is_rinnovo IS NULL OR is_rinnovo = 0) ORDER BY created_at DESC LIMIT 1),
-        (SELECT co.id FROM contracts co JOIN leads le ON le.id = co.leadId WHERE le.email = a.email AND a.email IS NOT NULL AND a.email != '' AND (co.is_rinnovo IS NULL OR co.is_rinnovo = 0) ORDER BY co.created_at DESC LIMIT 1)
-      )
-      LEFT JOIN leads l ON l.id = COALESCE(a.lead_id, c.leadId)
-      WHERE a.status = 'ATTIVO'
-      ORDER BY a.created_at DESC
-    `).all()
-    const result = (rows.results || []).map((r: any) => ({
-      assistito: `${r.nome_assistito} ${r.cognome_assistito}`,
-      servizio: r.servizio, piano: r.piano,
-      lead_id: r.lead_id_risolto,
-      codice_sconto: r.codice_sconto,
-      prezzo_scontato: r.prezzo_scontato,
-      prezzo_anno: r.prezzo_anno,
-      hasSconto: !!(r.codice_sconto && r.prezzo_scontato > 0 && r.prezzo_scontato < r.prezzo_anno)
-    }))
-    return c.json({ success: true, count: result.length, assistiti: result })
-  } catch (e: any) { return c.json({ error: e.message }, 500) }
-})
 
 app.get('/api/debug/logs', async (c) => {
   return c.json({
@@ -19709,25 +19678,6 @@ app.get('/api/debug/env', async (c) => {
   })
 })
 
-// GET /api/debug/lead-spedizione/:id — Diagnostica campi spedizione di un lead
-app.get('/api/debug/lead-spedizione/:id', async (c) => {
-  try {
-    if (!c.env?.DB) return c.json({ error: 'no DB' }, 500)
-    const id = c.req.param('id')
-    const lead = await c.env.DB.prepare(
-      `SELECT id, nomeRichiedente, cognomeRichiedente, email,
-              indirizzo_spedizione,
-              sped_nome, sped_indirizzo, sped_cap, sped_citta, sped_provincia, sped_nazione,
-              nomeAssistito, cognomeAssistito,
-              indirizzoAssistito, capAssistito, cittaAssistito, provinciaAssistito,
-              indirizzoIntestatario, capIntestatario, cittaIntestatario, provinciaIntestatario,
-              intestatarioContratto
-       FROM leads WHERE id = ?`
-    ).bind(id).first()
-    if (!lead) return c.json({ error: 'lead non trovato' }, 404)
-    return c.json({ success: true, lead })
-  } catch (e: any) { return c.json({ error: e.message }, 500) }
-})
 
 // DEBUG: List all email templates in database
 // PATCH /api/email-templates/:name — aggiorna subject e/o content di un template email per nome

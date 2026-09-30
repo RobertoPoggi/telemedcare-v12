@@ -3284,13 +3284,16 @@ export const dashboard = `<!DOCTYPE html>
                 const servizio = assistito.servizio || 'eCura PRO';
                 const piano = assistito.piano || 'BASE';
                 
-                // Calcola prezzo dinamico
+                // Calcola prezzo dinamico con sconto
                 const PREZZI_ECURA_TABLE = {
                     'eCura FAMILY': { BASE: 390, AVANZATO: 690 },
                     'eCura PRO': { BASE: 480, AVANZATO: 840 },
                     'eCura PREMIUM': { BASE: 590, AVANZATO: 990 }
                 };
-                const prezzoAnno = PREZZI_ECURA_TABLE[servizio]?.[piano] || 480;
+                const prezzoListino = PREZZI_ECURA_TABLE[servizio]?.[piano] || 480;
+                const prezzoScontato = assistito.prezzo_scontato ? Number(assistito.prezzo_scontato) : 0;
+                const hasSconto = !!(assistito.codice_sconto && prezzoScontato > 0 && prezzoScontato < prezzoListino);
+                const prezzoAnno = hasSconto ? prezzoScontato : prezzoListino;
                 
                 const status = assistito.status || 'ATTIVO';
                 const codice = assistito.codice_contratto || assistito.codice || 'N/A';
@@ -3342,7 +3345,10 @@ export const dashboard = `<!DOCTYPE html>
                         '<span class="px-3 py-1 ' + pianoColor + ' text-xs font-medium rounded-full">' + piano + '</span>' +
                     '</td>' +
                     '<td class="py-3 px-2 text-center">' +
-                        '<div class="font-bold ' + prezzoCellClass + ' text-base">€' + prezzoAnno + '</div>' +
+                        (hasSconto
+                            ? '<div class="font-bold ' + prezzoCellClass + ' text-base" title="Listino €' + prezzoListino + ' — Sconto applicato: ' + (assistito.codice_sconto || '') + '">€' + prezzoAnno + ' <span class="text-green-500 text-xs font-semibold" title="Sconto applicato">●</span></div>'
+                            : '<div class="font-bold ' + prezzoCellClass + ' text-base">€' + prezzoAnno + '</div>'
+                        ) +
                         '<div class="text-xs text-gray-500">/anno</div>' +
                     '</td>' +
                     '<td class="py-3 px-2 text-center">' +
