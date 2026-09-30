@@ -26078,31 +26078,6 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await V.sendEmail({to:((n=e.env)==null
             template_utilizzato, contenuto_html, prezzo_mensile, durata_mesi
           ) VALUES (?, ?, ?, ?, 'SIGNED', ?, ?, ?, 'BASE', '', ?, 12)
         `).bind(m,c,l,n.piano,g,n.imei,r,n.piano==="AVANZATO"?69:39).run(),i++,console.log(`✅ Contratto creato: ${l} per ${n.nome} ${n.cognome}`)}}return e.json({success:!0,message:"FORCE INIT completato con UPDATE contratti",stats:{leadsCreated:o,contractsCreated:i,contractsUpdated:s,assistitiTotali:t.length}})}catch(t){return console.error("❌ FORCE ERROR:",t),e.json({success:!1,error:t instanceof Error?t.message:String(t)},500)}});I.get("/api/assistiti",async e=>{var a;try{if(!((a=e.env)!=null&&a.DB))return e.json({success:!1,error:"Database non configurato"},500);const t=e.req.query("id");let i=(e.req.query("status")||"ATTIVO").toUpperCase()==="ALL"?"WHERE 1=1":"WHERE a.status = 'ATTIVO'";const s=[];t&&(i+=" AND a.id = ?",s.push(parseInt(t)));const n=await e.env.DB.prepare(`
-      WITH resolved_contract AS (
-        SELECT
-          a.id AS assistito_id,
-          COALESCE(
-            -- Priorità 1: contratto diretto da lead_id
-            (SELECT id FROM contracts
-              WHERE leadId = a.lead_id
-                AND (is_rinnovo IS NULL OR is_rinnovo = 0)
-              ORDER BY created_at DESC LIMIT 1),
-            -- Priorità 2: contratto via IMEI dispositivo (lead_id NULL ma IMEI noto)
-            (SELECT id FROM contracts
-              WHERE imei_dispositivo = a.imei
-                AND a.imei IS NOT NULL AND a.imei != ''
-                AND (is_rinnovo IS NULL OR is_rinnovo = 0)
-              ORDER BY created_at DESC LIMIT 1),
-            -- Priorità 3: contratto via email
-            (SELECT co.id FROM contracts co
-              JOIN leads le ON le.id = co.leadId
-              WHERE le.email = a.email
-                AND a.email IS NOT NULL AND a.email != ''
-                AND (co.is_rinnovo IS NULL OR co.is_rinnovo = 0)
-              ORDER BY co.created_at DESC LIMIT 1)
-          ) AS contract_id
-        FROM assistiti a
-      )
       SELECT 
         a.id,
         a.codice,
@@ -26135,8 +26110,26 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await V.sendEmail({to:((n=e.env)==null
         l.sconto_percentuale as sconto_percentuale,
         l.prezzo_anno as prezzo_anno
       FROM assistiti a
-      LEFT JOIN resolved_contract rc ON rc.assistito_id = a.id
-      LEFT JOIN contracts c ON c.id = rc.contract_id
+      LEFT JOIN contracts c ON c.id = COALESCE(
+        -- Priorità 1: contratto diretto via lead_id
+        (SELECT id FROM contracts
+          WHERE leadId = a.lead_id
+            AND (is_rinnovo IS NULL OR is_rinnovo = 0)
+          ORDER BY created_at DESC LIMIT 1),
+        -- Priorità 2: contratto via IMEI
+        (SELECT id FROM contracts
+          WHERE imei_dispositivo = a.imei
+            AND a.imei IS NOT NULL AND a.imei != ''
+            AND (is_rinnovo IS NULL OR is_rinnovo = 0)
+          ORDER BY created_at DESC LIMIT 1),
+        -- Priorità 3: contratto via email → lead
+        (SELECT co.id FROM contracts co
+          JOIN leads le ON le.id = co.leadId
+          WHERE le.email = a.email
+            AND a.email IS NOT NULL AND a.email != ''
+            AND (co.is_rinnovo IS NULL OR co.is_rinnovo = 0)
+          ORDER BY co.created_at DESC LIMIT 1)
+      )
       LEFT JOIN leads l ON l.id = COALESCE(a.lead_id, c.leadId)
       ${i}
       ORDER BY a.created_at DESC

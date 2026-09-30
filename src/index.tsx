@@ -26232,36 +26232,11 @@ app.get('/api/assistiti', async (c) => {
     }
 
     // ── Risolve lead anche quando a.lead_id è NULL (assistiti creati via setup-complete
-    //    che non salvavano lead_id). Strategia a cascata:
+    //    che non salvavano lead_id). Strategia a cascata via subquery inline:
     //    1. contratto diretto via a.lead_id  (caso normale post-fix)
     //    2. contratto via IMEI del dispositivo (caso storico: lead_id NULL ma IMEI noto)
     //    3. contratto via email dell'assistito → lead con stessa email
     const assistiti = await c.env.DB.prepare(`
-      WITH resolved_contract AS (
-        SELECT
-          a.id AS assistito_id,
-          COALESCE(
-            -- Priorità 1: contratto diretto da lead_id
-            (SELECT id FROM contracts
-              WHERE leadId = a.lead_id
-                AND (is_rinnovo IS NULL OR is_rinnovo = 0)
-              ORDER BY created_at DESC LIMIT 1),
-            -- Priorità 2: contratto via IMEI dispositivo (lead_id NULL ma IMEI noto)
-            (SELECT id FROM contracts
-              WHERE imei_dispositivo = a.imei
-                AND a.imei IS NOT NULL AND a.imei != ''
-                AND (is_rinnovo IS NULL OR is_rinnovo = 0)
-              ORDER BY created_at DESC LIMIT 1),
-            -- Priorità 3: contratto via email
-            (SELECT co.id FROM contracts co
-              JOIN leads le ON le.id = co.leadId
-              WHERE le.email = a.email
-                AND a.email IS NOT NULL AND a.email != ''
-                AND (co.is_rinnovo IS NULL OR co.is_rinnovo = 0)
-              ORDER BY co.created_at DESC LIMIT 1)
-          ) AS contract_id
-        FROM assistiti a
-      )
       SELECT 
         a.id,
         a.codice,
@@ -26294,8 +26269,26 @@ app.get('/api/assistiti', async (c) => {
         l.sconto_percentuale as sconto_percentuale,
         l.prezzo_anno as prezzo_anno
       FROM assistiti a
-      LEFT JOIN resolved_contract rc ON rc.assistito_id = a.id
-      LEFT JOIN contracts c ON c.id = rc.contract_id
+      LEFT JOIN contracts c ON c.id = COALESCE(
+        -- Priorità 1: contratto diretto via lead_id
+        (SELECT id FROM contracts
+          WHERE leadId = a.lead_id
+            AND (is_rinnovo IS NULL OR is_rinnovo = 0)
+          ORDER BY created_at DESC LIMIT 1),
+        -- Priorità 2: contratto via IMEI
+        (SELECT id FROM contracts
+          WHERE imei_dispositivo = a.imei
+            AND a.imei IS NOT NULL AND a.imei != ''
+            AND (is_rinnovo IS NULL OR is_rinnovo = 0)
+          ORDER BY created_at DESC LIMIT 1),
+        -- Priorità 3: contratto via email → lead
+        (SELECT co.id FROM contracts co
+          JOIN leads le ON le.id = co.leadId
+          WHERE le.email = a.email
+            AND a.email IS NOT NULL AND a.email != ''
+            AND (co.is_rinnovo IS NULL OR co.is_rinnovo = 0)
+          ORDER BY co.created_at DESC LIMIT 1)
+      )
       LEFT JOIN leads l ON l.id = COALESCE(a.lead_id, c.leadId)
       ${whereClause}
       ORDER BY a.created_at DESC
