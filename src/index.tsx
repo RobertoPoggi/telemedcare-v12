@@ -10967,7 +10967,8 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
                 l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
                 l.iva_agevolata, l.iva_esente,
                 l.rateizzazione_attiva AS lead_rateizzazione_attiva,
-                l.riserva_dominio AS lead_riserva_dominio
+                l.riserva_dominio AS lead_riserva_dominio,
+                l.prezzo_scontato, l.codice_sconto, l.sconto_percentuale, l.prezzo_anno
          FROM contracts c
          LEFT JOIN leads l ON l.id = c.leadId
          WHERE c.codice_contratto = ? OR c.id = ?
@@ -10990,7 +10991,8 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
                   l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
                   l.iva_agevolata, l.iva_esente,
                   l.rateizzazione_attiva AS lead_rateizzazione_attiva,
-                  l.riserva_dominio AS lead_riserva_dominio
+                  l.riserva_dominio AS lead_riserva_dominio,
+                  l.prezzo_scontato, l.codice_sconto, l.sconto_percentuale, l.prezzo_anno
            FROM contracts c
            LEFT JOIN leads l ON l.id = c.leadId
            WHERE c.leadId = ?
@@ -11042,14 +11044,24 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
     const ivaEsente    = !!(contractRow?.iva_esente)
     const ivaPct       = ivaEsente ? 0 : ivaAgevolata ? 4 : 22
 
-    // Usa getPricing per ottenere l'imponibile corretto (IVA escl.)
+    // Usa getPricing per prezzo di listino, poi applica sconto lead se presente
     const servizioRaw = (contractRow?.servizio || 'PRO').replace(/^eCura\s+/i, '').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'
     const pianoRaw    = (contractRow?.piano    || 'BASE').toUpperCase() as 'BASE'|'AVANZATO'
     const pricingPF   = getPricing(servizioRaw, pianoRaw)
-    const imponibile  = pricingPF ? pricingPF.setupBase : (parseFloat(contractRow?.prezzo_totale) || 0)
+    const prezzoListinoPF = pricingPF ? pricingPF.setupBase : (parseFloat(contractRow?.prezzo_totale) || 0)
+    // ✅ FIX SCONTO: usa prezzo_scontato dal lead se valorizzato e inferiore al listino
+    const hasScontoPF = !!(contractRow?.codice_sconto &&
+      contractRow?.prezzo_scontato &&
+      Number(contractRow.prezzo_scontato) > 0 &&
+      Number(contractRow.prezzo_scontato) < prezzoListinoPF)
+    const imponibile  = hasScontoPF ? Number(contractRow.prezzo_scontato) : prezzoListinoPF
     const ivaAmt      = ivaEsente ? 0 : Math.round(imponibile * ivaPct / 100 * 100) / 100
     const totale      = Math.round((imponibile + ivaAmt) * 100) / 100
     const fmt         = (n: number) => n.toFixed(2).replace('.', ',')
+    // Dati sconto per visualizzazione in pre-fattura
+    const scontoPctPF = hasScontoPF ? (Number(contractRow.sconto_percentuale) || 0) : 0
+    const importoScontoPF = hasScontoPF ? Math.round((prezzoListinoPF - imponibile) * 100) / 100 : 0
+    const codicesScontoPF = hasScontoPF ? (contractRow.codice_sconto || '') : ''
 
     // ── Dispositivo ───────────────────────────────────────────────────
     const dispositivo  = ddt.dispositivo || 'SiDLY Care PRO'
@@ -11286,8 +11298,17 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
   <!-- ══ IMPORTO E IVA ══ -->
   <div class="section-title">IMPORTO FORNITURA</div>
   <table class="importo-table">
+    ${hasScontoPF ? `
     <tr>
-      <td class="lbl">Imponibile:</td>
+      <td class="lbl">Prezzo di listino:</td>
+      <td class="val">€ ${fmt(prezzoListinoPF)}</td>
+    </tr>
+    <tr>
+      <td class="lbl">Sconto applicato${codicesScontoPF ? ` (cod. ${codicesScontoPF})` : ''}${scontoPctPF ? ` — ${scontoPctPF}%` : ''}:</td>
+      <td class="val" style="color:#dc2626;">− € ${fmt(importoScontoPF)}</td>
+    </tr>` : ''}
+    <tr>
+      <td class="lbl">Imponibile${hasScontoPF ? ' (scontato)' : ''}:</td>
       <td class="val">€ ${fmt(imponibile)}</td>
     </tr>
     <tr>
@@ -11384,7 +11405,8 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
                 l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
                 l.iva_agevolata, l.iva_esente,
                 l.rateizzazione_attiva AS lead_rateizzazione_attiva,
-                l.riserva_dominio AS lead_riserva_dominio
+                l.riserva_dominio AS lead_riserva_dominio,
+                l.prezzo_scontato, l.codice_sconto, l.sconto_percentuale, l.prezzo_anno
          FROM contracts c
          LEFT JOIN leads l ON l.id = c.leadId
          WHERE c.codice_contratto = ? OR c.id = ?
@@ -11406,7 +11428,8 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
                   l.indirizzoAssistito, l.cittaAssistito, l.capAssistito, l.provinciaAssistito,
                   l.iva_agevolata, l.iva_esente,
                   l.rateizzazione_attiva AS lead_rateizzazione_attiva,
-                  l.riserva_dominio AS lead_riserva_dominio
+                  l.riserva_dominio AS lead_riserva_dominio,
+                  l.prezzo_scontato, l.codice_sconto, l.sconto_percentuale, l.prezzo_anno
            FROM contracts c
            LEFT JOIN leads l ON l.id = c.leadId
            WHERE c.leadId = ?
@@ -11435,13 +11458,23 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
     // ── Prezzi ────────────────────────────────────────────────────────
     const ivaAgevolata = !!(contractRow?.iva_agevolata)
     const ivaEsente = !!(contractRow?.iva_esente)
-    const ivaPct       = ivaAgevolata ? 4 : 22
+    const ivaPct       = ivaEsente ? 0 : ivaAgevolata ? 4 : 22
     const servizioRawP = (contractRow?.servizio || 'PRO').replace(/^eCura\s+/i, '').trim().toUpperCase() as 'FAMILY'|'PRO'|'PREMIUM'
     const pianoRawP    = (contractRow?.piano    || 'BASE').toUpperCase() as 'BASE'|'AVANZATO'
     const pricingP     = getPricing(servizioRawP, pianoRawP)
-    const imponibileP  = pricingP ? pricingP.setupBase : (parseFloat(contractRow?.prezzo_totale) || 0)
-    const ivaAmtP      = Math.round(imponibileP * ivaPct / 100 * 100) / 100
+    const prezzoListinoP = pricingP ? pricingP.setupBase : (parseFloat(contractRow?.prezzo_totale) || 0)
+    // ✅ FIX SCONTO: usa prezzo_scontato dal lead se valorizzato e inferiore al listino
+    const hasScontoP = !!(contractRow?.codice_sconto &&
+      contractRow?.prezzo_scontato &&
+      Number(contractRow.prezzo_scontato) > 0 &&
+      Number(contractRow.prezzo_scontato) < prezzoListinoP)
+    const imponibileP  = hasScontoP ? Number(contractRow.prezzo_scontato) : prezzoListinoP
+    const ivaAmtP      = ivaEsente ? 0 : Math.round(imponibileP * ivaPct / 100 * 100) / 100
     const totaleP      = Math.round((imponibileP + ivaAmtP) * 100) / 100
+    // Dati sconto per visualizzazione
+    const scontoPctP = hasScontoP ? (Number(contractRow.sconto_percentuale) || 0) : 0
+    const importoScontoP = hasScontoP ? Math.round((prezzoListinoP - imponibileP) * 100) / 100 : 0
+    const codiceScontoP  = hasScontoP ? (contractRow.codice_sconto || '') : ''
 
     // ── Rate da rate_pagamento ────────────────────────────────────────────
     // Fallback: usa leads.rateizzazione_attiva se contracts non è sincronizzato
@@ -11593,12 +11626,21 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
         <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">Dispositivo</td>
         <td style="padding:4px 8px;border:1px solid #ccc;">${ddt.dispositivo || '—'}</td>
       </tr>
+      ${hasScontoP ? `
+      <tr>
+        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">Listino</td>
+        <td style="padding:4px 8px;border:1px solid #ccc;">€ ${fmtE(prezzoListinoP)}</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">Sconto${codiceScontoP ? ' cod. ' + codiceScontoP : ''}${scontoPctP ? ' ' + scontoPctP + '%' : ''}</td>
+        <td style="padding:4px 8px;border:1px solid #ccc;color:#dc2626;">− € ${fmtE(importoScontoP)}</td>
+      </tr>` : ''}
       <tr style="background:#f3e8ff;">
-        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">Imponibile</td>
+        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">Imponibile${hasScontoP ? ' (scontato)' : ''}</td>
         <td style="padding:4px 8px;border:1px solid #ccc;">€ ${fmtE(imponibileP)}</td>
       </tr>
       <tr>
-        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">IVA ${ivaPct}%${ivaAgevolata ? ' (agevolata)' : ''}</td>
+        <td style="padding:4px 8px;font-weight:bold;border:1px solid #ccc;">IVA ${ivaPct}%${ivaAgevolata ? ' (agevolata)' : ''}${ivaEsente ? ' (esente)' : ''}</td>
         <td style="padding:4px 8px;border:1px solid #ccc;">€ ${fmtE(ivaAmtP)}</td>
       </tr>
       <tr style="background:#6b21a8;color:white;">
