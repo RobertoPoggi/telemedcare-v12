@@ -4000,7 +4000,13 @@ async function loadPrefatture() {
       html += '<td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">' + fmtDate(p.created_at) + '</td>';
       html += '<td class="px-4 py-3 text-sm text-gray-900">' + esc(p.destinatario_nome || '—') + '</td>';
       html += '<td class="px-4 py-3 font-mono text-xs text-gray-500">' + esc(p.ddt_id || '—') + '</td>';
-      html += '<td class="px-4 py-3 text-right text-xs font-mono">' + fmtEur(p.imponibile) + '</td>';
+      var imponibileCell = fmtEur(p.imponibile);
+      if (p._sconto_applicato) {
+        imponibileCell = '<span title="Listino ' + fmtEur(p._prezzo_listino) + ' — Sconto ' + (p._sconto_pct ? p._sconto_pct + '%' : '') + (p._codice_sconto ? ' cod.' + esc(p._codice_sconto) : '') + '">'
+          + fmtEur(p.imponibile)
+          + ' <span class="text-green-600 text-xs font-semibold" title="Sconto applicato">●</span></span>';
+      }
+      html += '<td class="px-4 py-3 text-right text-xs font-mono">' + imponibileCell + '</td>';
       html += '<td class="px-4 py-3 text-right text-xs">' + fmtEur(p.iva_amt) + ' ' + ivaBadge + '</td>';
       html += '<td class="px-4 py-3 text-right font-bold text-sm">' + fmtEur(p.totale) + '</td>';
       html += '<td class="px-4 py-3 text-center">' + emailBadge + '</td>';
@@ -11710,17 +11716,74 @@ app.get('/api/prefatture', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
     const ddtId = c.req.query('ddt_id')
+
+    // ── Query con JOIN per recuperare sconto lead al volo ──────────────
+    // La pre-fattura storicizza imponibile/totale al momento della creazione,
+    // ma se il lead ha prezzo_scontato non veniva replicato (bug fix e7324fd).
+    // Per coerenza retroattiva: ricalcoliamo sempre imponibile/IVA/totale
+    // dal prezzo scontato del lead quando disponibile e inferiore al listino.
+    const baseQuery = `
+      SELECT
+        pf.*,
+        l.prezzo_scontato  AS lead_prezzo_scontato,
+        l.codice_sconto    AS lead_codice_sconto,
+        l.sconto_percentuale AS lead_sconto_pct,
+        l.iva_agevolata    AS lead_iva_agevolata,
+        l.iva_esente       AS lead_iva_esente
+      FROM prefatture pf
+      LEFT JOIN ddts      d  ON d.id            = pf.ddt_id
+      LEFT JOIN contracts co ON co.codice_contratto = d.contract_code
+                             OR co.id             = d.contract_code
+      LEFT JOIN leads     l  ON l.id             = co.leadId
+    `
     let rows: any
     if (ddtId) {
       rows = await c.env.DB.prepare(
-        `SELECT * FROM prefatture WHERE ddt_id = ? ORDER BY created_at DESC`
+        baseQuery + ` WHERE pf.ddt_id = ? ORDER BY pf.created_at DESC`
       ).bind(ddtId).all()
     } else {
       rows = await c.env.DB.prepare(
-        `SELECT * FROM prefatture ORDER BY created_at DESC LIMIT 200`
+        baseQuery + ` ORDER BY pf.created_at DESC LIMIT 200`
       ).all()
     }
-    return c.json({ success: true, prefatture: rows.results || [] })
+
+    // Ricalcola imponibile/iva/totale per le righe con sconto non applicato
+    const { getPricing } = await import('./modules/ecura-pricing')
+    const prefatture = (rows.results || []).map((pf: any) => {
+      const ivaEsente    = !!(pf.lead_iva_esente)
+      const ivaAgevolata = !ivaEsente && !!(pf.lead_iva_agevolata)
+      const ivaPct       = ivaEsente ? 0 : ivaAgevolata ? 4 : (pf.iva_pct ?? 22)
+      const prezzoScontato = pf.lead_prezzo_scontato ? Number(pf.lead_prezzo_scontato) : 0
+      const imponibileDB   = Number(pf.imponibile) || 0
+
+      // Applica sconto se: codice_sconto presente, prezzo_scontato > 0,
+      // e prezzo_scontato < imponibile salvato (significa che il DB ha ancora listino)
+      const hasSconto = !!(pf.lead_codice_sconto &&
+        prezzoScontato > 0 &&
+        prezzoScontato < imponibileDB)
+
+      if (hasSconto) {
+        const ivaAmt = ivaEsente ? 0 : Math.round(prezzoScontato * ivaPct / 100 * 100) / 100
+        const totale = Math.round((prezzoScontato + ivaAmt) * 100) / 100
+        return {
+          ...pf,
+          imponibile:    prezzoScontato,
+          iva_pct:       ivaPct,
+          iva_amt:       ivaAmt,
+          totale,
+          // Metadati sconto per UI
+          _sconto_applicato:    true,
+          _codice_sconto:       pf.lead_codice_sconto,
+          _sconto_pct:          pf.lead_sconto_pct,
+          _prezzo_listino:      imponibileDB,
+          _importo_sconto:      Math.round((imponibileDB - prezzoScontato) * 100) / 100,
+        }
+      }
+      // Nessuno sconto: restituisce com'è ma con iva_pct corretto per esente
+      return { ...pf, iva_pct: ivaPct }
+    })
+
+    return c.json({ success: true, prefatture })
   } catch (error: any) {
     return c.json({ success: false, error: error.message || String(error) }, 500)
   }
