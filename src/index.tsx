@@ -14887,11 +14887,30 @@ app.post('/api/configurations/submit', async (c) => {
         
         const ddtId = `DDT-${Date.now()}`
         const numeroDDT = `DDT-${String(nextNum).padStart(3, '0')}-${new Date().getFullYear()}`
-        const destinatarioNome = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
-        const destinatarioIndirizzo = lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
-        const destinatarioCap = lead.capIntestatario || lead.capAssistito || ''
-        const destinatarioCitta = lead.cittaIntestatario || lead.cittaAssistito || ''
-        const destinatarioProvincia = lead.provinciaIntestatario || lead.provinciaAssistito || ''
+        // ⭐ Rispetta indirizzo_spedizione del lead: 'custom' | 'richiedente' | 'assistito' (default)
+        const _spedVal = lead.indirizzo_spedizione || 'assistito'
+        let destinatarioNome: string, destinatarioIndirizzo: string
+        let destinatarioCap: string, destinatarioCitta: string, destinatarioProvincia: string
+        if (_spedVal === 'custom') {
+          destinatarioNome      = lead.sped_nome       || `${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`.trim() || `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
+          destinatarioIndirizzo = lead.sped_indirizzo  || lead.indirizzoAssistito || ''
+          destinatarioCap       = lead.sped_cap        || lead.capAssistito || ''
+          destinatarioCitta     = lead.sped_citta      || lead.cittaAssistito || ''
+          destinatarioProvincia = lead.sped_provincia  || lead.provinciaAssistito || ''
+        } else if (_spedVal === 'richiedente') {
+          destinatarioNome      = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
+          destinatarioIndirizzo = lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
+          destinatarioCap       = lead.capIntestatario || lead.capAssistito || ''
+          destinatarioCitta     = lead.cittaIntestatario || lead.cittaAssistito || ''
+          destinatarioProvincia = lead.provinciaIntestatario || lead.provinciaAssistito || ''
+        } else {
+          // 'assistito' (default)
+          destinatarioNome      = `${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`.trim() || `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
+          destinatarioIndirizzo = lead.indirizzoAssistito || lead.indirizzoIntestatario || ''
+          destinatarioCap       = lead.capAssistito || lead.capIntestatario || ''
+          destinatarioCitta     = lead.cittaAssistito || lead.cittaIntestatario || ''
+          destinatarioProvincia = lead.provinciaAssistito || lead.provinciaIntestatario || ''
+        }
         const servizioLabel = contractRow?.servizio || lead.servizio || 'eCura PRO'
         const dispositivoLabel = servizioLabel.includes('PREMIUM') || servizioLabel.includes('VITAL')
           ? 'SiDLY Vital Care'
