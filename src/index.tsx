@@ -26182,7 +26182,12 @@ app.get('/api/assistiti', async (c) => {
         COALESCE(a.fonte_override, l.fonte) as fonte,
         l.canale_acquisizione as canale_acquisizione,
         l.dettaglio_fonte as dettaglio_fonte,
-        l.iva_agevolata as iva_agevolata
+        l.iva_agevolata as iva_agevolata,
+        l.iva_esente as iva_esente,
+        l.prezzo_scontato as prezzo_scontato,
+        l.codice_sconto as codice_sconto,
+        l.sconto_percentuale as sconto_percentuale,
+        l.prezzo_anno as prezzo_anno
       FROM assistiti a
       LEFT JOIN contracts c ON c.id = (
         SELECT id FROM contracts
