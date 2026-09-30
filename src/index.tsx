@@ -325,6 +325,53 @@ function getIvaNote(lead: any): string {
   return ' (IVA 22%)'
 }
 
+/**
+ * resolveDestinatario — calcola nome e indirizzo fisico di consegna DDT.
+ *
+ * Regola di priorità (robusta, non dipende solo da indirizzo_spedizione):
+ *  1. Se sped_nome è popolato → usa sempre i campi sped_* (custom),
+ *     indipendentemente dal valore di indirizzo_spedizione nel DB
+ *     (gestisce lo stato incoerente: sped_* salvati ma flag non aggiornato)
+ *  2. Se indirizzo_spedizione='richiedente' → usa nomeRichiedente + indirizzoIntestatario
+ *  3. Altrimenti (default 'assistito') → usa nomeAssistito + indirizzoAssistito
+ */
+function resolveDestinatario(lead: any): {
+  nome: string; indirizzo: string; cap: string; citta: string; provincia: string; nazione: string
+} {
+  const hasSped = !!(lead.sped_nome && String(lead.sped_nome).trim())
+  const spedVal = lead.indirizzo_spedizione || 'assistito'
+
+  if (hasSped || spedVal === 'custom') {
+    return {
+      nome:      (lead.sped_nome       || `${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`.trim() || `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()).trim(),
+      indirizzo: lead.sped_indirizzo   || lead.indirizzoAssistito || '',
+      cap:       lead.sped_cap         || lead.capAssistito || '',
+      citta:     lead.sped_citta       || lead.cittaAssistito || '',
+      provincia: lead.sped_provincia   || lead.provinciaAssistito || '',
+      nazione:   lead.sped_nazione     || 'Italia',
+    }
+  }
+  if (spedVal === 'richiedente') {
+    return {
+      nome:      `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim(),
+      indirizzo: lead.indirizzoIntestatario || lead.indirizzoAssistito || '',
+      cap:       lead.capIntestatario   || lead.capAssistito || '',
+      citta:     lead.cittaIntestatario || lead.cittaAssistito || '',
+      provincia: lead.provinciaIntestatario || lead.provinciaAssistito || '',
+      nazione:   lead.nazione_intestatario || 'Italia',
+    }
+  }
+  // 'assistito' (default)
+  return {
+    nome:      `${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`.trim() || `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim(),
+    indirizzo: lead.indirizzoAssistito || lead.indirizzoIntestatario || '',
+    cap:       lead.capAssistito       || lead.capIntestatario || '',
+    citta:     lead.cittaAssistito     || lead.cittaIntestatario || '',
+    provincia: lead.provinciaAssistito || lead.provinciaIntestatario || '',
+    nazione:   lead.nazione_assistito  || 'Italia',
+  }
+}
+
 // Genera proforma da contratto firmato
 async function generaProformaDaContratto(contractId: string, db: any) {
   try {
@@ -14887,30 +14934,13 @@ app.post('/api/configurations/submit', async (c) => {
         
         const ddtId = `DDT-${Date.now()}`
         const numeroDDT = `DDT-${String(nextNum).padStart(3, '0')}-${new Date().getFullYear()}`
-        // ⭐ Rispetta indirizzo_spedizione del lead: 'custom' | 'richiedente' | 'assistito' (default)
-        const _spedVal = lead.indirizzo_spedizione || 'assistito'
-        let destinatarioNome: string, destinatarioIndirizzo: string
-        let destinatarioCap: string, destinatarioCitta: string, destinatarioProvincia: string
-        if (_spedVal === 'custom') {
-          destinatarioNome      = lead.sped_nome       || `${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`.trim() || `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
-          destinatarioIndirizzo = lead.sped_indirizzo  || lead.indirizzoAssistito || ''
-          destinatarioCap       = lead.sped_cap        || lead.capAssistito || ''
-          destinatarioCitta     = lead.sped_citta      || lead.cittaAssistito || ''
-          destinatarioProvincia = lead.sped_provincia  || lead.provinciaAssistito || ''
-        } else if (_spedVal === 'richiedente') {
-          destinatarioNome      = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
-          destinatarioIndirizzo = lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
-          destinatarioCap       = lead.capIntestatario || lead.capAssistito || ''
-          destinatarioCitta     = lead.cittaIntestatario || lead.cittaAssistito || ''
-          destinatarioProvincia = lead.provinciaIntestatario || lead.provinciaAssistito || ''
-        } else {
-          // 'assistito' (default)
-          destinatarioNome      = `${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`.trim() || `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
-          destinatarioIndirizzo = lead.indirizzoAssistito || lead.indirizzoIntestatario || ''
-          destinatarioCap       = lead.capAssistito || lead.capIntestatario || ''
-          destinatarioCitta     = lead.cittaAssistito || lead.cittaIntestatario || ''
-          destinatarioProvincia = lead.provinciaAssistito || lead.provinciaIntestatario || ''
-        }
+        // ⭐ Usa resolveDestinatario — gestisce correttamente sped_* anche con flag incoerente
+        const _dest = resolveDestinatario(lead)
+        const destinatarioNome      = _dest.nome
+        const destinatarioIndirizzo = _dest.indirizzo
+        const destinatarioCap       = _dest.cap
+        const destinatarioCitta     = _dest.citta
+        const destinatarioProvincia = _dest.provincia
         const servizioLabel = contractRow?.servizio || lead.servizio || 'eCura PRO'
         const dispositivoLabel = servizioLabel.includes('PREMIUM') || servizioLabel.includes('VITAL')
           ? 'SiDLY Vital Care'
@@ -16027,28 +16057,33 @@ app.post('/api/leads/:id/assistiti/:aid/genera-ddt', requireAuth, async (c) => {
     const body = await c.req.json() as any
     const { imei: imeiInput, telefonoSim, dataConsegna, note } = body
 
-    // Determina indirizzo di spedizione per questo assistito specifico
+    // Determina indirizzo di spedizione per questo assistito specifico.
+    // ⭐ Usa resolveDestinatario su un oggetto composito lead+ass:
+    //    - sped_* dal lead (flag custom) hanno priorità massima
+    //    - se non custom, l'assistito (ass) fornisce nome e indirizzo
+    //    - 'richiedente' usa i campi del richiedente/intestatario
     const spedDest = ass.indirizzo_spedizione || 'questo'
-    let nomeDestinatario: string, indirizzoDestinatario: string
-    let capDestinatario: string, cittaDestinatario: string, provinciaDestinatario: string
-    let nazioneDestinatario: string = ''
-
-    if (spedDest === 'richiedente') {
-      nomeDestinatario     = `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
-      indirizzoDestinatario= lead.indirizzoIntestatario || ''
-      capDestinatario      = lead.capIntestatario || ''
-      cittaDestinatario    = lead.cittaIntestatario || ''
-      provinciaDestinatario= lead.provinciaIntestatario || ''
-      nazioneDestinatario  = lead.nazione_intestatario || 'Italia'
-    } else {
-      // 'questo' = indirizzo dell'assistito stesso (da lead_assistiti)
-      nomeDestinatario     = `${ass.nome} ${ass.cognome}`.trim()
-      indirizzoDestinatario= ass.indirizzo || lead.indirizzoAssistito || ''
-      capDestinatario      = ass.cap       || lead.capAssistito || ''
-      cittaDestinatario    = ass.citta     || lead.cittaAssistito || ''
-      provinciaDestinatario= ass.provincia || lead.provinciaAssistito || ''
-      nazioneDestinatario  = ass.nazione   || lead.nazione_assistito || 'Italia'
+    // Costruisce un oggetto lead arricchito con i dati dell'assistito specifico
+    const leadPerDest = {
+      ...lead,
+      // I campi assistito vengono sostituiti con quelli del record lead_assistiti
+      nomeAssistito:     ass.nome     || lead.nomeAssistito,
+      cognomeAssistito:  ass.cognome  || lead.cognomeAssistito,
+      indirizzoAssistito: ass.indirizzo || lead.indirizzoAssistito,
+      capAssistito:      ass.cap      || lead.capAssistito,
+      cittaAssistito:    ass.citta    || lead.cittaAssistito,
+      provinciaAssistito: ass.provincia || lead.provinciaAssistito,
+      nazione_assistito: ass.nazione  || lead.nazione_assistito,
+      // Se l'assistito ha indirizzo_spedizione='richiedente' lo forziamo sul lead composito
+      indirizzo_spedizione: spedDest === 'richiedente' ? 'richiedente' : lead.indirizzo_spedizione || 'assistito',
     }
+    const _destAss = resolveDestinatario(leadPerDest)
+    const nomeDestinatario      = _destAss.nome
+    const indirizzoDestinatario = _destAss.indirizzo
+    const capDestinatario       = _destAss.cap
+    const cittaDestinatario     = _destAss.citta
+    const provinciaDestinatario = _destAss.provincia
+    const nazioneDestinatario   = _destAss.nazione
 
     // Servizio e dispositivo — FIX: include sia 'SIGNED' che 'firmato' per compatibilità
     const contract = await c.env.DB.prepare(
@@ -19615,6 +19650,38 @@ function addDebugLog(message: string) {
 }
 
 // GET /api/debug/logs - Visualizza ultimi log
+// GET /api/debug/assistiti-prezzi — verifica che /api/assistiti ritorni sconto correttamente
+app.get('/api/debug/assistiti-prezzi', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ error: 'no DB' }, 500)
+    const rows = await c.env.DB.prepare(`
+      SELECT
+        a.nome_assistito, a.cognome_assistito, a.servizio, a.piano,
+        l.codice_sconto, l.prezzo_scontato, l.prezzo_anno,
+        l.id AS lead_id_risolto
+      FROM assistiti a
+      LEFT JOIN contracts c ON c.id = COALESCE(
+        (SELECT id FROM contracts WHERE leadId = a.lead_id AND (is_rinnovo IS NULL OR is_rinnovo = 0) ORDER BY created_at DESC LIMIT 1),
+        (SELECT id FROM contracts WHERE imei_dispositivo = a.imei AND a.imei IS NOT NULL AND a.imei != '' AND (is_rinnovo IS NULL OR is_rinnovo = 0) ORDER BY created_at DESC LIMIT 1),
+        (SELECT co.id FROM contracts co JOIN leads le ON le.id = co.leadId WHERE le.email = a.email AND a.email IS NOT NULL AND a.email != '' AND (co.is_rinnovo IS NULL OR co.is_rinnovo = 0) ORDER BY co.created_at DESC LIMIT 1)
+      )
+      LEFT JOIN leads l ON l.id = COALESCE(a.lead_id, c.leadId)
+      WHERE a.status = 'ATTIVO'
+      ORDER BY a.created_at DESC
+    `).all()
+    const result = (rows.results || []).map((r: any) => ({
+      assistito: `${r.nome_assistito} ${r.cognome_assistito}`,
+      servizio: r.servizio, piano: r.piano,
+      lead_id: r.lead_id_risolto,
+      codice_sconto: r.codice_sconto,
+      prezzo_scontato: r.prezzo_scontato,
+      prezzo_anno: r.prezzo_anno,
+      hasSconto: !!(r.codice_sconto && r.prezzo_scontato > 0 && r.prezzo_scontato < r.prezzo_anno)
+    }))
+    return c.json({ success: true, count: result.length, assistiti: result })
+  } catch (e: any) { return c.json({ error: e.message }, 500) }
+})
+
 app.get('/api/debug/logs', async (c) => {
   return c.json({
     success: true,
@@ -36148,59 +36215,14 @@ app.post('/api/leads/:id/genera-ddt', requireAuth, async (c) => {
     // --- 3. Determina intestatario contratto e destinatario spedizione ---
     const intestatario = lead.intestatarioContratto || 'richiedente'
 
-    // ⭐ spedizioneA: campo SEPARATO dall'intestatario contratto.
-    // Valori: 'intestatario' (default) | 'richiedente' | 'assistito'
-    //   'intestatario' → spedisci a chi è intestatario del contratto (comportamento storico)
-    //   'richiedente'  → forza spedizione al richiedente indipendentemente dall'intestatario
-    //   'assistito'    → forza spedizione all'assistito indipendentemente dall'intestatario
-    //
-    // Caso d'uso 1: intestatario=assistito, voglio spedire al richiedente
-    //   → spedizioneA='richiedente'
-    // Caso d'uso 2: intestatario=richiedente, voglio spedire all'assistito
-    //   → spedizioneA='assistito'
-    // ⭐ indirizzo_spedizione: campo SEPARATO dall'intestatario contratto.
-    // Valori: 'assistito' (default) | 'richiedente' | 'intestatario' (alias = segui intestatario)
-    const spedValRaw: string = lead.indirizzo_spedizione || 'assistito'
-
-    // Risolvi il destinatario effettivo della spedizione
-    // 'intestatario' = fallback al valore di intestatarioContratto (backward compat)
-    const destinatarioSpedizione: 'richiedente' | 'assistito' | 'custom' =
-      spedValRaw === 'richiedente'   ? 'richiedente'
-      : spedValRaw === 'custom'      ? 'custom'
-      : spedValRaw === 'intestatario' ? (intestatario === 'assistito' ? 'assistito' : 'richiedente')
-      : 'assistito' // 'assistito' è il default
-
-    // Nominativo DDT: segue l'intestatario contratto (non la spedizione)
-    const nomeDestinatario = intestatario === 'assistito'
-      ? `${lead.nomeAssistito || ''} ${lead.cognomeAssistito || ''}`.trim()
-      : `${lead.nomeRichiedente || ''} ${lead.cognomeRichiedente || ''}`.trim()
-
-    // Indirizzo fisico di spedizione: segue destinatarioSpedizione
-    const indirizzoDestinatario = destinatarioSpedizione === 'custom'
-      ? lead.sped_indirizzo || lead.indirizzoAssistito || ''
-      : destinatarioSpedizione === 'assistito'
-        ? lead.indirizzoAssistito || lead.indirizzoIntestatario || ''
-        : lead.indirizzoIntestatario || lead.indirizzoAssistito || ''
-    const capDestinatario = destinatarioSpedizione === 'custom'
-      ? lead.sped_cap || lead.capAssistito || ''
-      : destinatarioSpedizione === 'assistito'
-        ? lead.capAssistito || lead.capIntestatario || ''
-        : lead.capIntestatario || lead.capAssistito || ''
-    const cittaDestinatario = destinatarioSpedizione === 'custom'
-      ? lead.sped_citta || lead.cittaAssistito || ''
-      : destinatarioSpedizione === 'assistito'
-        ? lead.cittaAssistito || lead.cittaIntestatario || ''
-        : lead.cittaIntestatario || lead.cittaAssistito || ''
-    const provinciaDestinatario = destinatarioSpedizione === 'custom'
-      ? lead.sped_provincia || lead.provinciaAssistito || ''
-      : destinatarioSpedizione === 'assistito'
-        ? lead.provinciaAssistito || lead.provinciaIntestatario || ''
-        : lead.provinciaIntestatario || lead.provinciaAssistito || ''
-    const nazioneDestinatario = destinatarioSpedizione === 'custom'
-      ? lead.sped_nazione || 'Italia'
-      : destinatarioSpedizione === 'assistito'
-        ? lead.nazione_assistito || 'Italia'
-        : lead.nazione_intestatario || 'Italia'
+    // ⭐ Usa resolveDestinatario — gestisce anche il caso sped_* popolati ma flag non aggiornato
+    const _destDDT = resolveDestinatario(lead)
+    const nomeDestinatario      = _destDDT.nome
+    const indirizzoDestinatario = _destDDT.indirizzo
+    const capDestinatario       = _destDDT.cap
+    const cittaDestinatario     = _destDDT.citta
+    const provinciaDestinatario = _destDDT.provincia
+    const nazioneDestinatario   = _destDDT.nazione
 
     // --- 4. Numero DDT: formato "DDT-NNN-AAAA" (es. DDT-008-2026) ---
     const annoCorrente = new Date().getFullYear()
