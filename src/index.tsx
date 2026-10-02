@@ -50,7 +50,7 @@ import type { AuthSession, UserRole } from './modules/auth-service'
 // Import Dashboard Templates
 import { dashboard, leads_dashboard, data_dashboard, home, workflow_manager, admin_setup } from './modules/dashboard-templates-new'
 import { renderGoogleAdsDashboard } from './modules/google-ads-dashboard'
-import { fetchFullAnalyticsReport } from './modules/google-analytics'
+import { fetchFullAnalyticsReport, detectAuthMethod } from './modules/google-analytics'
 import { renderSeoManagerDashboard } from './modules/seo-manager-dashboard'
 import { renderAiMarketingDashboard } from './modules/ai-marketing-dashboard'
 import * as SignatureManager from './modules/signature-manager'
@@ -92,8 +92,10 @@ type Bindings = {
   GOOGLE_REFRESH_TOKEN?: string
   GOOGLE_OAUTH_CLIENT_ID?: string
   GOOGLE_OAUTH_CLIENT_SECRET?: string
-  // Google OAuth Analytics (GA4 + Search Console — scope analytics.readonly + webmasters.readonly)
-  // Se non presente, usa GOOGLE_REFRESH_TOKEN come fallback
+  // Google Analytics — Service Account (metodo preferito, non scade mai)
+  // JSON completo scaricato da Google Cloud Console → IAM → Service Accounts → Keys
+  GOOGLE_SERVICE_ACCOUNT_JSON?: string
+  // Google OAuth Analytics (GA4 + Search Console — fallback legacy, scade ogni 7gg in app Testing)
   GOOGLE_REFRESH_TOKEN_ANALYTICS?: string
   GA4_PROPERTY_ID?: string
   SC_SITE_URL?: string
@@ -30956,6 +30958,126 @@ app.get('/api/admin/analytics-token', async (c) => {
   </body></html>`, 200)
 })
 
+// GET /api/admin/analytics-status — diagnostica stato credenziali Google Analytics
+// Testa la connessione e mostra quale metodo di auth è attivo
+app.get('/api/admin/analytics-status', async (c) => {
+  const authHeader = c.req.header('Authorization') || ''
+  const queryToken = c.req.query('token') || ''
+  const validToken = c.env.ADMIN_SECRET_TOKEN
+  const isAuthed = authHeader === `Bearer ${validToken}` || queryToken === validToken
+  if (!isAuthed) {
+    return c.html(`<html><body style="font-family:sans-serif;padding:32px">
+      <h2>🔒 Accesso negato</h2><p>Aggiungi <code>?token=IL_TUO_ADMIN_TOKEN</code> all'URL.</p>
+    </body></html>`, 401)
+  }
+
+  const serviceAccountJson = c.env?.GOOGLE_SERVICE_ACCOUNT_JSON
+  const refreshToken       = c.env?.GOOGLE_REFRESH_TOKEN_ANALYTICS || c.env?.GOOGLE_REFRESH_TOKEN
+  const clientId           = c.env?.GOOGLE_OAUTH_CLIENT_ID
+  const clientSecret       = c.env?.GOOGLE_OAUTH_CLIENT_SECRET
+  const ga4PropertyId      = c.env?.GA4_PROPERTY_ID || '549216845'
+  const scSiteUrl          = c.env?.SC_SITE_URL || 'https://www.ecura.it/'
+
+  const hasServiceAccount = !!serviceAccountJson
+  const hasOAuth = !!(refreshToken && clientId && clientSecret)
+
+  let authMethod = 'none'
+  let testResult = ''
+  let testOk = false
+  let saEmail = ''
+
+  if (hasServiceAccount) {
+    authMethod = 'service_account'
+    try {
+      const sa = JSON.parse(serviceAccountJson!)
+      saEmail = sa.client_email || '(email non trovata)'
+    } catch { saEmail = '(JSON non valido)' }
+  } else if (hasOAuth) {
+    authMethod = 'oauth2'
+  }
+
+  // Test connessione reale a GA4
+  if (hasServiceAccount || hasOAuth) {
+    try {
+      const config = {
+        serviceAccountJson, refreshToken, oauthClientId: clientId,
+        oauthClientSecret: clientSecret, ga4PropertyId, searchConsoleSiteUrl: scSiteUrl
+      }
+      const today = new Date().toISOString().slice(0, 10)
+      const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+      const result = await fetchFullAnalyticsReport(config as any, yesterday, today)
+      if (result.errors.length === 0) {
+        testOk = true
+        testResult = `✅ Connessione OK — Sessioni ieri: ${result.overview.sessions}, Utenti: ${result.overview.users}`
+      } else {
+        testResult = `❌ Errori: ${result.errors.join(' | ')}`
+      }
+    } catch (e: any) {
+      testResult = `❌ Eccezione: ${e.message}`
+    }
+  }
+
+  const statusColor = testOk ? '#27ae60' : '#e74c3c'
+  const methodBadge = authMethod === 'service_account'
+    ? `<span style="background:#27ae60;color:#fff;padding:4px 10px;border-radius:12px;font-size:.85rem">🔑 Service Account (permanente)</span>`
+    : authMethod === 'oauth2'
+    ? `<span style="background:#f39c12;color:#fff;padding:4px 10px;border-radius:12px;font-size:.85rem">⏰ OAuth2 (scade ogni 7gg)</span>`
+    : `<span style="background:#e74c3c;color:#fff;padding:4px 10px;border-radius:12px;font-size:.85rem">❌ Nessuna credenziale</span>`
+
+  return c.html(`<html><body style="font-family:sans-serif;padding:32px;max-width:750px">
+    <h2>📊 Stato credenziali Google Analytics</h2>
+    <table style="border-collapse:collapse;width:100%;margin:16px 0">
+      <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f5f5f5">Metodo autenticazione</td>
+          <td style="padding:8px;border:1px solid #ddd">${methodBadge}</td></tr>
+      ${authMethod === 'service_account' ? `
+      <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f5f5f5">Service Account email</td>
+          <td style="padding:8px;border:1px solid #ddd"><code>${saEmail}</code></td></tr>` : ''}
+      ${authMethod === 'oauth2' ? `
+      <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f5f5f5">GOOGLE_REFRESH_TOKEN_ANALYTICS</td>
+          <td style="padding:8px;border:1px solid #ddd">${refreshToken ? '✅ configurato' : '❌ mancante'}</td></tr>
+      <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f5f5f5">GOOGLE_OAUTH_CLIENT_ID</td>
+          <td style="padding:8px;border:1px solid #ddd">${clientId ? '✅ ' + clientId.slice(0,20) + '...' : '❌ mancante'}</td></tr>` : ''}
+      <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f5f5f5">GA4 Property ID</td>
+          <td style="padding:8px;border:1px solid #ddd">${ga4PropertyId}</td></tr>
+      <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f5f5f5">Search Console URL</td>
+          <td style="padding:8px;border:1px solid #ddd">${scSiteUrl}</td></tr>
+      <tr><td style="padding:8px;border:1px solid #ddd;font-weight:bold;background:#f5f5f5">Test connessione GA4</td>
+          <td style="padding:8px;border:1px solid #ddd;color:${statusColor}">${testResult || '(nessuna credenziale da testare)'}</td></tr>
+    </table>
+
+    ${authMethod === 'oauth2' ? `
+    <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:16px;margin:16px 0">
+      <strong>⚠️ Stai usando OAuth2</strong> — i token scadono ogni 7 giorni se l'app Google Cloud è in modalità "Testing".<br>
+      <strong>Soluzione definitiva:</strong> migra a Service Account (non scade mai).
+      <br><br>
+      <a href="/api/admin/analytics-reauth?token=${queryToken}" style="background:#4285F4;color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;font-size:.9rem">
+        🔄 Rinnova token OAuth2 ora
+      </a>
+    </div>` : ''}
+
+    ${authMethod === 'service_account' ? `
+    <div style="background:#d4edda;border:1px solid #28a745;border-radius:8px;padding:16px;margin:16px 0">
+      <strong>✅ Service Account configurato</strong> — il token non scade mai, nessuna manutenzione necessaria.
+    </div>` : ''}
+
+    ${authMethod === 'none' ? `
+    <div style="background:#f8d7da;border:1px solid #f5c6cb;border-radius:8px;padding:16px;margin:16px 0">
+      <strong>❌ Nessuna credenziale configurata</strong><br>
+      Configura <code>GOOGLE_SERVICE_ACCOUNT_JSON</code> nei secrets Cloudflare (metodo consigliato).
+    </div>` : ''}
+
+    <hr style="margin:24px 0">
+    <h3>📋 Come migrare a Service Account (soluzione definitiva)</h3>
+    <ol>
+      <li><a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank">Google Cloud Console → IAM → Service Accounts</a> → crea nuovo → crea chiave JSON → scarica</li>
+      <li>In <a href="https://analytics.google.com/" target="_blank">GA4</a>: Admin → Property access management → aggiungi l'email del service account come <strong>Viewer</strong></li>
+      <li>In <a href="https://search.google.com/search-console/" target="_blank">Search Console</a>: Settings → Users and permissions → aggiungi l'email come <strong>Full</strong></li>
+      <li>Cloudflare Dashboard → Pages → telemedcare-v12 → Settings → Environment variables → aggiungi secret <code>GOOGLE_SERVICE_ACCOUNT_JSON</code> con tutto il contenuto del file JSON</li>
+      <li>Trigger redeploy → ✅ Done, non scadrà mai più</li>
+    </ol>
+  </body></html>`)
+})
+
 // Helper functions per live-seo-report
 function formatDuration(secs: number): string {
   if (!secs || secs < 0) return '0:00'
@@ -30973,20 +31095,35 @@ function escHtml(s: string): string {
 // ============================================================
 app.get('/api/analytics/live-seo-report', async (c) => {
   try {
+    const serviceAccountJson = c.env?.GOOGLE_SERVICE_ACCOUNT_JSON
     const clientId = c.env?.GOOGLE_OAUTH_CLIENT_ID
     const clientSecret = c.env?.GOOGLE_OAUTH_CLIENT_SECRET
     const ga4PropertyId = c.env?.GA4_PROPERTY_ID || '549216845'
     const scSiteUrl = c.env?.SC_SITE_URL || 'https://www.ecura.it/'
-    // Usa token dedicato GA4 se disponibile, altrimenti fallback al token Sheets
+    // OAuth2 fallback: usa token dedicato GA4 se disponibile, altrimenti token Sheets
     const refreshToken = c.env?.GOOGLE_REFRESH_TOKEN_ANALYTICS || c.env?.GOOGLE_REFRESH_TOKEN
 
-    if (!refreshToken || !clientId || !clientSecret) {
-      return c.html(`<html><body style="font-family:sans-serif;padding:32px"><h1>⚠️ Credenziali Google mancanti</h1>
-        <p>Per il report SEO servono le credenziali OAuth Google con scope <code>analytics.readonly</code> e <code>webmasters.readonly</code>.</p>
-        <p>Configura nei secrets Cloudflare:</p>
-        <ul><li><strong>GOOGLE_REFRESH_TOKEN_ANALYTICS</strong> — refresh token con scope GA4 + Search Console</li>
-        <li><strong>GOOGLE_OAUTH_CLIENT_ID</strong></li><li><strong>GOOGLE_OAUTH_CLIENT_SECRET</strong></li></ul>
-        <p>Usa <a href="/api/admin/analytics-reauth">/api/admin/analytics-reauth</a> per generare il token.</p>
+    // Controlla se almeno un metodo di auth è disponibile
+    const hasServiceAccount = !!serviceAccountJson
+    const hasOAuth = !!(refreshToken && clientId && clientSecret)
+
+    if (!hasServiceAccount && !hasOAuth) {
+      return c.html(`<html><body style="font-family:sans-serif;padding:32px;max-width:700px">
+        <h1>⚠️ Credenziali Google mancanti</h1>
+        <p>Per il report SEO serve uno dei seguenti metodi di autenticazione:</p>
+        <h3>✅ Metodo consigliato — Service Account (non scade mai)</h3>
+        <ol>
+          <li>Google Cloud Console → IAM → Service Accounts → crea account → crea chiave JSON</li>
+          <li>Aggiungi l'email del service account come "Viewer" in GA4 e Search Console</li>
+          <li>Salva il JSON come secret Cloudflare: <code>GOOGLE_SERVICE_ACCOUNT_JSON</code></li>
+        </ol>
+        <h3>⚠️ Metodo legacy — OAuth2 refresh token (scade ogni 7 giorni)</h3>
+        <ul>
+          <li><strong>GOOGLE_REFRESH_TOKEN_ANALYTICS</strong></li>
+          <li><strong>GOOGLE_OAUTH_CLIENT_ID</strong></li>
+          <li><strong>GOOGLE_OAUTH_CLIENT_SECRET</strong></li>
+        </ul>
+        <p>Usa <a href="/api/admin/analytics-reauth">/api/admin/analytics-reauth</a> per generare il token OAuth.</p>
         </body></html>`, 500)
     }
 
@@ -30996,9 +31133,19 @@ app.get('/api/analytics/live-seo-report', async (c) => {
     const startDate = c.req.query('startDate') || defaultStart
     const endDate = c.req.query('endDate') || defaultEnd
 
+    // Costruisci config: Service Account ha priorità su OAuth2
+    const analyticsConfig = {
+      serviceAccountJson,
+      refreshToken,
+      oauthClientId: clientId,
+      oauthClientSecret: clientSecret,
+      ga4PropertyId,
+      searchConsoleSiteUrl: scSiteUrl
+    }
+
     // Fetch GA4 data
     const ga4 = await fetchFullAnalyticsReport(
-      { refreshToken, oauthClientId: clientId, oauthClientSecret: clientSecret, ga4PropertyId, searchConsoleSiteUrl: scSiteUrl },
+      analyticsConfig,
       startDate,
       endDate
     )

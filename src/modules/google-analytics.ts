@@ -1,27 +1,130 @@
 // ============================================================
 // google-analytics.ts
 // Integrazione GA4 Analytics Data API + Google Search Console
-// Usa OAuth2 refresh_token (stessi segreti di gsheet-import)
+//
+// AUTENTICAZIONE (in ordine di priorità):
+//   1. Service Account JSON  →  GOOGLE_SERVICE_ACCOUNT_JSON (secret Cloudflare)
+//      JWT firmato con RS256, access token dura 1h e si auto-rinnova.
+//      Non scade mai, non richiede flusso OAuth utente.
+//
+//   2. OAuth2 refresh_token  →  GOOGLE_REFRESH_TOKEN_ANALYTICS (fallback legacy)
+//      Scade ogni 7 giorni se l'app è in modalità "Testing" su Google Cloud.
 // ============================================================
 
+// ── Interfacce config ────────────────────────────────────────
+
 export interface GoogleAnalyticsConfig {
-  refreshToken: string
-  oauthClientId: string
-  oauthClientSecret: string
-  ga4PropertyId: string        // es. "549216845"
+  // Service Account (metodo preferito — non scade mai)
+  serviceAccountJson?: string   // JSON completo del service account (da Cloudflare secret)
+
+  // OAuth2 legacy (fallback)
+  refreshToken?: string
+  oauthClientId?: string
+  oauthClientSecret?: string
+
+  ga4PropertyId: string         // es. "549216845"
   searchConsoleSiteUrl?: string // es. "https://www.ecura.it/"
 }
 
-// ── Token refresh ────────────────────────────────────────────
-async function getAccessToken(config: GoogleAnalyticsConfig): Promise<string> {
+// ── Helpers base64url ────────────────────────────────────────
+
+function base64urlEncode(data: ArrayBuffer): string {
+  const bytes = new Uint8Array(data)
+  let str = ''
+  for (const b of bytes) str += String.fromCharCode(b)
+  return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+}
+
+function strToBase64url(str: string): string {
+  const enc = new TextEncoder()
+  const bytes = enc.encode(str)
+  let s = ''
+  for (const b of bytes) s += String.fromCharCode(b)
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+}
+
+// ── JWT firmato RS256 per Service Account ────────────────────
+
+async function getServiceAccountToken(serviceAccountJson: string, scopes: string[]): Promise<string> {
+  let sa: any
+  try {
+    sa = JSON.parse(serviceAccountJson)
+  } catch {
+    throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON non è JSON valido')
+  }
+
+  if (!sa.private_key || !sa.client_email) {
+    throw new Error('Service account JSON mancante di private_key o client_email')
+  }
+
+  const now = Math.floor(Date.now() / 1000)
+  const header = { alg: 'RS256', typ: 'JWT' }
+  const payload = {
+    iss: sa.client_email,
+    scope: scopes.join(' '),
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600
+  }
+
+  const headerB64  = strToBase64url(JSON.stringify(header))
+  const payloadB64 = strToBase64url(JSON.stringify(payload))
+  const sigInput   = `${headerB64}.${payloadB64}`
+
+  // Importa la chiave privata PEM RSA
+  const pemBody = sa.private_key
+    .replace(/-----BEGIN PRIVATE KEY-----/, '')
+    .replace(/-----END PRIVATE KEY-----/, '')
+    .replace(/\s/g, '')
+
+  const keyDer = Uint8Array.from(atob(pemBody), c => c.charCodeAt(0))
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8',
+    keyDer.buffer,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+
+  const sigBuffer = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    cryptoKey,
+    new TextEncoder().encode(sigInput)
+  )
+  const sigB64 = base64urlEncode(sigBuffer)
+  const jwt = `${sigInput}.${sigB64}`
+
+  // Scambia JWT con access token
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt
+    }).toString()
+  })
+
+  if (!tokenRes.ok) {
+    const err = await tokenRes.text()
+    throw new Error(`Service Account token exchange failed: ${err}`)
+  }
+
+  const json = await tokenRes.json() as { access_token?: string; error?: string }
+  if (!json.access_token) throw new Error(`No access_token from Service Account: ${JSON.stringify(json)}`)
+  return json.access_token
+}
+
+// ── OAuth2 refresh token (legacy) ────────────────────────────
+
+async function getOAuth2Token(refreshToken: string, clientId: string, clientSecret: string): Promise<string> {
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       grant_type: 'refresh_token',
-      refresh_token: config.refreshToken,
-      client_id: config.oauthClientId,
-      client_secret: config.oauthClientSecret
+      refresh_token: refreshToken,
+      client_id: clientId,
+      client_secret: clientSecret
     }).toString()
   })
   if (!res.ok) {
@@ -29,8 +132,37 @@ async function getAccessToken(config: GoogleAnalyticsConfig): Promise<string> {
     throw new Error(`OAuth2 token refresh failed: ${err}`)
   }
   const json = await res.json() as { access_token?: string; error?: string }
-  if (!json.access_token) throw new Error(`No access_token in response: ${JSON.stringify(json)}`)
+  if (!json.access_token) throw new Error(`No access_token in OAuth2 response: ${JSON.stringify(json)}`)
   return json.access_token
+}
+
+// ── getAccessToken: sceglie automaticamente il metodo migliore ──
+
+const GA4_SCOPES = [
+  'https://www.googleapis.com/auth/analytics.readonly',
+  'https://www.googleapis.com/auth/webmasters.readonly'
+]
+
+async function getAccessToken(config: GoogleAnalyticsConfig): Promise<string> {
+  // 1. Service Account — non scade mai, metodo preferito
+  if (config.serviceAccountJson) {
+    return getServiceAccountToken(config.serviceAccountJson, GA4_SCOPES)
+  }
+
+  // 2. OAuth2 refresh token — legacy, scade ogni 7gg se app in Testing
+  if (config.refreshToken && config.oauthClientId && config.oauthClientSecret) {
+    return getOAuth2Token(config.refreshToken, config.oauthClientId, config.oauthClientSecret)
+  }
+
+  throw new Error('Nessuna credenziale Google configurata. Imposta GOOGLE_SERVICE_ACCOUNT_JSON oppure GOOGLE_REFRESH_TOKEN_ANALYTICS + GOOGLE_OAUTH_CLIENT_ID + GOOGLE_OAUTH_CLIENT_SECRET nei secrets Cloudflare.')
+}
+
+// ── Utility: quale metodo di auth è attivo ───────────────────
+
+export function detectAuthMethod(config: GoogleAnalyticsConfig): 'service_account' | 'oauth2' | 'none' {
+  if (config.serviceAccountJson) return 'service_account'
+  if (config.refreshToken && config.oauthClientId && config.oauthClientSecret) return 'oauth2'
+  return 'none'
 }
 
 // ── GA4 Analytics Data API ───────────────────────────────────
@@ -47,10 +179,6 @@ export interface GA4ReportResult {
   metricHeaders: string[]
 }
 
-/**
- * Chiama GA4 Analytics Data API (runReport)
- * https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/properties/runReport
- */
 export async function ga4RunReport(
   config: GoogleAnalyticsConfig,
   body: {
@@ -68,10 +196,7 @@ export async function ga4RunReport(
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   })
 
@@ -81,21 +206,14 @@ export async function ga4RunReport(
   }
 
   const data = await res.json() as any
-
   const dimHeaders: string[] = (data.dimensionHeaders || []).map((h: any) => h.name)
   const metHeaders: string[] = (data.metricHeaders || []).map((h: any) => h.name)
-
   const rows: GA4ReportRow[] = (data.rows || []).map((row: any) => ({
     dimensions: (row.dimensionValues || []).map((v: any) => v.value),
     metrics: (row.metricValues || []).map((v: any) => v.value)
   }))
 
-  return {
-    rows,
-    rowCount: data.rowCount || rows.length,
-    dimensionHeaders: dimHeaders,
-    metricHeaders: metHeaders
-  }
+  return { rows, rowCount: data.rowCount || rows.length, dimensionHeaders: dimHeaders, metricHeaders: metHeaders }
 }
 
 // ── Search Console API ───────────────────────────────────────
@@ -113,10 +231,6 @@ export interface SearchConsoleResult {
   responseAggregationType?: string
 }
 
-/**
- * Chiama Search Console API (query)
- * https://developers.google.com/webmaster-tools/v1/searchanalytics/query
- */
 export async function searchConsoleQuery(
   config: GoogleAnalyticsConfig,
   body: {
@@ -137,10 +251,7 @@ export async function searchConsoleQuery(
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ rowLimit: 1000, searchType: 'web', ...body })
   })
 
@@ -167,6 +278,7 @@ export interface FullAnalyticsReport {
   generatedAt: string
   period: { startDate: string; endDate: string }
   ga4PropertyId: string
+  authMethod: 'service_account' | 'oauth2' | 'none'
   overview: {
     sessions: number
     users: number
@@ -177,7 +289,6 @@ export interface FullAnalyticsReport {
     conversions: number
   }
   channelBreakdown: { channel: string; sessions: number; users: number }[]
-  /** Granular: sessionSource + sessionMedium — es. "google / organic", "chatgpt.com / referral" */
   sourceMediumBreakdown: { source: string; medium: string; sessions: number; users: number; bounceRate: number }[]
   topPages: { page: string; pageviews: number; sessions: number }[]
   deviceBreakdown: { device: string; sessions: number }[]
@@ -196,14 +307,14 @@ export interface FullAnalyticsReport {
 
 export async function fetchFullAnalyticsReport(
   config: GoogleAnalyticsConfig,
-  startDate: string,  // es. "2026-08-09"
-  endDate: string     // es. "2026-09-03"
+  startDate: string,
+  endDate: string
 ): Promise<FullAnalyticsReport> {
   const errors: string[] = []
   const period = { startDate, endDate }
   const dateRanges = [{ startDate, endDate }]
+  const authMethod = detectAuthMethod(config)
 
-  // Helper: esegui con fallback
   async function safeRun<T>(fn: () => Promise<T>, label: string): Promise<T | null> {
     try { return await fn() }
     catch (e: any) {
@@ -212,17 +323,13 @@ export async function fetchFullAnalyticsReport(
     }
   }
 
-  // 1. Overview (sessioni, utenti, bounce, durata, pageviews)
+  // 1. Overview
   const overviewRaw = await safeRun(() => ga4RunReport(config, {
     dateRanges,
     metrics: [
-      { name: 'sessions' },
-      { name: 'activeUsers' },
-      { name: 'newUsers' },
-      { name: 'bounceRate' },
-      { name: 'averageSessionDuration' },
-      { name: 'screenPageViews' },
-      { name: 'conversions' }
+      { name: 'sessions' }, { name: 'activeUsers' }, { name: 'newUsers' },
+      { name: 'bounceRate' }, { name: 'averageSessionDuration' },
+      { name: 'screenPageViews' }, { name: 'conversions' }
     ]
   }), 'GA4 overview')
 
@@ -252,7 +359,7 @@ export async function fetchFullAnalyticsReport(
     users: parseInt(r.metrics[1])
   }))
 
-  // 2b. Source / Medium granular breakdown (es. google/organic, chatgpt.com/referral, bing/organic)
+  // 2b. Source/Medium granular
   const sourceMediumRaw = await safeRun(() => ga4RunReport(config, {
     dateRanges,
     dimensions: [{ name: 'sessionSource' }, { name: 'sessionMedium' }],
@@ -320,7 +427,7 @@ export async function fetchFullAnalyticsReport(
   }), 'GA4 daily trend')
 
   const dailyTrend = (dailyRaw?.rows || []).map(r => {
-    const d = r.dimensions[0] // YYYYMMDD
+    const d = r.dimensions[0]
     return {
       date: `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`,
       sessions: parseInt(r.metrics[0]),
@@ -336,28 +443,20 @@ export async function fetchFullAnalyticsReport(
     }), 'GSC overview')
 
     const scRow = scOverview?.rows[0]
-    const totalClicks = scRow?.clicks || 0
-    const totalImpressions = scRow?.impressions || 0
-    const avgCtr = scRow?.ctr || 0
-    const avgPosition = scRow?.position || 0
 
     const scQueries = await safeRun(() => searchConsoleQuery(config, {
-      startDate, endDate,
-      dimensions: ['query'],
-      rowLimit: 20
+      startDate, endDate, dimensions: ['query'], rowLimit: 20
     }), 'GSC queries')
 
     const scPages = await safeRun(() => searchConsoleQuery(config, {
-      startDate, endDate,
-      dimensions: ['page'],
-      rowLimit: 15
+      startDate, endDate, dimensions: ['page'], rowLimit: 15
     }), 'GSC pages')
 
     searchConsole = {
-      totalClicks,
-      totalImpressions,
-      avgCtr,
-      avgPosition,
+      totalClicks: scRow?.clicks || 0,
+      totalImpressions: scRow?.impressions || 0,
+      avgCtr: scRow?.ctr || 0,
+      avgPosition: scRow?.position || 0,
       topQueries: (scQueries?.rows || []).map(r => ({
         query: r.keys[0] || '',
         clicks: r.clicks, impressions: r.impressions, ctr: r.ctr, position: r.position
@@ -373,6 +472,7 @@ export async function fetchFullAnalyticsReport(
     generatedAt: new Date().toISOString(),
     period,
     ga4PropertyId: config.ga4PropertyId,
+    authMethod,
     overview,
     channelBreakdown,
     sourceMediumBreakdown,
