@@ -30958,6 +30958,25 @@ app.get('/api/admin/analytics-token', async (c) => {
   </body></html>`, 200)
 })
 
+// GET /api/admin/find-lead — cerca lead per nome/cognome (temporaneo, protetto da ADMIN token)
+app.get('/api/admin/find-lead', async (c) => {
+  const queryToken = c.req.query('token') || ''
+  const validToken = c.env.ADMIN_SECRET_TOKEN
+  if (queryToken !== validToken) return c.json({ error: 'Unauthorized' }, 401)
+  const q = (c.req.query('q') || '').trim()
+  if (!q || !c.env?.DB) return c.json({ error: 'missing q or DB' }, 400)
+  const like = `%${q}%`
+  const rows = await c.env.DB.prepare(`
+    SELECT id, nomeRichiedente, cognomeRichiedente, nomeAssistito, cognomeAssistito,
+           email, intestatarioContratto, nome_caregiver, cognome_caregiver, parentela_caregiver
+    FROM leads
+    WHERE nomeRichiedente LIKE ? OR cognomeRichiedente LIKE ?
+       OR nomeAssistito LIKE ? OR cognomeAssistito LIKE ?
+    LIMIT 10
+  `).bind(like, like, like, like).all()
+  return c.json({ results: rows.results })
+})
+
 // GET /api/admin/analytics-status — diagnostica stato credenziali Google Analytics
 // Testa la connessione e mostra quale metodo di auth è attivo
 app.get('/api/admin/analytics-status', async (c) => {
