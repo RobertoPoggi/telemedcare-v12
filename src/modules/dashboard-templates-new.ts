@@ -5434,11 +5434,29 @@ export const leads_dashboard = `<!DOCTYPE html>
         // NUOVE FUNZIONI AZIONI MANUALI
         // ============================================
 
+        // Traccia i leadId per cui è in corso una firma manuale (anti-doppio-invio)
+        const _manualSignInProgress = new Set();
+
         async function manualSign(leadId) {
+            // ── GUARD: già in corso per questo lead ──────────────────────────────
+            if (_manualSignInProgress.has(leadId)) {
+                alert('⏳ Invio già in corso per questo lead, attendere...');
+                return;
+            }
+
             if (!confirm("🖊️ Firmare manualmente il contratto per questo lead?\\n\\nVerrà generata una proforma automaticamente.")) {
                 return;
             }
-            
+
+            // ── Disabilita tutti i bottoni manual-sign per questo lead ────────────
+            const btns = document.querySelectorAll(\`[data-action="manual-sign"][data-lead-id="\${leadId}"]\`);
+            btns.forEach(b => {
+                b.disabled = true;
+                b.textContent = '⏳';
+                b.title = 'Invio in corso...';
+            });
+            _manualSignInProgress.add(leadId);
+
             try {
                 const response = await fetch(\`/api/leads/\${leadId}/manual-sign\`, {
                     method: 'POST',
@@ -5449,13 +5467,31 @@ export const leads_dashboard = `<!DOCTYPE html>
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert("✅ Contratto firmato manualmente!\\n\\nCodice: " + (result.contractId || 'N/A') + "\\nProforma: " + (result.proformaId || 'N/A'));
+                    if (result.duplicate) {
+                        alert("ℹ️ Contratto già firmato in precedenza.\\n\\nProforma già inviata: " + (result.proformaId || 'N/A') + "\\n\\nNessun nuovo invio effettuato.");
+                    } else {
+                        alert("✅ Contratto firmato manualmente!\\n\\nCodice: " + (result.contractId || 'N/A') + "\\nProforma: " + (result.proformaId || 'N/A'));
+                    }
                     loadLeadsData();
                 } else {
                     alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
+                    // In caso di errore riabilita i bottoni per permettere un nuovo tentativo
+                    btns.forEach(b => {
+                        b.disabled = false;
+                        b.textContent = '🖊️';
+                        b.title = 'Firma manuale contratto';
+                    });
                 }
             } catch (error) {
                 alert('❌ Errore di comunicazione: ' + error.message);
+                // In caso di errore di rete riabilita i bottoni
+                btns.forEach(b => {
+                    b.disabled = false;
+                    b.textContent = '🖊️';
+                    b.title = 'Firma manuale contratto';
+                });
+            } finally {
+                _manualSignInProgress.delete(leadId);
             }
         }
 

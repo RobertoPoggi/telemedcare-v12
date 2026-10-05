@@ -35748,6 +35748,21 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
     }
     
     console.log(`🖊️ [MANUAL-SIGN] Firma manuale contratto per lead ${leadId}`)
+
+    // ── IDEMPOTENCY CHECK: controlla se esiste già una proforma per questo lead ──
+    const existingProforma = await c.env.DB.prepare(
+      `SELECT numero_proforma, created_at FROM proforma WHERE leadId = ? ORDER BY created_at DESC LIMIT 1`
+    ).bind(leadId).first() as any
+
+    if (existingProforma) {
+      console.log(`⚠️ [MANUAL-SIGN] Proforma già esistente per lead ${leadId}: ${existingProforma.numero_proforma} — invio bloccato`)
+      return c.json({
+        success: true,
+        duplicate: true,
+        message: `Contratto già firmato e proforma già inviata in precedenza`,
+        proformaId: existingProforma.numero_proforma
+      })
+    }
     
     // Genera ID contratto
     const timestamp = Date.now()
