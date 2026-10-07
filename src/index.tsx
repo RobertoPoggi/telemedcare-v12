@@ -14053,28 +14053,81 @@ app.post('/api/leads/edit-form/:token', async (c) => {
       await c.env.DB.prepare(sqlLeads).bind(...leadsBinds).run()
     }
 
-    // ── 2. UPDATE configurations (ultima riga per quel leadId) ───────────────
-    const confFields: string[] = []
-    const confBinds: any[] = []
+    // ── 2. UPSERT configurations (UPDATE se esiste, INSERT se non esiste) ──────
+    // Costruisce la mappa colonna→valore per i campi configurations presenti nel body
+    const confColMap: Record<string, string> = {}   // { dbCol: value }
     for (const [k, v] of Object.entries(body)) {
       const dbCol = CONF_FIELD_MAP[k]
       if (dbCol && v !== null && v !== undefined) {
-        confFields.push(`${dbCol} = ?`)
-        confBinds.push(String(v))
+        confColMap[dbCol] = String(v)
       }
     }
+    const confFields = Object.keys(confColMap)   // nomi colonne DB
+
     if (confFields.length > 0) {
-      confFields.push('updated_at = ?')
-      confBinds.push(now)
-      confBinds.push(leadId)
-      // Aggiorna solo se esiste già una riga di configurazione per questo lead
-      const sqlConf = `UPDATE configurations SET ${confFields.join(', ')} WHERE leadId = ? AND id = (SELECT MAX(id) FROM configurations WHERE leadId = ?)`
-      confBinds.push(leadId) // secondo ? per la subquery
-      console.log(`📝 [EDIT-FORM] UPDATE configurations: ${confFields.length - 1} campi`)
-      await c.env.DB.prepare(sqlConf).bind(...confBinds).run()
+      // Verifica se esiste già una riga configurations per questo lead
+      const existingConf = await c.env.DB.prepare(
+        `SELECT id FROM configurations WHERE leadId = ? ORDER BY id DESC LIMIT 1`
+      ).bind(leadId).first() as any
+
+      if (existingConf) {
+        // ── UPDATE: riga già presente ─────────────────────────────────────────
+        const setClauses = confFields.map(col => `${col} = ?`).join(', ')
+        const binds: any[] = confFields.map(col => confColMap[col])
+        binds.push(now)      // updated_at
+        binds.push(leadId)   // WHERE leadId = ?
+        binds.push(existingConf.id)  // AND id = ?
+        const sqlUpdate = `UPDATE configurations SET ${setClauses}, updated_at = ? WHERE leadId = ? AND id = ?`
+        console.log(`📝 [EDIT-FORM] UPDATE configurations id=${existingConf.id}: ${confFields.length} campi`)
+        await c.env.DB.prepare(sqlUpdate).bind(...binds).run()
+      } else {
+        // ── INSERT: nessuna riga configurazione per questo lead — la creiamo ──
+        // Recupera dati assistito da leads per popolare i campi anagrafici obbligatori
+        const leadForConf = await c.env.DB.prepare(
+          `SELECT nomeAssistito, cognomeAssistito, dataNascitaAssistito,
+                  indirizzoAssistito, cittaAssistito, capAssistito, provinciaAssistito,
+                  email, telefono
+           FROM leads WHERE id = ? LIMIT 1`
+        ).bind(leadId).first() as any
+
+        // Costruisce colonne e valori per INSERT unendo dati leads + form
+        const insertCols: string[] = [
+          'leadId', 'nome_assistito', 'cognome_assistito', 'data_nascita',
+          'indirizzo', 'status', 'form_inviato', 'created_at', 'updated_at',
+        ]
+        const insertVals: any[] = [
+          leadId,
+          leadForConf?.nomeAssistito || '',
+          leadForConf?.cognomeAssistito || '',
+          leadForConf?.dataNascitaAssistito || '',
+          [leadForConf?.indirizzoAssistito, leadForConf?.cittaAssistito,
+           leadForConf?.provinciaAssistito, leadForConf?.capAssistito].filter(Boolean).join(', '),
+          'modifica_dati',
+          1,
+          now,
+          now,
+        ]
+
+        // Aggiunge tutti i campi configurations inviati dal form
+        for (const col of confFields) {
+          if (!insertCols.includes(col)) {   // evita duplicati
+            insertCols.push(col)
+            insertVals.push(confColMap[col])
+          }
+        }
+
+        const placeholders = insertCols.map(() => '?').join(', ')
+        const sqlInsert = `INSERT INTO configurations (${insertCols.join(', ')}) VALUES (${placeholders})`
+        console.log(`📝 [EDIT-FORM] INSERT configurations per lead ${leadId}: ${insertCols.length} colonne`)
+        await c.env.DB.prepare(sqlInsert).bind(...insertVals).run()
+      }
     }
 
-    const totalUpdated = leadsFields.length + confFields.length - (leadsFields.length > 0 ? 1 : 0) - (confFields.length > 0 ? 1 : 0)
+    // leadsFields contiene le clausole "col = ?" + "updated_at = ?" → sottrai 1 per updated_at
+    // confFields contiene i nomi colonna puri → lunghezza reale
+    const leadsCount = leadsFields.length > 0 ? leadsFields.length - 1 : 0
+    const confCount  = confFields.length
+    const totalUpdated = leadsCount + confCount
 
     if (totalUpdated === 0) {
       return c.json({ success: false, error: 'Nessun campo valido da aggiornare' }, 400)
@@ -14085,7 +14138,7 @@ app.post('/api/leads/edit-form/:token', async (c) => {
       `UPDATE lead_edit_tokens SET used_at = ? WHERE token = ?`
     ).bind(now, token).run()
 
-    console.log(`✅ [EDIT-FORM] Lead ${leadId} aggiornato — leads:${leadsFields.length > 0 ? leadsFields.length-1 : 0} campi, configurations:${confFields.length > 0 ? confFields.length-1 : 0} campi`)
+    console.log(`✅ [EDIT-FORM] Lead ${leadId} aggiornato — leads:${leadsCount} campi, configurations:${confCount} campi`)
 
     // ── 3. Invia email di riepilogo dopo aggiornamento ───────────────────────
     try {
