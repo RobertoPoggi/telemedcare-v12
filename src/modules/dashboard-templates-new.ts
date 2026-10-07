@@ -5538,7 +5538,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 alert('⏳ Invio già in corso, attendere…');
                 return;
             }
-            if (!confirm('✏️ Inviare al lead un link per modificare i propri dati?\n\nIl link sarà valido per 7 giorni.')) {
+            if (!confirm('✏️ Inviare al lead un link per modificare i propri dati?\\n\\nIl link sarà valido per 7 giorni.')) {
                 return;
             }
 
@@ -5555,7 +5555,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                 });
                 const result = await response.json();
                 if (result.success) {
-                    alert('✅ Form modifica dati inviato!\n\n' + (result.message || ''));
+                    alert('✅ Form modifica dati inviato!\\n\\n' + (result.message || ''));
                 } else {
                     alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
                     btns.forEach(b => { b.disabled = false; b.textContent = '✏️'; });
