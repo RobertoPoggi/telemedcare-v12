@@ -13826,9 +13826,18 @@ app.get('/api/leads/edit-token/:token', async (c) => {
 
     if (!tokenRow) return c.json({ success: false, error: 'Token non valido o scaduto' }, 404)
 
+    const leadId = tokenRow.lead_id
+
+    // Recupera anche l'ultima riga di configurations per pre-popolare i campi medici/contatti
+    const conf = await c.env.DB.prepare(`
+      SELECT * FROM configurations WHERE leadId = ? ORDER BY id DESC LIMIT 1
+    `).bind(leadId).first() as any
+
     // Esponi SOLO i campi sicuri per il lead (niente status, stato CRM, score, prezzi, ecc.)
+    // I campi anagrafici vengono da leads; i campi medici/contatti da configurations (alias corretti)
     const safe = {
-      id: tokenRow.lead_id,
+      id: leadId,
+      // ── da leads ──────────────────────────────────────────────────────────
       nomeRichiedente:              tokenRow.nomeRichiedente,
       cognomeRichiedente:           tokenRow.cognomeRichiedente,
       email:                        tokenRow.email,
@@ -13847,44 +13856,11 @@ app.get('/api/leads/edit-token/:token', async (c) => {
       dataNascitaAssistito:         tokenRow.dataNascitaAssistito,
       luogoNascitaAssistito:        tokenRow.luogoNascitaAssistito,
       cfAssistito:                  tokenRow.cfAssistito,
-      telefonoAssistito:            tokenRow.telefonoAssistito,
       indirizzoAssistito:           tokenRow.indirizzoAssistito,
       cittaAssistito:               tokenRow.cittaAssistito,
       capAssistito:                 tokenRow.capAssistito,
       provinciaAssistito:           tokenRow.provinciaAssistito,
-      contatto1_nome:               tokenRow.contatto1_nome,
-      contatto1_cognome:            tokenRow.contatto1_cognome,
-      contatto1_telefono:           tokenRow.contatto1_telefono,
-      contatto1_email:              tokenRow.contatto1_email,
-      contatto2_nome:               tokenRow.contatto2_nome,
-      contatto2_cognome:            tokenRow.contatto2_cognome,
-      contatto2_telefono:           tokenRow.contatto2_telefono,
-      contatto2_email:              tokenRow.contatto2_email,
-      contatto3_nome:               tokenRow.contatto3_nome,
-      contatto3_cognome:            tokenRow.contatto3_cognome,
-      contatto3_telefono:           tokenRow.contatto3_telefono,
-      contatto3_email:              tokenRow.contatto3_email,
-      whitelist1_nome:              tokenRow.whitelist1_nome,
-      whitelist1_cognome:           tokenRow.whitelist1_cognome,
-      whitelist1_telefono:          tokenRow.whitelist1_telefono,
-      whitelist1_email:             tokenRow.whitelist1_email,
-      whitelist2_nome:              tokenRow.whitelist2_nome,
-      whitelist2_cognome:           tokenRow.whitelist2_cognome,
-      whitelist2_telefono:          tokenRow.whitelist2_telefono,
-      whitelist2_email:             tokenRow.whitelist2_email,
-      whitelist3_nome:              tokenRow.whitelist3_nome,
-      whitelist3_cognome:           tokenRow.whitelist3_cognome,
-      whitelist3_telefono:          tokenRow.whitelist3_telefono,
-      whitelist3_email:             tokenRow.whitelist3_email,
       condizioniSalute:             tokenRow.condizioniSalute,
-      patologie_croniche:           tokenRow.patologie_croniche,
-      altre_patologie:              tokenRow.altre_patologie,
-      allergie:                     tokenRow.allergie,
-      peso:                         tokenRow.peso,
-      altezza:                      tokenRow.altezza,
-      farmaci:                      tokenRow.farmaci,
-      terapia_farmacologica:        tokenRow.terapia_farmacologica,
-      note_aggiuntive:              tokenRow.note_aggiuntive,
       indirizzo_spedizione:         tokenRow.indirizzo_spedizione,
       sped_nome:                    tokenRow.sped_nome,
       sped_indirizzo:               tokenRow.sped_indirizzo,
@@ -13892,6 +13868,40 @@ app.get('/api/leads/edit-token/:token', async (c) => {
       sped_cap:                     tokenRow.sped_cap,
       sped_provincia:               tokenRow.sped_provincia,
       note:                         tokenRow.note,
+      // ── da configurations (alias form ← db) ───────────────────────────────
+      telefonoAssistito:            conf?.telefono          ?? null,  // db: configurations.telefono
+      peso:                         conf?.peso              ?? null,
+      altezza:                      conf?.altezza           ?? null,
+      allergie:                     conf?.allergie          ?? null,
+      patologie_croniche:           conf?.patologie_croniche ?? null,
+      altre_patologie:              conf?.patologie         ?? null,  // db: patologie
+      note_aggiuntive:              conf?.note_mediche      ?? null,  // db: note_mediche
+      farmaci:                      conf?.farmaci_data      ?? null,  // db: farmaci_data
+      terapia_farmacologica:        conf?.farmaci_assunti   ?? null,  // db: farmaci_assunti
+      contatto1_nome:               conf?.contatto1_nome    ?? null,
+      contatto1_cognome:            conf?.contatto1_cognome ?? null,
+      contatto1_telefono:           conf?.contatto1_telefono ?? null,
+      contatto1_email:              conf?.contatto1_email   ?? null,
+      contatto2_nome:               conf?.contatto2_nome    ?? null,
+      contatto2_cognome:            conf?.contatto2_cognome ?? null,
+      contatto2_telefono:           conf?.contatto2_telefono ?? null,
+      contatto2_email:              conf?.contatto2_email   ?? null,
+      contatto3_nome:               conf?.contatto3_nome    ?? null,
+      contatto3_cognome:            conf?.contatto3_cognome ?? null,
+      contatto3_telefono:           conf?.contatto3_telefono ?? null,
+      contatto3_email:              conf?.contatto3_email   ?? null,
+      whitelist1_nome:              conf?.whitelist1_nome    ?? null,
+      whitelist1_cognome:           conf?.whitelist1_cognome ?? null,
+      whitelist1_telefono:          conf?.whitelist1_telefono ?? null,
+      whitelist1_email:             conf?.whitelist1_email   ?? null,
+      whitelist2_nome:              conf?.whitelist2_nome    ?? null,
+      whitelist2_cognome:           conf?.whitelist2_cognome ?? null,
+      whitelist2_telefono:          conf?.whitelist2_telefono ?? null,
+      whitelist2_email:             conf?.whitelist2_email   ?? null,
+      whitelist3_nome:              conf?.whitelist3_nome    ?? null,
+      whitelist3_cognome:           conf?.whitelist3_cognome ?? null,
+      whitelist3_telefono:          conf?.whitelist3_telefono ?? null,
+      whitelist3_email:             conf?.whitelist3_email   ?? null,
     }
 
     return c.json({ success: true, lead: safe })
@@ -13947,8 +13957,30 @@ app.post('/api/leads/edit-form/:token', async (c) => {
 
     console.log(`📝 [EDIT-FORM] Lead ${leadId} — campi ricevuti: ${Object.keys(body).join(', ')}`)
 
-    // Whitelist campi modificabili dal lead (niente status, stato CRM, score, ecc.)
-    const ALLOWED_FIELDS = new Set([
+    // ═══════════════════════════════════════════════════════════════════════
+    // MAPPING verificato con PRAGMA table_info sul DB di produzione:
+    //
+    // TABELLA leads (93 col) — campi modificabili dal form:
+    //   nomeRichiedente, cognomeRichiedente, email, telefono
+    //   intestatarioContratto, cfIntestatario, codiceFiscaleIntestatario
+    //   dataNascitaIntestatario, luogoNascitaIntestatario
+    //   indirizzoIntestatario, cittaIntestatario, capIntestatario, provinciaIntestatario
+    //   nomeAssistito, cognomeAssistito, dataNascitaAssistito, luogoNascitaAssistito
+    //   cfAssistito, indirizzoAssistito, cittaAssistito, capAssistito, provinciaAssistito
+    //   condizioniSalute, note
+    //   indirizzo_spedizione, sped_nome, sped_indirizzo, sped_cap, sped_citta, sped_provincia
+    //   (NB: telefonoAssistito NON esiste in leads → ignorato)
+    //
+    // TABELLA configurations (col rilevanti):
+    //   peso, altezza, allergie, patologie_croniche, farmaci_assunti (≠ farmaci)
+    //   patologie (≠ altre_patologie), note_mediche (≠ note_aggiuntive)
+    //   farmaci_data (≠ terapia_farmacologica), telefono (≠ telefonoAssistito)
+    //   contatto1/2/3_nome/cognome/telefono/email
+    //   whitelist1/2/3_nome/cognome/telefono/email
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Campi che vanno su leads (esistono nella tabella leads)
+    const LEADS_FIELDS = new Set([
       'nomeRichiedente','cognomeRichiedente','email','telefono',
       'intestatarioContratto',
       'cfIntestatario','codiceFiscaleIntestatario',
@@ -13956,63 +13988,105 @@ app.post('/api/leads/edit-form/:token', async (c) => {
       'indirizzoIntestatario','cittaIntestatario','capIntestatario','provinciaIntestatario',
       'nomeAssistito','cognomeAssistito',
       'dataNascitaAssistito','luogoNascitaAssistito',
-      'cfAssistito','telefonoAssistito',
+      'cfAssistito',
       'indirizzoAssistito','cittaAssistito','capAssistito','provinciaAssistito',
-      'contatto1_nome','contatto1_cognome','contatto1_telefono','contatto1_email',
-      'contatto2_nome','contatto2_cognome','contatto2_telefono','contatto2_email',
-      'contatto3_nome','contatto3_cognome','contatto3_telefono','contatto3_email',
-      'whitelist1_nome','whitelist1_cognome','whitelist1_telefono','whitelist1_email',
-      'whitelist2_nome','whitelist2_cognome','whitelist2_telefono','whitelist2_email',
-      'whitelist3_nome','whitelist3_cognome','whitelist3_telefono','whitelist3_email',
-      'condizioniSalute','patologie_croniche','altre_patologie',
-      'allergie','peso','altezza','farmaci','terapia_farmacologica','note_aggiuntive',
+      'condizioniSalute',
       'indirizzo_spedizione',
       'sped_nome','sped_indirizzo','sped_citta','sped_cap','sped_provincia',
       'note',
     ])
 
-    const safeBody: Record<string, any> = {}
-    for (const [k, v] of Object.entries(body)) {
-      if (ALLOWED_FIELDS.has(k)) safeBody[k] = v
-      else console.log(`🚫 [EDIT-FORM] Campo ignorato (non in whitelist): ${k}`)
+    // Campi dal form → colonne in configurations (con alias nome_form → nome_db)
+    const CONF_FIELD_MAP: Record<string, string> = {
+      'peso':                'peso',
+      'altezza':             'altezza',
+      'allergie':            'allergie',
+      'patologie_croniche':  'patologie_croniche',
+      'altre_patologie':     'patologie',           // form: altre_patologie → db: patologie
+      'note_aggiuntive':     'note_mediche',         // form: note_aggiuntive → db: note_mediche
+      'farmaci':             'farmaci_data',          // form: farmaci (JSON) → db: farmaci_data
+      'terapia_farmacologica': 'farmaci_assunti',    // form: terapia_farmacologica → db: farmaci_assunti
+      'telefonoAssistito':   'telefono',             // form: telefonoAssistito → db: configurations.telefono
+      'contatto1_nome':      'contatto1_nome',
+      'contatto1_cognome':   'contatto1_cognome',
+      'contatto1_telefono':  'contatto1_telefono',
+      'contatto1_email':     'contatto1_email',
+      'contatto2_nome':      'contatto2_nome',
+      'contatto2_cognome':   'contatto2_cognome',
+      'contatto2_telefono':  'contatto2_telefono',
+      'contatto2_email':     'contatto2_email',
+      'contatto3_nome':      'contatto3_nome',
+      'contatto3_cognome':   'contatto3_cognome',
+      'contatto3_telefono':  'contatto3_telefono',
+      'contatto3_email':     'contatto3_email',
+      'whitelist1_nome':     'whitelist1_nome',
+      'whitelist1_cognome':  'whitelist1_cognome',
+      'whitelist1_telefono': 'whitelist1_telefono',
+      'whitelist1_email':    'whitelist1_email',
+      'whitelist2_nome':     'whitelist2_nome',
+      'whitelist2_cognome':  'whitelist2_cognome',
+      'whitelist2_telefono': 'whitelist2_telefono',
+      'whitelist2_email':    'whitelist2_email',
+      'whitelist3_nome':     'whitelist3_nome',
+      'whitelist3_cognome':  'whitelist3_cognome',
+      'whitelist3_telefono': 'whitelist3_telefono',
+      'whitelist3_email':    'whitelist3_email',
     }
 
-    if (Object.keys(safeBody).length === 0) {
-      return c.json({ success: false, error: 'Nessun campo modificabile inviato' }, 400)
-    }
-
-    const updateFields: string[] = []
-    const binds: any[] = []
     const now = new Date().toISOString()
 
-    for (const [field, value] of Object.entries(safeBody)) {
-      // Salta valori null/undefined; accetta stringhe vuote solo per campi non obbligatori
-      if (value !== null && value !== undefined) {
-        updateFields.push(`${field} = ?`)
-        binds.push(String(value))
+    // ── 1. UPDATE leads ──────────────────────────────────────────────────────
+    const leadsFields: string[] = []
+    const leadsBinds: any[] = []
+    for (const [k, v] of Object.entries(body)) {
+      if (LEADS_FIELDS.has(k) && v !== null && v !== undefined) {
+        leadsFields.push(`${k} = ?`)
+        leadsBinds.push(String(v))
       }
     }
-
-    if (updateFields.length === 0) {
-      return c.json({ success: false, error: 'Nessun valore valido da aggiornare' }, 400)
+    if (leadsFields.length > 0) {
+      leadsFields.push('updated_at = ?')
+      leadsBinds.push(now)
+      leadsBinds.push(leadId)
+      const sqlLeads = `UPDATE leads SET ${leadsFields.join(', ')} WHERE id = ?`
+      console.log(`📝 [EDIT-FORM] UPDATE leads: ${leadsFields.length - 1} campi`)
+      await c.env.DB.prepare(sqlLeads).bind(...leadsBinds).run()
     }
 
-    updateFields.push('updated_at = ?')
-    binds.push(now)
-    binds.push(leadId)
+    // ── 2. UPDATE configurations (ultima riga per quel leadId) ───────────────
+    const confFields: string[] = []
+    const confBinds: any[] = []
+    for (const [k, v] of Object.entries(body)) {
+      const dbCol = CONF_FIELD_MAP[k]
+      if (dbCol && v !== null && v !== undefined) {
+        confFields.push(`${dbCol} = ?`)
+        confBinds.push(String(v))
+      }
+    }
+    if (confFields.length > 0) {
+      confFields.push('updated_at = ?')
+      confBinds.push(now)
+      confBinds.push(leadId)
+      // Aggiorna solo se esiste già una riga di configurazione per questo lead
+      const sqlConf = `UPDATE configurations SET ${confFields.join(', ')} WHERE leadId = ? AND id = (SELECT MAX(id) FROM configurations WHERE leadId = ?)`
+      confBinds.push(leadId) // secondo ? per la subquery
+      console.log(`📝 [EDIT-FORM] UPDATE configurations: ${confFields.length - 1} campi`)
+      await c.env.DB.prepare(sqlConf).bind(...confBinds).run()
+    }
 
-    const sql = `UPDATE leads SET ${updateFields.join(', ')} WHERE id = ?`
-    console.log(`📝 [EDIT-FORM] SQL: ${sql.substring(0, 200)}`)
+    const totalUpdated = leadsFields.length + confFields.length - (leadsFields.length > 0 ? 1 : 0) - (confFields.length > 0 ? 1 : 0)
 
-    await c.env.DB.prepare(sql).bind(...binds).run()
+    if (totalUpdated === 0) {
+      return c.json({ success: false, error: 'Nessun campo valido da aggiornare' }, 400)
+    }
 
     // Marca token come usato (monouso)
     await c.env.DB.prepare(
       `UPDATE lead_edit_tokens SET used_at = ? WHERE token = ?`
     ).bind(now, token).run()
 
-    console.log(`✅ [EDIT-FORM] Lead ${leadId} aggiornato (${updateFields.length - 1} campi)`)
-    return c.json({ success: true, message: 'Dati aggiornati con successo', updated: updateFields.length - 1 })
+    console.log(`✅ [EDIT-FORM] Lead ${leadId} aggiornato — leads:${leadsFields.length > 0 ? leadsFields.length-1 : 0} campi, configurations:${confFields.length > 0 ? confFields.length-1 : 0} campi`)
+    return c.json({ success: true, message: 'Dati aggiornati con successo', updated: totalUpdated })
 
   } catch (error) {
     console.error('❌ [EDIT-FORM] Errore completo:', error)
@@ -33670,22 +33744,6 @@ app.get('/api/debug/leads-emails', async (c) => {
 })
 
 // 🧹 CLEANUP ENDPOINT - Elimina dati test da Production
-// 🔍 DEBUG TEMPORANEO - Schema di tutte le tabelle rilevanti
-app.get('/api/debug/all-schemas', async (c) => {
-  try {
-    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
-    const tables = ['leads','configurations','assistiti','lead_assistiti']
-    const result: Record<string,any> = {}
-    for (const t of tables) {
-      try {
-        const r = await c.env.DB.prepare(`PRAGMA table_info(${t})`).all()
-        result[t] = (r.results || []).map((col: any) => col.name)
-      } catch(e: any) { result[t] = `ERRORE: ${e.message}` }
-    }
-    return c.json({ success: true, schemas: result })
-  } catch(e: any) { return c.json({ success: false, error: e.message }, 500) }
-})
-
 // ⚠️ SOLO PRODUCTION - Non eseguire su Preview!
 app.post('/api/admin/cleanup-test-data', async (c) => {
   try {
