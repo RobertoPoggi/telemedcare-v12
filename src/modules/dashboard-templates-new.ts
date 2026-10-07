@@ -4219,9 +4219,9 @@ export const leads_dashboard = `<!DOCTYPE html>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 7%;">Data</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">CM</th>
                             <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 5%;">Temp.</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 11%;">Stato</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 23%;">Azioni</th>
-                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 8%;">CRUD</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 9%;">Stato</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 27%;">Azioni</th>
+                            <th class="pb-3 text-xs font-semibold text-gray-600" style="width: 6%;">CRUD</th>
                         </tr>
                     </thead>
                     <tbody id="leadsTableBody">
@@ -4989,8 +4989,8 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 <option value="problemi_economici" \${lead.stato === 'problemi_economici' ? 'selected' : ''} class="bg-pink-50">💰 Problemi Economici</option>
                             </select>
                         </td>
-                        <td class="py-3 text-sm">
-                            <div class="flex space-x-1">
+                        <td class="py-2 text-sm">
+                            <div class="flex flex-wrap gap-[3px]">
                                 <button 
                                     data-action="interactions"
                                     data-lead-id="\${lead.id}"
