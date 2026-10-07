@@ -5093,6 +5093,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     title="\${isRateizzato ? (isSaldato ? 'Saldato — clicca per gestire' : 'Rateizzato — clicca per gestire') : 'Imposta Rateizzazione'}">
                                     📅
                                 </button>
+                                <button
+                                    data-action="send-edit-form"
+                                    data-lead-id="\${lead.id}"
+                                    class="px-2 py-1 bg-cyan-600 text-white text-xs rounded hover:bg-cyan-700 transition-colors action-btn"
+                                    title="Invia form modifica dati al lead">
+                                    ✏️
+                                </button>
 
                             </div>
                         </td>
@@ -5134,6 +5141,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         else if (action === 'whatsapp') sendWhatsApp(this);
                         else if (action === 'completion') requestCompletion(leadId);
                         else if (action === 'manual-sign') manualSign(leadId);
+                        else if (action === 'send-edit-form') sendEditForm(leadId);
                         else if (action === 'send-proforma') sendProforma(leadId);
                         else if (action === 'manual-payment') manualPayment(leadId, this.getAttribute('data-rateizzato') === '1');
                         else if (action === 'send-configuration') sendConfiguration(leadId);
@@ -5517,6 +5525,46 @@ export const leads_dashboard = `<!DOCTYPE html>
                 }
             } catch (error) {
                 alert('❌ Errore di comunicazione: ' + error.message);
+            }
+        }
+
+        // ============================================
+        // SEND EDIT FORM — Invia form modifica dati al lead
+        // ============================================
+        const _editFormInProgress = new Set();
+
+        async function sendEditForm(leadId) {
+            if (_editFormInProgress.has(leadId)) {
+                alert('⏳ Invio già in corso, attendere…');
+                return;
+            }
+            if (!confirm('✏️ Inviare al lead un link per modificare i propri dati?\n\nIl link sarà valido per 7 giorni.')) {
+                return;
+            }
+
+            // Disabilita bottone
+            const btns = document.querySelectorAll(\`[data-action="send-edit-form"][data-lead-id="\${leadId}"]\`);
+            btns.forEach(b => { b.disabled = true; b.textContent = '⏳'; });
+            _editFormInProgress.add(leadId);
+
+            try {
+                const response = await fetch(\`/api/leads/\${leadId}/send-edit-form\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('✅ Form modifica dati inviato!\n\n' + (result.message || ''));
+                } else {
+                    alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
+                    btns.forEach(b => { b.disabled = false; b.textContent = '✏️'; });
+                }
+            } catch (error) {
+                alert('❌ Errore di comunicazione: ' + error.message);
+                btns.forEach(b => { b.disabled = false; b.textContent = '✏️'; });
+            } finally {
+                _editFormInProgress.delete(leadId);
             }
         }
 

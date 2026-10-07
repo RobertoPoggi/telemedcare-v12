@@ -37059,6 +37059,311 @@ app.post('/api/leads/:id/send-configuration', async (c) => {
   }
 })
 
+// ============================================================================
+// POST /api/leads/:id/send-edit-form
+// Invia al lead una email con link al form di modifica dati (modifica-dati.html).
+// Il link contiene un token monouso valido 7 giorni.
+// ============================================================================
+app.post('/api/leads/:id/send-edit-form', requireAuth, async (c) => {
+  const leadId = c.req.param('id')
+
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    if (!lead.email) return c.json({ success: false, error: 'Il lead non ha un indirizzo email' }, 400)
+
+    // Genera token sicuro (valido 7 giorni)
+    const token = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '')
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    const now = new Date().toISOString()
+
+    // Garantisce esistenza della tabella lead_edit_tokens
+    try {
+      await c.env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS lead_edit_tokens (
+          id TEXT PRIMARY KEY,
+          lead_id TEXT NOT NULL,
+          token TEXT NOT NULL UNIQUE,
+          expires_at TEXT NOT NULL,
+          used_at TEXT DEFAULT NULL,
+          created_at TEXT NOT NULL
+        )
+      `).run()
+    } catch (_) { /* già esiste */ }
+
+    const tokenId = `LET-${Date.now()}-${Math.random().toString(36).slice(2,8).toUpperCase()}`
+    await c.env.DB.prepare(`
+      INSERT INTO lead_edit_tokens (id, lead_id, token, expires_at, created_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(tokenId, leadId, token, expiresAt, now).run()
+
+    // Costruisci link
+    const { getBaseUrl } = await import('./modules/url-helper')
+    const baseUrl = getBaseUrl(c.env)
+    const editLink = `${baseUrl}/modifica-dati.html?token=${token}`
+
+    const nomeCliente = `${lead.nomeRichiedente || 'Cliente'} ${lead.cognomeRichiedente || ''}`.trim()
+
+    // Email HTML
+    const emailHtml = `<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"><title>Aggiorna i tuoi dati eCura</title></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#333;background:#f9fafb">
+  <div style="background:linear-gradient(135deg,#1a56db 0%,#1e40af 100%);padding:32px 28px;border-radius:12px 12px 0 0;text-align:center">
+    <h1 style="color:white;margin:0;font-size:22px">📋 Aggiorna i tuoi dati eCura</h1>
+  </div>
+  <div style="background:white;border:1px solid #e5e7eb;border-top:none;padding:28px;border-radius:0 0 12px 12px">
+    <p style="font-size:16px;color:#374151">Gentile <strong>${nomeCliente}</strong>,</p>
+    <p style="color:#4b5563;line-height:1.7">
+      Ti inviamo questo link per consentirti di verificare e aggiornare tutti i dati presenti nel tuo profilo eCura.<br>
+      Puoi modificare liberamente le informazioni anagrafiche, i contatti di emergenza, i dati medici e l'indirizzo di spedizione.
+    </p>
+    <div style="background:#eff6ff;border-left:4px solid #1a56db;padding:14px 18px;margin:20px 0;border-radius:4px">
+      <p style="margin:0;color:#1e3a8a;font-size:14px">⏰ Il link è valido per <strong>7 giorni</strong> (scade il ${new Date(expiresAt).toLocaleDateString('it-IT', {day:'2-digit',month:'long',year:'numeric'})})</p>
+    </div>
+    <div style="text-align:center;margin:28px 0">
+      <a href="${editLink}"
+         style="display:inline-block;background:linear-gradient(135deg,#1a56db,#1e40af);color:white;padding:14px 36px;border-radius:10px;text-decoration:none;font-size:16px;font-weight:700">
+        ✏️ Aggiorna i miei dati
+      </a>
+    </div>
+    <p style="color:#6b7280;font-size:13px;text-align:center">
+      Se non riesci a cliccare il pulsante, copia e incolla questo link nel browser:<br>
+      <a href="${editLink}" style="color:#1a56db;word-break:break-all">${editLink}</a>
+    </p>
+    <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0">
+    <p style="color:#9ca3af;font-size:12px;text-align:center;margin:0">
+      eCura | <a href="https://www.ecura.it" style="color:#9ca3af">www.ecura.it</a>
+    </p>
+  </div>
+</body>
+</html>`
+
+    const EmailService = (await import('./modules/email-service')).default
+    const emailSvc = new EmailService(c.env)
+    const sent = await emailSvc.sendEmail({
+      to: lead.email,
+      subject: `📋 Aggiorna i tuoi dati eCura`,
+      html: emailHtml,
+      from: c.env?.RESEND_FROM || c.env?.EMAIL_FROM || 'info@ecura.it',
+      tags: [{ name: 'tipo', value: 'edit_form' }, { name: 'lead_id', value: leadId }]
+    })
+
+    if (!sent.success) throw new Error(sent.error || 'Invio email fallito')
+
+    console.log(`✅ [SEND-EDIT-FORM] Link modifica dati inviato a ${lead.email} (lead ${leadId})`)
+    return c.json({ success: true, message: `Link modifica dati inviato a ${lead.email}` })
+
+  } catch (error) {
+    console.error('❌ [SEND-EDIT-FORM] Errore:', error)
+    return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
+// ============================================================================
+// GET /api/leads/edit-token/:token
+// Restituisce i dati lead associati al token (solo campi modificabili dal lead).
+// ============================================================================
+app.get('/api/leads/edit-token/:token', async (c) => {
+  const token = c.req.param('token')
+
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+
+    const tokenRow = await c.env.DB.prepare(`
+      SELECT t.*, l.*
+      FROM lead_edit_tokens t
+      JOIN leads l ON t.lead_id = l.id
+      WHERE t.token = ?
+        AND t.expires_at > datetime('now')
+        AND t.used_at IS NULL
+      LIMIT 1
+    `).bind(token).first() as any
+
+    if (!tokenRow) return c.json({ success: false, error: 'Token non valido o scaduto' }, 404)
+
+    // Esponi SOLO i campi sicuri per il lead (niente status, stato CRM, score, prezzi, ecc.)
+    const safe = {
+      id: tokenRow.lead_id,
+      // Richiedente
+      nomeRichiedente:         tokenRow.nomeRichiedente,
+      cognomeRichiedente:      tokenRow.cognomeRichiedente,
+      email:                   tokenRow.email,
+      telefono:                tokenRow.telefono,
+      // Intestatario
+      intestatarioContratto:   tokenRow.intestatarioContratto,
+      cfIntestatario:          tokenRow.cfIntestatario,
+      codiceFiscaleIntestatario: tokenRow.codiceFiscaleIntestatario,
+      dataNascitaIntestatario:  tokenRow.dataNascitaIntestatario,
+      luogoNascitaIntestatario: tokenRow.luogoNascitaIntestatario,
+      indirizzoIntestatario:   tokenRow.indirizzoIntestatario,
+      cittaIntestatario:       tokenRow.cittaIntestatario,
+      capIntestatario:         tokenRow.capIntestatario,
+      provinciaIntestatario:   tokenRow.provinciaIntestatario,
+      // Assistito
+      nomeAssistito:            tokenRow.nomeAssistito,
+      cognomeAssistito:         tokenRow.cognomeAssistito,
+      dataNascitaAssistito:     tokenRow.dataNascitaAssistito,
+      luogoNascitaAssistito:    tokenRow.luogoNascitaAssistito,
+      cfAssistito:              tokenRow.cfAssistito,
+      telefonoAssistito:        tokenRow.telefonoAssistito,
+      indirizzoAssistito:       tokenRow.indirizzoAssistito,
+      cittaAssistito:           tokenRow.cittaAssistito,
+      capAssistito:             tokenRow.capAssistito,
+      provinciaAssistito:       tokenRow.provinciaAssistito,
+      // Contatti emergenza
+      contatto1_nome:           tokenRow.contatto1_nome,
+      contatto1_cognome:        tokenRow.contatto1_cognome,
+      contatto1_telefono:       tokenRow.contatto1_telefono,
+      contatto1_email:          tokenRow.contatto1_email,
+      contatto2_nome:           tokenRow.contatto2_nome,
+      contatto2_cognome:        tokenRow.contatto2_cognome,
+      contatto2_telefono:       tokenRow.contatto2_telefono,
+      contatto2_email:          tokenRow.contatto2_email,
+      contatto3_nome:           tokenRow.contatto3_nome,
+      contatto3_cognome:        tokenRow.contatto3_cognome,
+      contatto3_telefono:       tokenRow.contatto3_telefono,
+      contatto3_email:          tokenRow.contatto3_email,
+      // Whitelist
+      whitelist1_nome:          tokenRow.whitelist1_nome,
+      whitelist1_cognome:       tokenRow.whitelist1_cognome,
+      whitelist1_telefono:      tokenRow.whitelist1_telefono,
+      whitelist1_email:         tokenRow.whitelist1_email,
+      whitelist2_nome:          tokenRow.whitelist2_nome,
+      whitelist2_cognome:       tokenRow.whitelist2_cognome,
+      whitelist2_telefono:      tokenRow.whitelist2_telefono,
+      whitelist2_email:         tokenRow.whitelist2_email,
+      whitelist3_nome:          tokenRow.whitelist3_nome,
+      whitelist3_cognome:       tokenRow.whitelist3_cognome,
+      whitelist3_telefono:      tokenRow.whitelist3_telefono,
+      whitelist3_email:         tokenRow.whitelist3_email,
+      // Medico
+      condizioniSalute:         tokenRow.condizioniSalute,
+      patologie_croniche:       tokenRow.patologie_croniche,
+      altre_patologie:          tokenRow.altre_patologie,
+      allergie:                 tokenRow.allergie,
+      peso:                     tokenRow.peso,
+      altezza:                  tokenRow.altezza,
+      farmaci:                  tokenRow.farmaci,
+      terapia_farmacologica:    tokenRow.terapia_farmacologica,
+      note_aggiuntive:          tokenRow.note_aggiuntive,
+      // Spedizione
+      indirizzo_spedizione:     tokenRow.indirizzo_spedizione,
+      sped_nome:                tokenRow.sped_nome,
+      sped_indirizzo:           tokenRow.sped_indirizzo,
+      sped_citta:               tokenRow.sped_citta,
+      sped_cap:                 tokenRow.sped_cap,
+      sped_provincia:           tokenRow.sped_provincia,
+      // Note libere
+      note:                     tokenRow.note,
+    }
+
+    return c.json({ success: true, lead: safe })
+
+  } catch (error) {
+    console.error('❌ [EDIT-TOKEN-GET] Errore:', error)
+    return c.json({ success: false, error: 'Errore server' }, 500)
+  }
+})
+
+// ============================================================================
+// POST /api/leads/edit-form/:token
+// Salva le modifiche inviate dal lead tramite il form modifica-dati.html.
+// Usa PUT /api/leads/:id internamente per riutilizzare la stessa logica
+// di validazione/mapping già esistente.
+// ============================================================================
+app.post('/api/leads/edit-form/:token', async (c) => {
+  const token = c.req.param('token')
+
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+
+    // Valida token
+    const tokenRow = await c.env.DB.prepare(`
+      SELECT * FROM lead_edit_tokens
+      WHERE token = ?
+        AND expires_at > datetime('now')
+        AND used_at IS NULL
+      LIMIT 1
+    `).bind(token).first() as any
+
+    if (!tokenRow) return c.json({ success: false, error: 'Token non valido o scaduto' }, 400)
+
+    const leadId = tokenRow.lead_id
+    const body = await c.req.json()
+
+    // Whitelist campi modificabili dal lead (niente status, stato CRM, score, ecc.)
+    const ALLOWED_FIELDS = new Set([
+      'nomeRichiedente','cognomeRichiedente','email','telefono',
+      'intestatarioContratto',
+      'cfIntestatario','codiceFiscaleIntestatario',
+      'dataNascitaIntestatario','luogoNascitaIntestatario',
+      'indirizzoIntestatario','cittaIntestatario','capIntestatario','provinciaIntestatario',
+      'nomeAssistito','cognomeAssistito',
+      'dataNascitaAssistito','luogoNascitaAssistito',
+      'cfAssistito','telefonoAssistito',
+      'indirizzoAssistito','cittaAssistito','capAssistito','provinciaAssistito',
+      'contatto1_nome','contatto1_cognome','contatto1_telefono','contatto1_email',
+      'contatto2_nome','contatto2_cognome','contatto2_telefono','contatto2_email',
+      'contatto3_nome','contatto3_cognome','contatto3_telefono','contatto3_email',
+      'whitelist1_nome','whitelist1_cognome','whitelist1_telefono','whitelist1_email',
+      'whitelist2_nome','whitelist2_cognome','whitelist2_telefono','whitelist2_email',
+      'whitelist3_nome','whitelist3_cognome','whitelist3_telefono','whitelist3_email',
+      'condizioniSalute','patologie_croniche','altre_patologie',
+      'allergie','peso','altezza','farmaci','terapia_farmacologica','note_aggiuntive',
+      'indirizzo_spedizione',
+      'sped_nome','sped_indirizzo','sped_citta','sped_cap','sped_provincia',
+      'note',
+    ])
+
+    // Filtra solo i campi permessi
+    const safeBody: Record<string, any> = {}
+    for (const [k, v] of Object.entries(body)) {
+      if (ALLOWED_FIELDS.has(k)) safeBody[k] = v
+    }
+
+    if (Object.keys(safeBody).length === 0) {
+      return c.json({ success: false, error: 'Nessun campo modificabile inviato' }, 400)
+    }
+
+    // Costruisci UPDATE dinamico
+    const updateFields: string[] = []
+    const binds: any[] = []
+    const now = new Date().toISOString()
+
+    // Mapping identico (campo frontend = campo DB per i campi lead)
+    for (const [field, value] of Object.entries(safeBody)) {
+      if (value !== null && value !== undefined && value !== '') {
+        updateFields.push(`${field} = ?`)
+        binds.push(value)
+      }
+    }
+
+    updateFields.push('updated_at = ?')
+    binds.push(now)
+    binds.push(leadId)
+
+    await c.env.DB.prepare(
+      `UPDATE leads SET ${updateFields.join(', ')} WHERE id = ?`
+    ).bind(...binds).run()
+
+    // Marca token come usato (monouso)
+    await c.env.DB.prepare(
+      `UPDATE lead_edit_tokens SET used_at = ? WHERE token = ?`
+    ).bind(now, token).run()
+
+    console.log(`✅ [EDIT-FORM] Lead ${leadId} aggiornato dal form modifica (${Object.keys(safeBody).length} campi)`)
+
+    return c.json({ success: true, message: 'Dati aggiornati con successo', updated: Object.keys(safeBody).length })
+
+  } catch (error) {
+    console.error('❌ [EDIT-FORM] Errore:', error)
+    return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
 /**
  * UTILITY: Sync email template from static file → DB
  * POST /api/admin/sync-template/:name

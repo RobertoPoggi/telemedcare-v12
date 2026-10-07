@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aggiorna i tuoi dati - eCura</title>
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .ecura-gradient { background: linear-gradient(135deg, #1a56db 0%, #1e40af 100%); }
+        .section-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,.08);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 1.5rem;
+        }
+        .section-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #f3f4f6;
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #1e3a8a;
+        }
+        .field-group { padding: 1.25rem 1.5rem; }
+        label { display: block; font-size: .85rem; font-weight: 600; color: #374151; margin-bottom: .3rem; }
+        input[type=text], input[type=tel], input[type=email], input[type=date],
+        input[type=number], select, textarea {
+            width: 100%;
+            padding: .55rem .85rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: .9rem;
+            color: #111827;
+            background: #fff;
+            transition: border-color .15s, box-shadow .15s;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #1a56db;
+            box-shadow: 0 0 0 3px rgba(26,86,219,.12);
+        }
+        input[readonly], input[disabled] {
+            background: #f9fafb;
+            color: #6b7280;
+            cursor: default;
+        }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+        @media (max-width: 640px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+        .optional-tag {
+            font-size: .75rem; font-weight: 400; color: #9ca3af; margin-left: .3rem;
+        }
+        .contatto-block {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 1rem 1.25rem;
+            margin-bottom: .75rem;
+        }
+        .contatto-title {
+            font-size: .8rem;
+            font-weight: 700;
+            color: #4b5563;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: .75rem;
+        }
+        .patologie-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: .5rem;
+        }
+        .patologia-item {
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            padding: .4rem .6rem;
+            background: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            font-size: .875rem;
+        }
+        .patologia-item:hover { background: #eff6ff; border-color: #93c5fd; }
+        .farmaco-row {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr 1fr auto;
+            gap: .5rem;
+            align-items: end;
+            margin-bottom: .5rem;
+        }
+        @media (max-width: 640px) { .farmaco-row { grid-template-columns: 1fr; } }
+        .btn-add {
+            display: inline-flex; align-items: center; gap: .3rem;
+            padding: .4rem .8rem; border-radius: 6px;
+            background: #eff6ff; color: #1d4ed8;
+            border: 1px dashed #93c5fd;
+            font-size: .8rem; font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-add:hover { background: #dbeafe; }
+        .btn-remove {
+            padding: .35rem .5rem; background: #fee2e2; color: #dc2626;
+            border: none; border-radius: 6px; cursor: pointer; font-size: .85rem;
+        }
+        .btn-remove:hover { background: #fecaca; }
+        #toastMsg {
+            position: fixed; bottom: 1.5rem; right: 1.5rem;
+            padding: .75rem 1.25rem; border-radius: 10px;
+            font-weight: 600; font-size: .9rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,.15);
+            opacity: 0; transition: opacity .3s;
+            pointer-events: none; z-index: 9999;
+        }
+        #toastMsg.show { opacity: 1; }
+        #toastMsg.ok { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        #toastMsg.err { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .submit-bar {
+            position: sticky; bottom: 0;
+            background: rgba(255,255,255,.96);
+            backdrop-filter: blur(8px);
+            border-top: 1px solid #e5e7eb;
+            padding: 1rem 1.5rem;
+            display: flex; justify-content: center; gap: 1rem;
+            z-index: 100;
+        }
+        .btn-submit {
+            padding: .75rem 2.5rem;
+            background: linear-gradient(135deg, #1a56db 0%, #1e40af 100%);
+            color: white;
+            border: none; border-radius: 10px;
+            font-size: 1rem; font-weight: 700;
+            cursor: pointer; transition: opacity .15s;
+        }
+        .btn-submit:hover { opacity: .88; }
+        .btn-submit:disabled { opacity: .5; cursor: default; }
+        #loadingOverlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,.35);
+            z-index: 999;
+            justify-content: center; align-items: center;
+        }
+        #loadingOverlay.show { display: flex; }
+        .spinner {
+            width: 52px; height: 52px;
+            border: 5px solid rgba(255,255,255,.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .radio-card {
+            display: flex; align-items: center; gap: .5rem;
+            padding: .5rem .75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: .875rem;
+            transition: border-color .15s, background .15s;
+        }
+        .radio-card input[type=radio] { accent-color: #1a56db; }
+        .radio-card:has(input:checked) { border-color: #1a56db; background: #eff6ff; }
+        #successScreen { display: none; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- Loading overlay -->
+<div id="loadingOverlay">
+    <div class="spinner"></div>
+</div>
+
+<!-- Toast -->
+<div id="toastMsg"></div>
+
+<!-- Header -->
+<header class="ecura-gradient text-white py-5 shadow-lg">
+    <div class="max-w-3xl mx-auto px-4">
+        <div class="flex items-center gap-3">
+            <img src="/logo.png" alt="eCura" class="h-9 w-auto" onerror="this.style.display='none'">
+            <div>
+                <h1 class="text-xl font-bold leading-tight">Aggiorna i tuoi dati</h1>
+                <p class="text-blue-100 text-sm" id="headerSubtitle">Verifica e modifica le informazioni del tuo profilo eCura</p>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Main -->
+<main class="max-w-3xl mx-auto px-4 py-6">
+
+    <!-- Stato caricamento -->
+    <div id="loadingState" class="text-center py-16 text-gray-400">
+        <div class="inline-block w-10 h-10 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+        <p class="font-medium">Caricamento dati in corso…</p>
+    </div>
+
+    <!-- Errore token -->
+    <div id="errorState" class="hidden section-card">
+        <div class="field-group text-center py-10">
+            <div class="text-5xl mb-4">⚠️</div>
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Link non valido o scaduto</h2>
+            <p class="text-gray-500">Il link di modifica non è più valido. Contatta il tuo operatore eCura per riceverne uno nuovo.</p>
+        </div>
+    </div>
+
+    <!-- Schermata successo -->
+    <div id="successScreen" class="section-card">
+        <div class="field-group text-center py-12">
+            <div class="text-6xl mb-4">✅</div>
+            <h2 class="text-2xl font-bold text-green-700 mb-2">Dati aggiornati con successo!</h2>
+            <p class="text-gray-500 mt-2">Le modifiche sono state salvate. Il team eCura le riceverà a breve.</p>
+        </div>
+    </div>
+
+    <!-- Form principale (nascosto finché dati non caricati) -->
+    <form id="mainForm" class="hidden" novalidate>
+        <input type="hidden" id="leadId" name="leadId">
+        <input type="hidden" id="editToken" name="editToken">
+
+        <!-- ══════════════════════════════════════════
+             1. RICHIEDENTE (chi paga / firma il contratto)
+        ═══════════════════════════════════════════ -->
+        <div class="section-card">
+            <div class="section-header">👤 Dati Richiedente</div>
+            <div class="field-group">
+                <div class="grid-2">
+                    <div>
+                        <label for="nomeRichiedente">Nome <span class="optional-tag">(come sul documento)</span></label>
+                        <input type="text" id="nomeRichiedente" name="nomeRichiedente" placeholder="Es. Maria">
+                    </div>
+                    <div>
+                        <label for="cognomeRichiedente">Cognome</label>
+                        <input type="text" id="cognomeRichiedente" name="cognomeRichiedente" placeholder="Es. Rossi">
+                    </div>
+                    <div>
+                        <label for="email">Email <span class="optional-tag">(per comunicazioni)</span></label>
+                        <input type="email" id="email" name="email" placeholder="es. nome@email.it">
+                    </div>
+                    <div>
+                        <label for="telefono">Telefono</label>
+                        <input type="tel" id="telefono" name="telefono" placeholder="Es. +39 333 1234567">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             2. INTESTATARIO CONTRATTO
+        ═══════════════════════════════════════════ -->
+        <div class="section-card">
+            <div class="section-header">📄 Intestatario Contratto</div>
+            <div class="field-group">
+                <p class="text-sm text-gray-500 mb-3">Chi firma e intestà il contratto?</p>
+                <div class="flex gap-3 mb-4 flex-wrap">
+                    <label class="radio-card">
+                        <input type="radio" name="intestatarioContratto" value="richiedente" id="intestatarioRich">
+                        Il richiedente (chi compila)
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="intestatarioContratto" value="assistito" id="intestatarioAss">
+                        L'assistito
+                    </label>
+                </div>
+
+                <!-- Dati fiscali/anagrafici intestatario (solo se richiedente) -->
+                <div id="richiedenteFields">
+                    <div class="grid-2 mb-3">
+                        <div>
+                            <label for="cfIntestatario">Codice Fiscale Richiedente</label>
+                            <input type="text" id="cfIntestatario" name="cfIntestatario" maxlength="16"
+                                   placeholder="RSSMRA80A01H501Z" style="text-transform:uppercase"
+                                   oninput="this.value=this.value.toUpperCase()">
+                        </div>
+                        <div>
+                            <label for="dataNascitaIntestatario">Data di nascita <span class="optional-tag"></span></label>
+                            <input type="date" id="dataNascitaIntestatario" name="dataNascitaIntestatario">
+                        </div>
+                        <div>
+                            <label for="luogoNascitaIntestatario">Luogo di nascita <span class="optional-tag"></span></label>
+                            <input type="text" id="luogoNascitaIntestatario" name="luogoNascitaIntestatario" placeholder="Es. Roma (RM)">
+                        </div>
+                    </div>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Indirizzo di residenza / domicilio</p>
+                    <div class="grid-2 mb-1">
+                        <div class="col-span-2" style="grid-column:1/-1">
+                            <label for="indirizzoIntestatario">Via / Piazza, n° civico</label>
+                            <input type="text" id="indirizzoIntestatario" name="indirizzoIntestatario" placeholder="Es. Via Roma 12">
+                        </div>
+                        <div>
+                            <label for="cittaIntestatario">Città</label>
+                            <input type="text" id="cittaIntestatario" name="cittaIntestatario" placeholder="Es. Milano">
+                        </div>
+                        <div class="grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+                            <div>
+                                <label for="capIntestatario">CAP</label>
+                                <input type="text" id="capIntestatario" name="capIntestatario" maxlength="5" placeholder="20121">
+                            </div>
+                            <div>
+                                <label for="provinciaIntestatario">Prov.</label>
+                                <input type="text" id="provinciaIntestatario" name="provinciaIntestatario" maxlength="2" placeholder="MI"
+                                       style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             3. ASSISTITO (la persona che riceve il servizio)
+        ═══════════════════════════════════════════ -->
+        <div class="section-card">
+            <div class="section-header">🧓 Dati Assistito <span class="optional-tag" style="font-size:.85rem">(la persona che riceve il servizio)</span></div>
+            <div class="field-group">
+                <div class="mb-3">
+                    <label class="flex items-center gap-2 cursor-pointer" style="font-weight:normal">
+                        <input type="checkbox" id="stessaPersona" class="w-4 h-4" style="accent-color:#1a56db">
+                        <span class="text-sm text-gray-700">Il richiedente <strong>è</strong> anche l'assistito</span>
+                    </label>
+                </div>
+                <div id="assistitoFields">
+                    <div class="grid-2 mb-3">
+                        <div>
+                            <label for="nomeAssistito">Nome Assistito</label>
+                            <input type="text" id="nomeAssistito" name="nomeAssistito" placeholder="Es. Giovanni">
+                        </div>
+                        <div>
+                            <label for="cognomeAssistito">Cognome Assistito</label>
+                            <input type="text" id="cognomeAssistito" name="cognomeAssistito" placeholder="Es. Rossi">
+                        </div>
+                        <div>
+                            <label for="dataNascitaAssistito">Data di nascita</label>
+                            <input type="date" id="dataNascitaAssistito" name="dataNascitaAssistito">
+                        </div>
+                        <div>
+                            <label for="luogoNascitaAssistito">Luogo di nascita</label>
+                            <input type="text" id="luogoNascitaAssistito" name="luogoNascitaAssistito" placeholder="Es. Milano (MI)">
+                        </div>
+                        <div>
+                            <label for="cfAssistito">Codice Fiscale Assistito</label>
+                            <input type="text" id="cfAssistito" name="cfAssistito" maxlength="16"
+                                   placeholder="RSSGNN55E01F205P" style="text-transform:uppercase"
+                                   oninput="this.value=this.value.toUpperCase()">
+                        </div>
+                        <div>
+                            <label for="telefonoAssistito">Telefono Assistito <span class="optional-tag"></span></label>
+                            <input type="tel" id="telefonoAssistito" name="telefonoAssistito" placeholder="Se diverso dal richiedente">
+                        </div>
+                    </div>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Residenza / domicilio assistito</p>
+                    <div class="grid-2">
+                        <div style="grid-column:1/-1">
+                            <label for="indirizzoAssistito">Via / Piazza, n° civico</label>
+                            <input type="text" id="indirizzoAssistito" name="indirizzoAssistito" placeholder="Es. Via Garibaldi 5">
+                        </div>
+                        <div>
+                            <label for="cittaAssistito">Città</label>
+                            <input type="text" id="cittaAssistito" name="cittaAssistito" placeholder="Es. Roma">
+                        </div>
+                        <div class="grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+                            <div>
+                                <label for="capAssistito">CAP</label>
+                                <input type="text" id="capAssistito" name="capAssistito" maxlength="5" placeholder="00100">
+                            </div>
+                            <div>
+                                <label for="provinciaAssistito">Prov.</label>
+                                <input type="text" id="provinciaAssistito" name="provinciaAssistito" maxlength="2" placeholder="RM"
+                                       style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             4. CONTATTI DI EMERGENZA
+        ═══════════════════════════════════════════ -->
+        <div class="section-card">
+            <div class="section-header">🆘 Contatti di Emergenza <span class="optional-tag" style="font-size:.85rem">(familiari / caregiver)</span></div>
+            <div class="field-group">
+                <p class="text-sm text-gray-500 mb-4">Persone da contattare in caso di emergenza o da avvisare per gli alert del dispositivo.</p>
+
+                <!-- Contatto 1 -->
+                <div class="contatto-block">
+                    <div class="contatto-title">👤 Contatto 1 <span style="color:#ef4444">*</span></div>
+                    <div class="grid-2">
+                        <div>
+                            <label>Nome</label>
+                            <input type="text" name="contatto1_nome" placeholder="Es. Anna">
+                        </div>
+                        <div>
+                            <label>Cognome</label>
+                            <input type="text" name="contatto1_cognome" placeholder="Es. Rossi">
+                        </div>
+                        <div>
+                            <label>Telefono</label>
+                            <input type="tel" name="contatto1_telefono" placeholder="+39 333…">
+                        </div>
+                        <div>
+                            <label>Email <span class="optional-tag"></span></label>
+                            <input type="email" name="contatto1_email" placeholder="email@esempio.it">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contatto 2 -->
+                <div class="contatto-block">
+                    <div class="contatto-title">👤 Contatto 2 <span class="optional-tag">(opzionale)</span></div>
+                    <div class="grid-2">
+                        <div>
+                            <label>Nome</label>
+                            <input type="text" name="contatto2_nome" placeholder="Es. Marco">
+                        </div>
+                        <div>
+                            <label>Cognome</label>
+                            <input type="text" name="contatto2_cognome">
+                        </div>
+                        <div>
+                            <label>Telefono</label>
+                            <input type="tel" name="contatto2_telefono">
+                        </div>
+                        <div>
+                            <label>Email <span class="optional-tag"></span></label>
+                            <input type="email" name="contatto2_email">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contatto 3 -->
+                <div class="contatto-block">
+                    <div class="contatto-title">👤 Contatto 3 <span class="optional-tag">(opzionale)</span></div>
+                    <div class="grid-2">
+                        <div>
+                            <label>Nome</label>
+                            <input type="text" name="contatto3_nome">
+                        </div>
+                        <div>
+                            <label>Cognome</label>
+                            <input type="text" name="contatto3_cognome">
+                        </div>
+                        <div>
+                            <label>Telefono</label>
+                            <input type="tel" name="contatto3_telefono">
+                        </div>
+                        <div>
+                            <label>Email <span class="optional-tag"></span></label>
+                            <input type="email" name="contatto3_email">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             5. NUMERI IN WHITELIST (chi può chiamare il dispositivo)
+        ═══════════════════════════════════════════ -->
+        <div class="section-card">
+            <div class="section-header">📞 Whitelist Chiamate Dispositivo <span class="optional-tag" style="font-size:.85rem">(numeri autorizzati)</span></div>
+            <div class="field-group">
+                <p class="text-sm text-gray-500 mb-4">Inserisci i numeri di telefono autorizzati a chiamare e rispondere sul dispositivo eCura dell'assistito.</p>
+
+                <div class="contatto-block">
+                    <div class="contatto-title">📱 Numero 1</div>
+                    <div class="grid-2">
+                        <div><label>Nome</label><input type="text" name="whitelist1_nome"></div>
+                        <div><label>Cognome</label><input type="text" name="whitelist1_cognome"></div>
+                        <div><label>Telefono</label><input type="tel" name="whitelist1_telefono"></div>
+                        <div><label>Email <span class="optional-tag"></span></label><input type="email" name="whitelist1_email"></div>
+                    </div>
+                </div>
+
+                <div class="contatto-block">
+                    <div class="contatto-title">📱 Numero 2 <span class="optional-tag">(opzionale)</span></div>
+                    <div class="grid-2">
+                        <div><label>Nome</label><input type="text" name="whitelist2_nome"></div>
+                        <div><label>Cognome</label><input type="text" name="whitelist2_cognome"></div>
+                        <div><label>Telefono</label><input type="tel" name="whitelist2_telefono"></div>
+                        <div><label>Email <span class="optional-tag"></span></label><input type="email" name="whitelist2_email"></div>
+                    </div>
+                </div>
+
+                <div class="contatto-block">
+                    <div class="contatto-title">📱 Numero 3 <span class="optional-tag">(opzionale)</span></div>
+                    <div class="grid-2">
+                        <div><label>Nome</label><input type="text" name="whitelist3_nome"></div>
+                        <div><label>Cognome</label><input type="text" name="whitelist3_cognome"></div>
+                        <div><label>Telefono</label><input type="tel" name="whitelist3_telefono"></div>
+                        <div><label>Email <span class="optional-tag"></span></label><input type="email" name="whitelist3_email"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             6. INFORMAZIONI MEDICHE
+        ═══════════════════════════════════════════ -->
+        <div class="section-card">
+            <div class="section-header">🏥 Informazioni Mediche <span class="optional-tag" style="font-size:.85rem">(utili per la configurazione del servizio)</span></div>
+            <div class="field-group">
+
+                <label class="mb-2 block">Condizioni di salute generali</label>
+                <textarea id="condizioniSalute" name="condizioniSalute" rows="2"
+                          placeholder="Es. autonomo, necessita supervisione, allettato…" class="mb-4"></textarea>
+
+                <label class="mb-2 block">Patologie principali</label>
+                <div class="patologie-grid mb-3" id="patologieGrid">
+                    <!-- Generato da JS -->
+                </div>
+
+                <label class="mb-1 block">Altre patologie / condizioni</label>
+                <textarea name="altre_patologie" rows="2" id="altrePatologie"
+                          placeholder="Altre condizioni mediche rilevanti…" class="mb-4"></textarea>
+
+                <!-- Peso / Altezza -->
+                <div class="grid-2 mb-4">
+                    <div>
+                        <label for="peso">Peso <span class="optional-tag">(kg)</span></label>
+                        <input type="number" id="peso" name="peso" min="20" max="250" step="0.5" placeholder="70">
+                    </div>
+                    <div>
+                        <label for="altezza">Altezza <span class="optional-tag">(cm)</span></label>
+                        <input type="number" id="altezza" name="altezza" min="100" max="220" step="1" placeholder="170">
+                    </div>
+                </div>
+
+                <!-- Farmaci -->
+                <label class="mb-2 block">Terapia farmacologica <span class="optional-tag">(per reminder farmaci)</span></label>
+                <div id="farmaciList"></div>
+                <button type="button" class="btn-add mt-1" onclick="aggiungiFarmaco()">
+                    ＋ Aggiungi farmaco
+                </button>
+
+                <div class="mt-4">
+                    <label for="allergie">Allergie / intolleranze <span class="optional-tag"></span></label>
+                    <input type="text" id="allergie" name="allergie" placeholder="Es. penicillina, lattosio…">
+                </div>
+
+                <div class="mt-3">
+                    <label for="noteAggiuntive">Note aggiuntive <span class="optional-tag"></span></label>
+                    <textarea id="noteAggiuntive" name="note_aggiuntive" rows="2"
+                              placeholder="Altre informazioni utili per il servizio…"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             7. INDIRIZZO DI SPEDIZIONE
+        ═══════════════════════════════════════════ -->
+        <div class="section-card">
+            <div class="section-header">📦 Indirizzo di Spedizione Dispositivo</div>
+            <div class="field-group">
+                <p class="text-sm text-gray-500 mb-3">Dove deve arrivare il dispositivo eCura?</p>
+                <div class="flex gap-3 flex-wrap mb-4">
+                    <label class="radio-card">
+                        <input type="radio" name="indirizzo_spedizione" value="assistito">
+                        Residenza assistito
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="indirizzo_spedizione" value="richiedente">
+                        Residenza richiedente
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="indirizzo_spedizione" value="custom">
+                        Altro indirizzo
+                    </label>
+                </div>
+                <div id="customSpedizione" class="hidden grid-2">
+                    <div style="grid-column:1/-1">
+                        <label for="sped_nome">Nome destinatario</label>
+                        <input type="text" id="sped_nome" name="sped_nome">
+                    </div>
+                    <div style="grid-column:1/-1">
+                        <label for="sped_indirizzo">Indirizzo</label>
+                        <input type="text" id="sped_indirizzo" name="sped_indirizzo">
+                    </div>
+                    <div>
+                        <label for="sped_citta">Città</label>
+                        <input type="text" id="sped_citta" name="sped_citta">
+                    </div>
+                    <div class="grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+                        <div>
+                            <label for="sped_cap">CAP</label>
+                            <input type="text" id="sped_cap" name="sped_cap" maxlength="5">
+                        </div>
+                        <div>
+                            <label for="sped_provincia">Prov.</label>
+                            <input type="text" id="sped_provincia" name="sped_provincia" maxlength="2"
+                                   style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             8. NOTE GENERALI
+        ═══════════════════════════════════════════ -->
+        <div class="section-card">
+            <div class="section-header">📝 Note e Richieste</div>
+            <div class="field-group">
+                <label for="note">Note libere <span class="optional-tag">(visibili al team eCura)</span></label>
+                <textarea id="note" name="note" rows="3"
+                          placeholder="Domande, richieste particolari, informazioni aggiuntive…"></textarea>
+            </div>
+        </div>
+
+    </form><!-- /mainForm -->
+
+    <!-- Sticky submit bar -->
+    <div class="submit-bar" id="submitBar" style="display:none">
+        <button type="button" class="btn-submit" id="btnSubmit" onclick="submitForm()">
+            💾 Salva modifiche
+        </button>
+    </div>
+
+</main><!-- /main -->
+
+<script>
+// ════════════════════════════════════════════════
+// COSTANTI
+// ════════════════════════════════════════════════
+const PATOLOGIE_LIST = [
+    { val: 'ipertensione',  label: '🫀 Ipertensione' },
+    { val: 'diabete',       label: '💉 Diabete' },
+    { val: 'cardiopatia',   label: '❤️ Cardiopatia' },
+    { val: 'demenza',       label: '🧠 Demenza / Alzheimer' },
+    { val: 'ictus',         label: '⚡ Ictus / Stroke' },
+    { val: 'parkinson',     label: '🤲 Parkinson' },
+    { val: 'epilessia',     label: '⚡ Epilessia' },
+    { val: 'oncologica',    label: '🎗️ Patologia oncologica' },
+    { val: 'bpco',          label: '🫁 BPCO / Asma' },
+    { val: 'insufficienza_renale', label: '🫘 Insufficienza renale' },
+    { val: 'osteoporosi',   label: '🦴 Osteoporosi' },
+    { val: 'depressione',   label: '😔 Depressione / Ansia' },
+];
+
+let farmaciCount = 0;
+let currentLead = null;
+
+// ════════════════════════════════════════════════
+// INIT: leggi token da URL e carica dati
+// ════════════════════════════════════════════════
+(async function init() {
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+
+    if (!token) {
+        showError();
+        return;
+    }
+
+    document.getElementById('editToken').value = token;
+    buildPatologieGrid();
+
+    try {
+        const res = await fetch(`/api/leads/edit-token/${encodeURIComponent(token)}`);
+        if (!res.ok) { showError(); return; }
+        const data = await res.json();
+        if (!data.success || !data.lead) { showError(); return; }
+
+        currentLead = data.lead;
+        populateForm(data.lead);
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('mainForm').classList.remove('hidden');
+        document.getElementById('submitBar').style.display = 'flex';
+        document.getElementById('headerSubtitle').textContent =
+            `Benvenuto/a ${data.lead.nomeRichiedente || ''} — verifica e aggiorna i tuoi dati`;
+
+    } catch(e) {
+        showError();
+    }
+})();
+
+// ════════════════════════════════════════════════
+// RENDER PATOLOGIE GRID
+// ════════════════════════════════════════════════
+function buildPatologieGrid() {
+    const grid = document.getElementById('patologieGrid');
+    grid.innerHTML = PATOLOGIE_LIST.map(p => `
+        <label class="patologia-item">
+            <input type="checkbox" name="patologie[]" value="${p.val}" style="accent-color:#1a56db">
+            ${p.label}
+        </label>`).join('');
+}
+
+// ════════════════════════════════════════════════
+// POPOLA FORM DAI DATI LEAD
+// ════════════════════════════════════════════════
+function populateForm(lead) {
+    document.getElementById('leadId').value = lead.id || '';
+
+    // Richiedente
+    setVal('nomeRichiedente',  lead.nomeRichiedente);
+    setVal('cognomeRichiedente', lead.cognomeRichiedente);
+    setVal('email',            lead.email);
+    setVal('telefono',         lead.telefono);
+
+    // Intestatario
+    const intSel = lead.intestatarioContratto || 'richiedente';
+    const radio = document.querySelector(`input[name="intestatarioContratto"][value="${intSel}"]`);
+    if (radio) radio.checked = true;
+    toggleIntestatario(intSel);
+
+    setVal('cfIntestatario',          lead.cfIntestatario || lead.codiceFiscaleIntestatario);
+    setVal('dataNascitaIntestatario', lead.dataNascitaIntestatario);
+    setVal('luogoNascitaIntestatario',lead.luogoNascitaIntestatario);
+    setVal('indirizzoIntestatario',   lead.indirizzoIntestatario);
+    setVal('cittaIntestatario',       lead.cittaIntestatario);
+    setVal('capIntestatario',         lead.capIntestatario);
+    setVal('provinciaIntestatario',   lead.provinciaIntestatario);
+
+    // Assistito
+    setVal('nomeAssistito',           lead.nomeAssistito);
+    setVal('cognomeAssistito',        lead.cognomeAssistito);
+    setVal('dataNascitaAssistito',    lead.dataNascitaAssistito);
+    setVal('luogoNascitaAssistito',   lead.luogoNascitaAssistito);
+    setVal('cfAssistito',             lead.cfAssistito);
+    setVal('telefonoAssistito',       lead.telefonoAssistito);
+    setVal('indirizzoAssistito',      lead.indirizzoAssistito);
+    setVal('cittaAssistito',          lead.cittaAssistito);
+    setVal('capAssistito',            lead.capAssistito);
+    setVal('provinciaAssistito',      lead.provinciaAssistito);
+
+    // Contatti emergenza
+    ['1','2','3'].forEach(n => {
+        setVal(`[name="contatto${n}_nome"]`,     lead[`contatto${n}_nome`],     true);
+        setVal(`[name="contatto${n}_cognome"]`,  lead[`contatto${n}_cognome`],  true);
+        setVal(`[name="contatto${n}_telefono"]`, lead[`contatto${n}_telefono`], true);
+        setVal(`[name="contatto${n}_email"]`,    lead[`contatto${n}_email`],    true);
+    });
+
+    // Whitelist
+    ['1','2','3'].forEach(n => {
+        setVal(`[name="whitelist${n}_nome"]`,     lead[`whitelist${n}_nome`],     true);
+        setVal(`[name="whitelist${n}_cognome"]`,  lead[`whitelist${n}_cognome`],  true);
+        setVal(`[name="whitelist${n}_telefono"]`, lead[`whitelist${n}_telefono`], true);
+        setVal(`[name="whitelist${n}_email"]`,    lead[`whitelist${n}_email`],    true);
+    });
+
+    // Salute
+    setVal('condizioniSalute', lead.condizioniSalute);
+    setVal('altrePatologie',   lead.altre_patologie);
+    setVal('allergie',         lead.allergie);
+    setVal('noteAggiuntive',   lead.note_aggiuntive);
+    setVal('peso',             lead.peso);
+    setVal('altezza',          lead.altezza);
+
+    // Patologie checkboxes
+    const patologie = parsePatologie(lead.patologie_croniche || lead.patologie || '');
+    document.querySelectorAll('input[name="patologie[]"]').forEach(cb => {
+        cb.checked = patologie.includes(cb.value);
+    });
+
+    // Farmaci
+    parseFarmaci(lead.farmaci || lead.terapia_farmacologica || '');
+
+    // Spedizione
+    const spedVal = lead.indirizzo_spedizione || 'assistito';
+    const spedRadio = document.querySelector(`input[name="indirizzo_spedizione"][value="${spedVal}"]`);
+    if (spedRadio) spedRadio.checked = true;
+    toggleSpedizione(spedVal);
+
+    if (spedVal === 'custom') {
+        setVal('sped_nome',      lead.sped_nome);
+        setVal('sped_indirizzo', lead.sped_indirizzo);
+        setVal('sped_citta',     lead.sped_citta);
+        setVal('sped_cap',       lead.sped_cap);
+        setVal('sped_provincia', lead.sped_provincia);
+    }
+
+    // Note
+    setVal('note', lead.note);
+
+    // Event listeners dinamici
+    document.querySelectorAll('input[name="intestatarioContratto"]').forEach(r => {
+        r.addEventListener('change', () => toggleIntestatario(r.value));
+    });
+    document.querySelectorAll('input[name="indirizzo_spedizione"]').forEach(r => {
+        r.addEventListener('change', () => toggleSpedizione(r.value));
+    });
+    document.getElementById('stessaPersona').addEventListener('change', onStessaPersona);
+}
+
+function setVal(sel, value, isQuerySel = false) {
+    if (!value && value !== 0) return;
+    const el = isQuerySel
+        ? document.querySelector(sel)
+        : document.getElementById(sel);
+    if (el) el.value = value;
+}
+
+function parsePatologie(raw) {
+    if (!raw) return [];
+    // Supporta JSON array o stringa separata da virgola
+    try { return JSON.parse(raw); } catch(_) {}
+    return raw.split(',').map(s => s.trim()).filter(Boolean);
+}
+
+function parseFarmaci(raw) {
+    if (!raw) return;
+    let list = [];
+    try { list = JSON.parse(raw); } catch(_) {
+        // formato "Nome 10mg 08:00, Nome2 5mg 20:00"
+        list = raw.split(',').map(s => {
+            const parts = s.trim().split(/\s+/);
+            return { nome: parts[0] || '', dosaggio: parts[1] || '', orario: parts[2] || '' };
+        });
+    }
+    list.forEach(f => aggiungiFarmaco(f.nome, f.dosaggio, f.orario));
+}
+
+// ════════════════════════════════════════════════
+// UI HELPERS
+// ════════════════════════════════════════════════
+function toggleIntestatario(val) {
+    document.getElementById('richiedenteFields').style.display = val === 'richiedente' ? '' : 'none';
+}
+
+function toggleSpedizione(val) {
+    document.getElementById('customSpedizione').classList.toggle('hidden', val !== 'custom');
+}
+
+function onStessaPersona() {
+    const checked = document.getElementById('stessaPersona').checked;
+    document.getElementById('assistitoFields').style.display = checked ? 'none' : '';
+    if (checked) {
+        // copia richiedente → assistito (UI only, il backend riceverà i campi vuoti che ignorerà)
+        ['nomeAssistito', 'cognomeAssistito'].forEach(f => {
+            const src = f.replace('Assistito', '').replace(/^nome/, 'nomeRichiedente').replace(/^cognome/, 'cognomeRichiedente');
+        });
+        document.getElementById('nomeAssistito').value = document.getElementById('nomeRichiedente').value;
+        document.getElementById('cognomeAssistito').value = document.getElementById('cognomeRichiedente').value;
+        document.getElementById('cfAssistito').value = document.getElementById('cfIntestatario').value;
+        document.getElementById('indirizzoAssistito').value = document.getElementById('indirizzoIntestatario').value;
+        document.getElementById('cittaAssistito').value = document.getElementById('cittaIntestatario').value;
+        document.getElementById('capAssistito').value = document.getElementById('capIntestatario').value;
+        document.getElementById('provinciaAssistito').value = document.getElementById('provinciaIntestatario').value;
+    }
+}
+
+// ════════════════════════════════════════════════
+// FARMACI
+// ════════════════════════════════════════════════
+function aggiungiFarmaco(nome='', dosaggio='', orario='') {
+    farmaciCount++;
+    const idx = farmaciCount;
+    const div = document.createElement('div');
+    div.className = 'farmaco-row';
+    div.id = `farmaco_${idx}`;
+    div.innerHTML = `
+        <div>
+            ${idx === 1 ? '<label class="text-xs text-gray-500">Farmaco</label>' : ''}
+            <input type="text" name="farmaco_nome[]" value="${esc(nome)}" placeholder="Es. Ramipril">
+        </div>
+        <div>
+            ${idx === 1 ? '<label class="text-xs text-gray-500">Dosaggio</label>' : ''}
+            <input type="text" name="farmaco_dosaggio[]" value="${esc(dosaggio)}" placeholder="Es. 5 mg">
+        </div>
+        <div>
+            ${idx === 1 ? '<label class="text-xs text-gray-500">Orario</label>' : ''}
+            <input type="time" name="farmaco_orario[]" value="${esc(orario)}">
+        </div>
+        <div style="padding-top:${idx===1?'1.2rem':'0'}">
+            <button type="button" class="btn-remove" onclick="rimuoviFarmaco(${idx})" title="Rimuovi">✕</button>
+        </div>`;
+    document.getElementById('farmaciList').appendChild(div);
+}
+
+function rimuoviFarmaco(idx) {
+    document.getElementById(`farmaco_${idx}`)?.remove();
+}
+
+function esc(s) {
+    return String(s||'').replace(/"/g, '&quot;').replace(/</g,'&lt;');
+}
+
+// ════════════════════════════════════════════════
+// SUBMIT
+// ════════════════════════════════════════════════
+async function submitForm() {
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    btn.textContent = '⏳ Salvataggio…';
+    document.getElementById('loadingOverlay').classList.add('show');
+
+    try {
+        const form  = document.getElementById('mainForm');
+        const token = document.getElementById('editToken').value;
+        const leadId= document.getElementById('leadId').value;
+
+        // Raccogli tutti i dati
+        const body = {};
+
+        // Campi semplici
+        const simpleFields = [
+            'nomeRichiedente','cognomeRichiedente','email','telefono',
+            'intestatarioContratto',
+            'cfIntestatario','dataNascitaIntestatario','luogoNascitaIntestatario',
+            'indirizzoIntestatario','cittaIntestatario','capIntestatario','provinciaIntestatario',
+            'nomeAssistito','cognomeAssistito','dataNascitaAssistito','luogoNascitaAssistito',
+            'cfAssistito','telefonoAssistito',
+            'indirizzoAssistito','cittaAssistito','capAssistito','provinciaAssistito',
+            'condizioniSalute','altrePatologie','allergie','noteAggiuntive','peso','altezza',
+            'note',
+            'sped_nome','sped_indirizzo','sped_citta','sped_cap','sped_provincia',
+        ];
+        simpleFields.forEach(f => {
+            const el = document.getElementById(f) || form.querySelector(`[name="${f}"]`);
+            if (el && el.value !== '') body[f] = el.value.trim();
+        });
+
+        // Alias per il backend
+        if (body.altrePatologie)  { body.altre_patologie = body.altrePatologie; delete body.altrePatologie; }
+        if (body.noteAggiuntive)  { body.note_aggiuntive = body.noteAggiuntive; delete body.noteAggiuntive; }
+        if (body.telefonoAssistito) { body.telefonoAssistito = body.telefonoAssistito; }
+
+        // Intestatario: radio
+        const intRadio = form.querySelector('input[name="intestatarioContratto"]:checked');
+        if (intRadio) body.intestatarioContratto = intRadio.value;
+
+        // Spedizione: radio
+        const spedRadio = form.querySelector('input[name="indirizzo_spedizione"]:checked');
+        if (spedRadio) body.indirizzo_spedizione = spedRadio.value;
+
+        // Contatti e whitelist: da name="contatto1_nome" ecc.
+        ['1','2','3'].forEach(n => {
+            ['nome','cognome','telefono','email'].forEach(f => {
+                const el = form.querySelector(`[name="contatto${n}_${f}"]`);
+                if (el && el.value.trim()) body[`contatto${n}_${f}`] = el.value.trim();
+            });
+            ['nome','cognome','telefono','email'].forEach(f => {
+                const el = form.querySelector(`[name="whitelist${n}_${f}"]`);
+                if (el && el.value.trim()) body[`whitelist${n}_${f}`] = el.value.trim();
+            });
+        });
+
+        // Patologie: checkbox array → JSON
+        const patSel = [...form.querySelectorAll('input[name="patologie[]"]:checked')].map(cb => cb.value);
+        if (patSel.length) body.patologie_croniche = JSON.stringify(patSel);
+
+        // Farmaci: array → JSON
+        const nomi    = [...form.querySelectorAll('input[name="farmaco_nome[]"]')].map(el => el.value.trim());
+        const dosaggi = [...form.querySelectorAll('input[name="farmaco_dosaggio[]"]')].map(el => el.value.trim());
+        const orari   = [...form.querySelectorAll('input[name="farmaco_orario[]"]')].map(el => el.value.trim());
+        const farmaci = nomi.map((nome,i) => ({ nome, dosaggio: dosaggi[i]||'', orario: orari[i]||'' }))
+                            .filter(f => f.nome);
+        if (farmaci.length) body.farmaci = JSON.stringify(farmaci);
+
+        // Chiama l'endpoint di salvataggio
+        const res = await fetch(`/api/leads/edit-form/${encodeURIComponent(token)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+            document.getElementById('mainForm').style.display = 'none';
+            document.getElementById('submitBar').style.display = 'none';
+            document.getElementById('successScreen').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            throw new Error(result.error || 'Errore sconosciuto');
+        }
+
+    } catch(e) {
+        showToast('❌ Errore nel salvataggio: ' + e.message, 'err');
+        document.getElementById('btnSubmit').disabled = false;
+        document.getElementById('btnSubmit').textContent = '💾 Salva modifiche';
+    } finally {
+        document.getElementById('loadingOverlay').classList.remove('show');
+    }
+}
+
+// ════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════
+function showError() {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('errorState').classList.remove('hidden');
+}
+
+function showToast(msg, type = 'ok') {
+    const t = document.getElementById('toastMsg');
+    t.textContent = msg;
+    t.className = `show ${type}`;
+    clearTimeout(t._tid);
+    t._tid = setTimeout(() => { t.className = type; }, 4000);
+}
+</script>
+</body>
+</html>
