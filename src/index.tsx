@@ -13926,50 +13926,6 @@ app.post('/api/leads/edit-form/:token', async (c) => {
       `).run()
     } catch (_) { /* già esiste */ }
 
-    // ── Migrazione idempotente: aggiunge le colonne extra del form modifica-dati
-    //    alla tabella leads (se non esistono ancora) ──────────────────────────
-    const leadsEditFormCols = [
-      { name: 'telefonoAssistito',   def: 'TEXT DEFAULT NULL' },
-      { name: 'contatto1_nome',      def: 'TEXT DEFAULT NULL' },
-      { name: 'contatto1_cognome',   def: 'TEXT DEFAULT NULL' },
-      { name: 'contatto1_telefono',  def: 'TEXT DEFAULT NULL' },
-      { name: 'contatto1_email',     def: 'TEXT DEFAULT NULL' },
-      { name: 'contatto2_nome',      def: 'TEXT DEFAULT NULL' },
-      { name: 'contatto2_cognome',   def: 'TEXT DEFAULT NULL' },
-      { name: 'contatto2_telefono',  def: 'TEXT DEFAULT NULL' },
-      { name: 'contatto2_email',     def: 'TEXT DEFAULT NULL' },
-      { name: 'contatto3_nome',      def: 'TEXT DEFAULT NULL' },
-      { name: 'contatto3_cognome',   def: 'TEXT DEFAULT NULL' },
-      { name: 'contatto3_telefono',  def: 'TEXT DEFAULT NULL' },
-      { name: 'contatto3_email',     def: 'TEXT DEFAULT NULL' },
-      { name: 'whitelist1_nome',     def: 'TEXT DEFAULT NULL' },
-      { name: 'whitelist1_cognome',  def: 'TEXT DEFAULT NULL' },
-      { name: 'whitelist1_telefono', def: 'TEXT DEFAULT NULL' },
-      { name: 'whitelist1_email',    def: 'TEXT DEFAULT NULL' },
-      { name: 'whitelist2_nome',     def: 'TEXT DEFAULT NULL' },
-      { name: 'whitelist2_cognome',  def: 'TEXT DEFAULT NULL' },
-      { name: 'whitelist2_telefono', def: 'TEXT DEFAULT NULL' },
-      { name: 'whitelist2_email',    def: 'TEXT DEFAULT NULL' },
-      { name: 'whitelist3_nome',     def: 'TEXT DEFAULT NULL' },
-      { name: 'whitelist3_cognome',  def: 'TEXT DEFAULT NULL' },
-      { name: 'whitelist3_telefono', def: 'TEXT DEFAULT NULL' },
-      { name: 'whitelist3_email',    def: 'TEXT DEFAULT NULL' },
-      { name: 'patologie_croniche',  def: 'TEXT DEFAULT NULL' },
-      { name: 'altre_patologie',     def: 'TEXT DEFAULT NULL' },
-      { name: 'allergie',            def: 'TEXT DEFAULT NULL' },
-      { name: 'peso',                def: 'REAL DEFAULT NULL'  },
-      { name: 'altezza',             def: 'REAL DEFAULT NULL'  },
-      { name: 'farmaci',             def: 'TEXT DEFAULT NULL' },
-      { name: 'terapia_farmacologica', def: 'TEXT DEFAULT NULL' },
-      { name: 'note_aggiuntive',     def: 'TEXT DEFAULT NULL' },
-    ]
-    for (const col of leadsEditFormCols) {
-      try {
-        await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN ${col.name} ${col.def}`).run()
-        console.log(`✅ [EDIT-FORM] Colonna leads.${col.name} aggiunta`)
-      } catch (_) { /* già esiste — ok */ }
-    }
-
     // Valida token
     const tokenRow = await c.env.DB.prepare(`
       SELECT * FROM lead_edit_tokens
@@ -33714,6 +33670,22 @@ app.get('/api/debug/leads-emails', async (c) => {
 })
 
 // 🧹 CLEANUP ENDPOINT - Elimina dati test da Production
+// 🔍 DEBUG TEMPORANEO - Schema di tutte le tabelle rilevanti
+app.get('/api/debug/all-schemas', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const tables = ['leads','configurations','assistiti','lead_assistiti']
+    const result: Record<string,any> = {}
+    for (const t of tables) {
+      try {
+        const r = await c.env.DB.prepare(`PRAGMA table_info(${t})`).all()
+        result[t] = (r.results || []).map((col: any) => col.name)
+      } catch(e: any) { result[t] = `ERRORE: ${e.message}` }
+    }
+    return c.json({ success: true, schemas: result })
+  } catch(e: any) { return c.json({ success: false, error: e.message }, 500) }
+})
+
 // ⚠️ SOLO PRODUCTION - Non eseguire su Preview!
 app.post('/api/admin/cleanup-test-data', async (c) => {
   try {
