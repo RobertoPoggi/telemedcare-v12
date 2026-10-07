@@ -14123,6 +14123,34 @@ app.post('/api/leads/edit-form/:token', async (c) => {
       }
     }
 
+    // ── 3. UPDATE assistiti (solo se esiste già la riga per questo lead) ────────
+    // La tabella assistiti viene creata dal flusso attivazione-dispositivo (con IMEI/codice).
+    // Il form modifica-dati può aggiornare peso e altezza se la riga esiste già.
+    // NON facciamo INSERT qui: la creazione spetta all'operatore al momento dell'attivazione.
+    const pesoDalForm     = body['peso']    !== undefined && body['peso']    !== null ? String(body['peso'])    : null
+    const altezzaDalForm  = body['altezza'] !== undefined && body['altezza'] !== null ? String(body['altezza']) : null
+    if (pesoDalForm !== null || altezzaDalForm !== null) {
+      const existingAssistito = await c.env.DB.prepare(
+        `SELECT id FROM assistiti WHERE lead_id = ? LIMIT 1`
+      ).bind(leadId).first() as any
+
+      if (existingAssistito) {
+        const assistitiSets: string[] = []
+        const assistitiBinds: any[] = []
+        if (pesoDalForm !== null)    { assistitiSets.push('peso = ?');    assistitiBinds.push(pesoDalForm) }
+        if (altezzaDalForm !== null) { assistitiSets.push('altezza = ?'); assistitiBinds.push(altezzaDalForm) }
+        assistitiSets.push('updated_at = ?')
+        assistitiBinds.push(now)
+        assistitiBinds.push(existingAssistito.id)
+        await c.env.DB.prepare(
+          `UPDATE assistiti SET ${assistitiSets.join(', ')} WHERE id = ?`
+        ).bind(...assistitiBinds).run()
+        console.log(`📝 [EDIT-FORM] UPDATE assistiti id=${existingAssistito.id}: peso/altezza`)
+      } else {
+        console.log(`ℹ️ [EDIT-FORM] assistiti: nessuna riga per lead ${leadId} — skip (verrà creata all'attivazione dispositivo)`)
+      }
+    }
+
     // leadsFields contiene le clausole "col = ?" + "updated_at = ?" → sottrai 1 per updated_at
     // confFields contiene i nomi colonna puri → lunghezza reale
     const leadsCount = leadsFields.length > 0 ? leadsFields.length - 1 : 0
