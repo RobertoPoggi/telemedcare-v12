@@ -772,7 +772,62 @@ export async function processReminders(
   }
   
   console.log('✅ [REMINDER] Cron abilitato - avvio processo reminder')
-  
+
+  // ============================================
+  // 🛡️ PRE-LOAD EMAIL NOTIFICATE NEGLI ULTIMI 7 GIORNI (cross-run, cross-type)
+  // Carica dal DB tutte le email che hanno già ricevuto QUALSIASI reminder
+  // nelle ultime 7 giorni — garantisce la regola "max 1 promemoria ogni 7 giorni"
+  // anche tra run diverse e tra tipi diversi di reminder.
+  // ============================================
+  const GLOBAL_THROTTLE_DAYS = 7
+  const sevenDaysAgo = new Date()
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - GLOBAL_THROTTLE_DAYS)
+  const sevenDaysAgoIso = sevenDaysAgo.toISOString()
+
+  // Email già notificate negli ultimi 7 giorni (da qualsiasi tipo di reminder)
+  const recentlyNotifiedEmails = new Set<string>()
+
+  try {
+    // Controlla reminder completamento dati (lead_completion_tokens JOIN leads)
+    const recentTokenReminders = await db.prepare(`
+      SELECT LOWER(TRIM(l.email)) as email
+      FROM lead_completion_tokens t
+      JOIN leads l ON t.lead_id = l.id
+      WHERE t.reminder_sent_at > ?
+        AND l.email IS NOT NULL AND l.email != ''
+    `).bind(sevenDaysAgoIso).all()
+    for (const row of (recentTokenReminders.results || []) as any[]) {
+      if (row.email) recentlyNotifiedEmails.add(row.email)
+    }
+
+    // Controlla reminder firma contratto (leads.reminder_firma_sent_at)
+    const recentFirmaReminders = await db.prepare(`
+      SELECT LOWER(TRIM(email)) as email
+      FROM leads
+      WHERE reminder_firma_sent_at > ?
+        AND email IS NOT NULL AND email != ''
+    `).bind(sevenDaysAgoIso).all()
+    for (const row of (recentFirmaReminders.results || []) as any[]) {
+      if (row.email) recentlyNotifiedEmails.add(row.email)
+    }
+
+    // Controlla reminder proforma (leads.reminder_proforma_sent_at)
+    const recentProformaReminders = await db.prepare(`
+      SELECT LOWER(TRIM(email)) as email
+      FROM leads
+      WHERE reminder_proforma_sent_at > ?
+        AND email IS NOT NULL AND email != ''
+    `).bind(sevenDaysAgoIso).all()
+    for (const row of (recentProformaReminders.results || []) as any[]) {
+      if (row.email) recentlyNotifiedEmails.add(row.email)
+    }
+
+    console.log(`📬 [REMINDER] Email già notificate negli ultimi ${GLOBAL_THROTTLE_DAYS}gg: ${recentlyNotifiedEmails.size}`)
+  } catch (throttleErr) {
+    // Non bloccare il processo se la query fallisce — fail-open
+    console.warn('⚠️ [REMINDER] Errore caricamento throttle globale email:', throttleErr)
+  }
+
   // Ottieni token che necessitano reminder
   const tokens = await getTokensNeedingReminder(
     db,
@@ -827,7 +882,17 @@ export async function processReminders(
   
   let success = 0
   let failed = 0
-  
+
+  // ============================================
+  // 🛡️ THROTTLE GLOBALE PER-EMAIL (in-run + cross-run)
+  // Inizializzato con le email già notificate negli ultimi 7 giorni (dal DB).
+  // Durante questa run, le email inviate vengono aggiunte al set per evitare
+  // doppi invii anche tra tipi diversi nella stessa esecuzione.
+  // Questo risolve il caso mounatrima (3 email con giorni residui diversi)
+  // e sergio.capeto (2 email identiche da 2 tipi di reminder diversi).
+  // ============================================
+  const emailsNotifiedThisRun = recentlyNotifiedEmails  // parte già carico dal DB
+
   // ============================================
   // 1️⃣ REMINDER COMPLETAMENTO DATI
   // ============================================
@@ -843,12 +908,20 @@ export async function processReminders(
         failed++
         continue
       }
+
+      // 🛡️ GLOBAL EMAIL THROTTLE: salta se questa email è già stata notificata in questa run
+      const leadEmail = ((leadData as any).email || '').toLowerCase().trim()
+      if (leadEmail && emailsNotifiedThisRun.has(leadEmail)) {
+        console.log(`🚫 [REMINDER] Skip completamento (email già notificata oggi): ${leadEmail}`)
+        continue
+      }
       
       // Invia reminder
       const sent = await sendReminderEmail(db, env, token, leadData)
       
       if (sent) {
         success++
+        if (leadEmail) emailsNotifiedThisRun.add(leadEmail)
       } else {
         failed++
       }
@@ -873,8 +946,9 @@ export async function processReminders(
   
   try {
     const contractLeads = await db.prepare(`
-      SELECT l.*, 
-             c.id as contract_id, c.codice_contratto, c.pdf_url, c.status as contract_status
+      SELECT l.*,
+             MIN(c.id) as contract_id, MIN(c.codice_contratto) as codice_contratto,
+             MIN(c.pdf_url) as pdf_url, MIN(c.status) as contract_status
       FROM leads l
       JOIN contracts c ON c.leadId = l.id
       WHERE l.status = 'CONTRACT_SENT'
@@ -896,6 +970,7 @@ export async function processReminders(
           l.reminder_firma_sent_at IS NULL
           OR (l.reminder_firma_sent_at < ? AND l.reminder_firma_sent_at < ?)   -- entrambe le soglie: reminderDays E 7gg
         )
+      GROUP BY l.id   -- ✅ DEDUP: un lead con più contratti → una sola riga/email
       ORDER BY
         CASE l.stato
           WHEN 'in_trattativa' THEN 1
@@ -926,6 +1001,13 @@ export async function processReminders(
         console.log(`🚫 [REMINDER-FIRMA] Skipped (blacklist): ${nomeCognome}`)
         continue
       }
+
+      // 🛡️ GLOBAL EMAIL THROTTLE: salta se questa email è già stata notificata in questa run
+      const leadEmail = (lead.email || '').toLowerCase().trim()
+      if (leadEmail && emailsNotifiedThisRun.has(leadEmail)) {
+        console.log(`🚫 [REMINDER-FIRMA] Skip firma (email già notificata oggi): ${leadEmail}`)
+        continue
+      }
       
       const contractData = {
         id: lead.contract_id,
@@ -934,8 +1016,12 @@ export async function processReminders(
       }
       
       const sent = await sendReminderFirma(db, env, lead, contractData)
-      if (sent) success++
-      else failed++
+      if (sent) {
+        success++
+        if (leadEmail) emailsNotifiedThisRun.add(leadEmail)
+      } else {
+        failed++
+      }
       
       await new Promise(resolve => setTimeout(resolve, 1000))
     }
@@ -956,8 +1042,10 @@ export async function processReminders(
   try {
     const proformaLeads = await db.prepare(`
       SELECT l.*,
-             p.id as proforma_id, p.numero_proforma, p.prezzo_totale, 
-             p.payment_url, p.cliente_email, p.status as proforma_status
+             MIN(p.id) as proforma_id, MIN(p.numero_proforma) as numero_proforma,
+             MIN(p.prezzo_totale) as prezzo_totale,
+             MIN(p.payment_url) as payment_url, MIN(p.cliente_email) as cliente_email,
+             MIN(p.status) as proforma_status
       FROM leads l
       JOIN proforma p ON p.leadId = l.id
       WHERE l.status = 'PROFORMA_SENT'
@@ -978,6 +1066,7 @@ export async function processReminders(
           l.reminder_proforma_sent_at IS NULL
           OR (l.reminder_proforma_sent_at < ? AND l.reminder_proforma_sent_at < ?)
         )
+      GROUP BY l.id   -- ✅ DEDUP: un lead con più proforma → una sola riga/email
       ORDER BY
         CASE l.stato
           WHEN 'in_trattativa' THEN 1
@@ -1007,6 +1096,13 @@ export async function processReminders(
         console.log(`🚫 [REMINDER-PROFORMA] Skipped (blacklist): ${nomeCognome}`)
         continue
       }
+
+      // 🛡️ GLOBAL EMAIL THROTTLE: salta se questa email è già stata notificata in questa run
+      const leadEmail = (lead.email || lead.cliente_email || '').toLowerCase().trim()
+      if (leadEmail && emailsNotifiedThisRun.has(leadEmail)) {
+        console.log(`🚫 [REMINDER-PROFORMA] Skip proforma (email già notificata oggi): ${leadEmail}`)
+        continue
+      }
       
       const proformaData = {
         id: lead.proforma_id,
@@ -1018,8 +1114,12 @@ export async function processReminders(
       }
       
       const sent = await sendReminderProforma(db, env, lead, proformaData)
-      if (sent) success++
-      else failed++
+      if (sent) {
+        success++
+        if (leadEmail) emailsNotifiedThisRun.add(leadEmail)
+      } else {
+        failed++
+      }
       
       await new Promise(resolve => setTimeout(resolve, 1000))
     }
