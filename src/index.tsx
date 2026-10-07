@@ -1832,6 +1832,14 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
+  // 🔓 Form modifica dati lead via token monouso (link inviato per email al lead)
+  if (path.match(/^\/api\/leads\/edit-token\/[^\/]+$/) && method === 'GET') {
+    return next()
+  }
+  if (path.match(/^\/api\/leads\/edit-form\/[^\/]+$/) && method === 'POST') {
+    return next()
+  }
+
   // Endpoint sensibili: richiedono autenticazione
   const isSensitive = 
     path.startsWith('/api/leads') ||
