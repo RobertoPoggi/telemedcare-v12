@@ -13782,6 +13782,208 @@ app.get('/api/form/:leadId', async (c) => {
   }
 })
 
+// ============================================================================
+// GET /api/leads/edit-token/:token  — DEVE stare PRIMA di /api/leads/:id
+// Restituisce i dati lead associati al token (solo campi modificabili dal lead).
+// ============================================================================
+app.get('/api/leads/edit-token/:token', async (c) => {
+  const token = c.req.param('token')
+
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+
+    // Crea tabella se non esiste (primo accesso dopo deploy)
+    try {
+      await c.env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS lead_edit_tokens (
+          id TEXT PRIMARY KEY,
+          lead_id TEXT NOT NULL,
+          token TEXT NOT NULL UNIQUE,
+          expires_at TEXT NOT NULL,
+          used_at TEXT DEFAULT NULL,
+          created_at TEXT NOT NULL
+        )
+      `).run()
+    } catch (_) { /* già esiste */ }
+
+    const tokenRow = await c.env.DB.prepare(`
+      SELECT t.*, l.*
+      FROM lead_edit_tokens t
+      JOIN leads l ON t.lead_id = l.id
+      WHERE t.token = ?
+        AND t.expires_at > datetime('now')
+        AND t.used_at IS NULL
+      LIMIT 1
+    `).bind(token).first() as any
+
+    if (!tokenRow) return c.json({ success: false, error: 'Token non valido o scaduto' }, 404)
+
+    // Esponi SOLO i campi sicuri per il lead (niente status, stato CRM, score, prezzi, ecc.)
+    const safe = {
+      id: tokenRow.lead_id,
+      nomeRichiedente:              tokenRow.nomeRichiedente,
+      cognomeRichiedente:           tokenRow.cognomeRichiedente,
+      email:                        tokenRow.email,
+      telefono:                     tokenRow.telefono,
+      intestatarioContratto:        tokenRow.intestatarioContratto,
+      cfIntestatario:               tokenRow.cfIntestatario,
+      codiceFiscaleIntestatario:    tokenRow.codiceFiscaleIntestatario,
+      dataNascitaIntestatario:      tokenRow.dataNascitaIntestatario,
+      luogoNascitaIntestatario:     tokenRow.luogoNascitaIntestatario,
+      indirizzoIntestatario:        tokenRow.indirizzoIntestatario,
+      cittaIntestatario:            tokenRow.cittaIntestatario,
+      capIntestatario:              tokenRow.capIntestatario,
+      provinciaIntestatario:        tokenRow.provinciaIntestatario,
+      nomeAssistito:                tokenRow.nomeAssistito,
+      cognomeAssistito:             tokenRow.cognomeAssistito,
+      dataNascitaAssistito:         tokenRow.dataNascitaAssistito,
+      luogoNascitaAssistito:        tokenRow.luogoNascitaAssistito,
+      cfAssistito:                  tokenRow.cfAssistito,
+      telefonoAssistito:            tokenRow.telefonoAssistito,
+      indirizzoAssistito:           tokenRow.indirizzoAssistito,
+      cittaAssistito:               tokenRow.cittaAssistito,
+      capAssistito:                 tokenRow.capAssistito,
+      provinciaAssistito:           tokenRow.provinciaAssistito,
+      contatto1_nome:               tokenRow.contatto1_nome,
+      contatto1_cognome:            tokenRow.contatto1_cognome,
+      contatto1_telefono:           tokenRow.contatto1_telefono,
+      contatto1_email:              tokenRow.contatto1_email,
+      contatto2_nome:               tokenRow.contatto2_nome,
+      contatto2_cognome:            tokenRow.contatto2_cognome,
+      contatto2_telefono:           tokenRow.contatto2_telefono,
+      contatto2_email:              tokenRow.contatto2_email,
+      contatto3_nome:               tokenRow.contatto3_nome,
+      contatto3_cognome:            tokenRow.contatto3_cognome,
+      contatto3_telefono:           tokenRow.contatto3_telefono,
+      contatto3_email:              tokenRow.contatto3_email,
+      whitelist1_nome:              tokenRow.whitelist1_nome,
+      whitelist1_cognome:           tokenRow.whitelist1_cognome,
+      whitelist1_telefono:          tokenRow.whitelist1_telefono,
+      whitelist1_email:             tokenRow.whitelist1_email,
+      whitelist2_nome:              tokenRow.whitelist2_nome,
+      whitelist2_cognome:           tokenRow.whitelist2_cognome,
+      whitelist2_telefono:          tokenRow.whitelist2_telefono,
+      whitelist2_email:             tokenRow.whitelist2_email,
+      whitelist3_nome:              tokenRow.whitelist3_nome,
+      whitelist3_cognome:           tokenRow.whitelist3_cognome,
+      whitelist3_telefono:          tokenRow.whitelist3_telefono,
+      whitelist3_email:             tokenRow.whitelist3_email,
+      condizioniSalute:             tokenRow.condizioniSalute,
+      patologie_croniche:           tokenRow.patologie_croniche,
+      altre_patologie:              tokenRow.altre_patologie,
+      allergie:                     tokenRow.allergie,
+      peso:                         tokenRow.peso,
+      altezza:                      tokenRow.altezza,
+      farmaci:                      tokenRow.farmaci,
+      terapia_farmacologica:        tokenRow.terapia_farmacologica,
+      note_aggiuntive:              tokenRow.note_aggiuntive,
+      indirizzo_spedizione:         tokenRow.indirizzo_spedizione,
+      sped_nome:                    tokenRow.sped_nome,
+      sped_indirizzo:               tokenRow.sped_indirizzo,
+      sped_citta:                   tokenRow.sped_citta,
+      sped_cap:                     tokenRow.sped_cap,
+      sped_provincia:               tokenRow.sped_provincia,
+      note:                         tokenRow.note,
+    }
+
+    return c.json({ success: true, lead: safe })
+
+  } catch (error) {
+    console.error('❌ [EDIT-TOKEN-GET] Errore:', error)
+    return c.json({ success: false, error: 'Errore server' }, 500)
+  }
+})
+
+// ============================================================================
+// POST /api/leads/edit-form/:token  — DEVE stare PRIMA di /api/leads/:id
+// Salva le modifiche inviate dal lead tramite il form modifica-dati.html.
+// ============================================================================
+app.post('/api/leads/edit-form/:token', async (c) => {
+  const token = c.req.param('token')
+
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+
+    // Valida token
+    const tokenRow = await c.env.DB.prepare(`
+      SELECT * FROM lead_edit_tokens
+      WHERE token = ?
+        AND expires_at > datetime('now')
+        AND used_at IS NULL
+      LIMIT 1
+    `).bind(token).first() as any
+
+    if (!tokenRow) return c.json({ success: false, error: 'Token non valido o scaduto' }, 400)
+
+    const leadId = tokenRow.lead_id
+    const body = await c.req.json()
+
+    // Whitelist campi modificabili dal lead (niente status, stato CRM, score, ecc.)
+    const ALLOWED_FIELDS = new Set([
+      'nomeRichiedente','cognomeRichiedente','email','telefono',
+      'intestatarioContratto',
+      'cfIntestatario','codiceFiscaleIntestatario',
+      'dataNascitaIntestatario','luogoNascitaIntestatario',
+      'indirizzoIntestatario','cittaIntestatario','capIntestatario','provinciaIntestatario',
+      'nomeAssistito','cognomeAssistito',
+      'dataNascitaAssistito','luogoNascitaAssistito',
+      'cfAssistito','telefonoAssistito',
+      'indirizzoAssistito','cittaAssistito','capAssistito','provinciaAssistito',
+      'contatto1_nome','contatto1_cognome','contatto1_telefono','contatto1_email',
+      'contatto2_nome','contatto2_cognome','contatto2_telefono','contatto2_email',
+      'contatto3_nome','contatto3_cognome','contatto3_telefono','contatto3_email',
+      'whitelist1_nome','whitelist1_cognome','whitelist1_telefono','whitelist1_email',
+      'whitelist2_nome','whitelist2_cognome','whitelist2_telefono','whitelist2_email',
+      'whitelist3_nome','whitelist3_cognome','whitelist3_telefono','whitelist3_email',
+      'condizioniSalute','patologie_croniche','altre_patologie',
+      'allergie','peso','altezza','farmaci','terapia_farmacologica','note_aggiuntive',
+      'indirizzo_spedizione',
+      'sped_nome','sped_indirizzo','sped_citta','sped_cap','sped_provincia',
+      'note',
+    ])
+
+    const safeBody: Record<string, any> = {}
+    for (const [k, v] of Object.entries(body)) {
+      if (ALLOWED_FIELDS.has(k)) safeBody[k] = v
+    }
+
+    if (Object.keys(safeBody).length === 0) {
+      return c.json({ success: false, error: 'Nessun campo modificabile inviato' }, 400)
+    }
+
+    const updateFields: string[] = []
+    const binds: any[] = []
+    const now = new Date().toISOString()
+
+    for (const [field, value] of Object.entries(safeBody)) {
+      if (value !== null && value !== undefined && value !== '') {
+        updateFields.push(`${field} = ?`)
+        binds.push(value)
+      }
+    }
+
+    updateFields.push('updated_at = ?')
+    binds.push(now)
+    binds.push(leadId)
+
+    await c.env.DB.prepare(
+      `UPDATE leads SET ${updateFields.join(', ')} WHERE id = ?`
+    ).bind(...binds).run()
+
+    // Marca token come usato (monouso)
+    await c.env.DB.prepare(
+      `UPDATE lead_edit_tokens SET used_at = ? WHERE token = ?`
+    ).bind(now, token).run()
+
+    console.log(`✅ [EDIT-FORM] Lead ${leadId} aggiornato dal form modifica (${Object.keys(safeBody).length} campi)`)
+    return c.json({ success: true, message: 'Dati aggiornati con successo', updated: Object.keys(safeBody).length })
+
+  } catch (error) {
+    console.error('❌ [EDIT-FORM] Errore:', error)
+    return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
+  }
+})
+
 // POINT 10 - API per gestione singoli lead (correzione azioni Data Dashboard)
 app.get('/api/leads/:id', async (c) => {
   const id = c.req.param('id')
@@ -37141,208 +37343,6 @@ app.post('/api/leads/:id/send-edit-form', requireAuth, async (c) => {
 
   } catch (error) {
     console.error('❌ [SEND-EDIT-FORM] Errore:', error)
-    return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
-  }
-})
-
-// ============================================================================
-// GET /api/leads/edit-token/:token
-// Restituisce i dati lead associati al token (solo campi modificabili dal lead).
-// ============================================================================
-app.get('/api/leads/edit-token/:token', async (c) => {
-  const token = c.req.param('token')
-
-  try {
-    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
-
-    const tokenRow = await c.env.DB.prepare(`
-      SELECT t.*, l.*
-      FROM lead_edit_tokens t
-      JOIN leads l ON t.lead_id = l.id
-      WHERE t.token = ?
-        AND t.expires_at > datetime('now')
-        AND t.used_at IS NULL
-      LIMIT 1
-    `).bind(token).first() as any
-
-    if (!tokenRow) return c.json({ success: false, error: 'Token non valido o scaduto' }, 404)
-
-    // Esponi SOLO i campi sicuri per il lead (niente status, stato CRM, score, prezzi, ecc.)
-    const safe = {
-      id: tokenRow.lead_id,
-      // Richiedente
-      nomeRichiedente:         tokenRow.nomeRichiedente,
-      cognomeRichiedente:      tokenRow.cognomeRichiedente,
-      email:                   tokenRow.email,
-      telefono:                tokenRow.telefono,
-      // Intestatario
-      intestatarioContratto:   tokenRow.intestatarioContratto,
-      cfIntestatario:          tokenRow.cfIntestatario,
-      codiceFiscaleIntestatario: tokenRow.codiceFiscaleIntestatario,
-      dataNascitaIntestatario:  tokenRow.dataNascitaIntestatario,
-      luogoNascitaIntestatario: tokenRow.luogoNascitaIntestatario,
-      indirizzoIntestatario:   tokenRow.indirizzoIntestatario,
-      cittaIntestatario:       tokenRow.cittaIntestatario,
-      capIntestatario:         tokenRow.capIntestatario,
-      provinciaIntestatario:   tokenRow.provinciaIntestatario,
-      // Assistito
-      nomeAssistito:            tokenRow.nomeAssistito,
-      cognomeAssistito:         tokenRow.cognomeAssistito,
-      dataNascitaAssistito:     tokenRow.dataNascitaAssistito,
-      luogoNascitaAssistito:    tokenRow.luogoNascitaAssistito,
-      cfAssistito:              tokenRow.cfAssistito,
-      telefonoAssistito:        tokenRow.telefonoAssistito,
-      indirizzoAssistito:       tokenRow.indirizzoAssistito,
-      cittaAssistito:           tokenRow.cittaAssistito,
-      capAssistito:             tokenRow.capAssistito,
-      provinciaAssistito:       tokenRow.provinciaAssistito,
-      // Contatti emergenza
-      contatto1_nome:           tokenRow.contatto1_nome,
-      contatto1_cognome:        tokenRow.contatto1_cognome,
-      contatto1_telefono:       tokenRow.contatto1_telefono,
-      contatto1_email:          tokenRow.contatto1_email,
-      contatto2_nome:           tokenRow.contatto2_nome,
-      contatto2_cognome:        tokenRow.contatto2_cognome,
-      contatto2_telefono:       tokenRow.contatto2_telefono,
-      contatto2_email:          tokenRow.contatto2_email,
-      contatto3_nome:           tokenRow.contatto3_nome,
-      contatto3_cognome:        tokenRow.contatto3_cognome,
-      contatto3_telefono:       tokenRow.contatto3_telefono,
-      contatto3_email:          tokenRow.contatto3_email,
-      // Whitelist
-      whitelist1_nome:          tokenRow.whitelist1_nome,
-      whitelist1_cognome:       tokenRow.whitelist1_cognome,
-      whitelist1_telefono:      tokenRow.whitelist1_telefono,
-      whitelist1_email:         tokenRow.whitelist1_email,
-      whitelist2_nome:          tokenRow.whitelist2_nome,
-      whitelist2_cognome:       tokenRow.whitelist2_cognome,
-      whitelist2_telefono:      tokenRow.whitelist2_telefono,
-      whitelist2_email:         tokenRow.whitelist2_email,
-      whitelist3_nome:          tokenRow.whitelist3_nome,
-      whitelist3_cognome:       tokenRow.whitelist3_cognome,
-      whitelist3_telefono:      tokenRow.whitelist3_telefono,
-      whitelist3_email:         tokenRow.whitelist3_email,
-      // Medico
-      condizioniSalute:         tokenRow.condizioniSalute,
-      patologie_croniche:       tokenRow.patologie_croniche,
-      altre_patologie:          tokenRow.altre_patologie,
-      allergie:                 tokenRow.allergie,
-      peso:                     tokenRow.peso,
-      altezza:                  tokenRow.altezza,
-      farmaci:                  tokenRow.farmaci,
-      terapia_farmacologica:    tokenRow.terapia_farmacologica,
-      note_aggiuntive:          tokenRow.note_aggiuntive,
-      // Spedizione
-      indirizzo_spedizione:     tokenRow.indirizzo_spedizione,
-      sped_nome:                tokenRow.sped_nome,
-      sped_indirizzo:           tokenRow.sped_indirizzo,
-      sped_citta:               tokenRow.sped_citta,
-      sped_cap:                 tokenRow.sped_cap,
-      sped_provincia:           tokenRow.sped_provincia,
-      // Note libere
-      note:                     tokenRow.note,
-    }
-
-    return c.json({ success: true, lead: safe })
-
-  } catch (error) {
-    console.error('❌ [EDIT-TOKEN-GET] Errore:', error)
-    return c.json({ success: false, error: 'Errore server' }, 500)
-  }
-})
-
-// ============================================================================
-// POST /api/leads/edit-form/:token
-// Salva le modifiche inviate dal lead tramite il form modifica-dati.html.
-// Usa PUT /api/leads/:id internamente per riutilizzare la stessa logica
-// di validazione/mapping già esistente.
-// ============================================================================
-app.post('/api/leads/edit-form/:token', async (c) => {
-  const token = c.req.param('token')
-
-  try {
-    if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
-
-    // Valida token
-    const tokenRow = await c.env.DB.prepare(`
-      SELECT * FROM lead_edit_tokens
-      WHERE token = ?
-        AND expires_at > datetime('now')
-        AND used_at IS NULL
-      LIMIT 1
-    `).bind(token).first() as any
-
-    if (!tokenRow) return c.json({ success: false, error: 'Token non valido o scaduto' }, 400)
-
-    const leadId = tokenRow.lead_id
-    const body = await c.req.json()
-
-    // Whitelist campi modificabili dal lead (niente status, stato CRM, score, ecc.)
-    const ALLOWED_FIELDS = new Set([
-      'nomeRichiedente','cognomeRichiedente','email','telefono',
-      'intestatarioContratto',
-      'cfIntestatario','codiceFiscaleIntestatario',
-      'dataNascitaIntestatario','luogoNascitaIntestatario',
-      'indirizzoIntestatario','cittaIntestatario','capIntestatario','provinciaIntestatario',
-      'nomeAssistito','cognomeAssistito',
-      'dataNascitaAssistito','luogoNascitaAssistito',
-      'cfAssistito','telefonoAssistito',
-      'indirizzoAssistito','cittaAssistito','capAssistito','provinciaAssistito',
-      'contatto1_nome','contatto1_cognome','contatto1_telefono','contatto1_email',
-      'contatto2_nome','contatto2_cognome','contatto2_telefono','contatto2_email',
-      'contatto3_nome','contatto3_cognome','contatto3_telefono','contatto3_email',
-      'whitelist1_nome','whitelist1_cognome','whitelist1_telefono','whitelist1_email',
-      'whitelist2_nome','whitelist2_cognome','whitelist2_telefono','whitelist2_email',
-      'whitelist3_nome','whitelist3_cognome','whitelist3_telefono','whitelist3_email',
-      'condizioniSalute','patologie_croniche','altre_patologie',
-      'allergie','peso','altezza','farmaci','terapia_farmacologica','note_aggiuntive',
-      'indirizzo_spedizione',
-      'sped_nome','sped_indirizzo','sped_citta','sped_cap','sped_provincia',
-      'note',
-    ])
-
-    // Filtra solo i campi permessi
-    const safeBody: Record<string, any> = {}
-    for (const [k, v] of Object.entries(body)) {
-      if (ALLOWED_FIELDS.has(k)) safeBody[k] = v
-    }
-
-    if (Object.keys(safeBody).length === 0) {
-      return c.json({ success: false, error: 'Nessun campo modificabile inviato' }, 400)
-    }
-
-    // Costruisci UPDATE dinamico
-    const updateFields: string[] = []
-    const binds: any[] = []
-    const now = new Date().toISOString()
-
-    // Mapping identico (campo frontend = campo DB per i campi lead)
-    for (const [field, value] of Object.entries(safeBody)) {
-      if (value !== null && value !== undefined && value !== '') {
-        updateFields.push(`${field} = ?`)
-        binds.push(value)
-      }
-    }
-
-    updateFields.push('updated_at = ?')
-    binds.push(now)
-    binds.push(leadId)
-
-    await c.env.DB.prepare(
-      `UPDATE leads SET ${updateFields.join(', ')} WHERE id = ?`
-    ).bind(...binds).run()
-
-    // Marca token come usato (monouso)
-    await c.env.DB.prepare(
-      `UPDATE lead_edit_tokens SET used_at = ? WHERE token = ?`
-    ).bind(now, token).run()
-
-    console.log(`✅ [EDIT-FORM] Lead ${leadId} aggiornato dal form modifica (${Object.keys(safeBody).length} campi)`)
-
-    return c.json({ success: true, message: 'Dati aggiornati con successo', updated: Object.keys(safeBody).length })
-
-  } catch (error) {
-    console.error('❌ [EDIT-FORM] Errore:', error)
     return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
   }
 })
