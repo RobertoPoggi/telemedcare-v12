@@ -13912,6 +13912,64 @@ app.post('/api/leads/edit-form/:token', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
 
+    // Crea tabella se non esiste (difesa)
+    try {
+      await c.env.DB.prepare(`
+        CREATE TABLE IF NOT EXISTS lead_edit_tokens (
+          id TEXT PRIMARY KEY,
+          lead_id TEXT NOT NULL,
+          token TEXT NOT NULL UNIQUE,
+          expires_at TEXT NOT NULL,
+          used_at TEXT DEFAULT NULL,
+          created_at TEXT NOT NULL
+        )
+      `).run()
+    } catch (_) { /* già esiste */ }
+
+    // ── Migrazione idempotente: aggiunge le colonne extra del form modifica-dati
+    //    alla tabella leads (se non esistono ancora) ──────────────────────────
+    const leadsEditFormCols = [
+      { name: 'telefonoAssistito',   def: 'TEXT DEFAULT NULL' },
+      { name: 'contatto1_nome',      def: 'TEXT DEFAULT NULL' },
+      { name: 'contatto1_cognome',   def: 'TEXT DEFAULT NULL' },
+      { name: 'contatto1_telefono',  def: 'TEXT DEFAULT NULL' },
+      { name: 'contatto1_email',     def: 'TEXT DEFAULT NULL' },
+      { name: 'contatto2_nome',      def: 'TEXT DEFAULT NULL' },
+      { name: 'contatto2_cognome',   def: 'TEXT DEFAULT NULL' },
+      { name: 'contatto2_telefono',  def: 'TEXT DEFAULT NULL' },
+      { name: 'contatto2_email',     def: 'TEXT DEFAULT NULL' },
+      { name: 'contatto3_nome',      def: 'TEXT DEFAULT NULL' },
+      { name: 'contatto3_cognome',   def: 'TEXT DEFAULT NULL' },
+      { name: 'contatto3_telefono',  def: 'TEXT DEFAULT NULL' },
+      { name: 'contatto3_email',     def: 'TEXT DEFAULT NULL' },
+      { name: 'whitelist1_nome',     def: 'TEXT DEFAULT NULL' },
+      { name: 'whitelist1_cognome',  def: 'TEXT DEFAULT NULL' },
+      { name: 'whitelist1_telefono', def: 'TEXT DEFAULT NULL' },
+      { name: 'whitelist1_email',    def: 'TEXT DEFAULT NULL' },
+      { name: 'whitelist2_nome',     def: 'TEXT DEFAULT NULL' },
+      { name: 'whitelist2_cognome',  def: 'TEXT DEFAULT NULL' },
+      { name: 'whitelist2_telefono', def: 'TEXT DEFAULT NULL' },
+      { name: 'whitelist2_email',    def: 'TEXT DEFAULT NULL' },
+      { name: 'whitelist3_nome',     def: 'TEXT DEFAULT NULL' },
+      { name: 'whitelist3_cognome',  def: 'TEXT DEFAULT NULL' },
+      { name: 'whitelist3_telefono', def: 'TEXT DEFAULT NULL' },
+      { name: 'whitelist3_email',    def: 'TEXT DEFAULT NULL' },
+      { name: 'patologie_croniche',  def: 'TEXT DEFAULT NULL' },
+      { name: 'altre_patologie',     def: 'TEXT DEFAULT NULL' },
+      { name: 'allergie',            def: 'TEXT DEFAULT NULL' },
+      { name: 'peso',                def: 'REAL DEFAULT NULL'  },
+      { name: 'altezza',             def: 'REAL DEFAULT NULL'  },
+      { name: 'farmaci',             def: 'TEXT DEFAULT NULL' },
+      { name: 'terapia_farmacologica', def: 'TEXT DEFAULT NULL' },
+      { name: 'note_aggiuntive',     def: 'TEXT DEFAULT NULL' },
+    ]
+    for (const col of leadsEditFormCols) {
+      try {
+        await c.env.DB.prepare(`ALTER TABLE leads ADD COLUMN ${col.name} ${col.def}`).run()
+        console.log(`✅ [EDIT-FORM] Colonna leads.${col.name} aggiunta`)
+      } catch (_) { /* già esiste — ok */ }
+    }
+
     // Valida token
     const tokenRow = await c.env.DB.prepare(`
       SELECT * FROM lead_edit_tokens
@@ -13924,7 +13982,14 @@ app.post('/api/leads/edit-form/:token', async (c) => {
     if (!tokenRow) return c.json({ success: false, error: 'Token non valido o scaduto' }, 400)
 
     const leadId = tokenRow.lead_id
-    const body = await c.req.json()
+    let body: Record<string, any>
+    try {
+      body = await c.req.json()
+    } catch (_) {
+      return c.json({ success: false, error: 'Body JSON non valido' }, 400)
+    }
+
+    console.log(`📝 [EDIT-FORM] Lead ${leadId} — campi ricevuti: ${Object.keys(body).join(', ')}`)
 
     // Whitelist campi modificabili dal lead (niente status, stato CRM, score, ecc.)
     const ALLOWED_FIELDS = new Set([
@@ -13953,6 +14018,7 @@ app.post('/api/leads/edit-form/:token', async (c) => {
     const safeBody: Record<string, any> = {}
     for (const [k, v] of Object.entries(body)) {
       if (ALLOWED_FIELDS.has(k)) safeBody[k] = v
+      else console.log(`🚫 [EDIT-FORM] Campo ignorato (non in whitelist): ${k}`)
     }
 
     if (Object.keys(safeBody).length === 0) {
@@ -13964,31 +14030,41 @@ app.post('/api/leads/edit-form/:token', async (c) => {
     const now = new Date().toISOString()
 
     for (const [field, value] of Object.entries(safeBody)) {
-      if (value !== null && value !== undefined && value !== '') {
+      // Salta valori null/undefined; accetta stringhe vuote solo per campi non obbligatori
+      if (value !== null && value !== undefined) {
         updateFields.push(`${field} = ?`)
-        binds.push(value)
+        binds.push(String(value))
       }
+    }
+
+    if (updateFields.length === 0) {
+      return c.json({ success: false, error: 'Nessun valore valido da aggiornare' }, 400)
     }
 
     updateFields.push('updated_at = ?')
     binds.push(now)
     binds.push(leadId)
 
-    await c.env.DB.prepare(
-      `UPDATE leads SET ${updateFields.join(', ')} WHERE id = ?`
-    ).bind(...binds).run()
+    const sql = `UPDATE leads SET ${updateFields.join(', ')} WHERE id = ?`
+    console.log(`📝 [EDIT-FORM] SQL: ${sql.substring(0, 200)}`)
+
+    await c.env.DB.prepare(sql).bind(...binds).run()
 
     // Marca token come usato (monouso)
     await c.env.DB.prepare(
       `UPDATE lead_edit_tokens SET used_at = ? WHERE token = ?`
     ).bind(now, token).run()
 
-    console.log(`✅ [EDIT-FORM] Lead ${leadId} aggiornato dal form modifica (${Object.keys(safeBody).length} campi)`)
-    return c.json({ success: true, message: 'Dati aggiornati con successo', updated: Object.keys(safeBody).length })
+    console.log(`✅ [EDIT-FORM] Lead ${leadId} aggiornato (${updateFields.length - 1} campi)`)
+    return c.json({ success: true, message: 'Dati aggiornati con successo', updated: updateFields.length - 1 })
 
   } catch (error) {
-    console.error('❌ [EDIT-FORM] Errore:', error)
-    return c.json({ success: false, error: error instanceof Error ? error.message : String(error) }, 500)
+    console.error('❌ [EDIT-FORM] Errore completo:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : String(error),
+      details: error instanceof Error ? error.stack?.substring(0, 500) : undefined
+    }, 500)
   }
 })
 
