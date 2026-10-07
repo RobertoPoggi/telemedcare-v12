@@ -14086,6 +14086,166 @@ app.post('/api/leads/edit-form/:token', async (c) => {
     ).bind(now, token).run()
 
     console.log(`✅ [EDIT-FORM] Lead ${leadId} aggiornato — leads:${leadsFields.length > 0 ? leadsFields.length-1 : 0} campi, configurations:${confFields.length > 0 ? confFields.length-1 : 0} campi`)
+
+    // ── 3. Invia email di riepilogo dopo aggiornamento ───────────────────────
+    try {
+      // Rileggi i dati aggiornati da leads e configurations
+      const updatedLead = await c.env.DB.prepare(
+        `SELECT * FROM leads WHERE id = ? LIMIT 1`
+      ).bind(leadId).first() as any
+
+      const updatedConf = await c.env.DB.prepare(
+        `SELECT * FROM configurations WHERE leadId = ? ORDER BY id DESC LIMIT 1`
+      ).bind(leadId).first() as any
+
+      if (updatedLead) {
+        const EmailServiceClass = (await import('./modules/email-service')).default
+        const { loadEmailTemplate, renderTemplate } = await import('./modules/template-loader-clean')
+
+        const emailService = new EmailServiceClass(c.env)
+        const template = await loadEmailTemplate('email_modifica_dati_riepilogo', c.env.DB, c.env)
+
+        // Prepara tabella farmaci HTML
+        let farmaciTable = '<p style="color: #64748b; font-style: italic;">Nessun farmaco indicato</p>'
+        const farmaciData = updatedConf?.farmaci_data ?? null
+        if (farmaciData) {
+          try {
+            const farmaci = typeof farmaciData === 'string' ? JSON.parse(farmaciData) : farmaciData
+            if (farmaci.nomi && farmaci.nomi.length > 0) {
+              farmaciTable = '<table class="farmaci-table">'
+              farmaciTable += '<tr><th>Farmaco</th><th>Dosaggio</th><th>Orario</th></tr>'
+              for (let i = 0; i < farmaci.nomi.length; i++) {
+                farmaciTable += `<tr>
+                  <td><strong>${farmaci.nomi[i] || ''}</strong></td>
+                  <td>${farmaci.dosaggi?.[i] || 'Non specificato'}</td>
+                  <td>${farmaci.orari?.[i] || 'Non specificato'}</td>
+                </tr>`
+              }
+              farmaciTable += '</table>'
+            }
+          } catch (e) {
+            console.error('[EDIT-FORM] Errore parsing farmaci_data per email:', e)
+          }
+        }
+
+        // Formatta patologie croniche (potrebbe essere JSON array)
+        let patologieCroniche = updatedConf?.patologie_croniche || ''
+        if (patologieCroniche) {
+          try {
+            const parsed = typeof patologieCroniche === 'string' ? JSON.parse(patologieCroniche) : patologieCroniche
+            if (Array.isArray(parsed)) patologieCroniche = parsed.join(', ')
+          } catch (_) { /* usa il valore stringa così com'è */ }
+        }
+
+        const dataModifica = new Date().toLocaleDateString('it-IT', {
+          day: '2-digit', month: '2-digit', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        })
+
+        const templateData: Record<string, string> = {
+          LEAD_ID:              String(updatedLead.id ?? ''),
+          NOME_RICHIEDENTE:     updatedLead.nomeRichiedente || '',
+          COGNOME_RICHIEDENTE:  updatedLead.cognomeRichiedente || '',
+          EMAIL_RICHIEDENTE:    updatedLead.email || '',
+          TELEFONO_RICHIEDENTE: updatedLead.telefono || '',
+          SERVIZIO:             updatedLead.servizio || '',
+          PIANO_SERVIZIO:       updatedLead.piano || updatedLead.pacchetto || '',
+          DATA_MODIFICA:        dataModifica,
+
+          // Dati assistito da leads
+          NOME_ASSISTITO:       updatedLead.nomeAssistito || '',
+          COGNOME_ASSISTITO:    updatedLead.cognomeAssistito || '',
+          DATA_NASCITA:         updatedLead.dataNascitaAssistito || '',
+          CF_ASSISTITO:         updatedLead.cfAssistito || '',
+          INDIRIZZO_ASSISTITO:  [updatedLead.indirizzoAssistito, updatedLead.cittaAssistito, updatedLead.provinciaAssistito, updatedLead.capAssistito].filter(Boolean).join(', '),
+          CONDIZIONI_SALUTE:    updatedLead.condizioniSalute || '',
+          NOTE:                 updatedLead.note || '',
+
+          // Spedizione
+          SPED_NOME:            updatedLead.sped_nome || '',
+          SPED_INDIRIZZO:       updatedLead.sped_indirizzo || '',
+          SPED_CITTA:           updatedLead.sped_citta || '',
+          SPED_CAP:             updatedLead.sped_cap || '',
+          SPED_PROVINCIA:       updatedLead.sped_provincia || '',
+
+          // Dati medici da configurations (alias db→display)
+          PESO:                 updatedConf?.peso || '',
+          ALTEZZA:              updatedConf?.altezza || '',
+          TELEFONO_ASSISTITO:   updatedConf?.telefono || '',
+          ALLERGIE:             updatedConf?.allergie || 'Nessuna',
+          PATOLOGIE_CRONICHE:   patologieCroniche || 'Nessuna',
+          PATOLOGIE:            updatedConf?.patologie || 'Nessuna',       // db: patologie → display: Altre Patologie
+          NOTE_MEDICHE:         updatedConf?.note_mediche || 'Nessuna',    // db: note_mediche
+
+          // Contatti emergenza
+          CONTATTO1_NOME:       updatedConf?.contatto1_nome || '',
+          CONTATTO1_COGNOME:    updatedConf?.contatto1_cognome || '',
+          CONTATTO1_TELEFONO:   updatedConf?.contatto1_telefono || '',
+          CONTATTO1_EMAIL:      updatedConf?.contatto1_email || '',
+          CONTATTO2_NOME:       updatedConf?.contatto2_nome || '',
+          CONTATTO2_COGNOME:    updatedConf?.contatto2_cognome || '',
+          CONTATTO2_TELEFONO:   updatedConf?.contatto2_telefono || '',
+          CONTATTO2_EMAIL:      updatedConf?.contatto2_email || '',
+          CONTATTO3_NOME:       updatedConf?.contatto3_nome || '',
+          CONTATTO3_COGNOME:    updatedConf?.contatto3_cognome || '',
+          CONTATTO3_TELEFONO:   updatedConf?.contatto3_telefono || '',
+          CONTATTO3_EMAIL:      updatedConf?.contatto3_email || '',
+
+          // Whitelist
+          WHITELIST1_NOME:      updatedConf?.whitelist1_nome || '',
+          WHITELIST1_COGNOME:   updatedConf?.whitelist1_cognome || '',
+          WHITELIST1_TELEFONO:  updatedConf?.whitelist1_telefono || '',
+          WHITELIST2_NOME:      updatedConf?.whitelist2_nome || '',
+          WHITELIST2_COGNOME:   updatedConf?.whitelist2_cognome || '',
+          WHITELIST2_TELEFONO:  updatedConf?.whitelist2_telefono || '',
+          WHITELIST3_NOME:      updatedConf?.whitelist3_nome || '',
+          WHITELIST3_COGNOME:   updatedConf?.whitelist3_cognome || '',
+          WHITELIST3_TELEFONO:  updatedConf?.whitelist3_telefono || '',
+
+          // Farmaci
+          FARMACI_TABLE: farmaciTable,
+        }
+
+        const emailHtml = renderTemplate(template, templateData)
+        const subject = `✏️ Modifica Dati - ${updatedLead.nomeRichiedente || ''} ${updatedLead.cognomeRichiedente || ''} (Lead ${leadId})`
+
+        // Invia email a info@ecura.it (notifica interna con riepilogo completo)
+        const infoEmail = c.env.EMAIL_TO || c.env.EMAIL_TO_INFO || 'info@ecura.it'
+        const sendInfo = await emailService.sendEmail({
+          to: infoEmail,
+          from: c.env.RESEND_FROM || 'info@ecura.it',
+          subject,
+          html: emailHtml
+        })
+        if (sendInfo.success) {
+          console.log(`✅ [EDIT-FORM] Email riepilogo inviata a ${infoEmail}: ${sendInfo.messageId}`)
+        } else {
+          console.error(`❌ [EDIT-FORM] Errore invio email info@:`, sendInfo.error)
+        }
+
+        // Invia email al lead (conferma avvenuta modifica)
+        const leadEmail = updatedLead.email
+        if (leadEmail) {
+          // Template conferma semplificata per il lead — riusa lo stesso template ma con
+          // soggetto diverso: è un riepilogo leggibile anche dal cliente
+          const sendLead = await emailService.sendEmail({
+            to: leadEmail,
+            from: c.env.RESEND_FROM || 'info@ecura.it',
+            subject: `✅ eCura - Conferma aggiornamento dati`,
+            html: emailHtml
+          })
+          if (sendLead.success) {
+            console.log(`✅ [EDIT-FORM] Email conferma inviata al lead ${leadEmail}: ${sendLead.messageId}`)
+          } else {
+            console.error(`❌ [EDIT-FORM] Errore invio email lead:`, sendLead.error)
+          }
+        }
+      }
+    } catch (emailError) {
+      // L'errore email non deve bloccare la risposta di successo
+      console.error('❌ [EDIT-FORM] Errore nel blocco invio email (non bloccante):', emailError)
+    }
+
     return c.json({ success: true, message: 'Dati aggiornati con successo', updated: totalUpdated })
 
   } catch (error) {
