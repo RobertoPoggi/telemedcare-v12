@@ -24543,13 +24543,16 @@ app.post('/api/cron/rata-reminders', async (c) => {
     await safeAlter(`ALTER TABLE rate_pagamento ADD COLUMN reminder_sent_at TEXT DEFAULT NULL`)
     await safeAlter(`ALTER TABLE rate_pagamento ADD COLUMN reminder_count INTEGER DEFAULT 0`)
 
-    // ── Query: rate con scadenza entro 7 giorni, non ancora pagate, reminder non
-    //    inviato oggi. Il join con leads e proforma ci dà tutti i dati necessari. ─
+    // ── Query: rate in scadenza nei prossimi 7 giorni O già scadute da ≤30 giorni,
+    //    non ancora pagate, reminder non inviato oggi.
     const oggi = new Date()
-    const tra7gg = new Date(oggi)
-    tra7gg.setDate(tra7gg.getDate() + 7)
+    const tra7gg  = new Date(oggi); tra7gg.setDate(tra7gg.getDate() + 7)
+    const fa30gg  = new Date(oggi); fa30gg.setDate(fa30gg.getDate() - 30)
     const oggiStr    = oggi.toISOString().slice(0, 10)
     const tra7ggStr  = tra7gg.toISOString().slice(0, 10)
+    const fa30ggStr  = fa30gg.toISOString().slice(0, 10)
+
+    console.log(`📅 [CRON-RATA] Finestra: da ${fa30ggStr} (scadute) a ${tra7ggStr} (in scadenza)`)
 
     type RataRow = {
       rata_id: number
@@ -24564,6 +24567,7 @@ app.post('/api/cron/rata-reminders', async (c) => {
       cognomeRichiedente: string
       email: string
       iva_agevolata: number
+      iva_esente: number
       // proforma
       proforma_id: string | null
       numero_proforma: string | null
@@ -24584,6 +24588,7 @@ app.post('/api/cron/rata-reminders', async (c) => {
         l.cognomeRichiedente,
         l.email,
         COALESCE(l.iva_agevolata, 0) AS iva_agevolata,
+        COALESCE(l.iva_esente,    0) AS iva_esente,
         p.id           AS proforma_id,
         p.numero_proforma,
         p.tipo_servizio AS servizio,
@@ -24597,7 +24602,7 @@ app.post('/api/cron/rata-reminders', async (c) => {
         AND l.email IS NOT NULL
         AND l.email != ''
       ORDER BY r.data_scadenza ASC, r.lead_id ASC, r.numero_rata ASC
-    `).bind(oggiStr, tra7ggStr, oggiStr).all<RataRow>()
+    `).bind(fa30ggStr, tra7ggStr, oggiStr).all<RataRow>()
 
     const rate = rateResult.results || []
     console.log(`📅 [CRON-RATA] Rate trovate in scadenza: ${rate.length}`)
@@ -24638,7 +24643,8 @@ app.post('/api/cron/rata-reminders', async (c) => {
         nomeRichiedente: primaRata.nomeRichiedente,
         cognomeRichiedente: primaRata.cognomeRichiedente,
         email: primaRata.email,
-        iva_agevolata: primaRata.iva_agevolata
+        iva_agevolata: primaRata.iva_agevolata,
+        iva_esente: primaRata.iva_esente
       }
 
       const proformaInfo = {

@@ -2463,17 +2463,21 @@ export async function sendRataReminderEmail(
       ? `⚠️ Rata ${rataData.numero_rata}/${rataData.totale_rate} SCADUTA il ${scadenzaFmt} — pagamento in sospeso eCura`
       : `⏰ Reminder Rata ${rataData.numero_rata}/${rataData.totale_rate} — scadenza ${scadenzaFmt} — eCura`
 
+    const fromEmail = env.RESEND_FROM || 'info@ecura.it'
+    // Nota: CC a info@ecura.it è aggiunto automaticamente da sendEmailInternal
+    // per tutte le email inviate a destinatari diversi da info@ecura.it
     const sendResult = await emailService.sendEmail({
       to: leadData.email,
+      from: fromEmail,
       subject: oggetto,
       html: htmlContent
     })
 
     if (sendResult.success) {
       result.success = true
-      result.emailsSent.push(`email_reminder_rata${rataData.numero_rata} -> ${leadData.email}`)
+      result.emailsSent.push(`email_reminder_rata${rataData.numero_rata} -> ${leadData.email} (cc: info@ecura.it auto)`)
       result.messageIds = [sendResult.messageId]
-      console.log(`✅ [CRON-RATA] Reminder rata ${rataData.numero_rata} inviato a ${leadData.email}: ${sendResult.messageId}`)
+      console.log(`✅ [CRON-RATA] Reminder rata ${rataData.numero_rata} inviato a ${leadData.email} (cc: info@ecura.it): ${sendResult.messageId}`)
     } else {
       result.errors.push(`Errore invio reminder rata ${rataData.numero_rata}: ${sendResult.error}`)
       console.error(`❌ [CRON-RATA] Errore invio reminder rata ${rataData.numero_rata}:`, sendResult.error)
