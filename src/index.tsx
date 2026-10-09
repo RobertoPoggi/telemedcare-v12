@@ -37619,20 +37619,8 @@ app.post('/api/leads/:id/send-edit-form', requireAuth, async (c) => {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     const now = new Date().toISOString()
 
-    // Garantisce esistenza della tabella lead_edit_tokens
-    try {
-      await c.env.DB.prepare(`
-        CREATE TABLE IF NOT EXISTS lead_edit_tokens (
-          id TEXT PRIMARY KEY,
-          lead_id TEXT NOT NULL,
-          token TEXT NOT NULL UNIQUE,
-          expires_at TEXT NOT NULL,
-          used_at TEXT DEFAULT NULL,
-          created_at TEXT NOT NULL
-        )
-      `).run()
-    } catch (_) { /* già esiste */ }
-
+    // NB: CREATE TABLE IF NOT EXISTS rimosso — la tabella è già garantita
+    // dal primo accesso a GET/POST /api/leads/edit-token/:token
     const tokenId = `LET-${Date.now()}-${Math.random().toString(36).slice(2,8).toUpperCase()}`
     await c.env.DB.prepare(`
       INSERT INTO lead_edit_tokens (id, lead_id, token, expires_at, created_at)

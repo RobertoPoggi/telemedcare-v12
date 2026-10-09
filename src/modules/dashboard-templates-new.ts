@@ -5544,7 +5544,7 @@ export const leads_dashboard = `<!DOCTYPE html>
 
             // Disabilita bottone
             const btns = document.querySelectorAll(\`[data-action="send-edit-form"][data-lead-id="\${leadId}"]\`);
-            btns.forEach(b => { b.disabled = true; b.textContent = '⏳'; });
+            btns.forEach(b => { b.disabled = true; b.textContent = '⏳'; b.title = 'Invio in corso...'; });
             _editFormInProgress.add(leadId);
 
             try {
@@ -5558,13 +5558,13 @@ export const leads_dashboard = `<!DOCTYPE html>
                     alert('✅ Form modifica dati inviato!\\n\\n' + (result.message || ''));
                 } else {
                     alert('❌ Errore: ' + (result.error || 'Errore sconosciuto'));
-                    btns.forEach(b => { b.disabled = false; b.textContent = '✏️'; });
                 }
             } catch (error) {
                 alert('❌ Errore di comunicazione: ' + error.message);
-                btns.forEach(b => { b.disabled = false; b.textContent = '✏️'; });
             } finally {
+                // Riabilita SEMPRE il bottone (sia successo che errore che eccezione)
                 _editFormInProgress.delete(leadId);
+                btns.forEach(b => { b.disabled = false; b.textContent = '✏️'; b.title = 'Invia form modifica dati'; });
             }
         }
 
