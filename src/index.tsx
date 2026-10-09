@@ -24610,7 +24610,7 @@ app.post('/api/cron/rata-reminders', async (c) => {
     if (rate.length === 0) {
       return c.json({
         success: true,
-        message: 'Nessuna rata in scadenza nei prossimi 7 giorni',
+        message: 'Nessuna rata da sollecitare (scadute ≤30gg o in scadenza ≤7gg)',
         stats: { total: 0, sent: 0, failed: 0, skipped: 0 }
       })
     }
@@ -24620,7 +24620,10 @@ app.post('/api/cron/rata-reminders', async (c) => {
     let sent = 0, failed = 0, skipped = 0
     const details: Array<{ rata_id: number; lead_id: string; rata: number; esito: string }> = []
 
-    // Raggruppa per lead per caricare tutte le rate del lead una volta sola
+    // Raggruppa per lead — UNA SOLA EMAIL PER LEAD PER GIORNO
+    // Se un lead ha più rate scadute, inviamo un solo reminder sulla rata più urgente
+    // (la prima per data_scadenza) e marchiamo TUTTE le rate del lead come notificate oggi.
+    // Questo evita di bombardare il cliente con N email lo stesso giorno.
     const leadIds = [...new Set(rate.map(r => r.lead_id))]
 
     for (const leadId of leadIds) {
@@ -24634,48 +24637,55 @@ app.post('/api/cron/rata-reminders', async (c) => {
       const tutteLeRate = tutteLeRateResult.results || []
       const totaleRate = tutteLeRate.length
 
-      // Prendi la prima proforma del lead (per il link pagamento)
       const rateDelLead = rate.filter(r => r.lead_id === leadId)
-      const primaRata = rateDelLead[0]
+      // Ordina per data_scadenza ASC → la prima è la più urgente (scaduta prima o prossima a scadere)
+      rateDelLead.sort((a, b) => a.data_scadenza.localeCompare(b.data_scadenza))
+      const rataUrgente = rateDelLead[0]   // ← inviamo il reminder su questa sola rata
 
       const leadData = {
-        id: primaRata.lead_id,
-        nomeRichiedente: primaRata.nomeRichiedente,
-        cognomeRichiedente: primaRata.cognomeRichiedente,
-        email: primaRata.email,
-        iva_agevolata: primaRata.iva_agevolata,
-        iva_esente: primaRata.iva_esente
+        id: rataUrgente.lead_id,
+        nomeRichiedente: rataUrgente.nomeRichiedente,
+        cognomeRichiedente: rataUrgente.cognomeRichiedente,
+        email: rataUrgente.email,
+        iva_agevolata: rataUrgente.iva_agevolata,
+        iva_esente: rataUrgente.iva_esente
       }
 
       const proformaInfo = {
-        proformaId: primaRata.proforma_id || primaRata.lead_id,
-        numeroProforma: primaRata.numero_proforma || `—`,
-        servizio: primaRata.servizio || 'PRO',
-        piano: primaRata.piano || 'BASE'
+        proformaId: rataUrgente.proforma_id || rataUrgente.lead_id,
+        numeroProforma: rataUrgente.numero_proforma || `—`,
+        servizio: rataUrgente.servizio || 'PRO',
+        piano: rataUrgente.piano || 'BASE'
       }
 
-      // Invia un reminder per ogni rata in scadenza di questo lead
-      for (const rata of rateDelLead) {
-        try {
-          const esito = await sendRataReminderEmail(
-            leadData,
-            {
-              id: rata.rata_id,
-              numero_rata: rata.numero_rata,
-              totale_rate: totaleRate,
-              importo: rata.importo,
-              data_scadenza: rata.data_scadenza
-            },
-            proformaInfo,
-            tutteLeRate,
-            env,
-            db
-          )
+      // Calcola il totale arretrato (tutte le rate non pagate di questo lead)
+      const rateArretrate = rateDelLead.filter(r => r.data_scadenza < oggiStr)
+      const nArretrate = rateArretrate.length
+      if (nArretrate > 1) {
+        console.log(`⚠️ [CRON-RATA] Lead ${leadId} ha ${nArretrate} rate scadute — invio 1 sola email sulla rata ${rataUrgente.numero_rata} (più urgente)`)
+      }
 
-          if (esito.success) {
-            sent++
-            details.push({ rata_id: rata.rata_id, lead_id: rata.lead_id, rata: rata.numero_rata, esito: 'sent' })
-            // Aggiorna reminder_sent_at e reminder_count
+      try {
+        const esito = await sendRataReminderEmail(
+          leadData,
+          {
+            id: rataUrgente.rata_id,
+            numero_rata: rataUrgente.numero_rata,
+            totale_rate: totaleRate,
+            importo: rataUrgente.importo,
+            data_scadenza: rataUrgente.data_scadenza
+          },
+          proformaInfo,
+          tutteLeRate,
+          env,
+          db
+        )
+
+        if (esito.success) {
+          sent++
+          // Marca TUTTE le rate del lead come notificate oggi (non solo quella urgente)
+          // così non vengono rimandate altre email oggi per le rate secondarie
+          for (const rata of rateDelLead) {
             await db.prepare(`
               UPDATE rate_pagamento
               SET reminder_sent_at = datetime('now'),
@@ -24683,15 +24693,19 @@ app.post('/api/cron/rata-reminders', async (c) => {
                   updated_at       = datetime('now')
               WHERE id = ?
             `).bind(rata.rata_id).run()
-          } else {
-            failed++
-            details.push({ rata_id: rata.rata_id, lead_id: rata.lead_id, rata: rata.numero_rata, esito: `failed: ${esito.errors.join('; ')}` })
+            details.push({ rata_id: rata.rata_id, lead_id: rata.lead_id, rata: rata.numero_rata,
+              esito: rata.rata_id === rataUrgente.rata_id ? 'sent' : 'marked_notified_same_day' })
           }
-        } catch (err: any) {
+        } else {
           failed++
-          details.push({ rata_id: rata.rata_id, lead_id: rata.lead_id, rata: rata.numero_rata, esito: `exception: ${err.message}` })
-          console.error(`❌ [CRON-RATA] Eccezione rata ${rata.rata_id}:`, err)
+          details.push({ rata_id: rataUrgente.rata_id, lead_id: rataUrgente.lead_id,
+            rata: rataUrgente.numero_rata, esito: `failed: ${esito.errors.join('; ')}` })
         }
+      } catch (err: any) {
+        failed++
+        details.push({ rata_id: rataUrgente.rata_id, lead_id: rataUrgente.lead_id,
+          rata: rataUrgente.numero_rata, esito: `exception: ${err.message}` })
+        console.error(`❌ [CRON-RATA] Eccezione lead ${leadId}:`, err)
       }
     }
 
