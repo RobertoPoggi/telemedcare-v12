@@ -6098,8 +6098,8 @@ export const leads_dashboard = `<!DOCTYPE html>
         (function injectRateizzazioneModal() {
             if (document.getElementById('rateizzazioneModal')) return;
             const html = \`
-              <div id="rateizzazioneModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:16px;">
-              <div style="background:#fff;border-radius:16px;padding:24px 28px;max-width:680px;width:100%;max-height:92vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.18);">
+              <div id="rateizzazioneModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:12px;box-sizing:border-box;">
+              <div style="background:#fff;border-radius:16px;padding:20px 22px;max-width:720px;width:100%;max-height:94vh;overflow-y:auto;overflow-x:hidden;box-shadow:0 8px 40px rgba(0,0,0,.18);box-sizing:border-box;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
                   <h2 style="font-size:18px;font-weight:700;color:#1f2937;margin:0;">📅 Rateizzazione pagamento</h2>
                   <button onclick="closeRateizzazioneModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#6b7280;">×</button>
@@ -6107,10 +6107,10 @@ export const leads_dashboard = `<!DOCTYPE html>
                 <div id="rateizzazioneLeadInfo" style="font-size:13px;color:#4b5563;margin-bottom:16px;"></div>
 
                 <!-- Sezione esistente (visualizzazione rate) -->
-                <div id="rateizzazioneExisting" style="display:none;margin-bottom:16px;"></div>
+                <div id="rateizzazioneExisting" style="display:none;margin-bottom:16px;overflow-x:auto;"></div>
 
                 <!-- Sezione configurazione nuove rate -->
-                <div id="rateizzazioneForm">
+                <div id="rateizzazioneForm" style="overflow-x:hidden;">
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
                     <div>
                       <label style="font-size:12px;font-weight:600;color:#374151;">Numero di rate *</label>
@@ -6176,7 +6176,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                           onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
                     🗑 Rimuovi Piano
                   </button>
-                  <button onclick="salvaRateizzazione()"
+                  <button id="rateizzazioneSalvaBtn" onclick="salvaRateizzazione()"
                           style="padding:8px 18px;background:#6366f1;color:#ffffff;font-size:14px;font-weight:600;border-radius:8px;border:none;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.15);"
                           onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='#6366f1'">
                     💾 Salva Piano Rate
@@ -6208,6 +6208,10 @@ export const leads_dashboard = `<!DOCTYPE html>
 
             existingEl.style.display = 'none';
             existingEl.innerHTML     = '';
+            // Reset sempre: form visibile di default solo se NON rateizzato
+            formEl.style.display = isRateizzato ? 'none' : 'block';
+            const salvaBtn = document.getElementById('rateizzazioneSalvaBtn');
+            if (salvaBtn) salvaBtn.style.display = isRateizzato ? 'none' : 'inline-block';
 
             if (isRateizzato) {
                 delBtn.style.display = 'inline-block';
@@ -6221,16 +6225,16 @@ export const leads_dashboard = `<!DOCTYPE html>
                             const sel = ['ATTESA','PAGATA','SCADUTA','ANNULLATA'].map(s =>
                                 \`<option value="\${s}" \${r.status===s?'selected':''}> \${s}</option>\`).join('');
                             return \`<tr style="border-bottom:1px solid #f3f4f6;">
-                                <td style="padding:5px 8px;font-weight:600;white-space:nowrap;">Rata \${r.numero_rata}</td>
-                                <td style="padding:5px 8px;text-align:right;white-space:nowrap;">€\${Number(r.importo).toFixed(2)}</td>
-                                <td style="padding:5px 8px;white-space:nowrap;">\${r.data_scadenza ? r.data_scadenza.substring(0,10) : '—'}</td>
-                                <td style="padding:5px 8px;">
+                                <td style="padding:5px 10px;font-weight:600;white-space:nowrap;">Rata \${r.numero_rata}</td>
+                                <td style="padding:5px 10px;text-align:right;white-space:nowrap;">€\${Number(r.importo).toFixed(2)}</td>
+                                <td style="padding:5px 10px;white-space:nowrap;">\${r.data_scadenza ? r.data_scadenza.substring(0,10) : '—'}</td>
+                                <td style="padding:5px 10px;white-space:nowrap;">
                                     <select onchange="aggiornaStato(\${r.id},'\${leadId}',this.value)"
-                                            style="font-size:11px;padding:2px 4px;border:1px solid #d1d5db;border-radius:6px;color:\${sc};font-weight:600;max-width:100px;">
+                                            style="font-size:11px;padding:3px 6px;border:1px solid #d1d5db;border-radius:6px;color:\${sc};font-weight:600;min-width:90px;">
                                         \${sel}
                                     </select>
                                 </td>
-                                <td style="padding:5px 8px;font-size:11px;color:#6b7280;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">\${r.riferimento||r.note||''}</td>
+                                <td style="padding:5px 10px;font-size:11px;color:#6b7280;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;">\${r.riferimento||r.note||''}</td>
                             </tr>\`;
                         }).join('');
                         existingEl.innerHTML = \`
@@ -6240,27 +6244,27 @@ export const leads_dashboard = `<!DOCTYPE html>
                                 \${data.riserva_dominio ? '<span style="margin-left:8px;font-size:11px;background:#fed7aa;color:#92400e;padding:2px 7px;border-radius:9999px;">🔒 Riserva di Dominio</span>' : ''}
                                 \${data.rateizzazione_saldo ? '<span style="margin-left:8px;font-size:11px;background:#dcfce7;color:#166534;padding:2px 7px;border-radius:9999px;">✅ SALDATO</span>' : ''}
                               </div>
-                              <div style="overflow-x:auto;">
-                              <table style="width:100%;font-size:12px;border-collapse:collapse;min-width:420px;">
+                              <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+                              <table style="width:max-content;min-width:100%;font-size:12px;border-collapse:collapse;table-layout:auto;">
                                 <thead><tr style="background:#e0e7ff;font-size:10px;text-transform:uppercase;color:#4338ca;">
-                                  <th style="padding:5px 8px;text-align:left;white-space:nowrap;">Rata</th>
-                                  <th style="padding:5px 8px;text-align:right;white-space:nowrap;">Importo</th>
-                                  <th style="padding:5px 8px;text-align:left;white-space:nowrap;">Scadenza</th>
-                                  <th style="padding:5px 8px;text-align:left;white-space:nowrap;">Stato</th>
-                                  <th style="padding:5px 8px;text-align:left;white-space:nowrap;">Rif.</th>
+                                  <th style="padding:5px 10px;text-align:left;white-space:nowrap;">Rata</th>
+                                  <th style="padding:5px 10px;text-align:right;white-space:nowrap;">Importo</th>
+                                  <th style="padding:5px 10px;text-align:left;white-space:nowrap;">Scadenza</th>
+                                  <th style="padding:5px 10px;text-align:left;white-space:nowrap;">Stato</th>
+                                  <th style="padding:5px 10px;text-align:left;white-space:nowrap;">Rif.</th>
                                 </tr></thead>
                                 <tbody>\${righe}</tbody>
                               </table>
                               </div>
                             </div>
                             <div style="margin-top:10px;">
-                              <button onclick="document.getElementById('rateizzazioneForm').style.display=document.getElementById('rateizzazioneForm').style.display==='none'?'block':'none'"
-                                style="font-size:12px;color:#6366f1;background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;">
+                              <button onclick="(function(){var f=document.getElementById('rateizzazioneForm');var s=document.getElementById('rateizzazioneSalvaBtn');var vis=f.style.display==='none';f.style.display=vis?'block':'none';if(s)s.style.display=vis?'inline-block':'none';})()"
+                                style="font-size:12px;color:#6366f1;background:none;border:none;cursor:pointer;padding:4px 0;text-decoration:underline;">
                                 ✏️ Modifica / Sostituisci piano
                               </button>
                             </div>\`;
                         existingEl.style.display = 'block';
-                        // Se piano esiste già, nasconde il form di modifica di default
+                        // form già nascosto sopra (reset iniziale), confermato
                         formEl.style.display = 'none';
                     }
                 } catch(e) { /* ignora */ }
