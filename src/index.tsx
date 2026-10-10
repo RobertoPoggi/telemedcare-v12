@@ -11653,6 +11653,77 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
       ).run()
     }
 
+    // ── Genera rate_pagamento dal piano indicativo del lead ───────────────────
+    // Le rate vengono create QUI per la prima volta, usando il piano salvato
+    // in leads.rateizzazione_piano_json quando l'operatore ha impostato la rateizzazione.
+    // Se il piano esiste → usa le scadenze/importi pianificati.
+    // Se rateizzazione_attiva=1 ma il piano è assente → non crea rate (operatore deve impostarlo).
+    let rateCreate = 0
+    if (leadIdForRateP && rateizzazioneAttivaP) {
+      try {
+        // Leggi il piano indicativo dal lead
+        const leadPiano = await c.env.DB.prepare(
+          `SELECT rateizzazione_piano_json, rateizzazione_note, riserva_dominio FROM leads WHERE id = ? LIMIT 1`
+        ).bind(leadIdForRateP).first() as any
+
+        const pianoJson = leadPiano?.rateizzazione_piano_json
+          ? JSON.parse(leadPiano.rateizzazione_piano_json) as Array<{
+              numero_rata: number; importo: number; data_scadenza: string; note?: string
+            }>
+          : null
+
+        if (pianoJson && pianoJson.length > 0) {
+          // Assicura che la tabella esista
+          try {
+            await c.env.DB.prepare(`
+              CREATE TABLE IF NOT EXISTS rate_pagamento (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                lead_id          TEXT NOT NULL,
+                numero_rata      INTEGER NOT NULL,
+                importo          REAL NOT NULL,
+                data_scadenza    TEXT NOT NULL,
+                status           TEXT NOT NULL DEFAULT 'ATTESA',
+                metodo_pagamento TEXT DEFAULT NULL,
+                riferimento      TEXT DEFAULT NULL,
+                note             TEXT DEFAULT NULL,
+                reminder_sent_at TEXT DEFAULT NULL,
+                reminder_count   INTEGER DEFAULT 0,
+                created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
+              )
+            `).run()
+          } catch (_) {}
+
+          // Cancella eventuali rate ATTESA/SCADUTA esistenti (idempotente: rigenerazione prefattura)
+          await c.env.DB.prepare(
+            `DELETE FROM rate_pagamento WHERE lead_id = ? AND status IN ('ATTESA','SCADUTA')`
+          ).bind(leadIdForRateP).run()
+
+          const nowRate = new Date().toISOString()
+          for (const r of pianoJson) {
+            if (!r.importo || !r.data_scadenza) continue
+            await c.env.DB.prepare(`
+              INSERT INTO rate_pagamento (lead_id, numero_rata, importo, data_scadenza, status, note, created_at, updated_at)
+              VALUES (?, ?, ?, ?, 'ATTESA', ?, ?, ?)
+            `).bind(leadIdForRateP, r.numero_rata, r.importo, r.data_scadenza, r.note || null, nowRate, nowRate).run()
+            rateCreate++
+          }
+
+          // Aggiorna rate_json sulla prefattura appena salvata
+          await c.env.DB.prepare(
+            `UPDATE prefatture SET rate_json = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+          ).bind(JSON.stringify(pianoJson), finalPfId).run()
+
+          console.log(`📅 [PREFATTURA] Lead ${leadIdForRateP}: create ${rateCreate} rate_pagamento dalla prefattura ${finalNumPF}`)
+        } else if (rateizzazioneAttivaP) {
+          console.warn(`⚠️ [PREFATTURA] Lead ${leadIdForRateP}: rateizzazione_attiva=1 ma nessun piano indicativo salvato (rateizzazione_piano_json NULL). Rate non create — operatore deve impostare il piano.`)
+        }
+      } catch (rateErr: any) {
+        // Non-blocking: la prefattura è già salvata, l'errore sulle rate non deve bloccare
+        console.error(`❌ [PREFATTURA] Errore creazione rate_pagamento per lead ${leadIdForRateP}:`, rateErr)
+      }
+    }
+
     // ── Invia email al commercialista (se configurato) ─────────────────
     let emailInviata = false
     let emailError   = ''
@@ -11749,12 +11820,13 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
 
     return c.json({
       success: true,
-      prefattura_id: pfId,
+      prefattura_id: finalPfId,
       numero_prefattura: finalNumPF,
       imponibile: imponibileP,
       iva_pct: ivaPct,
       iva_amt: ivaAmtP,
       totale: totaleP,
+      rate_create: rateCreate,
       email_inviata: emailInviata,
       email_commercialista: emailCommercialista || null,
       email_error: emailError || null,
@@ -27897,6 +27969,14 @@ app.post('/api/leads/apply-canale-discounts', requireAuth, async (c) => {
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ─── POST /api/leads/:id/rateizzazione — imposta piano rate per un lead ────
+// POST /api/leads/:id/rateizzazione
+// ── PIANO RATEIZZAZIONE (solo indicazione, NO rate_pagamento) ─────────────
+// Salva sul lead l'intenzione di pagare a rate e il piano indicativo
+// (numero rate, importi, scadenze pianificate, riserva di dominio).
+// Le righe effettive in rate_pagamento vengono create AUTOMATICAMENTE
+// quando si genera la prefattura (POST /api/ddts/:id/prefattura).
+// Questo endpoint è quindi utilizzabile in qualsiasi momento del flusso
+// (anche prima di avere un contratto) perché non produce obbligazioni verso il cliente.
 app.post('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
   const leadId = c.req.param('id')
   try {
@@ -27914,35 +27994,21 @@ app.post('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
     const db = c.env.DB
     const now = new Date().toISOString()
 
-    // 0. Assicura che la tabella esista (colonne minime) + aggiungi colonne leads se mancanti
-    const step0a = 'CREATE TABLE rate_pagamento'
-    await db.prepare(`
-      CREATE TABLE IF NOT EXISTS rate_pagamento (
-        id               INTEGER PRIMARY KEY AUTOINCREMENT,
-        lead_id          TEXT NOT NULL,
-        numero_rata      INTEGER NOT NULL,
-        importo          REAL NOT NULL,
-        data_scadenza    TEXT NOT NULL,
-        status           TEXT NOT NULL DEFAULT 'ATTESA',
-        metodo_pagamento TEXT DEFAULT NULL,
-        riferimento      TEXT DEFAULT NULL,
-        note             TEXT DEFAULT NULL,
-        created_at       TEXT NOT NULL DEFAULT (datetime('now')),
-        updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
-      )
-    `).run()
+    // Verifica esistenza lead
+    const lead = await db.prepare(`SELECT id FROM leads WHERE id = ? LIMIT 1`).bind(leadId).first() as any
+    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
 
-    // Aggiungi colonne leads mancanti (migration non eseguita)
+    // Migration safe: aggiungi colonne se mancanti
     const leadsColsDefs: Array<[string, string]> = [
-      ['rateizzazione_attiva', 'INTEGER NOT NULL DEFAULT 0'],
-      ['rateizzazione_saldo',  'INTEGER NOT NULL DEFAULT 0'],
-      ['rateizzazione_note',   'TEXT DEFAULT NULL'],
-      ['riserva_dominio',      'INTEGER NOT NULL DEFAULT 0'],
+      ['rateizzazione_attiva',    'INTEGER NOT NULL DEFAULT 0'],
+      ['rateizzazione_saldo',     'INTEGER NOT NULL DEFAULT 0'],
+      ['rateizzazione_note',      'TEXT DEFAULT NULL'],
+      ['riserva_dominio',         'INTEGER NOT NULL DEFAULT 0'],
+      ['rateizzazione_piano_json','TEXT DEFAULT NULL'],  // ← piano indicativo (scadenze/importi)
     ]
     for (const [col, def] of leadsColsDefs) {
       try { await db.prepare(`ALTER TABLE leads ADD COLUMN ${col} ${def}`).run() } catch {}
     }
-    // Aggiungi colonne contracts mancanti
     const contractsColsDefs: Array<[string, string]> = [
       ['rateizzazione_attiva', 'INTEGER NOT NULL DEFAULT 0'],
       ['riserva_dominio',      'INTEGER NOT NULL DEFAULT 0'],
@@ -27951,48 +28017,21 @@ app.post('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
       try { await db.prepare(`ALTER TABLE contracts ADD COLUMN ${col} ${def}`).run() } catch {}
     }
 
-    // 0b. GUARDIA: il lead deve essere convertito OPPURE avere una proforma OPPURE una prefattura.
-    //     Impedisce di creare rate su prospect/lead non ancora clienti.
-    const lead = await db.prepare(`SELECT status FROM leads WHERE id = ? LIMIT 1`).bind(leadId).first() as any
-    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
-
-    const isConvertito = lead.status === 'convertito'
-    const hasProforma = await db.prepare(
-      `SELECT 1 FROM proforma WHERE leadId = ? LIMIT 1`
-    ).bind(leadId).first()
-    const hasPrefattura = await db.prepare(`
-      SELECT 1 FROM prefatture pft
-      JOIN contracts ct ON ct.codice_contratto = pft.contract_code
-      WHERE ct.leadId = ? LIMIT 1
-    `).bind(leadId).first()
-
-    if (!isConvertito && !hasProforma && !hasPrefattura) {
-      console.warn(`⚠️ [RATEIZZAZIONE] Lead ${leadId} (status: ${lead.status}) — nessuna proforma né prefattura emessa. Operazione bloccata.`)
-      return c.json({
-        success: false,
-        error: 'Impossibile impostare una rateizzazione: il lead non è convertito e non ha nessuna proforma o prefattura emessa.'
-      }, 403)
-    }
-
-    // 1. Cancella rate precedenti ATTESA/SCADUTA
-    await db.prepare(`DELETE FROM rate_pagamento WHERE lead_id = ? AND status IN ('ATTESA','SCADUTA')`).bind(leadId).run()
-
-    // 2. Inserisce le nuove rate
-    for (const r of body.rate) {
-      if (!r.importo || !r.data_scadenza) continue
-      await db.prepare(`
-        INSERT INTO rate_pagamento (lead_id, numero_rata, importo, data_scadenza, status, note, created_at, updated_at)
-        VALUES (?, ?, ?, ?, 'ATTESA', ?, ?, ?)
-      `).bind(leadId, r.numero_rata, r.importo, r.data_scadenza, r.note || null, now, now).run()
-    }
-
-    // 3. Aggiorna flags sul lead
+    // Salva il piano come JSON sul lead — NON crea righe in rate_pagamento.
+    // Le rate_pagamento verranno create alla generazione della prefattura.
+    const pianoJson = JSON.stringify(body.rate)
     await db.prepare(`
-      UPDATE leads SET rateizzazione_attiva=1, riserva_dominio=?, rateizzazione_note=?, rateizzazione_saldo=0, updated_at=?
-      WHERE id=?
-    `).bind(body.riserva_dominio ? 1 : 0, body.note_rateizzazione || null, now, leadId).run()
+      UPDATE leads
+      SET rateizzazione_attiva     = 1,
+          riserva_dominio          = ?,
+          rateizzazione_note       = ?,
+          rateizzazione_piano_json = ?,
+          rateizzazione_saldo      = 0,
+          updated_at               = ?
+      WHERE id = ?
+    `).bind(body.riserva_dominio ? 1 : 0, body.note_rateizzazione || null, pianoJson, now, leadId).run()
 
-    // 4. Aggiorna contratto firmato se esiste
+    // Aggiorna anche il contratto firmato se esiste
     try {
       await db.prepare(`
         UPDATE contracts SET rateizzazione_attiva=1, riserva_dominio=?, updated_at=?
@@ -28000,8 +28039,12 @@ app.post('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
       `).bind(body.riserva_dominio ? 1 : 0, now, leadId).run()
     } catch {}
 
-    console.log(`📅 [RATEIZZAZIONE] Lead ${leadId}: ${body.rate.length} rate impostate`)
-    return c.json({ success: true, rate_create: body.rate.length, message: `Piano rateizzazione impostato: ${body.rate.length} rate` })
+    console.log(`📅 [RATEIZZAZIONE] Lead ${leadId}: piano indicativo salvato (${body.rate.length} rate). Le rate_pagamento saranno create alla generazione prefattura.`)
+    return c.json({
+      success: true,
+      message: `Piano rateizzazione salvato (${body.rate.length} rate). Le rate effettive verranno create automaticamente alla generazione della prefattura.`,
+      rate_pianificate: body.rate.length
+    })
   } catch (err: any) {
     console.error('❌ [RATEIZZAZIONE] Errore:', err)
     return c.json({ success: false, error: err?.message ?? String(err) }, 500)
@@ -28016,7 +28059,8 @@ app.get('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
     const db = c.env.DB
 
     const lead = await db.prepare(`
-      SELECT rateizzazione_attiva, rateizzazione_note, rateizzazione_saldo, riserva_dominio, prezzo_anno, prezzo_scontato
+      SELECT rateizzazione_attiva, rateizzazione_note, rateizzazione_saldo, riserva_dominio,
+             prezzo_anno, prezzo_scontato, rateizzazione_piano_json
       FROM leads WHERE id = ?
     `).bind(leadId).first() as any
 
@@ -28030,6 +28074,14 @@ app.get('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
     const totalePagato  = (rate.results || []).filter((r: any) => r.status === 'PAGATA').reduce((sum: number, r: any) => sum + (Number(r.importo) || 0), 0)
     const ratePagate    = (rate.results || []).filter((r: any) => r.status === 'PAGATA').length
 
+    // Piano indicativo (salvato dall'operatore prima della prefattura)
+    let pianoIndicativo: any[] = []
+    try {
+      if (lead.rateizzazione_piano_json) pianoIndicativo = JSON.parse(lead.rateizzazione_piano_json)
+    } catch (_) {}
+
+    const hasRateEffettive = (rate.results || []).length > 0
+
     return c.json({
       success: true,
       rateizzazione_attiva: Boolean(lead.rateizzazione_attiva),
@@ -28037,11 +28089,15 @@ app.get('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
       riserva_dominio:      Boolean(lead.riserva_dominio),
       rateizzazione_note:   lead.rateizzazione_note,
       prezzo_totale:        lead.prezzo_scontato || lead.prezzo_anno,
+      // rate effettive (create dalla prefattura) — vuoto finché la prefattura non è generata
       totale_rate:          totaleImporti,
       totale_pagato:        totalePagato,
       rate_pagate:          ratePagate,
       rate_totali:          (rate.results || []).length,
-      rate:                 rate.results || []
+      rate:                 rate.results || [],
+      // piano indicativo (salvato dall'operatore, usato per generare le rate alla prefattura)
+      piano_indicativo:     pianoIndicativo,
+      piano_in_attesa_prefattura: Boolean(lead.rateizzazione_attiva) && !hasRateEffettive && pianoIndicativo.length > 0
     })
   } catch (err: any) {
     return c.json({ success: false, error: err?.message }, 500)

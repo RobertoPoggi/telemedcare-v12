@@ -6218,54 +6218,94 @@ export const leads_dashboard = `<!DOCTYPE html>
                 try {
                     const res = await fetch('/api/leads/' + leadId + '/rateizzazione', { credentials: 'include' });
                     const data = await res.json();
-                    if (data.success && data.rate && data.rate.length > 0) {
-                        const statusColors = { PAGATA:'#16a34a', ATTESA:'#d97706', SCADUTA:'#dc2626', ANNULLATA:'#6b7280' };
-                        const righe = data.rate.map(r => {
-                            const sc  = statusColors[r.status] || '#6b7280';
-                            const sel = ['ATTESA','PAGATA','SCADUTA','ANNULLATA'].map(s =>
-                                \`<option value="\${s}" \${r.status===s?'selected':''}> \${s}</option>\`).join('');
-                            return \`<tr style="border-bottom:1px solid #f3f4f6;">
-                                <td style="padding:5px 10px;font-weight:600;white-space:nowrap;">Rata \${r.numero_rata}</td>
-                                <td style="padding:5px 10px;text-align:right;white-space:nowrap;">€\${Number(r.importo).toFixed(2)}</td>
-                                <td style="padding:5px 10px;white-space:nowrap;">\${r.data_scadenza ? r.data_scadenza.substring(0,10) : '—'}</td>
-                                <td style="padding:5px 10px;white-space:nowrap;">
-                                    <select onchange="aggiornaStato(\${r.id},'\${leadId}',this.value)"
-                                            style="font-size:11px;padding:3px 6px;border:1px solid #d1d5db;border-radius:6px;color:\${sc};font-weight:600;min-width:90px;">
-                                        \${sel}
-                                    </select>
-                                </td>
-                                <td style="padding:5px 10px;font-size:11px;color:#6b7280;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;">\${r.riferimento||r.note||''}</td>
-                            </tr>\`;
-                        }).join('');
-                        existingEl.innerHTML = \`
-                            <div style="background:#eef2ff;border:1px solid #a5b4fc;border-radius:10px;padding:12px;margin-bottom:12px;">
-                              <div style="font-size:13px;font-weight:700;color:#4338ca;margin-bottom:8px;">
-                                📋 Piano attuale &nbsp;·&nbsp; Pagate: \${data.rate_pagate}/\${data.rate_totali} &nbsp;·&nbsp; Saldo: €\${data.totale_pagato.toFixed(2)}/€\${data.totale_rate.toFixed(2)}
-                                \${data.riserva_dominio ? '<span style="margin-left:8px;font-size:11px;background:#fed7aa;color:#92400e;padding:2px 7px;border-radius:9999px;">🔒 Riserva di Dominio</span>' : ''}
-                                \${data.rateizzazione_saldo ? '<span style="margin-left:8px;font-size:11px;background:#dcfce7;color:#166534;padding:2px 7px;border-radius:9999px;">✅ SALDATO</span>' : ''}
-                              </div>
-                              <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
-                              <table style="width:max-content;min-width:100%;font-size:12px;border-collapse:collapse;table-layout:auto;">
-                                <thead><tr style="background:#e0e7ff;font-size:10px;text-transform:uppercase;color:#4338ca;">
-                                  <th style="padding:5px 10px;text-align:left;white-space:nowrap;">Rata</th>
-                                  <th style="padding:5px 10px;text-align:right;white-space:nowrap;">Importo</th>
-                                  <th style="padding:5px 10px;text-align:left;white-space:nowrap;">Scadenza</th>
-                                  <th style="padding:5px 10px;text-align:left;white-space:nowrap;">Stato</th>
-                                  <th style="padding:5px 10px;text-align:left;white-space:nowrap;">Rif.</th>
-                                </tr></thead>
-                                <tbody>\${righe}</tbody>
-                              </table>
-                              </div>
-                            </div>
-                            <div style="margin-top:10px;">
-                              <button onclick="(function(){var f=document.getElementById('rateizzazioneForm');var s=document.getElementById('rateizzazioneSalvaBtn');var vis=f.style.display==='none';f.style.display=vis?'block':'none';if(s)s.style.display=vis?'inline-block':'none';})()"
-                                style="font-size:12px;color:#6366f1;background:none;border:none;cursor:pointer;padding:4px 0;text-decoration:underline;">
-                                ✏️ Modifica / Sostituisci piano
-                              </button>
-                            </div>\`;
-                        existingEl.style.display = 'block';
-                        // form già nascosto sopra (reset iniziale), confermato
-                        formEl.style.display = 'none';
+                    if (data.success) {
+                        // ── CASO A: rate effettive già create dalla prefattura ─────────────────
+                        if (data.rate && data.rate.length > 0) {
+                            const statusColors = { PAGATA:'#16a34a', ATTESA:'#d97706', SCADUTA:'#dc2626', ANNULLATA:'#6b7280' };
+                            const righe = data.rate.map(r => {
+                                const sc  = statusColors[r.status] || '#6b7280';
+                                const sel = ['ATTESA','PAGATA','SCADUTA','ANNULLATA'].map(s =>
+                                    \`<option value="\${s}" \${r.status===s?'selected':''}> \${s}</option>\`).join('');
+                                return \`<tr style="border-bottom:1px solid #f3f4f6;">
+                                    <td style="padding:5px 10px;font-weight:600;white-space:nowrap;">Rata \${r.numero_rata}</td>
+                                    <td style="padding:5px 10px;text-align:right;white-space:nowrap;">€\${Number(r.importo).toFixed(2)}</td>
+                                    <td style="padding:5px 10px;white-space:nowrap;">\${r.data_scadenza ? r.data_scadenza.substring(0,10) : '—'}</td>
+                                    <td style="padding:5px 10px;white-space:nowrap;">
+                                        <select onchange="aggiornaStato(\${r.id},'\${leadId}',this.value)"
+                                                style="font-size:11px;padding:3px 6px;border:1px solid #d1d5db;border-radius:6px;color:\${sc};font-weight:600;min-width:90px;">
+                                            \${sel}
+                                        </select>
+                                    </td>
+                                    <td style="padding:5px 10px;font-size:11px;color:#6b7280;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;">\${r.riferimento||r.note||''}</td>
+                                </tr>\`;
+                            }).join('');
+                            existingEl.innerHTML = \`
+                                <div style="background:#eef2ff;border:1px solid #a5b4fc;border-radius:10px;padding:12px;margin-bottom:12px;">
+                                  <div style="font-size:13px;font-weight:700;color:#4338ca;margin-bottom:8px;">
+                                    📋 Piano attuale &nbsp;·&nbsp; Pagate: \${data.rate_pagate}/\${data.rate_totali} &nbsp;·&nbsp; Saldo: €\${data.totale_pagato.toFixed(2)}/€\${data.totale_rate.toFixed(2)}
+                                    \${data.riserva_dominio ? '<span style="margin-left:8px;font-size:11px;background:#fed7aa;color:#92400e;padding:2px 7px;border-radius:9999px;">🔒 Riserva di Dominio</span>' : ''}
+                                    \${data.rateizzazione_saldo ? '<span style="margin-left:8px;font-size:11px;background:#dcfce7;color:#166534;padding:2px 7px;border-radius:9999px;">✅ SALDATO</span>' : ''}
+                                  </div>
+                                  <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+                                  <table style="width:max-content;min-width:100%;font-size:12px;border-collapse:collapse;table-layout:auto;">
+                                    <thead><tr style="background:#e0e7ff;font-size:10px;text-transform:uppercase;color:#4338ca;">
+                                      <th style="padding:5px 10px;text-align:left;white-space:nowrap;">Rata</th>
+                                      <th style="padding:5px 10px;text-align:right;white-space:nowrap;">Importo</th>
+                                      <th style="padding:5px 10px;text-align:left;white-space:nowrap;">Scadenza</th>
+                                      <th style="padding:5px 10px;text-align:left;white-space:nowrap;">Stato</th>
+                                      <th style="padding:5px 10px;text-align:left;white-space:nowrap;">Rif.</th>
+                                    </tr></thead>
+                                    <tbody>\${righe}</tbody>
+                                  </table>
+                                  </div>
+                                </div>
+                                <div style="margin-top:10px;">
+                                  <button onclick="(function(){var f=document.getElementById('rateizzazioneForm');var s=document.getElementById('rateizzazioneSalvaBtn');var vis=f.style.display==='none';f.style.display=vis?'block':'none';if(s)s.style.display=vis?'inline-block':'none';})()"
+                                    style="font-size:12px;color:#6366f1;background:none;border:none;cursor:pointer;padding:4px 0;text-decoration:underline;">
+                                    ✏️ Modifica / Sostituisci piano
+                                  </button>
+                                </div>\`;
+                            existingEl.style.display = 'block';
+                            formEl.style.display = 'none';
+
+                        // ── CASO B: piano indicativo salvato, prefattura non ancora generata ──
+                        } else if (data.piano_in_attesa_prefattura && data.piano_indicativo && data.piano_indicativo.length > 0) {
+                            const righeIndicative = data.piano_indicativo.map(r =>
+                                \`<tr style="border-bottom:1px solid #f3f4f6;">
+                                    <td style="padding:5px 10px;font-weight:600;white-space:nowrap;">Rata \${r.numero_rata}</td>
+                                    <td style="padding:5px 10px;text-align:right;white-space:nowrap;">€\${Number(r.importo).toFixed(2)}</td>
+                                    <td style="padding:5px 10px;white-space:nowrap;">\${r.data_scadenza ? r.data_scadenza.substring(0,10) : '—'}</td>
+                                    <td style="padding:5px 10px;font-size:11px;color:#6b7280;" colspan="2">\${r.note||''}</td>
+                                </tr>\`
+                            ).join('');
+                            existingEl.innerHTML = \`
+                                <div style="background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:12px;margin-bottom:12px;">
+                                  <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:8px;">
+                                    ⏳ Piano indicativo salvato — in attesa della prefattura
+                                    \${data.riserva_dominio ? '<span style="margin-left:8px;font-size:11px;background:#fed7aa;color:#92400e;padding:2px 7px;border-radius:9999px;">🔒 Riserva di Dominio</span>' : ''}
+                                  </div>
+                                  <p style="font-size:11px;color:#78350f;margin:0 0 8px;">Le rate effettive verranno create automaticamente quando si genera la prefattura dal DDT.</p>
+                                  <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+                                  <table style="width:max-content;min-width:100%;font-size:12px;border-collapse:collapse;table-layout:auto;">
+                                    <thead><tr style="background:#fef9c3;font-size:10px;text-transform:uppercase;color:#92400e;">
+                                      <th style="padding:5px 10px;text-align:left;white-space:nowrap;">Rata</th>
+                                      <th style="padding:5px 10px;text-align:right;white-space:nowrap;">Importo</th>
+                                      <th style="padding:5px 10px;text-align:left;white-space:nowrap;">Scadenza pianif.</th>
+                                      <th style="padding:5px 10px;text-align:left;white-space:nowrap;" colspan="2">Note</th>
+                                    </tr></thead>
+                                    <tbody>\${righeIndicative}</tbody>
+                                  </table>
+                                  </div>
+                                </div>
+                                <div style="margin-top:10px;">
+                                  <button onclick="(function(){var f=document.getElementById('rateizzazioneForm');var s=document.getElementById('rateizzazioneSalvaBtn');var vis=f.style.display==='none';f.style.display=vis?'block':'none';if(s)s.style.display=vis?'inline-block':'none';})()"
+                                    style="font-size:12px;color:#6366f1;background:none;border:none;cursor:pointer;padding:4px 0;text-decoration:underline;">
+                                    ✏️ Modifica piano indicativo
+                                  </button>
+                                </div>\`;
+                            existingEl.style.display = 'block';
+                            formEl.style.display = 'none';
+                        }
                     }
                 } catch(e) { /* ignora */ }
             } else {
