@@ -26504,10 +26504,14 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await V.sendEmail({to:((n=e.env)==null
         created_at       TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
       )
-    `).run();const r=[["rateizzazione_attiva","INTEGER NOT NULL DEFAULT 0"],["rateizzazione_saldo","INTEGER NOT NULL DEFAULT 0"],["rateizzazione_note","TEXT DEFAULT NULL"],["riserva_dominio","INTEGER NOT NULL DEFAULT 0"]];for(const[c,p]of r)try{await i.prepare(`ALTER TABLE leads ADD COLUMN ${c} ${p}`).run()}catch{}const l=[["rateizzazione_attiva","INTEGER NOT NULL DEFAULT 0"],["riserva_dominio","INTEGER NOT NULL DEFAULT 0"]];for(const[c,p]of l)try{await i.prepare(`ALTER TABLE contracts ADD COLUMN ${c} ${p}`).run()}catch{}await i.prepare("DELETE FROM rate_pagamento WHERE lead_id = ? AND status IN ('ATTESA','SCADUTA')").bind(a).run();for(const c of o.rate)!c.importo||!c.data_scadenza||await i.prepare(`
+    `).run();const r=[["rateizzazione_attiva","INTEGER NOT NULL DEFAULT 0"],["rateizzazione_saldo","INTEGER NOT NULL DEFAULT 0"],["rateizzazione_note","TEXT DEFAULT NULL"],["riserva_dominio","INTEGER NOT NULL DEFAULT 0"]];for(const[g,v]of r)try{await i.prepare(`ALTER TABLE leads ADD COLUMN ${g} ${v}`).run()}catch{}const l=[["rateizzazione_attiva","INTEGER NOT NULL DEFAULT 0"],["riserva_dominio","INTEGER NOT NULL DEFAULT 0"]];for(const[g,v]of l)try{await i.prepare(`ALTER TABLE contracts ADD COLUMN ${g} ${v}`).run()}catch{}const c=await i.prepare("SELECT status FROM leads WHERE id = ? LIMIT 1").bind(a).first();if(!c)return e.json({success:!1,error:"Lead non trovato"},404);const p=c.status==="convertito",u=await i.prepare("SELECT 1 FROM proforma WHERE leadId = ? LIMIT 1").bind(a).first(),m=await i.prepare(`
+      SELECT 1 FROM prefatture pft
+      JOIN contracts ct ON ct.codice_contratto = pft.contract_code
+      WHERE ct.leadId = ? LIMIT 1
+    `).bind(a).first();if(!p&&!u&&!m)return console.warn(`⚠️ [RATEIZZAZIONE] Lead ${a} (status: ${c.status}) — nessuna proforma né prefattura emessa. Operazione bloccata.`),e.json({success:!1,error:"Impossibile impostare una rateizzazione: il lead non è convertito e non ha nessuna proforma o prefattura emessa."},403);await i.prepare("DELETE FROM rate_pagamento WHERE lead_id = ? AND status IN ('ATTESA','SCADUTA')").bind(a).run();for(const g of o.rate)!g.importo||!g.data_scadenza||await i.prepare(`
         INSERT INTO rate_pagamento (lead_id, numero_rata, importo, data_scadenza, status, note, created_at, updated_at)
         VALUES (?, ?, ?, ?, 'ATTESA', ?, ?, ?)
-      `).bind(a,c.numero_rata,c.importo,c.data_scadenza,c.note||null,s,s).run();await i.prepare(`
+      `).bind(a,g.numero_rata,g.importo,g.data_scadenza,g.note||null,s,s).run();await i.prepare(`
       UPDATE leads SET rateizzazione_attiva=1, riserva_dominio=?, rateizzazione_note=?, rateizzazione_saldo=0, updated_at=?
       WHERE id=?
     `).bind(o.riserva_dominio?1:0,o.note_rateizzazione||null,s,a).run();try{await i.prepare(`

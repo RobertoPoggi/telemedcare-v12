@@ -27951,6 +27951,29 @@ app.post('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
       try { await db.prepare(`ALTER TABLE contracts ADD COLUMN ${col} ${def}`).run() } catch {}
     }
 
+    // 0b. GUARDIA: il lead deve essere convertito OPPURE avere una proforma OPPURE una prefattura.
+    //     Impedisce di creare rate su prospect/lead non ancora clienti.
+    const lead = await db.prepare(`SELECT status FROM leads WHERE id = ? LIMIT 1`).bind(leadId).first() as any
+    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+
+    const isConvertito = lead.status === 'convertito'
+    const hasProforma = await db.prepare(
+      `SELECT 1 FROM proforma WHERE leadId = ? LIMIT 1`
+    ).bind(leadId).first()
+    const hasPrefattura = await db.prepare(`
+      SELECT 1 FROM prefatture pft
+      JOIN contracts ct ON ct.codice_contratto = pft.contract_code
+      WHERE ct.leadId = ? LIMIT 1
+    `).bind(leadId).first()
+
+    if (!isConvertito && !hasProforma && !hasPrefattura) {
+      console.warn(`⚠️ [RATEIZZAZIONE] Lead ${leadId} (status: ${lead.status}) — nessuna proforma né prefattura emessa. Operazione bloccata.`)
+      return c.json({
+        success: false,
+        error: 'Impossibile impostare una rateizzazione: il lead non è convertito e non ha nessuna proforma o prefattura emessa.'
+      }, 403)
+    }
+
     // 1. Cancella rate precedenti ATTESA/SCADUTA
     await db.prepare(`DELETE FROM rate_pagamento WHERE lead_id = ? AND status IN ('ATTESA','SCADUTA')`).bind(leadId).run()
 
