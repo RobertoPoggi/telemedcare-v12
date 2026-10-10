@@ -2452,7 +2452,7 @@ export async function sendRataReminderEmail(
     }
 
     const template = await loadEmailTemplate('email_reminder_rata', db, env)
-    const htmlContent = TemplateEngine.render(template, templateData)
+    const htmlContent = renderTemplate(template, templateData)
 
     const oggi = new Date()
     const dataScadenza = new Date(rataData.data_scadenza)

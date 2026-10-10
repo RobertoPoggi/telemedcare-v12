@@ -24715,13 +24715,64 @@ app.post('/api/cron/rata-reminders', async (c) => {
       success: true,
       message: `Reminder rate completati: ${sent} inviati, ${failed} falliti`,
       stats: { total: rate.length, sent, failed, skipped },
-      window: { da: oggiStr, a: tra7ggStr },
+      window: { da: fa30ggStr, a: tra7ggStr, oggi: oggiStr },
       details
     })
 
   } catch (error: any) {
     console.error('❌ [CRON-RATA] Errore generale:', error)
     return c.json({ success: false, error: error.message }, 500)
+  }
+})
+
+// GET /api/cron/rata-reminders/status — stato rate pendenti (senza inviare email)
+// Permette di verificare quante rate sarebbero sollecitate oggi, senza inviare nulla
+app.get('/api/cron/rata-reminders/status', async (c) => {
+  try {
+    const db = c.env.DB as D1Database
+    const authHeader = c.req.header('Authorization')
+    const cronSecret = c.env.CRON_SECRET
+    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+      return c.json({ success: false, error: 'Non autorizzato' }, 401)
+    }
+    const oggi = new Date()
+    const tra7gg = new Date(oggi); tra7gg.setDate(tra7gg.getDate() + 7)
+    const fa30gg = new Date(oggi); fa30gg.setDate(fa30gg.getDate() - 30)
+    const oggiStr   = oggi.toISOString().slice(0, 10)
+    const tra7ggStr = tra7gg.toISOString().slice(0, 10)
+    const fa30ggStr = fa30gg.toISOString().slice(0, 10)
+
+    const rateResult = await db.prepare(`
+      SELECT r.id, r.lead_id, r.numero_rata, r.importo, r.data_scadenza,
+             r.status, r.reminder_sent_at, COALESCE(r.reminder_count,0) AS reminder_count,
+             l.nomeRichiedente, l.cognomeRichiedente, l.email
+      FROM rate_pagamento r
+      JOIN leads l ON l.id = r.lead_id
+      WHERE r.status NOT IN ('PAGATA','paid','ANNULLATA')
+        AND r.data_scadenza BETWEEN ? AND ?
+        AND l.email IS NOT NULL AND l.email != ''
+      ORDER BY r.data_scadenza ASC
+    `).bind(fa30ggStr, tra7ggStr).all()
+
+    const tutte = rateResult.results || []
+    const daInviare = tutte.filter((r: any) =>
+      !r.reminder_sent_at || r.reminder_sent_at.slice(0,10) < oggiStr
+    )
+    const giaSollecitate = tutte.filter((r: any) =>
+      r.reminder_sent_at && r.reminder_sent_at.slice(0,10) >= oggiStr
+    )
+
+    return c.json({
+      success: true,
+      window: { da: fa30ggStr, a: tra7ggStr, oggi: oggiStr },
+      totale_rate_in_finestra: tutte.length,
+      da_inviare_oggi: daInviare.length,
+      gia_sollecitate_oggi: giaSollecitate.length,
+      lead_distinti_da_sollecitare: [...new Set(daInviare.map((r: any) => r.lead_id))].length,
+      rate: tutte
+    })
+  } catch (err: any) {
+    return c.json({ success: false, error: err.message }, 500)
   }
 })
 
