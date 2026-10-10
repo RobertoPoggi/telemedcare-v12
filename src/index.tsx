@@ -24575,6 +24575,14 @@ app.post('/api/cron/rata-reminders', async (c) => {
       piano: string | null
     }
 
+    // ── PROTEZIONI OBBLIGATORIE ────────────────────────────────────────────────
+    // 1. l.status IN (...): solo lead con contratto firmato/attivo.
+    //    Esclude qualsiasi lead non convertito (prospect, in trattativa, perso…)
+    // 2. INNER JOIN proforma: deve esistere almeno una proforma emessa.
+    //    Esclude lead con rate create per errore senza mai aver prodotto una fattura.
+    // 3. r.status NOT IN (...): solo rate non ancora saldate.
+    // 4. BETWEEN fa30gg..+7gg: finestra temporale (-30gg scadute / +7gg in scadenza).
+    // 5. reminder_sent_at: non più di 1 reminder per rata per giorno.
     const rateResult = await db.prepare(`
       SELECT
         r.id           AS rata_id,
@@ -24595,12 +24603,26 @@ app.post('/api/cron/rata-reminders', async (c) => {
         p.tipo_servizio AS piano
       FROM rate_pagamento r
       JOIN leads l ON l.id = r.lead_id
-      LEFT JOIN proforma p ON p.leadId = r.lead_id
+      -- PROTEZIONE 1: solo lead con contratto firmato/attivo
+      --   convertito = assistito attivo
+      --   ACTIVE = attivo post-attivazione dispositivo
+      --   CONTRACT_SIGNED = contratto firmato (ma forse dispositivo non ancora attivato)
+      --   CONTRACT_SENT = contratto inviato ma non ancora firmato — incluso perché
+      --                   la proforma è già emessa e la rateizzazione è già attiva
+      INNER JOIN (
+        SELECT DISTINCT leadId FROM proforma WHERE leadId IS NOT NULL
+      ) pf ON pf.leadId = l.id
+      -- PROTEZIONE 2: proforma più recente per dati visualizzati nell'email
+      LEFT JOIN proforma p ON p.id = (
+        SELECT id FROM proforma WHERE leadId = r.lead_id ORDER BY created_at DESC LIMIT 1
+      )
       WHERE r.status NOT IN ('PAGATA', 'paid', 'ANNULLATA')
         AND r.data_scadenza BETWEEN ? AND ?
         AND (r.reminder_sent_at IS NULL OR date(r.reminder_sent_at) < ?)
         AND l.email IS NOT NULL
         AND l.email != ''
+        -- PROTEZIONE CHIAVE: solo lead con status che indica contratto reale emesso
+        AND l.status IN ('convertito', 'ACTIVE', 'CONTRACT_SIGNED', 'CONTRACT_SENT')
       ORDER BY r.data_scadenza ASC, r.lead_id ASC, r.numero_rata ASC
     `).bind(fa30ggStr, tra7ggStr, oggiStr).all<RataRow>()
 
@@ -24744,13 +24766,18 @@ app.get('/api/cron/rata-reminders/status', async (c) => {
 
     const rateResult = await db.prepare(`
       SELECT r.id, r.lead_id, r.numero_rata, r.importo, r.data_scadenza,
-             r.status, r.reminder_sent_at, COALESCE(r.reminder_count,0) AS reminder_count,
-             l.nomeRichiedente, l.cognomeRichiedente, l.email
+             r.status AS rata_status, r.reminder_sent_at, COALESCE(r.reminder_count,0) AS reminder_count,
+             l.nomeRichiedente, l.cognomeRichiedente, l.email, l.status AS lead_status
       FROM rate_pagamento r
       JOIN leads l ON l.id = r.lead_id
+      -- Stessa protezione del cron: solo lead con proforma emessa e status valido
+      INNER JOIN (
+        SELECT DISTINCT leadId FROM proforma WHERE leadId IS NOT NULL
+      ) pf ON pf.leadId = l.id
       WHERE r.status NOT IN ('PAGATA','paid','ANNULLATA')
         AND r.data_scadenza BETWEEN ? AND ?
         AND l.email IS NOT NULL AND l.email != ''
+        AND l.status IN ('convertito','ACTIVE','CONTRACT_SIGNED','CONTRACT_SENT')
       ORDER BY r.data_scadenza ASC
     `).bind(fa30ggStr, tra7ggStr).all()
 
