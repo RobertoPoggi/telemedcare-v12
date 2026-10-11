@@ -1807,7 +1807,48 @@ export async function inviaEmailBenvenuto(
             : `<ul style="margin:4px 0; padding-left:20px;">${baseItems}<li>Telemonitoraggio FC e SpO2</li><li>Rilevamento cadute con AI avanzata</li><li>Promemoria farmaci vocali</li></ul>`
         }
       })(),
-      PREZZO_PIANO: prezzoBase
+      PREZZO_PIANO: prezzoBase,
+      // ── Tutorial video: link in base a servizio + piano ──────────────────
+      LINK_TUTORIAL: (() => {
+        const baseDocUrl = 'https://telemedcare-v12.pages.dev/documents'
+        // Tutorial principale: dipende dal servizio
+        const tutorialPrincipale =
+          servizioType === 'FAMILY'  ? `${baseDocUrl}/eCura_Family_SiDLY_Care_Pro_Tutorial.mp4` :
+          servizioType === 'PREMIUM' ? `${baseDocUrl}/eCura_Premium_SiDLY_Vital_Care_Tutorial.mp4` :
+          /* PRO */                    `${baseDocUrl}/eCura_Professional_SiDLY_Care_Pro_Tutorial.mp4`
+
+        const nomeTutorial =
+          servizioType === 'FAMILY'  ? 'Tutorial eCura Family — SiDLY Care PRO' :
+          servizioType === 'PREMIUM' ? 'Tutorial eCura Premium — SiDLY Vital Care' :
+          /* PRO */                    'Tutorial eCura Professional — SiDLY Care PRO'
+
+        // Tutorial aggiuntivo Centrale Operativa: SOLO piano AVANZATO
+        const tutorialCO = pianoType === 'AVANZATO'
+          ? `${baseDocUrl}/eCura_Piano_Avanzato_Centrale_Operativa_Tutorial.mp4`
+          : null
+
+        const btnStyle = `display:inline-block;padding:13px 28px;background:linear-gradient(135deg,#1e40af 0%,#1e3a8a 100%);color:#ffffff;text-decoration:none;border-radius:6px;font-size:15px;font-weight:600;box-shadow:0 4px 8px rgba(30,64,175,0.3);margin:6px 4px;`
+        const btnStyleGreen = `display:inline-block;padding:13px 28px;background:linear-gradient(135deg,#15803d 0%,#166534 100%);color:#ffffff;text-decoration:none;border-radius:6px;font-size:15px;font-weight:600;box-shadow:0 4px 8px rgba(21,128,61,0.3);margin:6px 4px;`
+
+        let html = `
+<div style="margin:24px 0;padding:20px;background-color:#eff6ff;border-radius:8px;border-left:4px solid #1e40af;text-align:center;">
+  <h3 style="margin:0 0 8px;font-size:17px;color:#1e40af;">🎓 Tutorial del Suo dispositivo</h3>
+  <p style="margin:0 0 16px;font-size:14px;line-height:1.5;color:#374151;">
+    Abbiamo preparato un video tutorial per guidarLa nell'uso corretto del Suo ${dispositivo}.<br>
+    Lo consigliamo sia al caregiver che all'assistito prima dell'attivazione del servizio.
+  </p>
+  <a href="${tutorialPrincipale}" style="${btnStyle}">▶ Scarica / Visualizza ${nomeTutorial}</a>`
+
+        if (tutorialCO) {
+          html += `
+  <br>
+  <p style="margin:14px 0 10px;font-size:14px;color:#374151;">Per il Suo piano <strong>Avanzato</strong> con Centrale Operativa H24:</p>
+  <a href="${tutorialCO}" style="${btnStyleGreen}">▶ Scarica / Visualizza Tutorial Centrale Operativa H24</a>`
+        }
+
+        html += `\n</div>`
+        return html
+      })()
     }
 
     // Renderizza template
