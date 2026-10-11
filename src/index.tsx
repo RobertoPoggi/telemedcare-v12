@@ -37013,10 +37013,10 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
 })
 
 // ============================================================
-// POST /api/test-benvenuto — invia email benvenuto di test (richiede sessione)
-// Body: { email, servizio, piano } — non richiede un lead reale nel DB
+// POST /api/admin/test-benvenuto — invia email benvenuto di test
+// Body: { email, servizio, piano } — protetto da middleware /api/admin/* (X-Cron-Secret)
 // ============================================================
-app.post('/api/test-benvenuto', requireAuth, async (c) => {
+app.post('/api/admin/test-benvenuto', async (c) => {
   try {
     const body = await c.req.json() as { email?: string; servizio?: string; piano?: string }
     const toEmail  = body.email   || 'info@ecura.it'

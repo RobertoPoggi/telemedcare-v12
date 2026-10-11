@@ -1,0 +1,59 @@
+name: Invia Email Benvenuto di Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: 'Email destinatario'
+        required: true
+        default: 'info@ecura.it'
+      servizio:
+        description: 'Servizio (FAMILY / PRO / PREMIUM)'
+        required: true
+        default: 'PRO'
+      piano:
+        description: 'Piano (BASE / AVANZATO)'
+        required: true
+        default: 'AVANZATO'
+      ambiente:
+        description: 'Ambiente (production / preview)'
+        required: true
+        default: 'production'
+
+jobs:
+  send-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Invia email benvenuto di test
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ "${{ github.event.inputs.ambiente }}" = "preview" ]; then
+            BASE_URL="https://preview.telemedcare-v12.pages.dev"
+          else
+            BASE_URL="https://telemedcare-v12.pages.dev"
+          fi
+
+          echo "📧 Invio email benvenuto di test..."
+          echo "   → Destinatario : ${{ github.event.inputs.email }}"
+          echo "   → Servizio     : ${{ github.event.inputs.servizio }}"
+          echo "   → Piano        : ${{ github.event.inputs.piano }}"
+          echo "   → Ambiente     : $BASE_URL"
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/admin/test-benvenuto" \
+            -H "Content-Type: application/json" \
+            -H "X-Cron-Secret: ${CRON_SECRET}" \
+            -d "{\"email\":\"${{ github.event.inputs.email }}\",\"servizio\":\"${{ github.event.inputs.servizio }}\",\"piano\":\"${{ github.event.inputs.piano }}\"}")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          echo "HTTP: $HTTP_CODE"
+          echo "Response: $BODY"
+
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Email inviata con successo!"
+          else
+            echo "❌ Errore invio — HTTP $HTTP_CODE"
+            exit 1
+          fi
