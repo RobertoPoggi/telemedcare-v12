@@ -37013,6 +37013,37 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
 })
 
 // ============================================================
+// POST /api/admin/test-benvenuto — invia email benvenuto di test a indirizzo arbitrario
+// Body: { email, servizio, piano } — non richiede un lead reale nel DB
+// ============================================================
+app.post('/api/admin/test-benvenuto', requireAuth, async (c) => {
+  try {
+    const body = await c.req.json() as { email?: string; servizio?: string; piano?: string }
+    const toEmail  = body.email   || 'info@ecura.it'
+    const servizio = body.servizio || 'PRO'
+    const piano    = body.piano    || 'AVANZATO'
+
+    const { inviaEmailBenvenuto } = await import('./modules/workflow-email-manager')
+    const fakeClient = {
+      id:                 'TEST-000',
+      email:             toEmail,
+      nomeRichiedente:   'Team',
+      cognomeRichiedente:'eCura',
+      servizio,
+      piano,
+      pacchetto:         piano,
+      codiceCliente:     'TEST-000',
+      iva_esente:        false,
+      iva_agevolata:     false,
+    }
+    const result = await inviaEmailBenvenuto(fakeClient as any, c.env, c.env.DB)
+    return c.json({ success: result.success, errors: result.errors, emailsSent: result.emailsSent })
+  } catch (err: any) {
+    return c.json({ success: false, error: err?.message ?? String(err) }, 500)
+  }
+})
+
+// ============================================================
 // POST /api/leads/:id/send-benvenuto
 // Invia manualmente email di benvenuto al lead (con IVA agevolata e dispositivo corretti)
 // ============================================================
