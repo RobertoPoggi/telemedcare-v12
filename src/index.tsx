@@ -520,8 +520,8 @@ async function inviaEmailProforma(proforma: any, env?: any) {
       CODICE_CLIENTE: proforma.numero_proforma || proforma.id || 'N/A',
       IBAN: 'IT97L0503401727000000003519',
       CAUSALE: `Proforma ${proforma.numero_proforma || proforma.id} - ${proforma.cliente_nome || ''} ${proforma.cliente_cognome || ''}`.trim(),
-      LINK_PROFORMA_PDF: '',  // non disponibile in questo path legacy
-      LINK_PAGAMENTO: '',
+      LINK_PROFORMA_PDF: `https://telemedcare-v12.pages.dev/proforma-view?id=${proforma.id}`,
+      LINK_PAGAMENTO: `https://telemedcare-v12.pages.dev/pagamento.html?proformaId=${proforma.id}`,
       NOTA_RINNOVO: '',
       PIANO_RATEIZZAZIONE: '',
       PASSI_DOPO_PAGAMENTO: `<ol style="margin:0;padding-left:20px;font-size:14px;line-height:1.8;">
@@ -9693,7 +9693,7 @@ app.post('/api/proforma/send', async (c) => {
     }
     
     // Invia email con template email_invio_proforma
-    const emailResult = await inviaEmailProforma(proforma)
+    const emailResult = await inviaEmailProforma(proforma, c.env)
     
     if (emailResult.success) {
       // Aggiorna status
