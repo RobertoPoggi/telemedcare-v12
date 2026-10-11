@@ -37018,10 +37018,10 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
 // ============================================================
 app.post('/api/admin/test-benvenuto', async (c) => {
   try {
-    const body = await c.req.json() as { email?: string; servizio?: string; piano?: string }
-    const toEmail  = body.email   || 'info@ecura.it'
-    const servizio = body.servizio || 'PRO'
-    const piano    = body.piano    || 'AVANZATO'
+    // Parametri da query string (evita problemi di body parsing con middleware)
+    const toEmail  = c.req.query('email')    || 'info@ecura.it'
+    const servizio = c.req.query('servizio') || 'PRO'
+    const piano    = c.req.query('piano')    || 'AVANZATO'
 
     const { inviaEmailBenvenuto } = await import('./modules/workflow-email-manager')
     const fakeClient = {

@@ -40,10 +40,13 @@ jobs:
           echo "   → Piano        : ${{ github.event.inputs.piano }}"
           echo "   → Ambiente     : $BASE_URL"
 
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/admin/test-benvenuto" \
-            -H "Content-Type: application/json" \
-            -H "X-Cron-Secret: ${CRON_SECRET}" \
-            -d "{\"email\":\"${{ github.event.inputs.email }}\",\"servizio\":\"${{ github.event.inputs.servizio }}\",\"piano\":\"${{ github.event.inputs.piano }}\"}")
+          EMAIL="${{ github.event.inputs.email }}"
+          SERVIZIO="${{ github.event.inputs.servizio }}"
+          PIANO="${{ github.event.inputs.piano }}"
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "$BASE_URL/api/admin/test-benvenuto?email=${EMAIL}&servizio=${SERVIZIO}&piano=${PIANO}" \
+            -H "X-Cron-Secret: ${CRON_SECRET}")
 
           HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
           BODY=$(echo "$RESPONSE" | head -n -1)
