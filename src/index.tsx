@@ -37014,9 +37014,18 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
 
 // ============================================================
 // POST /api/admin/test-benvenuto — invia email benvenuto di test a indirizzo arbitrario
-// Body: { email, servizio, piano } — non richiede un lead reale nel DB
+// Body: { email, servizio, piano } — accetta sessione cookie OPPURE Bearer CRON_SECRET
 // ============================================================
-app.post('/api/admin/test-benvenuto', requireAuth, async (c) => {
+app.post('/api/admin/test-benvenuto', async (c) => {
+  // Accetta sia sessione autenticata che CRON_SECRET (per chiamate curl/CI)
+  const authHeader = c.req.header('Authorization') || ''
+  const cronSecret = c.env?.CRON_SECRET || ''
+  const cookie = c.req.header('Cookie') || ''
+  const hasCronAuth = cronSecret && authHeader === `Bearer ${cronSecret}`
+  const hasSession  = cookie.includes('session=')
+  if (!hasCronAuth && !hasSession) {
+    return c.json({ success: false, error: 'Non autorizzato' }, 401)
+  }
   try {
     const body = await c.req.json() as { email?: string; servizio?: string; piano?: string }
     const toEmail  = body.email   || 'info@ecura.it'
