@@ -28058,6 +28058,20 @@ app.get('/api/leads/:id/rateizzazione', requireAuth, async (c) => {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
     const db = c.env.DB
 
+    // Migration safe: assicura che le colonne esistano prima della SELECT.
+    // Per lead esistenti in produzione che non hanno mai chiamato il POST,
+    // la colonna rateizzazione_piano_json potrebbe non esistere → SQLite error → 500.
+    const leadsColsDefsGet: Array<[string, string]> = [
+      ['rateizzazione_attiva',    'INTEGER NOT NULL DEFAULT 0'],
+      ['rateizzazione_saldo',     'INTEGER NOT NULL DEFAULT 0'],
+      ['rateizzazione_note',      'TEXT DEFAULT NULL'],
+      ['riserva_dominio',         'INTEGER NOT NULL DEFAULT 0'],
+      ['rateizzazione_piano_json','TEXT DEFAULT NULL'],
+    ]
+    for (const [col, def] of leadsColsDefsGet) {
+      try { await db.prepare(`ALTER TABLE leads ADD COLUMN ${col} ${def}`).run() } catch {}
+    }
+
     const lead = await db.prepare(`
       SELECT rateizzazione_attiva, rateizzazione_note, rateizzazione_saldo, riserva_dominio,
              prezzo_anno, prezzo_scontato, rateizzazione_piano_json
