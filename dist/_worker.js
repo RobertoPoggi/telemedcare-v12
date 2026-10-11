@@ -1550,8 +1550,8 @@ Email: ${e.email}`});v.success?(o.success=!0,o.emailsSent.push("email_notifica_i
   </p>
   <a href="${E}" style="${S}">▶ Scarica / Visualizza ${R}</a>`;return D&&(z+=`
   <br>
-  <p style="margin:14px 0 10px;font-size:14px;color:#374151;">Per il Suo piano <strong>Avanzato</strong> con Centrale Operativa H24:</p>
-  <a href="${D}" style="${L}">▶ Scarica / Visualizza Tutorial Centrale Operativa H24</a>`),z+=`
+  <p style="margin:14px 0 10px;font-size:14px;color:#374151;">Per il Suo piano <strong>Avanzato</strong> con Centrale Operativa:</p>
+  <a href="${D}" style="${L}">▶ Scarica / Visualizza Tutorial eCura Piano Avanzato — Centrale Operativa</a>`),z+=`
 </div>`,z})()},y=ra(s,A),b=await i.sendEmail({to:e.email,from:(a==null?void 0:a.RESEND_FROM)||"info@ecura.it",subject:`🎉 Benvenuto/a in eCura, ${e.nomeRichiedente}!`,html:y});b.success?(o.success=!0,o.emailsSent.push(`email_benvenuto -> ${e.email}`),o.messageIds=[b.messageId],console.log(`✅ [WORKFLOW] Email benvenuto inviata con successo: ${b.messageId}`)):(o.errors.push(`Errore invio email benvenuto: ${b.error}`),console.error("❌ [WORKFLOW] Errore invio email benvenuto:",b.error))}catch(i){o.errors.push(`Eccezione invio email benvenuto: ${i.message}`),console.error("❌ [WORKFLOW] Eccezione STEP 4:",i)}return o}async function _E(e,a,t){const o={success:!1,step:"email_form_configurazione",emailsSent:[],errors:[]};try{console.log(`📧 [WORKFLOW] STEP 4B: Invio email form configurazione a ${e.email}`);const i=new Ze(a),s=Nm(),r=`${ft(a)}/form-configurazione?token=${s}&leadId=${e.id}`;await t.prepare(`
       INSERT INTO lead_completion_tokens (token, lead_id, expires_at, created_at)
       VALUES (?, ?, datetime('now', '+30 days'), datetime('now'))

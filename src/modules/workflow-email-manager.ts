@@ -1842,8 +1842,8 @@ export async function inviaEmailBenvenuto(
         if (tutorialCO) {
           html += `
   <br>
-  <p style="margin:14px 0 10px;font-size:14px;color:#374151;">Per il Suo piano <strong>Avanzato</strong> con Centrale Operativa H24:</p>
-  <a href="${tutorialCO}" style="${btnStyleGreen}">▶ Scarica / Visualizza Tutorial Centrale Operativa H24</a>`
+  <p style="margin:14px 0 10px;font-size:14px;color:#374151;">Per il Suo piano <strong>Avanzato</strong> con Centrale Operativa:</p>
+  <a href="${tutorialCO}" style="${btnStyleGreen}">▶ Scarica / Visualizza Tutorial eCura Piano Avanzato — Centrale Operativa</a>`
         }
 
         html += `\n</div>`
