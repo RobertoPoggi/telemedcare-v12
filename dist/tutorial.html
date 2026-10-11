@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tutorial eCura</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 24px 16px 40px;
+    }
+    .logo {
+      font-size: 28px;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .logo span { color: #ffffff; }
+    .subtitle {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 28px;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 14px;
+      overflow: hidden;
+      width: 100%;
+      max-width: 760px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .video-wrap {
+      position: relative;
+      width: 100%;
+      background: #000;
+    }
+    video {
+      width: 100%;
+      display: block;
+      border-radius: 0;
+    }
+    .info {
+      padding: 20px 24px 24px;
+    }
+    .badge {
+      display: inline-block;
+      background: #1e40af;
+      color: #bfdbfe;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+    .desc {
+      font-size: 14px;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+    .btn-download {
+      display: inline-block;
+      background: linear-gradient(135deg, #1e40af, #1e3a8a);
+      color: #ffffff;
+      text-decoration: none;
+      padding: 11px 26px;
+      border-radius: 7px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(30,64,175,0.4);
+    }
+    .btn-download:hover { background: linear-gradient(135deg, #2563eb, #1e40af); }
+    .footer-note {
+      margin-top: 28px;
+      font-size: 12px;
+      color: #475569;
+      text-align: center;
+    }
+    .footer-note a { color: #38bdf8; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <div class="logo">e<span>Cura</span></div>
+  <div class="subtitle">Tutorial dispositivo — Medica GB S.r.l.</div>
+
+  <div class="card">
+    <div class="video-wrap">
+      <video id="player" controls preload="metadata" playsinline>
+        <!-- src injected by JS -->
+      </video>
+    </div>
+    <div class="info">
+      <div class="badge" id="badge">Tutorial</div>
+      <h1 id="titolo">Caricamento...</h1>
+      <p class="desc" id="desc"></p>
+      <a id="btnDownload" href="#" download class="btn-download">⬇ Scarica il video</a>
+    </div>
+  </div>
+
+  <p class="footer-note">
+    Per assistenza: <a href="mailto:info@ecura.it">info@ecura.it</a> |
+    <a href="https://www.ecura.it">www.ecura.it</a>
+  </p>
+
+  <script>
+    const BASE = '/documents'
+
+    const tutorials = {
+      family: {
+        file:   'eCura_Family_SiDLY_Care_Pro_Tutorial.mp4',
+        poster: 'eCura_Family_SiDLY_Care_Pro_Tutorial_poster.jpg',
+        badge:  'eCura Family',
+        titolo: 'Tutorial eCura Family — SiDLY Care PRO',
+        desc:   'Guida completa per il caregiver e l\'assistito all\'uso del braccialetto SiDLY Care PRO: attivazione, chiamate di emergenza, geolocalizzazione e notifiche ai familiari.'
+      },
+      professional: {
+        file:   'eCura_Professional_SiDLY_Care_Pro_Tutorial.mp4',
+        poster: 'eCura_Professional_SiDLY_Care_Pro_Tutorial_poster.jpg',
+        badge:  'eCura Professional',
+        titolo: 'Tutorial eCura Professional — SiDLY Care PRO',
+        desc:   'Guida completa per il caregiver e l\'assistito all\'uso del braccialetto SiDLY Care PRO: telemonitoraggio FC e SpO2, rilevamento cadute, promemoria farmaci e geolocalizzazione GPS.'
+      },
+      premium: {
+        file:   'eCura_Premium_SiDLY_Vital_Care_Tutorial.mp4',
+        poster: 'eCura_Premium_SiDLY_Vital_Care_Tutorial_poster.jpg',
+        badge:  'eCura Premium',
+        titolo: 'Tutorial eCura Premium — SiDLY Vital Care',
+        desc:   'Guida completa per il caregiver e l\'assistito all\'uso dello smartwatch SiDLY Vital Care: monitoraggio continuo FC/SpO2, analisi del sonno, AI predittiva e geolocalizzazione avanzata.'
+      },
+      avanzato: {
+        file:   'eCura_Piano_Avanzato_Centrale_Operativa_Tutorial.mp4',
+        poster: 'eCura_Piano_Avanzato_Centrale_Operativa_Tutorial_poster.jpg',
+        badge:  'Piano Avanzato',
+        titolo: 'Tutorial eCura Piano Avanzato — Centrale Operativa',
+        desc:   'Come funziona la Centrale Operativa H24 attiva 7 giorni su 7: gestione delle allerte, contatto con operatori specializzati e coordinamento con i familiari in caso di emergenza.'
+      }
+    }
+
+    const params = new URLSearchParams(window.location.search)
+    const key = (params.get('t') || 'professional').toLowerCase()
+    const t = tutorials[key] || tutorials['professional']
+
+    const player = document.getElementById('player')
+    const src = `${BASE}/${t.file}`
+    const posterSrc = `${BASE}/${t.poster}`
+
+    player.src = src
+    player.poster = posterSrc
+
+    document.getElementById('badge').textContent  = t.badge
+    document.getElementById('titolo').textContent = t.titolo
+    document.getElementById('desc').textContent   = t.desc
+
+    const btn = document.getElementById('btnDownload')
+    btn.href = src
+    btn.setAttribute('download', t.file)
+
+    document.title = t.titolo + ' — eCura'
+  </script>
+</body>
+</html>

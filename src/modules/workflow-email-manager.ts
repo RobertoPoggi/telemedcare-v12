@@ -1812,10 +1812,12 @@ export async function inviaEmailBenvenuto(
       LINK_TUTORIAL: (() => {
         const baseDocUrl = 'https://telemedcare-v12.pages.dev/documents'
         // Tutorial principale: dipende dal servizio
+        const basePlayerUrl = 'https://telemedcare-v12.pages.dev/tutorial.html'
+
         const tutorialPrincipale =
-          servizioType === 'FAMILY'  ? `${baseDocUrl}/eCura_Family_SiDLY_Care_Pro_Tutorial.mp4` :
-          servizioType === 'PREMIUM' ? `${baseDocUrl}/eCura_Premium_SiDLY_Vital_Care_Tutorial.mp4` :
-          /* PRO */                    `${baseDocUrl}/eCura_Professional_SiDLY_Care_Pro_Tutorial.mp4`
+          servizioType === 'FAMILY'  ? `${basePlayerUrl}?t=family` :
+          servizioType === 'PREMIUM' ? `${basePlayerUrl}?t=premium` :
+          /* PRO */                    `${basePlayerUrl}?t=professional`
 
         const nomeTutorial =
           servizioType === 'FAMILY'  ? 'Tutorial eCura Family — SiDLY Care PRO' :
@@ -1824,7 +1826,7 @@ export async function inviaEmailBenvenuto(
 
         // Tutorial aggiuntivo Centrale Operativa: SOLO piano AVANZATO
         const tutorialCO = pianoType === 'AVANZATO'
-          ? `${baseDocUrl}/eCura_Piano_Avanzato_Centrale_Operativa_Tutorial.mp4`
+          ? `${basePlayerUrl}?t=avanzato`
           : null
 
         const btnStyle = `display:inline-block;padding:13px 28px;background:linear-gradient(135deg,#1e40af 0%,#1e3a8a 100%);color:#ffffff;text-decoration:none;border-radius:6px;font-size:15px;font-weight:600;box-shadow:0 4px 8px rgba(30,64,175,0.3);margin:6px 4px;`
