@@ -468,7 +468,15 @@ export async function processPayment(
     // 3.1: Registra pagamento
     // Build payment params ensuring all required fields are defined
     const importoValue = ctx.paymentData.amount || ctx.paymentData.importo
-    const metodoPagamentoValue = ctx.paymentData.paymentMethod || ctx.paymentData.metodo || 'BONIFICO'
+
+    // Normalizza metodoPagamento verso i valori accettati da PaymentManager
+    // Il frontend invia 'stripe', 'card', 'sepa' — il DB vuole 'STRIPE_CARD' | 'STRIPE_SEPA' | 'BONIFICO'
+    const rawMetodo = (ctx.paymentData.paymentMethod || ctx.paymentData.metodo || '').toLowerCase()
+    const metodoPagamentoValue: 'BONIFICO' | 'STRIPE_CARD' | 'STRIPE_SEPA' =
+      rawMetodo.includes('sepa')                          ? 'STRIPE_SEPA'
+      : rawMetodo.includes('stripe') || rawMetodo.includes('card') ? 'STRIPE_CARD'
+      : rawMetodo.includes('bonifico') || rawMetodo.includes('bank') ? 'BONIFICO'
+      : 'BONIFICO'  // fallback sicuro
     
     if (!importoValue) {
       result.errors.push('Importo pagamento non specificato')

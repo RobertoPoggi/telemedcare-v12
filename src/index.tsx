@@ -9864,13 +9864,14 @@ app.post('/api/create-payment-intent', async (c) => {
     }
     
     // Recupera contratto separatamente (se esiste)
+    // ✅ FIX: la colonna è 'leadId' (camelCase) nel DB reale, non 'lead_id'
     let contract = null
     if (proforma.leadId) {
       try {
         contract = await c.env.DB.prepare(`
           SELECT *
           FROM contracts
-          WHERE lead_id = ?
+          WHERE leadId = ?
           ORDER BY created_at DESC
           LIMIT 1
         `).bind(proforma.leadId).first()
