@@ -19630,37 +19630,6 @@ app.get('/test-update-contracts-dates', async (c) => {
   `)
 })
 
-// GET /api/fix-filippone-proforma — one-time: corregge proforma ID 53 (totale 147.50→590, mensile 49.17→49.17)
-// TOKEN: 17f82309a142207aea4e7bf5c6bdc6c1
-app.get('/api/fix-filippone-proforma', async (c) => {
-  const token = c.req.query('t')
-  if (token !== '17f82309a142207aea4e7bf5c6bdc6c1') return c.json({ error: 'Unauthorized' }, 401)
-  if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
-  try {
-    // Filippone: eCura PREMIUM, prezzo_anno=590, iva_agevolata=1
-    // prezzo_totale deve essere il totale annuo 590 (IVA esclusa)
-    // prezzo_mensile = 590/12 = 49.17
-    // numero_proforma aggiornato per chiarezza
-    await c.env.DB.prepare(`
-      UPDATE proforma SET
-        prezzo_totale  = 590,
-        prezzo_mensile = 49.17,
-        durata_mesi    = 12,
-        numero_proforma = 'PRF202610-FILIPPONE',
-        updated_at     = ?
-      WHERE id = 53
-    `).bind(new Date().toISOString()).run()
-
-    const updated = await c.env.DB.prepare(
-      `SELECT id, numero_proforma, prezzo_mensile, durata_mesi, prezzo_totale, iva_agevolata, status FROM proforma WHERE id = 53`
-    ).first()
-
-    return c.json({ success: true, proforma_aggiornata: updated })
-  } catch (e: any) {
-    return c.json({ success: false, error: e?.message ?? String(e) }, 500)
-  }
-})
-
 // POST /api/contracts/sign - Salva firma digitale
 app.post('/api/contracts/sign', async (c) => {
   try {
