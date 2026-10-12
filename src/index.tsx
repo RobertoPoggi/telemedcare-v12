@@ -19628,26 +19628,74 @@ app.get('/test-update-contracts-dates', async (c) => {
   `)
 })
 
-// GET /api/diagnosi-zullo — endpoint temporaneo one-time per diagnosticare caso Zullo
-// TOKEN: 17f82309a142207aea4e7bf5c6bdc6c1 (da rimuovere dopo diagnosi)
-app.get('/api/diagnosi-zullo', async (c) => {
+// GET /api/diagnosi — endpoint temporaneo one-time per diagnosticare casi DB
+// TOKEN: 17f82309a142207aea4e7bf5c6bdc6c1
+app.get('/api/diagnosi', async (c) => {
   const token = c.req.query('t')
   if (token !== '17f82309a142207aea4e7bf5c6bdc6c1') {
     return c.json({ error: 'Unauthorized' }, 401)
   }
   if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
   try {
-    const [leads, contracts, proformaByName, lastSigned] = await Promise.all([
-      c.env.DB.prepare(`SELECT id, nomeRichiedente, cognomeRichiedente, email, telefono, servizio, piano, status, created_at FROM leads WHERE cognomeRichiedente LIKE '%Zullo%' OR cognomeAssistito LIKE '%Zullo%' ORDER BY created_at DESC LIMIT 5`).all(),
-      c.env.DB.prepare(`SELECT id, leadId, cognomeRichiedente, nomeRichiedente, email, status, signed_at, proforma_rinnovo_id, created_at FROM contracts WHERE cognomeRichiedente LIKE '%Zullo%' OR cognomeAssistito LIKE '%Zullo%' ORDER BY created_at DESC LIMIT 5`).all(),
-      c.env.DB.prepare(`SELECT id, leadId, contract_id, numero_proforma, cliente_nome, cliente_cognome, cliente_email, tipo_servizio, prezzo_totale, status, email_sent, created_at FROM proforma WHERE cliente_cognome LIKE '%Zullo%' ORDER BY created_at DESC LIMIT 5`).all(),
-      c.env.DB.prepare(`SELECT id, leadId, cognomeRichiedente, nomeRichiedente, email, status, signed_at, proforma_rinnovo_id, created_at FROM contracts WHERE status='SIGNED' ORDER BY signed_at DESC LIMIT 10`).all(),
+    // 1. Schema tabelle per capire i nomi colonne reali
+    const [sLeads, sContracts, sProforma, sRate] = await Promise.all([
+      c.env.DB.prepare(`PRAGMA table_info(leads)`).all(),
+      c.env.DB.prepare(`PRAGMA table_info(contracts)`).all(),
+      c.env.DB.prepare(`PRAGMA table_info(proforma)`).all(),
+      c.env.DB.prepare(`PRAGMA table_info(rate)`).all(),
     ])
+
+    // 2. Lead Zullo e Filippone
+    const leadsZullo = await c.env.DB.prepare(
+      `SELECT * FROM leads WHERE cognomeRichiedente LIKE '%Zullo%' OR cognomeAssistito LIKE '%Zullo%' ORDER BY created_at DESC LIMIT 5`
+    ).all()
+    const leadsFilippone = await c.env.DB.prepare(
+      `SELECT * FROM leads WHERE cognomeRichiedente LIKE '%Filippone%' OR cognomeAssistito LIKE '%Filippone%' ORDER BY created_at DESC LIMIT 5`
+    ).all()
+
+    // 3. Ultimi 10 contratti firmati (colonne sicure)
+    const lastSigned = await c.env.DB.prepare(
+      `SELECT * FROM contracts WHERE status='SIGNED' ORDER BY created_at DESC LIMIT 10`
+    ).all()
+
+    // 4. Tutti i contratti (ultimi 10 in assoluto)
+    const lastContracts = await c.env.DB.prepare(
+      `SELECT * FROM contracts ORDER BY created_at DESC LIMIT 10`
+    ).all()
+
+    // 5. Proforma per Zullo e Filippone
+    const proformaZullo = await c.env.DB.prepare(
+      `SELECT * FROM proforma WHERE cliente_cognome LIKE '%Zullo%' ORDER BY created_at DESC LIMIT 5`
+    ).all()
+    const proformaFilippone = await c.env.DB.prepare(
+      `SELECT * FROM proforma WHERE cliente_cognome LIKE '%Filippone%' ORDER BY created_at DESC LIMIT 5`
+    ).all()
+
+    // 6. Rate Filippone (cerca per leadId se lo conosciamo)
+    const rateFilippone = await c.env.DB.prepare(
+      `SELECT * FROM rate WHERE leadId IN (SELECT id FROM leads WHERE cognomeRichiedente LIKE '%Filippone%') ORDER BY numero_rata ASC LIMIT 10`
+    ).all()
+
     return c.json({
-      leads: leads.results,
-      contracts: contracts.results,
-      proformaByName: proformaByName.results,
-      lastSigned: lastSigned.results,
+      schema: {
+        leads:     (sLeads.results as any[]).map((r:any) => r.name),
+        contracts: (sContracts.results as any[]).map((r:any) => r.name),
+        proforma:  (sProforma.results as any[]).map((r:any) => r.name),
+        rate:      (sRate.results as any[]).map((r:any) => r.name),
+      },
+      zullo: {
+        leads:    leadsZullo.results,
+        proforma: proformaZullo.results,
+      },
+      filippone: {
+        leads:    leadsFilippone.results,
+        proforma: proformaFilippone.results,
+        rate:     rateFilippone.results,
+      },
+      contracts: {
+        lastSigned:   lastSigned.results,
+        lastAll:      lastContracts.results,
+      },
     })
   } catch (e: any) {
     return c.json({ error: e?.message ?? String(e) }, 500)
