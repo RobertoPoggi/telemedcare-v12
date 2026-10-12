@@ -19675,26 +19675,31 @@ app.get('/api/diagnosi', async (c) => {
       `SELECT * FROM proforma WHERE cliente_cognome LIKE '%Filippone%' ORDER BY created_at DESC LIMIT 5`
     ).all()
 
-    // 6. Rate Filippone — usa il nome tabella corretto se esiste
-    const rateTableName = tableNames.find(t => t.toLowerCase().includes('rat')) || null
-    let rateFilippone: any = { results: [] }
-    if (rateTableName) {
-      rateFilippone = await c.env.DB.prepare(
-        `SELECT * FROM "${rateTableName}" ORDER BY created_at DESC LIMIT 20`
-      ).all()
-    }
+    // 6. Contratto Zullo specifico
+    const contractZullo = await c.env.DB.prepare(
+      `SELECT id, leadId, status, signed_at, proforma_rinnovo_id, created_at, updated_at FROM contracts WHERE leadId = 'LEAD-eCura-00038' ORDER BY created_at DESC LIMIT 5`
+    ).all()
+
+    // 7. Rate_pagamento di Filippone
+    const rateFilippone = await c.env.DB.prepare(
+      `SELECT * FROM rate_pagamento WHERE leadId = 'LEAD-eCura-00015' ORDER BY numero_rata ASC LIMIT 10`
+    ).all()
+
+    // 8. Schema rate_pagamento
+    const sRatePagamento = await c.env.DB.prepare(`PRAGMA table_info(rate_pagamento)`).all()
 
     return c.json({
       schema: {
-        allTables,
+        allTables: tableNames,
         leads:     (sLeads.results as any[]).map((r:any) => r.name),
         contracts: (sContracts.results as any[]).map((r:any) => r.name),
         proforma:  (sProforma.results as any[]).map((r:any) => r.name),
-        rateTable: rateTableName,
+        rate_pagamento: (sRatePagamento.results as any[]).map((r:any) => r.name),
       },
       zullo: {
-        leads:    leadsZullo.results,
-        proforma: proformaZullo.results,
+        leads:         leadsZullo.results,
+        proforma:      proformaZullo.results,
+        contracts:     contractZullo.results,
       },
       filippone: {
         leads:    leadsFilippone.results,
