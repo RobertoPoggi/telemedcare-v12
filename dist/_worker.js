@@ -25486,7 +25486,15 @@ Medica GB S.r.l. — P.IVA 12435130963`}),await q.sendEmail({to:((n=e.env)==null
   <\/script>
 </body>
 </html>
-  `));I.post("/api/contracts/sign",async e=>{var a,t,o;try{const i=await e.req.json(),{contractId:s,signatureData:n,firmaDigitale:r,timestamp:l,userAgent:c,screenResolution:p,ipAddress:u}=i,m=n||r||"Firma Manuale";if(!s||!m)return e.json({success:!1,error:"Dati firma mancanti"},400);if(!((a=e.env)!=null&&a.DB))return e.json({success:!1,error:"Database non configurato"},500);const g=await e.env.DB.prepare("SELECT * FROM contracts WHERE id = ?").bind(s).first();if(!g)return e.json({success:!1,error:"Contratto non trovato"},404);if(g.status==="SIGNED")return e.json({success:!1,error:"Contratto già firmato"},400);const v=u||e.req.header("cf-connecting-ip")||e.req.header("x-forwarded-for")||e.req.header("x-real-ip")||"unknown";await e.env.DB.prepare(`
+  `));I.get("/api/fix-filippone-proforma",async e=>{var t;if(e.req.query("t")!=="17f82309a142207aea4e7bf5c6bdc6c1")return e.json({error:"Unauthorized"},401);if(!((t=e.env)!=null&&t.DB))return e.json({error:"DB non configurato"},500);try{await e.env.DB.prepare(`
+      UPDATE proforma SET
+        prezzo_totale  = 590,
+        prezzo_mensile = 49.17,
+        durata_mesi    = 12,
+        numero_proforma = 'PRF202610-FILIPPONE',
+        updated_at     = ?
+      WHERE id = 53
+    `).bind(new Date().toISOString()).run();const o=await e.env.DB.prepare("SELECT id, numero_proforma, prezzo_mensile, durata_mesi, prezzo_totale, iva_agevolata, status FROM proforma WHERE id = 53").first();return e.json({success:!0,proforma_aggiornata:o})}catch(o){return e.json({success:!1,error:(o==null?void 0:o.message)??String(o)},500)}});I.post("/api/contracts/sign",async e=>{var a,t,o;try{const i=await e.req.json(),{contractId:s,signatureData:n,firmaDigitale:r,timestamp:l,userAgent:c,screenResolution:p,ipAddress:u}=i,m=n||r||"Firma Manuale";if(!s||!m)return e.json({success:!1,error:"Dati firma mancanti"},400);if(!((a=e.env)!=null&&a.DB))return e.json({success:!1,error:"Database non configurato"},500);const g=await e.env.DB.prepare("SELECT * FROM contracts WHERE id = ?").bind(s).first();if(!g)return e.json({success:!1,error:"Contratto non trovato"},404);if(g.status==="SIGNED")return e.json({success:!1,error:"Contratto già firmato"},400);const v=u||e.req.header("cf-connecting-ip")||e.req.header("x-forwarded-for")||e.req.header("x-real-ip")||"unknown";await e.env.DB.prepare(`
       UPDATE contracts 
       SET status = 'SIGNED',
           signature_data = ?,
