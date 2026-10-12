@@ -1,0 +1,89 @@
+name: Diagnosi Caso Zullo
+
+on:
+  workflow_dispatch:
+    inputs:
+      cognome:
+        description: 'Cognome da cercare (default: Zullo)'
+        required: false
+        default: 'Zullo'
+      contract_id:
+        description: 'Contract ID specifico (opzionale, lascia vuoto per cercare per cognome)'
+        required: false
+        default: ''
+
+jobs:
+  diagnosi:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cerca Zullo in leads, contracts e proforma
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          COGNOME: ${{ github.event.inputs.cognome }}
+          CONTRACT_ID: ${{ github.event.inputs.contract_id }}
+        run: |
+          BASE_URL="https://telemedcare-v12.pages.dev"
+          
+          echo "============================================"
+          echo "🔍 DIAGNOSI CASO: $COGNOME"
+          echo "============================================"
+          
+          # ── 1. Cerca lead per cognome ──────────────────
+          echo ""
+          echo "--- [1] LEADS (cognomeRichiedente LIKE '%$COGNOME%') ---"
+          curl -s -X POST "$BASE_URL/api/admin/db-query" \
+            -H "Content-Type: application/json" \
+            -H "X-Cron-Secret: $CRON_SECRET" \
+            -d "{\"sql\": \"SELECT id, nomeRichiedente, cognomeRichiedente, email, telefono, servizio, piano, status, created_at FROM leads WHERE cognomeRichiedente LIKE '%$COGNOME%' OR cognomeAssistito LIKE '%$COGNOME%' ORDER BY created_at DESC LIMIT 5\"}" \
+            | python3 -m json.tool 2>/dev/null || echo "(risposta non JSON)"
+          
+          # ── 2. Cerca contracts per cognome ────────────
+          echo ""
+          echo "--- [2] CONTRACTS (cognomeRichiedente LIKE '%$COGNOME%') ---"
+          curl -s -X POST "$BASE_URL/api/admin/db-query" \
+            -H "Content-Type: application/json" \
+            -H "X-Cron-Secret: $CRON_SECRET" \
+            -d "{\"sql\": \"SELECT id, leadId, cognomeRichiedente, nomeRichiedente, email, status, signed_at, proforma_rinnovo_id, created_at FROM contracts WHERE cognomeRichiedente LIKE '%$COGNOME%' OR cognomeAssistito LIKE '%$COGNOME%' ORDER BY created_at DESC LIMIT 5\"}" \
+            | python3 -m json.tool 2>/dev/null || echo "(risposta non JSON)"
+          
+          # ── 3. Se contract_id specificato, cerca per ID ─
+          if [ -n "$CONTRACT_ID" ]; then
+            echo ""
+            echo "--- [3] CONTRACT SPECIFICO ID=$CONTRACT_ID ---"
+            curl -s -X POST "$BASE_URL/api/admin/db-query" \
+              -H "Content-Type: application/json" \
+              -H "X-Cron-Secret: $CRON_SECRET" \
+              -d "{\"sql\": \"SELECT id, leadId, cognomeRichiedente, nomeRichiedente, email, status, signed_at, proforma_rinnovo_id, created_at FROM contracts WHERE id = '$CONTRACT_ID'\"}" \
+              | python3 -m json.tool 2>/dev/null || echo "(risposta non JSON)"
+            
+            echo ""
+            echo "--- [3b] PROFORMA collegata al CONTRACT_ID=$CONTRACT_ID ---"
+            curl -s -X POST "$BASE_URL/api/admin/db-query" \
+              -H "Content-Type: application/json" \
+              -H "X-Cron-Secret: $CRON_SECRET" \
+              -d "{\"sql\": \"SELECT id, leadId, contract_id, numero_proforma, cliente_nome, cliente_cognome, cliente_email, tipo_servizio, prezzo_totale, status, email_sent, created_at FROM proforma WHERE contract_id = '$CONTRACT_ID' ORDER BY created_at DESC LIMIT 5\"}" \
+              | python3 -m json.tool 2>/dev/null || echo "(risposta non JSON)"
+          fi
+          
+          # ── 4. Cerca proforma per cognome ────────────
+          echo ""
+          echo "--- [4] PROFORMA (cliente_cognome LIKE '%$COGNOME%') ---"
+          curl -s -X POST "$BASE_URL/api/admin/db-query" \
+            -H "Content-Type: application/json" \
+            -H "X-Cron-Secret: $CRON_SECRET" \
+            -d "{\"sql\": \"SELECT id, leadId, contract_id, numero_proforma, cliente_nome, cliente_cognome, cliente_email, tipo_servizio, prezzo_totale, status, email_sent, created_at FROM proforma WHERE cliente_cognome LIKE '%$COGNOME%' ORDER BY created_at DESC LIMIT 5\"}" \
+            | python3 -m json.tool 2>/dev/null || echo "(risposta non JSON)"
+          
+          # ── 5. Ultimi 5 contratti firmati ────────────
+          echo ""
+          echo "--- [5] ULTIMI 5 CONTRATTI FIRMATI (status=SIGNED) ---"
+          curl -s -X POST "$BASE_URL/api/admin/db-query" \
+            -H "Content-Type: application/json" \
+            -H "X-Cron-Secret: $CRON_SECRET" \
+            -d "{\"sql\": \"SELECT id, leadId, cognomeRichiedente, nomeRichiedente, email, status, signed_at, proforma_rinnovo_id, created_at FROM contracts WHERE status='SIGNED' ORDER BY signed_at DESC LIMIT 5\"}" \
+            | python3 -m json.tool 2>/dev/null || echo "(risposta non JSON)"
+          
+          echo ""
+          echo "============================================"
+          echo "✅ DIAGNOSI COMPLETATA"
+          echo "============================================"

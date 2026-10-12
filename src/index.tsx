@@ -37044,6 +37044,74 @@ app.post('/api/admin/test-benvenuto', async (c) => {
 })
 
 // ============================================================
+// POST /api/admin/db-query — Esegue SQL di SOLA LETTURA sul DB di produzione
+// Protetto da middleware /api/admin/* (X-Cron-Secret o ADMIN_SECRET_TOKEN)
+// Body: { sql: string }
+// ============================================================
+app.post('/api/admin/db-query', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    let sql: string = ''
+    try {
+      const body = await c.req.json() as any
+      sql = (body?.sql || '').trim()
+    } catch {
+      return c.json({ success: false, error: 'Body JSON non valido' }, 400)
+    }
+    if (!sql) return c.json({ success: false, error: 'Parametro "sql" obbligatorio' }, 400)
+    // Sicurezza: solo SELECT consentito
+    const sqlUpper = sql.toUpperCase().replace(/\s+/g, ' ').trimStart()
+    if (!sqlUpper.startsWith('SELECT') && !sqlUpper.startsWith('PRAGMA')) {
+      return c.json({ success: false, error: 'Solo query SELECT/PRAGMA consentite' }, 403)
+    }
+    const result = await c.env.DB.prepare(sql).all()
+    return c.json({
+      success: true,
+      count: result.results?.length ?? 0,
+      results: result.results ?? [],
+    })
+  } catch (err: any) {
+    return c.json({ success: false, error: err?.message ?? String(err) }, 500)
+  }
+})
+
+// ============================================================
+// POST /api/admin/db-execute — Esegue SQL di SCRITTURA sul DB di produzione
+// Protetto da middleware /api/admin/* (X-Cron-Secret o ADMIN_SECRET_TOKEN)
+// Body: { sql: string, params?: any[] }
+// ============================================================
+app.post('/api/admin/db-execute', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    let sql: string = ''
+    let params: any[] = []
+    try {
+      const body = await c.req.json() as any
+      sql    = (body?.sql    || '').trim()
+      params = Array.isArray(body?.params) ? body.params : []
+    } catch {
+      return c.json({ success: false, error: 'Body JSON non valido' }, 400)
+    }
+    if (!sql) return c.json({ success: false, error: 'Parametro "sql" obbligatorio' }, 400)
+    // Blocca DROP TABLE / TRUNCATE per sicurezza
+    const sqlUpper = sql.toUpperCase()
+    if (sqlUpper.includes('DROP TABLE') || sqlUpper.includes('TRUNCATE')) {
+      return c.json({ success: false, error: 'DROP TABLE e TRUNCATE non consentiti' }, 403)
+    }
+    const stmt = params.length > 0
+      ? c.env.DB.prepare(sql).bind(...params)
+      : c.env.DB.prepare(sql)
+    const result = await stmt.run()
+    return c.json({
+      success: true,
+      meta: result.meta ?? {},
+    })
+  } catch (err: any) {
+    return c.json({ success: false, error: err?.message ?? String(err) }, 500)
+  }
+})
+
+// ============================================================
 // POST /api/leads/:id/send-benvenuto
 // Invia manualmente email di benvenuto al lead (con IVA agevolata e dispositivo corretti)
 // ============================================================
