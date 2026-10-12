@@ -19637,12 +19637,16 @@ app.get('/api/diagnosi', async (c) => {
   }
   if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
   try {
-    // 1. Schema tabelle per capire i nomi colonne reali
-    const [sLeads, sContracts, sProforma, sRate] = await Promise.all([
+    // 1. Schema tabelle — lista tutte le tabelle esistenti
+    const allTables = await c.env.DB.prepare(
+      `SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`
+    ).all()
+    const tableNames = (allTables.results as any[]).map((r:any) => r.name as string)
+
+    const [sLeads, sContracts, sProforma] = await Promise.all([
       c.env.DB.prepare(`PRAGMA table_info(leads)`).all(),
       c.env.DB.prepare(`PRAGMA table_info(contracts)`).all(),
       c.env.DB.prepare(`PRAGMA table_info(proforma)`).all(),
-      c.env.DB.prepare(`PRAGMA table_info(rate)`).all(),
     ])
 
     // 2. Lead Zullo e Filippone
@@ -19671,17 +19675,22 @@ app.get('/api/diagnosi', async (c) => {
       `SELECT * FROM proforma WHERE cliente_cognome LIKE '%Filippone%' ORDER BY created_at DESC LIMIT 5`
     ).all()
 
-    // 6. Rate Filippone (cerca per leadId se lo conosciamo)
-    const rateFilippone = await c.env.DB.prepare(
-      `SELECT * FROM rate WHERE leadId IN (SELECT id FROM leads WHERE cognomeRichiedente LIKE '%Filippone%') ORDER BY numero_rata ASC LIMIT 10`
-    ).all()
+    // 6. Rate Filippone — usa il nome tabella corretto se esiste
+    const rateTableName = tableNames.find(t => t.toLowerCase().includes('rat')) || null
+    let rateFilippone: any = { results: [] }
+    if (rateTableName) {
+      rateFilippone = await c.env.DB.prepare(
+        `SELECT * FROM "${rateTableName}" ORDER BY created_at DESC LIMIT 20`
+      ).all()
+    }
 
     return c.json({
       schema: {
+        allTables,
         leads:     (sLeads.results as any[]).map((r:any) => r.name),
         contracts: (sContracts.results as any[]).map((r:any) => r.name),
         proforma:  (sProforma.results as any[]).map((r:any) => r.name),
-        rate:      (sRate.results as any[]).map((r:any) => r.name),
+        rateTable: rateTableName,
       },
       zullo: {
         leads:    leadsZullo.results,
