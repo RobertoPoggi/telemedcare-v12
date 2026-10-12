@@ -9893,25 +9893,27 @@ app.post('/api/create-payment-intent', async (c) => {
     let totalAmount = 0
 
     // ── RATEIZZAZIONE: se è stata specificata una rata, carica importo da rate_pagamento ──
-    if (numeroRata && proforma.lead_id) {
+    // ✅ FIX: la colonna in DB è leadId (camelCase), non lead_id
+    const proformaLeadId = (proforma as any).leadId || (proforma as any).lead_id || null
+    if (numeroRata && proformaLeadId) {
       try {
         const rata = await c.env.DB.prepare(`
           SELECT importo, numero_rata, data_scadenza, status
           FROM rate_pagamento
           WHERE lead_id = ? AND numero_rata = ?
           LIMIT 1
-        `).bind(proforma.lead_id, numeroRata).first()
+        `).bind(proformaLeadId, numeroRata).first()
         
         if (rata) {
           // Importo nella tabella è l'imponibile; calcola IVA in base al flag iva_agevolata del lead
           const lead = await c.env.DB.prepare(`SELECT iva_agevolata, iva_esente FROM leads WHERE id = ? LIMIT 1`)
-            .bind(proforma.lead_id).first()
+            .bind(proformaLeadId).first()
           const ivaRateRata = (lead as any)?.iva_esente ? 0 : (lead as any)?.iva_agevolata ? 0.04 : 0.22
           const imponibileRata = Number((rata as any).importo) || 0
           totalAmount = Math.round((imponibileRata * (1 + ivaRateRata)) * 100) / 100
           console.log(`✅ [PAYMENT] Rata ${numeroRata}: imponibile €${imponibileRata.toFixed(2)}, IVA ${ivaRateRata*100}%, totale €${totalAmount.toFixed(2)}`)
         } else {
-          console.warn(`⚠️ [PAYMENT] Rata ${numeroRata} non trovata per lead ${proforma.lead_id}, fallback su importo proforma`)
+          console.warn(`⚠️ [PAYMENT] Rata ${numeroRata} non trovata per lead ${proformaLeadId}, fallback su importo proforma`)
         }
       } catch (err) {
         console.warn('[PAYMENT] Errore lettura rata:', err)
@@ -19626,188 +19628,6 @@ app.get('/test-update-contracts-dates', async (c) => {
 </body>
 </html>
   `)
-})
-
-// GET /api/diagnosi — endpoint temporaneo one-time per diagnosticare casi DB
-// TOKEN: 17f82309a142207aea4e7bf5c6bdc6c1
-app.get('/api/diagnosi', async (c) => {
-  const token = c.req.query('t')
-  if (token !== '17f82309a142207aea4e7bf5c6bdc6c1') {
-    return c.json({ error: 'Unauthorized' }, 401)
-  }
-  if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
-  try {
-    // 1. Schema tabelle — lista tutte le tabelle esistenti
-    const allTables = await c.env.DB.prepare(
-      `SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`
-    ).all()
-    const tableNames = (allTables.results as any[]).map((r:any) => r.name as string)
-
-    const [sLeads, sContracts, sProforma] = await Promise.all([
-      c.env.DB.prepare(`PRAGMA table_info(leads)`).all(),
-      c.env.DB.prepare(`PRAGMA table_info(contracts)`).all(),
-      c.env.DB.prepare(`PRAGMA table_info(proforma)`).all(),
-    ])
-
-    // 2. Lead Zullo e Filippone
-    const leadsZullo = await c.env.DB.prepare(
-      `SELECT * FROM leads WHERE cognomeRichiedente LIKE '%Zullo%' OR cognomeAssistito LIKE '%Zullo%' ORDER BY created_at DESC LIMIT 5`
-    ).all()
-    const leadsFilippone = await c.env.DB.prepare(
-      `SELECT * FROM leads WHERE cognomeRichiedente LIKE '%Filippone%' OR cognomeAssistito LIKE '%Filippone%' ORDER BY created_at DESC LIMIT 5`
-    ).all()
-
-    // 3. Ultimi 10 contratti firmati (colonne sicure)
-    const lastSigned = await c.env.DB.prepare(
-      `SELECT * FROM contracts WHERE status='SIGNED' ORDER BY created_at DESC LIMIT 10`
-    ).all()
-
-    // 4. Tutti i contratti (ultimi 10 in assoluto)
-    const lastContracts = await c.env.DB.prepare(
-      `SELECT * FROM contracts ORDER BY created_at DESC LIMIT 10`
-    ).all()
-
-    // 5. Proforma per Zullo e Filippone
-    const proformaZullo = await c.env.DB.prepare(
-      `SELECT * FROM proforma WHERE cliente_cognome LIKE '%Zullo%' ORDER BY created_at DESC LIMIT 5`
-    ).all()
-    const proformaFilippone = await c.env.DB.prepare(
-      `SELECT * FROM proforma WHERE cliente_cognome LIKE '%Filippone%' ORDER BY created_at DESC LIMIT 5`
-    ).all()
-
-    // 6. Contratto Zullo specifico — usa colonne sicure
-    const contractZullo = await c.env.DB.prepare(
-      `SELECT * FROM contracts WHERE id LIKE '%ZULLO%' OR id LIKE '%zullo%' OR id LIKE '%00038%' ORDER BY created_at DESC LIMIT 5`
-    ).all()
-
-    // 7. Rate_pagamento di Filippone — prima cerca colonne
-    const sRatePagamento = await c.env.DB.prepare(`PRAGMA table_info(rate_pagamento)`).all()
-    const rpCols = (sRatePagamento.results as any[]).map((r:any) => r.name as string)
-    const rpLeadCol = rpCols.find(c => c.toLowerCase() === 'leadid' || c.toLowerCase() === 'lead_id') || null
-    let rateFilippone: any = { results: [] }
-    if (rpLeadCol) {
-      rateFilippone = await c.env.DB.prepare(
-        `SELECT * FROM rate_pagamento WHERE "${rpLeadCol}" = 'LEAD-eCura-00015' ORDER BY rowid ASC LIMIT 10`
-      ).all()
-    } else {
-      // fallback: ultime 10 righe
-      rateFilippone = await c.env.DB.prepare(`SELECT * FROM rate_pagamento ORDER BY rowid DESC LIMIT 10`).all()
-    }
-
-    return c.json({
-      schema: {
-        allTables: tableNames,
-        leads:     (sLeads.results as any[]).map((r:any) => r.name),
-        contracts: (sContracts.results as any[]).map((r:any) => r.name),
-        proforma:  (sProforma.results as any[]).map((r:any) => r.name),
-        rate_pagamento: (sRatePagamento.results as any[]).map((r:any) => r.name),
-      },
-      zullo: {
-        leads:         leadsZullo.results,
-        proforma:      proformaZullo.results,
-        contracts:     contractZullo.results,
-      },
-      filippone: {
-        leads:    leadsFilippone.results,
-        proforma: proformaFilippone.results,
-        rate:     rateFilippone.results,
-      },
-      contracts: {
-        lastSigned:   lastSigned.results,
-        lastAll:      lastContracts.results,
-      },
-    })
-  } catch (e: any) {
-    return c.json({ error: e?.message ?? String(e) }, 500)
-  }
-})
-
-// GET /api/fix-urgente — endpoint one-time per fix Zullo (scadenza proforma) + Filippone (crea proforma rata)
-// TOKEN: 17f82309a142207aea4e7bf5c6bdc6c1
-app.get('/api/fix-urgente', async (c) => {
-  const token = c.req.query('t')
-  if (token !== '17f82309a142207aea4e7bf5c6bdc6c1') return c.json({ error: 'Unauthorized' }, 401)
-  if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
-  const results: Record<string, any> = {}
-  try {
-    // ── FIX 1: ZULLO — estendi scadenza proforma ID 52 al 2026-11-12 ──
-    await c.env.DB.prepare(
-      `UPDATE proforma SET data_scadenza = '2026-11-12', updated_at = ? WHERE id = 52`
-    ).bind(new Date().toISOString()).run()
-    results.zullo_scadenza = 'OK — proforma ID 52 scadenza → 2026-11-12'
-
-    // ── FIX 2: FILIPPONE — crea proforma per rata 2 (€147.50, iva_agevolata=1, iva_esente=0) ──
-    const now = new Date().toISOString()
-    const oggi = now.split('T')[0]
-    const insertResult = await c.env.DB.prepare(`
-      INSERT INTO proforma (
-        contract_id, leadId, numero_proforma,
-        data_emissione, data_scadenza,
-        cliente_nome, cliente_cognome, cliente_email, cliente_telefono,
-        cliente_indirizzo, cliente_citta, cliente_cap, cliente_provincia, cliente_codice_fiscale,
-        tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
-        iva_agevolata, iva_esente, is_rinnovo, riserva_dominio,
-        status, email_sent, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      null,                          // contract_id (non ha contratto digitale)
-      'LEAD-eCura-00015',            // leadId
-      'PRF202610-FILIPPONE-R2',      // numero_proforma univoco
-      oggi,                          // data_emissione
-      '2026-11-15',                  // data_scadenza (allineata alla rata 2)
-      'Emanuela',                    // cliente_nome
-      'Filippone',                   // cliente_cognome
-      'emanuelafilippone@alice.it',  // cliente_email
-      '3381330893',                  // cliente_telefono
-      'VIA MATTEOTTI N. 314',        // cliente_indirizzo
-      'LOCRI',                       // cliente_citta
-      '89044',                       // cliente_cap
-      'RC',                          // cliente_provincia
-      'FLPMNL69M63D976P',            // cliente_codice_fiscale
-      'eCura PREMIUM',               // tipo_servizio
-      49.17,                         // prezzo_mensile (590/12)
-      12,                            // durata_mesi
-      147.50,                        // prezzo_totale (importo rata)
-      1,                             // iva_agevolata
-      0,                             // iva_esente
-      0,                             // is_rinnovo
-      1,                             // riserva_dominio
-      'SENT',                        // status
-      1,                             // email_sent
-      now,                           // created_at
-      now                            // updated_at
-    ).run()
-
-    // Recupera ID proforma appena creata
-    let proformaFilipponeId: number | null = null
-    if (insertResult.meta?.last_row_id) {
-      proformaFilipponeId = insertResult.meta.last_row_id as number
-    } else {
-      const rec = await c.env.DB.prepare(
-        `SELECT id FROM proforma WHERE numero_proforma = 'PRF202610-FILIPPONE-R2' LIMIT 1`
-      ).first() as any
-      proformaFilipponeId = rec?.id ?? null
-    }
-    results.filippone_proforma_id = proformaFilipponeId
-    results.filippone_proforma = proformaFilipponeId
-      ? `OK — Proforma ID ${proformaFilipponeId} creata per rata 2`
-      : 'WARN — proforma creata ma ID non recuperato'
-
-    // Aggiorna rata 2 con riferimento alla proforma (nota nel campo note)
-    if (proformaFilipponeId) {
-      await c.env.DB.prepare(
-        `UPDATE rate_pagamento SET note = ?, updated_at = ? WHERE lead_id = 'LEAD-eCura-00015' AND numero_rata = 2`
-      ).bind(`proforma_id:${proformaFilipponeId}`, now).run()
-      results.filippone_rata2_note = `OK — rata 2 aggiornata con proforma_id:${proformaFilipponeId}`
-
-      const linkPagamento = `https://telemedcare-v12.pages.dev/pagamento.html?proformaId=${proformaFilipponeId}&rata=2`
-      results.filippone_link_pagamento = linkPagamento
-    }
-
-    return c.json({ success: true, results })
-  } catch (e: any) {
-    return c.json({ success: false, error: e?.message ?? String(e), results }, 500)
-  }
 })
 
 // POST /api/contracts/sign - Salva firma digitale
