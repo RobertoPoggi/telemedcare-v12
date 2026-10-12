@@ -9880,8 +9880,8 @@ app.post('/api/create-payment-intent', async (c) => {
       }
     }
     
-    // Verifica che la proforma non sia già pagata
-    if (proforma.status === 'paid') {
+    // Verifica che la proforma non sia già pagata (case-insensitive: DB può contenere 'PAID' o 'paid')
+    if (String(proforma.status || '').toUpperCase() === 'PAID') {
       return c.json({ 
         success: false, 
         error: 'Proforma già pagata',
@@ -10245,12 +10245,34 @@ app.get('/api/proforma/:id', async (c) => {
     const importoTotaleIvaInclusa = Math.round((prezzoBaseIvaEsclusa + importoIva) * 100) / 100
     console.log(`📊 [API/proforma] IVA: agevolata=${ivaAgevolataEffettiva}, rate=${ivaRateProforma*100}%, base=€${prezzoBaseIvaEsclusa}, iva=€${importoIva}, totale=€${importoTotaleIvaInclusa}`)
     
+    // ✅ RATEIZZAZIONE: se il lead ha rate attive, le include nella response
+    // Permette al frontend di mostrare l'importo reale della singola rata
+    let rate: any[] = []
+    const proformaLeadIdForRate = (proforma as any).leadId || (proforma as any).lead_id || null
+    if (proformaLeadIdForRate) {
+      try {
+        const rateRows = await c.env.DB.prepare(
+          `SELECT numero_rata, importo, data_scadenza, status, metodo_pagamento
+           FROM rate_pagamento
+           WHERE lead_id = ?
+           ORDER BY numero_rata ASC`
+        ).bind(proformaLeadIdForRate).all()
+        rate = (rateRows?.results || []) as any[]
+        if (rate.length > 0) {
+          console.log(`📊 [API/proforma] ${rate.length} rate trovate per lead ${proformaLeadIdForRate}`)
+        }
+      } catch (rateErr) {
+        console.warn(`⚠️ [API/proforma] Errore fetch rate (non bloccante):`, rateErr)
+      }
+    }
+
     const proformaResponse = {
       ...proforma,
-      importo_totale: importoTotaleIvaInclusa.toFixed(2),  // Totale IVA INCLUSA
+      importo_totale: importoTotaleIvaInclusa.toFixed(2),  // Totale IVA INCLUSA (intera proforma)
       prezzo_base: prezzoBaseIvaEsclusa.toFixed(2),  // Base IVA ESCLUSA (da DB)
       importo_iva: importoIva.toFixed(2),  // IVA calcolata
       iva_label: ivaEsenteEffettiva ? ivaLabelProforma : `IVA ${ivaLabelProforma}`,  // es. "Esente IVA" o "IVA 4% (Legge 104)" o "IVA 22%"
+      iva_rate: ivaRateProforma,  // ✅ Tasso IVA numerico (0, 0.04, 0.22) — per calcoli frontend
       
       // Servizio
       servizio: proforma.tipo_servizio || 'eCura PRO',
@@ -10270,7 +10292,10 @@ app.get('/api/proforma/:id', async (c) => {
       cliente_codice_fiscale: proforma.cliente_codice_fiscale || proforma.lead_cf_intestatario || proforma.lead_cf_assistito || '',
       // ✅ FIX: iva_agevolata e iva_esente con fallback a leads
       iva_agevolata: proforma.iva_agevolata || proforma.lead_iva_agevolata || 0,
-      iva_esente: proforma.iva_esente || proforma.lead_iva_esente || 0
+      iva_esente: proforma.iva_esente || proforma.lead_iva_esente || 0,
+      // ✅ RATEIZZAZIONE: rate_pagamento incluse se presenti
+      rate: rate,
+      rateizzazione_attiva: rate.length > 0
     }
     
     return c.json({ success: true, proforma: proformaResponse })

@@ -275,7 +275,7 @@
                         <strong id="scadenza">-</strong>
                     </div>
                     <div class="info-row">
-                        <span>TOTALE DA PAGARE:</span>
+                        <span id="totale-label">TOTALE DA PAGARE:</span>
                         <strong id="totale">€0.00</strong>
                     </div>
                 </div>
@@ -399,17 +399,31 @@
             document.getElementById('piano').textContent = proformaData.piano || 'BASE';
             document.getElementById('scadenza').textContent = new Date(proformaData.data_scadenza).toLocaleDateString('it-IT');
             
-            // ✅ RATEIZZAZIONE: se è specificata una rata, mostra solo quell'importo
-            // Il server calcolerà l'importo IVA inclusa della rata; qui usiamo il totale proforma come fallback
+            // ✅ RATEIZZAZIONE: calcola e mostra importo reale della rata (IVA inclusa)
+            // L'API ora restituisce rate[] e iva_rate → possiamo mostrare l'importo esatto senza aspettare Stripe
+            const ivaPerc = parseFloat(proformaData.iva_rate) || (proformaData.iva_esente ? 0 : proformaData.iva_agevolata ? 0.04 : 0.22);
             const prezzoBase = parseFloat(proformaData.prezzo_base || proformaData.prezzo_totale || 0);
-            const ivaPerc = proformaData.iva_esente ? 0 : proformaData.iva_agevolata ? 0.04 : 0.22;
-            const iva = parseFloat(proformaData.importo_iva) || (prezzoBase * ivaPerc);
-            const totaleProforma = parseFloat(proformaData.importo_totale || (prezzoBase + iva)).toFixed(2);
-            
-            // Etichetta importo: per rata specifica il numero, altrimenti totale
-            const etichettaImporto = numeroRata
-                ? `€${totaleProforma} (Rata ${numeroRata} — importo calcolato al pagamento)`
-                : `€${totaleProforma}`;
+            const totaleProforma = parseFloat(proformaData.importo_totale || (prezzoBase * (1 + ivaPerc))).toFixed(2);
+
+            let etichettaImporto;
+            if (numeroRata && proformaData.rate && proformaData.rate.length > 0) {
+                // Trova la rata specifica e calcola il suo importo IVA inclusa
+                const rataInfo = proformaData.rate.find(r => Number(r.numero_rata) === Number(numeroRata));
+                if (rataInfo) {
+                    const imponibileRata = parseFloat(rataInfo.importo) || 0;
+                    const totaleRata = Math.round(imponibileRata * (1 + ivaPerc) * 100) / 100;
+                    const ivaLabel = proformaData.iva_esente ? 'esente IVA' : proformaData.iva_agevolata ? 'IVA 4% (L.104)' : 'IVA 22%';
+                    etichettaImporto = `€${totaleRata.toFixed(2)} — Rata ${numeroRata} di ${proformaData.rate.length} (${ivaLabel})`;
+                    document.getElementById('totale-label').textContent = `RATA ${numeroRata} DI ${proformaData.rate.length} DA PAGARE:`;
+                } else {
+                    etichettaImporto = `Rata ${numeroRata} — importo da confermare`;
+                }
+            } else if (numeroRata) {
+                // Fallback: rata specificata ma rate non nella response (API vecchia)
+                etichettaImporto = `€${totaleProforma} (Rata ${numeroRata})`;
+            } else {
+                etichettaImporto = `€${totaleProforma}`;
+            }
             document.getElementById('totale').textContent = etichettaImporto;
             document.getElementById('importo-bonifico').textContent = etichettaImporto;
             
