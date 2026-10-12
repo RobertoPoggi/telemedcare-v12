@@ -19675,18 +19675,24 @@ app.get('/api/diagnosi', async (c) => {
       `SELECT * FROM proforma WHERE cliente_cognome LIKE '%Filippone%' ORDER BY created_at DESC LIMIT 5`
     ).all()
 
-    // 6. Contratto Zullo specifico
+    // 6. Contratto Zullo specifico — usa colonne sicure
     const contractZullo = await c.env.DB.prepare(
-      `SELECT id, leadId, status, signed_at, proforma_rinnovo_id, created_at, updated_at FROM contracts WHERE leadId = 'LEAD-eCura-00038' ORDER BY created_at DESC LIMIT 5`
+      `SELECT * FROM contracts WHERE id LIKE '%ZULLO%' OR id LIKE '%zullo%' OR id LIKE '%00038%' ORDER BY created_at DESC LIMIT 5`
     ).all()
 
-    // 7. Rate_pagamento di Filippone
-    const rateFilippone = await c.env.DB.prepare(
-      `SELECT * FROM rate_pagamento WHERE leadId = 'LEAD-eCura-00015' ORDER BY numero_rata ASC LIMIT 10`
-    ).all()
-
-    // 8. Schema rate_pagamento
+    // 7. Rate_pagamento di Filippone — prima cerca colonne
     const sRatePagamento = await c.env.DB.prepare(`PRAGMA table_info(rate_pagamento)`).all()
+    const rpCols = (sRatePagamento.results as any[]).map((r:any) => r.name as string)
+    const rpLeadCol = rpCols.find(c => c.toLowerCase() === 'leadid' || c.toLowerCase() === 'lead_id') || null
+    let rateFilippone: any = { results: [] }
+    if (rpLeadCol) {
+      rateFilippone = await c.env.DB.prepare(
+        `SELECT * FROM rate_pagamento WHERE "${rpLeadCol}" = 'LEAD-eCura-00015' ORDER BY rowid ASC LIMIT 10`
+      ).all()
+    } else {
+      // fallback: ultime 10 righe
+      rateFilippone = await c.env.DB.prepare(`SELECT * FROM rate_pagamento ORDER BY rowid DESC LIMIT 10`).all()
+    }
 
     return c.json({
       schema: {
