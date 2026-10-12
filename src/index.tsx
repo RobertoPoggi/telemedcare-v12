@@ -19628,6 +19628,32 @@ app.get('/test-update-contracts-dates', async (c) => {
   `)
 })
 
+// GET /api/diagnosi-zullo — endpoint temporaneo one-time per diagnosticare caso Zullo
+// TOKEN: 17f82309a142207aea4e7bf5c6bdc6c1 (da rimuovere dopo diagnosi)
+app.get('/api/diagnosi-zullo', async (c) => {
+  const token = c.req.query('t')
+  if (token !== '17f82309a142207aea4e7bf5c6bdc6c1') {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+  if (!c.env?.DB) return c.json({ error: 'DB non configurato' }, 500)
+  try {
+    const [leads, contracts, proformaByName, lastSigned] = await Promise.all([
+      c.env.DB.prepare(`SELECT id, nomeRichiedente, cognomeRichiedente, email, telefono, servizio, piano, status, created_at FROM leads WHERE cognomeRichiedente LIKE '%Zullo%' OR cognomeAssistito LIKE '%Zullo%' ORDER BY created_at DESC LIMIT 5`).all(),
+      c.env.DB.prepare(`SELECT id, leadId, cognomeRichiedente, nomeRichiedente, email, status, signed_at, proforma_rinnovo_id, created_at FROM contracts WHERE cognomeRichiedente LIKE '%Zullo%' OR cognomeAssistito LIKE '%Zullo%' ORDER BY created_at DESC LIMIT 5`).all(),
+      c.env.DB.prepare(`SELECT id, leadId, contract_id, numero_proforma, cliente_nome, cliente_cognome, cliente_email, tipo_servizio, prezzo_totale, status, email_sent, created_at FROM proforma WHERE cliente_cognome LIKE '%Zullo%' ORDER BY created_at DESC LIMIT 5`).all(),
+      c.env.DB.prepare(`SELECT id, leadId, cognomeRichiedente, nomeRichiedente, email, status, signed_at, proforma_rinnovo_id, created_at FROM contracts WHERE status='SIGNED' ORDER BY signed_at DESC LIMIT 10`).all(),
+    ])
+    return c.json({
+      leads: leads.results,
+      contracts: contracts.results,
+      proformaByName: proformaByName.results,
+      lastSigned: lastSigned.results,
+    })
+  } catch (e: any) {
+    return c.json({ error: e?.message ?? String(e) }, 500)
+  }
+})
+
 // POST /api/contracts/sign - Salva firma digitale
 app.post('/api/contracts/sign', async (c) => {
   try {
