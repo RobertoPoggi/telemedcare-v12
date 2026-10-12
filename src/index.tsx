@@ -20565,23 +20565,32 @@ app.get('/api/contracts/:id', async (c) => {
       return c.json({ success: false, error: 'Contratto non trovato' }, 404)
     }
     
-    // Prendi i dati del lead se disponibili
-    // ✅ FIX: Usa dati INTESTATARIO (non richiedente) per il contratto
+    // Prendi i dati del lead rispettando intestatarioContratto
+    // 'richiedente' → nomeRichiedente/cognomeRichiedente
+    // 'assistito'   → nomeAssistito/cognomeAssistito  (es. Pineda è l'assistita, Comper è il richiedente)
     let nomeCliente = 'Cliente'
     let cognomeCliente = ''
     let emailCliente = ''
-    
+
     if (contract.leadId) {
       try {
         const lead = await c.env.DB.prepare(`
-          SELECT nomeRichiedente, cognomeRichiedente, email
+          SELECT nomeRichiedente, cognomeRichiedente,
+                 nomeAssistito,   cognomeAssistito,
+                 intestatarioContratto, email
           FROM leads WHERE id = ?
         `).bind(contract.leadId).first() as any
-        
+
         if (lead) {
-          nomeCliente = lead.nomeRichiedente || 'Cliente'
-          cognomeCliente = lead.cognomeRichiedente || ''
           emailCliente = lead.email || ''
+          const intestatario = lead.intestatarioContratto || 'richiedente'
+          if (intestatario === 'assistito') {
+            nomeCliente    = lead.nomeAssistito    || lead.nomeRichiedente    || 'Cliente'
+            cognomeCliente = lead.cognomeAssistito || lead.cognomeRichiedente || ''
+          } else {
+            nomeCliente    = lead.nomeRichiedente    || 'Cliente'
+            cognomeCliente = lead.cognomeRichiedente || ''
+          }
         }
       } catch (leadError) {
         console.warn('⚠️  Errore caricamento lead:', leadError)
