@@ -9993,7 +9993,7 @@ app.post('/api/create-payment-intent', async (c) => {
 // POST /api/payments - Registra pagamento (webhook Stripe o manuale)
 app.post('/api/payments', async (c) => {
   try {
-    const { proformaId, importo, metodoPagamento, transactionId, stripePaymentIntentId, autoConfirm } = await c.req.json()
+    const { proformaId, importo, metodoPagamento, transactionId, stripePaymentIntentId, autoConfirm, numeroRata } = await c.req.json()
     
     if (!c.env?.DB) {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
@@ -10012,7 +10012,8 @@ app.post('/api/payments', async (c) => {
       id: proforma.id,
       numero: proforma.numero_proforma,
       leadId: proforma.leadId,
-      contract_id: proforma.contract_id
+      contract_id: proforma.contract_id,
+      numeroRata: numeroRata || null
     })
     
     // Recupera lead data
@@ -10027,6 +10028,7 @@ app.post('/api/payments', async (c) => {
       importo,
       metodoPagamento,
       transactionId,
+      numeroRata: numeroRata || null,
       proforma_contract_id: proforma.contract_id,
       leadId: leadData.id
     }))
@@ -10050,21 +10052,23 @@ app.post('/api/payments', async (c) => {
         nomeAssistito: leadData.nomeAssistito || leadData.nomeRichiedente,
         cognomeAssistito: leadData.cognomeAssistito || leadData.cognomeRichiedente,
         etaAssistito: leadData.etaAssistito ? String(leadData.etaAssistito) : null,
-        pacchetto: leadData.servizio || 'eCura PRO',  // ✅ FIX: usa servizio completo (es. "eCura PREMIUM")
-        tipoServizio: leadData.tipoServizio || 'BASE',  // ✅ Piano: BASE o AVANZATO
+        pacchetto: leadData.servizio || 'eCura PRO',
+        tipoServizio: leadData.tipoServizio || 'BASE',
         vuoleContratto: true,
         vuoleBrochure: leadData.vuoleBrochure === 'Si',
         vuoleManuale: leadData.vuoleManuale === 'Si',
         fonte: leadData.fonte || 'LANDING_PAGE'
       },
       proformaId,
-      contractId: proforma.contract_id,
+      contractId: proforma.contract_id || '',  // ✅ FIX: non bloccare se contract_id è null (rateizzazione senza contratto digitale)
       paymentData: {
         amount: importo,
         paymentMethod: metodoPagamento,
         transactionId,
         stripePaymentIntentId,
-        autoConfirm: autoConfirm || false  // ✅ Conferma automatica (true per Stripe)
+        autoConfirm: autoConfirm || false,
+        numeroRata: numeroRata || null,  // ✅ FIX: passa numeroRata all'orchestrator
+        leadRateizzazione: !!(leadData as any).rateizzazione_attiva,
       }
     }
     

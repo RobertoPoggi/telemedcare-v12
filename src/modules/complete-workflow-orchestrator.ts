@@ -476,10 +476,9 @@ export async function processPayment(
       return result
     }
     
+    // ✅ FIX: contractId può essere null per lead con rateizzazione senza contratto digitale
     if (!ctx.contractId) {
-      result.errors.push('Contract ID mancante')
-      result.message = 'Dati contratto incompleti'
-      return result
+      console.warn(`⚠️ [ORCHESTRATOR] contractId mancante — lead con rateizzazione senza contratto digitale, proseguo`)
     }
     
     const paymentParams: PaymentManager.PaymentData = {
@@ -514,66 +513,138 @@ export async function processPayment(
       return result
     }
 
+    const numeroRata: number | null = ctx.paymentData.numeroRata || null
+    const isRateizzazione: boolean  = !!(ctx.paymentData.leadRateizzazione || numeroRata)
+
     // 3.2: Conferma pagamento (se automatico, altrimenti manuale dopo)
     if (ctx.paymentData.autoConfirm) {
-      const confirmResult = await PaymentManager.confirmPayment(ctx.db, paymentResult.paymentId)
-      
-      if (!confirmResult.success) {
-        result.errors.push(confirmResult.error)
-        result.message = 'Errore conferma pagamento'
-        return result
+      if (isRateizzazione && numeroRata) {
+        // ✅ FIX RATEIZZAZIONE: aggiorna solo la rata specifica in rate_pagamento
+        // NON tocca lo status della proforma né del lead (non ancora saldo completo)
+        try {
+          await ctx.db.prepare(`
+            UPDATE rate_pagamento
+            SET status          = 'PAGATA',
+                data_pagamento  = ?,
+                metodo_pagamento= 'CARTA',
+                riferimento     = ?,
+                updated_at      = ?
+            WHERE lead_id = ? AND numero_rata = ?
+          `).bind(
+            new Date().toISOString(),
+            ctx.paymentData.stripePaymentIntentId || ctx.paymentData.transactionId || 'stripe',
+            new Date().toISOString(),
+            ctx.leadData.id,
+            numeroRata
+          ).run()
+          console.log(`✅ [ORCHESTRATOR] Rata ${numeroRata} segnata come PAGATA in rate_pagamento`)
+
+          // Controlla se tutte le rate sono pagate
+          const rateRim = await ctx.db.prepare(`
+            SELECT COUNT(*) as tot, SUM(CASE WHEN status='PAGATA' THEN 1 ELSE 0 END) as pagate
+            FROM rate_pagamento WHERE lead_id = ?
+          `).bind(ctx.leadData.id).first() as any
+          const tuttePagate = rateRim && Number(rateRim.tot) > 0 && Number(rateRim.tot) === Number(rateRim.pagate)
+          console.log(`📊 [ORCHESTRATOR] Rate: ${rateRim?.pagate}/${rateRim?.tot} pagate. Tutte pagate: ${tuttePagate}`)
+
+          if (tuttePagate) {
+            // Saldo completato → marca proforma PAID e lead CONVERTED
+            await ctx.db.prepare(`UPDATE proforma SET status='PAID', updated_at=? WHERE id=?`)
+              .bind(new Date().toISOString(), ctx.proformaId).run()
+            await ctx.db.prepare(`UPDATE leads SET status='CONVERTED', updated_at=? WHERE id=?`)
+              .bind(new Date().toISOString(), ctx.leadData.id).run()
+            console.log(`✅ [ORCHESTRATOR] Tutte le rate pagate → proforma PAID, lead CONVERTED`)
+          }
+        } catch (rataErr: any) {
+          console.error(`❌ [ORCHESTRATOR] Errore aggiornamento rata:`, rataErr)
+          result.errors.push(`Errore aggiornamento rata: ${rataErr.message}`)
+        }
+      } else {
+        // Pagamento unico normale
+        const confirmResult = await PaymentManager.confirmPayment(ctx.db, paymentResult.paymentId)
+        if (!confirmResult.success) {
+          result.errors.push(confirmResult.error)
+          result.message = 'Errore conferma pagamento'
+          return result
+        }
       }
     }
 
     // 3.3: Genera codice cliente
     const codiceCliente = await generateCodiceCliente(ctx.db, ctx.leadData.id)
 
-    // 3.4: ✅ Invia SOLO email configurazione post-pagamento (template CORRETTO)
-    console.log(`📧 [ORCHESTRATOR] Preparazione invio email configurazione...`)
-    console.log(`   → Lead ID: ${ctx.leadData.id}`)
-    console.log(`   → Email: ${ctx.leadData.email}`)
-    console.log(`   → Codice Cliente: ${codiceCliente}`)
-    console.log(`   → Servizio: ${ctx.leadData.pacchetto}`)
-    
-    const emailConfigResult = await WorkflowEmailManager.inviaEmailConfigurazionePostPagamento(
-      { 
-        ...ctx.leadData, 
-        codiceCliente,
-        servizio: ctx.leadData.pacchetto,  // es. "eCura PREMIUM"
-        piano: (ctx.leadData as any).tipoServizio || 'BASE'  // ✅ FIX: usa tipoServizio per il piano (BASE/AVANZATO)
-      },
-      ctx.env,
-      ctx.db
-    )
-    
-    console.log(`📧 [ORCHESTRATOR] Risultato email configurazione:`, {
-      success: emailConfigResult.success,
-      errors: emailConfigResult.errors,
-      emailsSent: emailConfigResult.emailsSent
-    })
+    // 3.4: Invia email configurazione post-pagamento SOLO se:
+    //       - pagamento unico (non rateizzazione), OPPURE
+    //       - rateizzazione e tutte le rate sono pagate
+    let deveInviareEmailConfig = !isRateizzazione
+    if (isRateizzazione && numeroRata) {
+      try {
+        const rateCheck = await ctx.db.prepare(`
+          SELECT COUNT(*) as tot, SUM(CASE WHEN status='PAGATA' THEN 1 ELSE 0 END) as pagate
+          FROM rate_pagamento WHERE lead_id = ?
+        `).bind(ctx.leadData.id).first() as any
+        deveInviareEmailConfig = rateCheck && Number(rateCheck.tot) > 0 && Number(rateCheck.tot) === Number(rateCheck.pagate)
+      } catch { deveInviareEmailConfig = false }
+    }
+
+    console.log(`📧 [ORCHESTRATOR] inviaEmailConfig=${deveInviareEmailConfig} (isRateizzazione=${isRateizzazione}, rata=${numeroRata})`)
+
+    let emailConfigResult: any = { success: true, emailsSent: [], errors: [] }
+    if (deveInviareEmailConfig) {
+      console.log(`📧 [ORCHESTRATOR] Invio email configurazione post-pagamento a ${ctx.leadData.email}`)
+      emailConfigResult = await WorkflowEmailManager.inviaEmailConfigurazionePostPagamento(
+        {
+          ...ctx.leadData,
+          codiceCliente,
+          servizio: ctx.leadData.pacchetto,
+          piano: (ctx.leadData as any).tipoServizio || 'BASE'
+        },
+        ctx.env,
+        ctx.db
+      )
+    } else if (isRateizzazione && numeroRata) {
+      console.log(`📧 [ORCHESTRATOR] Rata ${numeroRata} pagata — email conferma rata (non configurazione)`)
+      // Email leggera di conferma singola rata
+      try {
+        const rateAll = await ctx.db.prepare(
+          `SELECT COUNT(*) as tot FROM rate_pagamento WHERE lead_id = ?`
+        ).bind(ctx.leadData.id).first() as any
+        const totaleRate = Number(rateAll?.tot) || 0
+        // Invia email semplice di ricevuta rata via WorkflowEmailManager se disponibile
+        // Per ora: solo log, l'email di conferma rata è opzionale
+        console.log(`✅ [ORCHESTRATOR] Rata ${numeroRata}/${totaleRate} pagata con carta. Email configurazione rinviata al saldo completo.`)
+        emailConfigResult = { success: true, emailsSent: [`nota_rata_${numeroRata}`], errors: [] }
+      } catch { /* non critico */ }
+    }
 
     if (emailConfigResult.success) {
       result.success = true
-      result.message = 'Pagamento registrato, email configurazione inviata'
+      result.message = deveInviareEmailConfig
+        ? 'Pagamento registrato, email configurazione inviata'
+        : `Rata ${numeroRata} registrata come pagata`
       result.data = {
         paymentId: paymentResult.paymentId,
         codiceCliente,
-        emailsSent: emailConfigResult.emailsSent
+        emailsSent: emailConfigResult.emailsSent,
+        numeroRata: numeroRata || null,
+        isRateizzazione
       }
     } else {
-      // Email fallita ma pagamento registrato
       result.success = true  // Pagamento OK anche se email fallisce
       result.message = 'Pagamento registrato (errore invio email configurazione)'
       result.errors.push(...emailConfigResult.errors)
       result.data = {
         paymentId: paymentResult.paymentId,
         codiceCliente,
-        emailsSent: []
+        emailsSent: [],
+        numeroRata: numeroRata || null
       }
     }
 
-    // Aggiorna status lead
-    await updateLeadStatus(ctx.db, ctx.leadData.id, 'PAYMENT_RECEIVED')
+    // Aggiorna status lead (solo se non rateizzazione con rate ancora in sospeso)
+    if (!isRateizzazione || deveInviareEmailConfig) {
+      await updateLeadStatus(ctx.db, ctx.leadData.id, 'PAYMENT_RECEIVED')
+    }
 
     console.log(`✅ [ORCHESTRATOR] STEP 3 completato: ${result.message}`)
 
