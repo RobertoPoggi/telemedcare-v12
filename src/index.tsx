@@ -32185,9 +32185,12 @@ app.get('/api/analytics/live-seo-report', async (c) => {
     const deviceLabels = ga4.deviceBreakdown.map(d => `'${d.device}'`).join(',')
     const deviceData = ga4.deviceBreakdown.map(d => d.sessions).join(',')
 
-    // Daily trend
-    const dailyLabels = ga4.dailyTrend.map(d => `'${d.date.slice(5)}'`).join(',')
-    const dailySessions = ga4.dailyTrend.map(d => d.sessions).join(',')
+    // Daily trend — se l'ultimo punto è il giorno in corso, lo proietta a 24 ore
+    const nowRome = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Rome' }))
+    const todayRome = `${nowRome.getFullYear()}-${String(nowRome.getMonth() + 1).padStart(2, '0')}-${String(nowRome.getDate()).padStart(2, '0')}`
+    const hoursElapsed = Math.max(nowRome.getHours() + nowRome.getMinutes() / 60, 1)
+    const dailyLabels = ga4.dailyTrend.map(d => d.date === todayRome ? `'${d.date.slice(5)} ⏳ proiez.'` : `'${d.date.slice(5)}'`).join(',')
+    const dailySessions = ga4.dailyTrend.map(d => d.date === todayRome ? Math.round(d.sessions * 24 / hoursElapsed) : d.sessions).join(',')
 
     // Search Console table rows
     const scTableRows = ga4.searchConsole?.topQueries.slice(0, 15).map(q => `
