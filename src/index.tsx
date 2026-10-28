@@ -32185,12 +32185,21 @@ app.get('/api/analytics/live-seo-report', async (c) => {
     const deviceLabels = ga4.deviceBreakdown.map(d => `'${d.device}'`).join(',')
     const deviceData = ga4.deviceBreakdown.map(d => d.sessions).join(',')
 
-    // Daily trend — se l'ultimo punto è il giorno in corso, lo proietta a 24 ore
+    // Daily trend — proiezione a 24 ore SOLO per l'ultimo punto della serie, e solo se è il giorno in corso.
+    // Prima delle 08:00 (Europe/Rome) la stima non è attendibile: si mostra il dato reale con etichetta "in corso".
+    const PROJECTION_MIN_HOUR = 8
     const nowRome = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Rome' }))
     const todayRome = `${nowRome.getFullYear()}-${String(nowRome.getMonth() + 1).padStart(2, '0')}-${String(nowRome.getDate()).padStart(2, '0')}`
-    const hoursElapsed = Math.max(nowRome.getHours() + nowRome.getMinutes() / 60, 1)
-    const dailyLabels = ga4.dailyTrend.map(d => d.date === todayRome ? `'${d.date.slice(5)} ⏳ proiez.'` : `'${d.date.slice(5)}'`).join(',')
-    const dailySessions = ga4.dailyTrend.map(d => d.date === todayRome ? Math.round(d.sessions * 24 / hoursElapsed) : d.sessions).join(',')
+    const hoursElapsed = nowRome.getHours() + nowRome.getMinutes() / 60
+    const lastTrendIdx = ga4.dailyTrend.length - 1
+    const isTodayPoint = (d: { date: string }, i: number) => i === lastTrendIdx && d.date === todayRome
+    const canProject = hoursElapsed >= PROJECTION_MIN_HOUR
+    const dailyLabels = ga4.dailyTrend.map((d, i) => isTodayPoint(d, i)
+      ? `'${d.date.slice(5)} ${canProject ? '⏳ proiez.' : '⏳ in corso'}'`
+      : `'${d.date.slice(5)}'`).join(',')
+    const dailySessions = ga4.dailyTrend.map((d, i) => isTodayPoint(d, i) && canProject
+      ? Math.round(d.sessions * 24 / hoursElapsed)
+      : d.sessions).join(',')
 
     // Search Console table rows
     const scTableRows = ga4.searchConsole?.topQueries.slice(0, 15).map(q => `
