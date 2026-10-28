@@ -130,6 +130,72 @@ function buildRateHtml(
 }
 
 /**
+ * 🏷️ Applica lo sconto registrato sul lead ai dati contratto, se il chiamante non l'ha già fatto.
+ *
+ * Perché esiste: solo POST /api/leads/:id/send-contract leggeva lo sconto dal lead.
+ * Gli altri chiamanti di inviaEmailContratto (invio per assistito aggiuntivo, "reinvia" da
+ * /api/contracts/send, workflow automatici) passano il prezzo di listino: contratto, email e
+ * record `contracts` (UPDATE se il codice esiste già) finivano a listino anche con sconto sul CRM.
+ *
+ * Regole:
+ *  - nessun intervento per i rinnovi, né se il chiamante ha già calcolato uno sconto (importoSconto > 0)
+ *  - lo sconto del lead conta se c'è codice_sconto oppure sconto_percentuale/sconto_fisso/prezzo_scontato
+ *  - importo: percentuale (sul listino del contratto) > fisso > rapporto prezzo_scontato/prezzo_anno
+ *  - se prezzoBase è già <= prezzo_scontato del lead il prezzo risulta già scontato: nessun doppio sconto
+ *  - prezzoBase/prezzoIvaInclusa vengono riscritti (IVA con l'aliquota del lead)
+ */
+export async function applyLeadDiscountToContractData(
+  db: any,
+  leadData: any,
+  contractData: any
+): Promise<{ applied: boolean; reason: string }> {
+  if (!db || !leadData?.id) return { applied: false, reason: 'db/lead non disponibili' }
+  if (contractData.isRinnovo || contractData.is_rinnovo) return { applied: false, reason: 'rinnovo' }
+  if (Number(contractData.importoSconto) > 0) return { applied: false, reason: 'sconto già calcolato dal chiamante' }
+
+  const row = await db.prepare(
+    'SELECT codice_sconto, sconto_percentuale, sconto_fisso, prezzo_scontato, prezzo_anno FROM leads WHERE id = ?'
+  ).bind(leadData.id).first() as any
+  if (!row) return { applied: false, reason: 'lead non trovato' }
+
+  const listino = Number(contractData.prezzoBase) || 0
+  const pct = Number(row.sconto_percentuale) || 0
+  const fisso = Number(row.sconto_fisso) || 0
+  const prezzoScontatoLead = Number(row.prezzo_scontato) || 0
+  const prezzoAnnoLead = Number(row.prezzo_anno) || 0
+  const codice = (row.codice_sconto || '').toString().trim()
+
+  const hasDiscountOnLead = !!codice || pct > 0 || fisso > 0 || prezzoScontatoLead > 0
+  if (!hasDiscountOnLead || listino <= 0) return { applied: false, reason: 'nessuno sconto sul lead' }
+
+  // già scontato dal chiamante (es. prezzo passato = prezzo_scontato del lead)
+  if (prezzoScontatoLead > 0 && listino <= prezzoScontatoLead + 0.005 && prezzoAnnoLead > prezzoScontatoLead) {
+    return { applied: false, reason: 'prezzo già scontato' }
+  }
+
+  let importo = 0
+  if (pct > 0) importo = listino * pct / 100
+  else if (fisso > 0) importo = fisso
+  else if (prezzoScontatoLead > 0 && prezzoAnnoLead > prezzoScontatoLead) importo = listino * (1 - prezzoScontatoLead / prezzoAnnoLead)
+  importo = Math.round(importo * 100) / 100
+  if (!(importo > 0) || importo >= listino) return { applied: false, reason: 'importo sconto non valido' }
+
+  const scontato = Math.round((listino - importo) * 100) / 100
+  const ivaRate = leadData.iva_esente ? 0 : leadData.iva_agevolata ? 0.04 : 0.22
+
+  contractData.prezzoListino = listino
+  contractData.prezzoBase = scontato
+  contractData.prezzoIvaInclusa = Math.round(scontato * (1 + ivaRate) * 100) / 100
+  contractData.codiceSconto = codice
+  contractData.scontoPercentuale = pct
+  contractData.scontoFisso = fisso
+  contractData.importoSconto = importo
+
+  console.log(`🏷️ [CONTRATTO] Sconto del lead applicato: listino €${listino} → €${scontato} (-€${importo}, cod. ${contractData.codiceSconto || 'nessuno'})`)
+  return { applied: true, reason: 'ok' }
+}
+
+/**
  * Genera HTML completo del contratto con tutti i dati del cliente
  */
 export async function generateContractHtml(leadData: any, contractData: any): Promise<string> {
@@ -152,7 +218,7 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
   const scontoPercentuale = Number(contractData.scontoPercentuale) || 0
   const importoSconto = Number(contractData.importoSconto) || 0
   const prezzoListino = Number(contractData.prezzoListino) || 0
-  const hasScontoContratto = !isRinnovo && codiceSconto && importoSconto > 0
+  const hasScontoContratto = !isRinnovo && importoSconto > 0
   
   // Estrai tipo servizio per calcolare rinnovo corretto
   // ✅ FIX: case-insensitive per gestire 'eCura Family', 'eCura PRO', 'FAMILY', 'PRO', ecc.
@@ -554,7 +620,7 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
     <h2>Tariffa del Servizio</h2>
     ${hasScontoContratto ? `
     <div style="background:#fff8e1; border-left:4px solid #f59e0b; padding:12px 16px; margin:16px 0; border-radius:0 4px 4px 0;">
-      <strong style="color:#92400e;">🏷️ SCONTO APPLICATO — Codice ${codiceSconto}</strong><br>
+      <strong style="color:#92400e;">🏷️ SCONTO APPLICATO${codiceSconto ? ' — Codice ' + codiceSconto : ''}</strong><br>
       <span style="color:#78350f; font-size:13px;">
         Prezzo di listino: <span style="text-decoration:line-through;">${prezzoListino.toFixed(2).replace('.', ',')} €</span> &nbsp;|&nbsp;
         Sconto${scontoPercentuale > 0 ? ' -' + scontoPercentuale + '%' : ''}: <strong style="color:#b91c1c;">-${importoSconto.toFixed(2).replace('.', ',')} €</strong> &nbsp;|&nbsp;
@@ -1134,6 +1200,9 @@ export async function inviaEmailContratto(
     
     if (db) {
       try {
+        // 🏷️ Sconto registrato sul lead (se il chiamante non l'ha già applicato)
+        await applyLeadDiscountToContractData(db, leadData, contractData)
+
         console.log(`📋 [CONTRATTO] Generazione HTML contratto...`)
         // Genera HTML contratto completo
         const contractHtml = await generateContractHtml(leadData, contractData)
@@ -1476,7 +1545,7 @@ export async function inviaEmailProforma(
     const scontoPerc   = Number(proformaData.scontoPercentuale) || 0
     const impSconto    = Number(proformaData.importoSconto) || 0
     const prezzoListino = Number(proformaData.prezzoListino) || 0
-    const hasScontoEmail = !isRinnovo && codiceSconto && impSconto > 0
+    const hasScontoEmail = !isRinnovo && impSconto > 0
 
     // Calcola imponibile, IVA e totale con aliquota corretta
     const imponibile = proformaData.prezzoBase  // già scontato se hasScontoEmail

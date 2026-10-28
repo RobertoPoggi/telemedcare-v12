@@ -11145,8 +11145,7 @@ app.get('/api/ddts/:id/prefattura-html', async (c) => {
     const pricingPF   = getPricing(servizioRaw, pianoRaw)
     const prezzoListinoPF = pricingPF ? pricingPF.setupBase : (parseFloat(contractRow?.prezzo_totale) || 0)
     // ✅ FIX SCONTO: usa prezzo_scontato dal lead se valorizzato e inferiore al listino
-    const hasScontoPF = !!(contractRow?.codice_sconto &&
-      contractRow?.prezzo_scontato &&
+    const hasScontoPF = !!(contractRow?.prezzo_scontato &&
       Number(contractRow.prezzo_scontato) > 0 &&
       Number(contractRow.prezzo_scontato) < prezzoListinoPF)
     const imponibile  = hasScontoPF ? Number(contractRow.prezzo_scontato) : prezzoListinoPF
@@ -11559,8 +11558,7 @@ app.post('/api/ddts/:id/prefattura', async (c) => {
     const pricingP     = getPricing(servizioRawP, pianoRawP)
     const prezzoListinoP = pricingP ? pricingP.setupBase : (parseFloat(contractRow?.prezzo_totale) || 0)
     // ✅ FIX SCONTO: usa prezzo_scontato dal lead se valorizzato e inferiore al listino
-    const hasScontoP = !!(contractRow?.codice_sconto &&
-      contractRow?.prezzo_scontato &&
+    const hasScontoP = !!(contractRow?.prezzo_scontato &&
       Number(contractRow.prezzo_scontato) > 0 &&
       Number(contractRow.prezzo_scontato) < prezzoListinoP)
     const imponibileP  = hasScontoP ? Number(contractRow.prezzo_scontato) : prezzoListinoP
@@ -11919,8 +11917,7 @@ app.get('/api/prefatture', async (c) => {
 
       // Applica sconto se: codice_sconto presente, prezzo_scontato > 0,
       // e prezzo_scontato < imponibile salvato (significa che il DB ha ancora listino)
-      const hasSconto = !!(pf.lead_codice_sconto &&
-        prezzoScontato > 0 &&
+      const hasSconto = !!(prezzoScontato > 0 &&
         prezzoScontato < imponibileDB)
 
       if (hasSconto) {
@@ -13600,11 +13597,12 @@ app.post('/api/leads/:id/send-contract', async (c) => {
     // 🏷️ FIX SCONTO: se il lead ha prezzo_scontato valorizzato (da codice sconto),
     // usarlo come prezzo base IVA-esclusa per il contratto — NON il listino pieno.
     // prezzo_scontato nel DB è già IVA esclusa (stesso formato di prezzo_anno).
+    // Lo sconto vale anche se sul lead manca il codice (sconto applicato a mano nel CRM):
+    // basta un prezzo_scontato valido e inferiore al listino del contratto.
     const hasScontoLead = !isRinnovoReq &&
-      lead.codice_sconto &&
-      lead.prezzo_scontato &&
+      !!lead.prezzo_scontato &&
       Number(lead.prezzo_scontato) > 0 &&
-      Number(lead.prezzo_scontato) < Number(lead.prezzo_anno || prezzoListinoBase)
+      Number(lead.prezzo_scontato) < prezzoListinoBase
 
     const prezzoBaseContratto = hasScontoLead
       ? Number(lead.prezzo_scontato)
@@ -38438,19 +38436,44 @@ app.post('/api/oneshot-rigenera-html-contratto-9fx2v', async (c) => {
       rate: rateContratto
     }
 
+    // 3b. 🏷️ Applica lo sconto registrato sul lead (se il prezzo del contratto è ancora a listino)
+    const { applyLeadDiscountToContractData, generateContractHtml } = await import('./modules/workflow-email-manager')
+    const discountRes = await applyLeadDiscountToContractData(c.env.DB, leadData, contractData)
+    console.log(`🏷️ [ONESHOT] Sconto lead: ${discountRes.applied ? 'applicato' : 'non applicato'} (${discountRes.reason})`)
+
     // 4. Rigenera HTML
-    const { generateContractHtml } = await import('./modules/workflow-email-manager')
     const nuovoHtml = await generateContractHtml(leadData, contractData)
 
     console.log(`📋 [ONESHOT] HTML rigenerato per ${contractId}: ${nuovoHtml.length} chars`)
 
-    // 5. UPDATE solo contenuto_html — NON toccare firma/status
-    await c.env.DB.prepare(`
-      UPDATE contracts SET
-        contenuto_html = ?,
-        updated_at = ?
-      WHERE id = ?
-    `).bind(nuovoHtml, new Date().toISOString(), contractId).run()
+    // 5. UPDATE contenuto_html — NON toccare firma/status.
+    //    Il prezzo del record (prezzo_totale IVA esclusa, prezzo_mensile) viene riallineato solo se
+    //    lo sconto è stato applicato ora E il contratto NON è già firmato (un contratto firmato
+    //    non si modifica nei valori economici senza una decisione esplicita).
+    const aggiornaPrezzo = discountRes.applied && String(contract.status || '').toUpperCase() !== 'SIGNED'
+    if (aggiornaPrezzo) {
+      await c.env.DB.prepare(`
+        UPDATE contracts SET
+          contenuto_html = ?,
+          prezzo_totale = ?,
+          prezzo_mensile = ?,
+          updated_at = ?
+        WHERE id = ?
+      `).bind(
+        nuovoHtml,
+        contractData.prezzoBase,
+        Math.round((contractData.prezzoBase / 12) * 100) / 100,
+        new Date().toISOString(),
+        contractId
+      ).run()
+    } else {
+      await c.env.DB.prepare(`
+        UPDATE contracts SET
+          contenuto_html = ?,
+          updated_at = ?
+        WHERE id = ?
+      `).bind(nuovoHtml, new Date().toISOString(), contractId).run()
+    }
 
     console.log(`✅ [ONESHOT] contenuto_html aggiornato per ${contractId} — firma/status intatti`)
 
