@@ -284,6 +284,41 @@ export async function ensureScontoRinnoviColumns(db: any): Promise<string[]> {
 }
 
 /**
+ * Colonne di attribuzione Google Ads (gclid/gbraid/wbraid) sui lead.
+ * Idempotente; in memoria per isolate evita ALTER ripetuti.
+ */
+let _adsColumnsReady = false
+export async function ensureAdsClickColumns(db: any): Promise<string[]> {
+  const log: string[] = []
+  if (_adsColumnsReady) return log
+  const cols = [
+    { name: 'gclid', def: 'TEXT DEFAULT NULL' },
+    { name: 'gbraid', def: 'TEXT DEFAULT NULL' },
+    { name: 'wbraid', def: 'TEXT DEFAULT NULL' },
+    { name: 'click_ts', def: 'INTEGER DEFAULT NULL' },
+    { name: 'landing_page', def: 'TEXT DEFAULT NULL' },
+  ]
+  let ok = true
+  for (const col of cols) {
+    try {
+      await db.prepare(`ALTER TABLE leads ADD COLUMN ${col.name} ${col.def}`).run()
+      log.push(`✅ leads.${col.name} aggiunto`)
+    } catch (e: any) {
+      if (e?.message && e.message.includes('duplicate column')) log.push(`ℹ️ leads.${col.name} già esiste`)
+      else { ok = false; log.push(`⚠️ Errore leads.${col.name}: ${e?.message}`) }
+    }
+  }
+  for (const idx of [
+    'CREATE INDEX IF NOT EXISTS idx_leads_gclid ON leads(gclid)',
+    'CREATE INDEX IF NOT EXISTS idx_leads_click_ts ON leads(click_ts)',
+  ]) {
+    try { await db.prepare(idx).run() } catch (e: any) { ok = false; log.push(`⚠️ Errore indice: ${e?.message}`) }
+  }
+  if (ok) _adsColumnsReady = true
+  return log
+}
+
+/**
  * Per il contratto del PRIMO anno: se il lead ha l'eccezione "sconto sui rinnovi" attiva,
  * valorizza contractData.rinnovoScontato in modo che il testo contrattuale riporti
  * la tariffa di rinnovo scontata (clausola esplicita).

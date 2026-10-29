@@ -23358,6 +23358,87 @@ app.get('/api/hubspot/auto-import/diagnose', async (c) => {
 })
 
 // ─────────────────────────────────────────────────────────────────────
+// GET /api/admin/ads-offline-conversions — CSV conversioni offline per Google Ads
+// Auth: middleware /api/admin/* (Authorization: Bearer <ADMIN_SECRET_TOKEN> oppure X-Cron-Secret).
+//       Nessun token in query string (finirebbe nei log).
+// Parametri opzionali:
+//   stati  = elenco stati separati da virgola (default: lead che hanno firmato/pagato)
+//   giorni = finestra in giorni sulla data del click (default 90, max 90)
+//   valore = valore conversione in EUR (default 29.90, come il tag sul sito)
+//   nome   = nome azione di conversione (deve coincidere con quella creata in Google Ads)
+//   formato= csv (default) | json (anteprima)
+// ─────────────────────────────────────────────────────────────────────
+app.get('/api/admin/ads-offline-conversions', async (c) => {
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const { ensureAdsClickColumns } = await import('./modules/workflow-email-manager')
+    await ensureAdsClickColumns(c.env.DB)
+
+    const DEFAULT_STATI = ['CONTRACT_SIGNED', 'SIGNED', 'PAYMENT_RECEIVED', 'ACTIVE', 'ATTIVO', 'CONVERTED']
+    const statiQ = (c.req.query('stati') || '').split(',').map(x => x.trim().toUpperCase()).filter(x => /^[A-Z_]{2,40}$/.test(x))
+    const stati = statiQ.length ? statiQ : DEFAULT_STATI
+    const giorni = Math.min(90, Math.max(1, parseInt(c.req.query('giorni') || '90', 10) || 90))
+    const valoreNum = Number(c.req.query('valore') || '29.90')
+    const valore = (Number.isFinite(valoreNum) && valoreNum >= 0 ? valoreNum : 29.90).toFixed(2)
+    const nome = (c.req.query('nome') || 'Lead qualificato eCura').slice(0, 100)
+    const minTs = Date.now() - giorni * 864e5
+
+    const placeholders = stati.map(() => '?').join(',')
+    const { results } = await c.env.DB.prepare(`
+      SELECT id, gclid, gbraid, wbraid, click_ts, created_at, updated_at, status
+        FROM leads
+       WHERE ((gclid IS NOT NULL AND gclid != '') OR (gbraid IS NOT NULL AND gbraid != '') OR (wbraid IS NOT NULL AND wbraid != ''))
+         AND click_ts IS NOT NULL AND click_ts >= ?
+         AND status IN (${placeholders})
+       ORDER BY updated_at DESC
+       LIMIT 5000
+    `).bind(minTs, ...stati).all()
+
+    // Google richiede un file per tipo di identificativo (gclid / gbraid / wbraid)
+    const kinds: Array<{ key: 'gclid' | 'gbraid' | 'wbraid'; header: string }> = [
+      { key: 'gclid', header: 'Google Click ID' },
+      { key: 'gbraid', header: 'Gbraid' },
+      { key: 'wbraid', header: 'Wbraid' },
+    ]
+    const kindQ = (c.req.query('tipo') || 'gclid') as 'gclid' | 'gbraid' | 'wbraid'
+    const kind = kinds.find(k => k.key === kindQ) || kinds[0]
+
+    const fmt = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ') + '+00:00'
+    const esc = (v: any) => { const t = String(v ?? ''); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t }
+
+    const rows: string[][] = []
+    for (const l of (results || []) as any[]) {
+      const id = l[kind.key]
+      if (!id) continue
+      // L'ora di conversione deve essere SUCCESSIVA al click: si usa l'ultimo aggiornamento del lead
+      const clickMs = Number(l.click_ts)
+      let convMs = Date.parse(l.updated_at || l.created_at || '')
+      if (!Number.isFinite(convMs) || convMs <= clickMs) convMs = clickMs + 60000
+      if (convMs > Date.now()) convMs = Date.now() - 60000
+      rows.push([id, nome, fmt(new Date(convMs)), valore, 'EUR'])
+    }
+
+    if (c.req.query('formato') === 'json') {
+      return c.json({ success: true, tipo: kind.key, stati, giorni, count: rows.length, anteprima: rows.slice(0, 20) })
+    }
+
+    // Prima riga "Parameters:TimeZone=" come da template ufficiale; l'offset +00:00 è comunque esplicito
+    const csv = ['Parameters:TimeZone=+0000', [kind.header, 'Conversion Name', 'Conversion Time', 'Conversion Value', 'Conversion Currency'].join(',')]
+      .concat(rows.map(r => r.map(esc).join(',')))
+      .join('\n')
+    return new Response(csv, {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="ecura-offline-conversions-${kind.key}.csv"`,
+        'Cache-Control': 'no-store',
+      }
+    })
+  } catch (e: any) {
+    return c.json({ success: false, error: e?.message || 'Errore export' }, 500)
+  }
+})
+
+// ─────────────────────────────────────────────────────────────────────
 // POST /api/leads/public — Endpoint pubblico per form landing eCura
 // NON usa HubSpot. Riceve lead dalla landing proprietaria su ecura.it.
 // Auth: X-API-Key header (LANDING_API_KEY env var) oppure open se non configurata
@@ -23383,7 +23464,30 @@ app.post('/api/leads/public', async (c) => {
             dettaglio_fonte, utm_source, utm_medium, utm_campaign,
             landing_variant, page_url,
             prezzo_anno, prezzo_rinnovo,
+            gclid, gbraid, wbraid, click_ts, landing_page,
             fonte: fonteBody } = body
+
+    // Attribuzione Google Ads: validazione (il form invia i click ID solo con consenso marketing)
+    const _CLICK_RE = /^[A-Za-z0-9_\-]{5,255}$/
+    const _cid = (v: any) => (typeof v === 'string' && _CLICK_RE.test(v)) ? v : null
+    const _adsGclid = _cid(gclid), _adsGbraid = _cid(gbraid), _adsWbraid = _cid(wbraid)
+    const _adsTsNum = Number(click_ts)
+    const _adsTs = (Number.isFinite(_adsTsNum) && _adsTsNum > 0) ? Math.floor(_adsTsNum) : null
+    const _adsLanding = typeof landing_page === 'string' ? landing_page.slice(0, 500) : null
+    const _adsHas = !!(_adsGclid || _adsGbraid || _adsWbraid)
+    const _saveAdsClick = async (leadIdForAds: string, onlyIfEmpty: boolean) => {
+      if (!_adsHas) return
+      try {
+        const { ensureAdsClickColumns } = await import('./modules/workflow-email-manager')
+        await ensureAdsClickColumns(c.env.DB)
+        const f = (col: string) => onlyIfEmpty ? `${col} = CASE WHEN ${col} IS NULL OR ${col} = '' THEN ? ELSE ${col} END` : `${col} = ?`
+        await c.env.DB.prepare(
+          `UPDATE leads SET ${f('gclid')}, ${f('gbraid')}, ${f('wbraid')}, ${f('click_ts')}, ${f('landing_page')} WHERE id = ?`
+        ).bind(_adsGclid, _adsGbraid, _adsWbraid, _adsTs, _adsLanding, leadIdForAds).run()
+      } catch (adsErr: any) {
+        console.error('⚠️ [LANDING] salvataggio click ID fallito (lead comunque salvato):', adsErr?.message)
+      }
+    }
 
     // Fonte: whitelist di valori ammessi dall'esterno (default 'Form eCura')
     const FONTE_WHITELIST = ['Form eCura', 'FORM PARTNER']
@@ -23432,6 +23536,8 @@ app.post('/api/leads/public', async (c) => {
         const baseUrl = c.env?.PUBLIC_URL || c.env?.PAGES_URL || 'https://telemedcare-v12.pages.dev'
         await fetch(`${baseUrl}/api/leads/fix-prices`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
       } catch (_) {}
+      // Click ID: il lead esiste già, completa solo se mancanti (primo click vince)
+      await _saveAdsClick((existing as any).id, true)
       return c.json({ success: true, id: (existing as any).id, duplicate: true })
     }
 
@@ -23482,6 +23588,8 @@ app.post('/api/leads/public', async (c) => {
       new Date().toISOString(),
       new Date().toISOString()
     ).run()
+
+    await _saveAdsClick(leadId, false)
 
     console.log(`✅ [LANDING] Nuovo lead salvato: ${leadId} (${email}) — fonte: ${fonteEffettiva}`)
 
