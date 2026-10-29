@@ -321,6 +321,7 @@ export const CONTRATTO_RINNOVO_B2C_TEMPLATE = `<!DOCTYPE html>
         </table>
         <p>La tariffa di rinnovo è <strong>agevolata rispetto alla prima annualità</strong>
         ({{PREZZO_TOTALE_PRIMO_ANNO}}) in quanto non include il costo del dispositivo e il setup iniziale.</p>
+        {{NOTA_SCONTO_RINNOVO}}
         <p>La medesima tariffa di <strong>{{PREZZO_RINNOVO}}</strong> si applicherà alle annualità successive,
         salvo variazioni comunicate per iscritto con almeno 30 giorni di anticipo.</p>
 

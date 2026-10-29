@@ -196,6 +196,87 @@ export async function applyLeadDiscountToContractData(
 }
 
 /**
+ * 🔁 ECCEZIONE: sconto esteso ai RINNOVI (per singolo lead, su decisione commerciale).
+ * Di default i rinnovi NON sono scontati. Se sul lead è attivo `sconto_rinnovi_attivo`
+ * la tariffa di rinnovo di listino viene ridotta della percentuale `sconto_rinnovi_percentuale`.
+ * Funzione pura: nessun accesso al DB (usare loadRinnovoSconto per leggere i campi).
+ */
+export function computeRinnovoScontato(
+  lead: any,
+  listinoRinnovo: number
+): { applied: boolean; listino: number; rinnovoBase: number; percentuale: number; importoSconto: number } {
+  const listino = Number(listinoRinnovo) || 0
+  const attivo = !!(lead && Number(lead.sconto_rinnovi_attivo) === 1)
+  const pct = Number(lead?.sconto_rinnovi_percentuale) || 0
+  if (!attivo || !(pct > 0) || pct >= 100 || !(listino > 0)) {
+    return { applied: false, listino, rinnovoBase: listino, percentuale: 0, importoSconto: 0 }
+  }
+  const importoSconto = Math.round(listino * pct) / 100
+  const rinnovoBase = Math.round((listino - importoSconto) * 100) / 100
+  return { applied: true, listino, rinnovoBase, percentuale: pct, importoSconto: Math.round(importoSconto * 100) / 100 }
+}
+
+/**
+ * Legge dal DB i campi dell'eccezione "sconto sui rinnovi" del lead.
+ * Tollerante: se le colonne non esistono ancora (migrazione non eseguita) restituisce null.
+ */
+export async function loadRinnovoSconto(db: any, leadId: string): Promise<any | null> {
+  if (!db || !leadId) return null
+  try {
+    const row = await db.prepare(
+      'SELECT sconto_rinnovi_attivo, sconto_rinnovi_percentuale, sconto_rinnovi_note FROM leads WHERE id = ?'
+    ).bind(leadId).first()
+    return row || null
+  } catch {
+    return null
+  }
+}
+
+/** Crea (idempotente) le colonne dell'eccezione "sconto sui rinnovi" nella tabella leads. */
+export async function ensureScontoRinnoviColumns(db: any): Promise<string[]> {
+  const cols = [
+    { name: 'sconto_rinnovi_attivo', def: 'INTEGER DEFAULT 0' },
+    { name: 'sconto_rinnovi_percentuale', def: 'REAL DEFAULT 0' },
+    { name: 'sconto_rinnovi_note', def: 'TEXT DEFAULT NULL' },
+    { name: 'sconto_rinnovi_da', def: 'TEXT DEFAULT NULL' },
+    { name: 'sconto_rinnovi_data', def: 'TEXT DEFAULT NULL' },
+  ]
+  const log: string[] = []
+  for (const col of cols) {
+    try {
+      await db.prepare(`ALTER TABLE leads ADD COLUMN ${col.name} ${col.def}`).run()
+      log.push(`✅ leads.${col.name} aggiunto`)
+    } catch (e: any) {
+      if (e?.message && e.message.includes('duplicate column')) log.push(`ℹ️ leads.${col.name} già esiste`)
+      else log.push(`⚠️ Errore leads.${col.name}: ${e?.message}`)
+    }
+  }
+  return log
+}
+
+/**
+ * Per il contratto del PRIMO anno: se il lead ha l'eccezione "sconto sui rinnovi" attiva,
+ * valorizza contractData.rinnovoScontato in modo che il testo contrattuale riporti
+ * la tariffa di rinnovo scontata (clausola esplicita).
+ */
+export async function applyRinnovoScontoToContractData(db: any, leadData: any, contractData: any): Promise<boolean> {
+  if (!db || !leadData?.id) return false
+  if (contractData.isRinnovo || contractData.is_rinnovo) return false
+  const row = await loadRinnovoSconto(db, leadData.id)
+  if (!row) return false
+  const { getPricing } = await import('./ecura-pricing')
+  const nome = String(contractData.servizio || 'eCura PRO').toUpperCase()
+  const tipo: 'FAMILY' | 'PRO' | 'PREMIUM' = nome.includes('FAMILY') ? 'FAMILY' : nome.includes('PREMIUM') ? 'PREMIUM' : 'PRO'
+  const pricing = getPricing(tipo, (contractData.tipoServizio || 'BASE') as 'BASE' | 'AVANZATO')
+  if (!pricing) return false
+  const r = computeRinnovoScontato(row, pricing.rinnovoBase)
+  if (!r.applied) return false
+  contractData.rinnovoScontato = r
+  console.log(`🔁 [CONTRATTO] Eccezione sconto rinnovi: listino €${r.listino} → €${r.rinnovoBase} (-${r.percentuale}%)`)
+  return true
+}
+
+/**
  * Genera HTML completo del contratto con tutti i dati del cliente
  */
 export async function generateContractHtml(leadData: any, contractData: any): Promise<string> {
@@ -236,7 +317,11 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
   // ✅ Carica descrizione funzioni dispositivo differenziata per servizio × piano
   const { getDescrizioneFunzioniDispositivo } = await import('./ecura-services')
   const funzioniDispositivoHtml = getDescrizioneFunzioniDispositivo(servizioTipo, piano)
-  const importoAnniSuccessivi = pricing ? pricing.rinnovoBase : 0 // IVA esclusa
+  // 🔁 Eccezione: sconto esteso ai rinnovi (solo se attivato sul lead e passato in contractData)
+  const rinnovoScontato = (!isRinnovo && contractData.rinnovoScontato?.applied) ? contractData.rinnovoScontato : null
+  const importoAnniSuccessivi = rinnovoScontato
+    ? rinnovoScontato.rinnovoBase
+    : (pricing ? pricing.rinnovoBase : 0) // IVA esclusa
   
   // ✅ FIX: IVA dinamica — priorità esente 0% > agevolata 4% > standard 22%
   const ivaAgevolataContratto = !!(leadData as any).iva_agevolata
@@ -645,7 +730,8 @@ export async function generateContractHtml(leadData: any, contractData: any): Pr
         <li>Configurazione del Dispositivo e del Processo di Comunicazione con ${pianoNome === 'AVANZATO' ? 'la Centrale Operativa e uno o più familiari' : 'uno o più familiari'} e Piattaforma Web e APP di TeleAssistenza per la durata di 12 mesi</li>
         <li>SIM multiprovider (prefisso +48 o +33) in grado di collegarsi automaticamente al provider con migliore copertura e di funzionare in tutta Europa, per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
     </ul>
-    <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${servizioTipo !== 'PRO' ? `eCura ${servizioTipo.charAt(0) + servizioTipo.slice(1).toLowerCase()} ` : ''}${pianoNome === 'BASE' ? 'base' : 'avanzato'}" sarà pari a <span class="highlight">${importoAnniSuccessivi} €</span> (${mensileRinnovo}) ${ivaEsenteContratto ? 'Esente IVA' : `+ IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${totaleRinnovoCorretto} € IVA inclusa</span>)`} con inclusi:</p>
+    <p>Per i successivi anni (rinnovabili di anno in anno) la tariffa annuale per il "Servizio di Continuità di TeleAssistenza ${servizioTipo !== 'PRO' ? `eCura ${servizioTipo.charAt(0) + servizioTipo.slice(1).toLowerCase()} ` : ''}${pianoNome === 'BASE' ? 'base' : 'avanzato'}" sarà pari a <span class="highlight">${importoAnniSuccessivi} €</span> (${mensileRinnovo}) ${ivaEsenteContratto ? 'Esente IVA' : `+ IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${totaleRinnovoCorretto} € IVA inclusa</span>)`} con inclusi:</p>${rinnovoScontato ? `
+    <p><strong>Condizione particolare:</strong> in deroga alle condizioni generali, lo sconto del ${rinnovoScontato.percentuale}% concordato con il Cliente si applica anche alla tariffa annuale di rinnovo, che risulta pertanto ridotta da ${rinnovoScontato.listino} € a <span class="highlight">${rinnovoScontato.rinnovoBase} €</span> ${ivaEsenteContratto ? 'Esente IVA' : `+ IVA ${ivaPercContratto}${ivaNoteContratto} (totale <span class="highlight">${totaleRinnovoCorretto} € IVA inclusa</span>)`}.</p>` : ''}
     <ul>
         <li>Piattaforma Web e APP di TeleAssistenza per la durata di 12mesi</li>
         <li>SIM multiprovider per trasmissione dati e comunicazione vocale per la durata di 12 mesi</li>
@@ -1202,6 +1288,7 @@ export async function inviaEmailContratto(
       try {
         // 🏷️ Sconto registrato sul lead (se il chiamante non l'ha già applicato)
         await applyLeadDiscountToContractData(db, leadData, contractData)
+        await applyRinnovoScontoToContractData(db, leadData, contractData)
 
         console.log(`📋 [CONTRATTO] Generazione HTML contratto...`)
         // Genera HTML contratto completo

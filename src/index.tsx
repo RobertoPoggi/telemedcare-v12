@@ -16831,6 +16831,15 @@ app.post('/api/leads/:id/assistiti/:aid/genera-ddt', requireAuth, async (c) => {
 // RINNOVI CONTRATTUALI
 // ═══════════════════════════════════════════════════════════════════════════
 
+// Nota contrattuale per l'eccezione "sconto esteso ai rinnovi" (vuota se non applicata)
+function buildNotaScontoRinnovo(r: { listino: number; rinnovoBase: number; percentuale: number }): string {
+  const fmt = (n: number) => n.toFixed(2).replace('.', ',')
+  return `<p style="margin-top:8px;padding:8px 12px;background:#fff8e1;border-left:3px solid #f59e0b;font-size:10pt;">` +
+    `<strong>Condizione particolare:</strong> in deroga alle condizioni generali, lo sconto del ${r.percentuale}% ` +
+    `concordato con il Cliente si applica anche alla tariffa di rinnovo (tariffa di listino € ${fmt(r.listino)} + IVA, ` +
+    `tariffa applicata € ${fmt(r.rinnovoBase)} + IVA).</p>`
+}
+
 // Tabella prezzi rinnovo (IVA esclusa) per servizio+piano
 const PREZZI_RINNOVO_BASE: Record<string, Record<string, number>> = {
   'eCura FAMILY': { BASE: 200, AVANZATO: 500 },
@@ -16911,9 +16920,17 @@ app.post('/api/contracts/rinnovo', async (c) => {
     const servizio = origContract.servizio || 'eCura PRO'
     const piano    = origContract.piano || origContract.tipo_contratto || 'BASE'
     const ivaRate  = lead.iva_esente ? 0 : lead.iva_agevolata ? 0.04 : 0.22
-    const rinnovoBase  = PREZZI_RINNOVO_BASE[servizio]?.[piano] ?? 240
+    const rinnovoListino = PREZZI_RINNOVO_BASE[servizio]?.[piano] ?? 240
+    // 🔁 ECCEZIONE per singolo lead: sconto esteso ai rinnovi (default: nessuno sconto)
+    const { computeRinnovoScontato } = await import('./modules/workflow-email-manager')
+    const rinnovoSconto = computeRinnovoScontato(lead, rinnovoListino)
+    const rinnovoBase  = rinnovoSconto.rinnovoBase
     const ivaImporto   = Math.round(rinnovoBase * ivaRate * 100) / 100
     const rinnovoTotale = Math.round((rinnovoBase + ivaImporto) * 100) / 100
+    const notaScontoRinnovo = rinnovoSconto.applied ? buildNotaScontoRinnovo(rinnovoSconto) : ''
+    if (rinnovoSconto.applied) {
+      console.log(`🔁 [RINNOVO] Eccezione sconto rinnovi lead ${lead.id}: listino €${rinnovoListino} → €${rinnovoBase} (-${rinnovoSconto.percentuale}%)`)
+    }
 
     const ivaLabel = lead.iva_esente ? 'Esente IVA' : lead.iva_agevolata ? 'IVA 4%' : 'IVA 22%'
     const ivaNote  = lead.iva_esente  ? ' — Operazione esente IVA (art. 10 n. 18 d.P.R. 633/1972)'
@@ -17043,6 +17060,7 @@ app.post('/api/contracts/rinnovo', async (c) => {
       IVA_NOTE:                   ivaNote,
       PREZZO_RINNOVO:             `€ ${rinnovoTotale.toFixed(2).replace('.', ',')}`,
       PREZZO_TOTALE_PRIMO_ANNO:   `€ ${prezzoTotalePrimoAnnoNum}`,
+      NOTA_SCONTO_RINNOVO:        notaScontoRinnovo,
       SEZIONE_CONSEGNA:           sezioneConsegnaRinnovo,
     })
 
@@ -17391,6 +17409,15 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
     const ivaEsente = !!(contract.iva_esente)
     const ivaRate = ivaEsente ? 0 : ivaAgevolata ? 0.04 : 0.22
     const rinnovoBase = parseFloat(contract.prezzo_totale || 0)
+    // 🔁 Nota sconto rinnovi: solo se l'eccezione è attiva sul lead E il prezzo del contratto è davvero scontato
+    let notaScontoRinnovoRigenera = ''
+    try {
+      const { loadRinnovoSconto, computeRinnovoScontato } = await import('./modules/workflow-email-manager')
+      const rs = await loadRinnovoSconto(c.env.DB, contract.leadId)
+      const listinoRig = PREZZI_RINNOVO_BASE[contract.servizio || 'eCura PRO']?.[contract.piano || 'BASE'] ?? 240
+      const calc = computeRinnovoScontato(rs, listinoRig)
+      if (calc.applied && Math.abs(calc.rinnovoBase - rinnovoBase) < 0.005) notaScontoRinnovoRigenera = buildNotaScontoRinnovo(calc)
+    } catch { /* eccezione non disponibile: nessuna nota */ }
     const ivaImporto = Math.round(rinnovoBase * ivaRate * 100) / 100
     const rinnovoTotale = Math.round((rinnovoBase + ivaImporto) * 100) / 100
     const ivaLabel = ivaEsente ? 'IVA esente' : ivaAgevolata ? 'IVA 4%' : 'IVA 22%'
@@ -17541,6 +17568,7 @@ app.post('/api/contracts/:id/rigenera-html', async (c) => {
       IVA_NOTE:                   ivaNote,
       PREZZO_RINNOVO:             `€ ${rinnovoTotale.toFixed(2).replace('.', ',')}`,
       PREZZO_TOTALE_PRIMO_ANNO:   `€ ${prezzoTotalePrimoAnnoNum}`,
+      NOTA_SCONTO_RINNOVO:        notaScontoRinnovoRigenera,
       SEZIONE_CONSEGNA:           sezioneConsegnaRigenera,
     }
     const htmlCompiled = templateHtml.replace(/\{\{([A-Z_]+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`)
@@ -27420,6 +27448,15 @@ app.post('/api/migrate-schema', async (c) => {
       }
     }
 
+    // ─── MIGRAZIONE ECCEZIONE: sconto esteso ai rinnovi (per singolo lead) ────
+    try {
+      const { ensureScontoRinnoviColumns } = await import('./modules/workflow-email-manager')
+      const logRinn = await ensureScontoRinnoviColumns(c.env.DB)
+      migrations.push(...logRinn)
+    } catch (e: any) {
+      migrations.push(`⚠️ Errore colonne sconto_rinnovi: ${e.message}`)
+    }
+
     // ─── MIGRAZIONE SCONTI: colonne contracts ───────────────────────────────
     const contractsDiscount = [
       { name: 'codice_sconto',     def: `TEXT DEFAULT NULL` },
@@ -27913,6 +27950,108 @@ app.delete('/api/leads/:id/apply-discount', requireAuth, async (c) => {
       WHERE id = ?
     `).bind(leadId).run()
     return c.json({ success: true, message: 'Sconto rimosso dal lead' })
+  } catch (error: any) {
+    return c.json({ success: false, error: error?.message }, 500)
+  }
+})
+
+// ─── ECCEZIONE: sconto esteso ai RINNOVI di un singolo lead ───────────────
+// Default: i rinnovi NON sono scontati. Questa eccezione (decisione commerciale caso per caso)
+// riduce la tariffa di rinnovo del lead della percentuale indicata.
+// POST   /api/leads/:id/sconto-rinnovi   body: { percentuale?: number, note?: string, applicato_da?: string }
+//        (percentuale omessa = stessa percentuale dello sconto già applicato sul lead)
+// GET    /api/leads/:id/sconto-rinnovi   stato attuale + anteprima prezzi
+// DELETE /api/leads/:id/sconto-rinnovi   rimuove l'eccezione (i rinnovi tornano a listino)
+// Nota: i contratti di rinnovo GIÀ creati non vengono modificati (prezzo_totale resta quello del contratto).
+app.get('/api/leads/:id/sconto-rinnovi', requireAuth, async (c) => {
+  const leadId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const { ensureScontoRinnoviColumns, computeRinnovoScontato } = await import('./modules/workflow-email-manager')
+    await ensureScontoRinnoviColumns(c.env.DB)
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+    const servizio = String(lead.servizio || 'eCura PRO')
+    const piano = String(lead.piano || 'BASE')
+    const listino = PREZZI_RINNOVO_BASE[servizio]?.[piano] ?? 240
+    const ivaRate = lead.iva_esente ? 0 : lead.iva_agevolata ? 0.04 : 0.22
+    const r = computeRinnovoScontato(lead, listino)
+    return c.json({
+      success: true,
+      attivo: Number(lead.sconto_rinnovi_attivo) === 1,
+      percentuale: Number(lead.sconto_rinnovi_percentuale) || 0,
+      note: lead.sconto_rinnovi_note || null,
+      applicato_da: lead.sconto_rinnovi_da || null,
+      data: lead.sconto_rinnovi_data || null,
+      listinoRinnovo: listino,
+      rinnovoBase: r.rinnovoBase,
+      rinnovoIvaInclusa: Math.round(r.rinnovoBase * (1 + ivaRate) * 100) / 100
+    })
+  } catch (error: any) {
+    return c.json({ success: false, error: error?.message }, 500)
+  }
+})
+
+app.post('/api/leads/:id/sconto-rinnovi', requireAuth, async (c) => {
+  const leadId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const body = await c.req.json().catch(() => ({})) as any
+    const { ensureScontoRinnoviColumns, computeRinnovoScontato } = await import('./modules/workflow-email-manager')
+    await ensureScontoRinnoviColumns(c.env.DB)
+    const lead = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+    if (!lead) return c.json({ success: false, error: 'Lead non trovato' }, 404)
+
+    let pct = body.percentuale !== undefined && body.percentuale !== null && body.percentuale !== ''
+      ? Number(body.percentuale)
+      : Number(lead.sconto_percentuale) || 0
+    if (!(pct > 0) || pct >= 100 || !isFinite(pct)) {
+      return c.json({ success: false, error: 'Percentuale non valida (deve essere tra 0 e 100, estremi esclusi). Indicare "percentuale" nel body.' }, 400)
+    }
+    pct = Math.round(pct * 100) / 100
+    const note = String(body.note || 'Eccezione commerciale: sconto esteso ai rinnovi').slice(0, 500)
+    const da = String(body.applicato_da || 'operatore').slice(0, 100)
+
+    await c.env.DB.prepare(`
+      UPDATE leads SET
+        sconto_rinnovi_attivo = 1, sconto_rinnovi_percentuale = ?,
+        sconto_rinnovi_note = ?, sconto_rinnovi_da = ?, sconto_rinnovi_data = ?,
+        updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(pct, note, da, new Date().toISOString(), leadId).run()
+
+    const servizio = String(lead.servizio || 'eCura PRO')
+    const piano = String(lead.piano || 'BASE')
+    const listino = PREZZI_RINNOVO_BASE[servizio]?.[piano] ?? 240
+    const ivaRate = lead.iva_esente ? 0 : lead.iva_agevolata ? 0.04 : 0.22
+    const r = computeRinnovoScontato({ sconto_rinnovi_attivo: 1, sconto_rinnovi_percentuale: pct }, listino)
+    return c.json({
+      success: true,
+      message: `Sconto ${pct}% esteso ai rinnovi: rinnovo € ${r.rinnovoBase.toFixed(2)} + IVA (listino € ${listino})`,
+      percentuale: pct,
+      listinoRinnovo: listino,
+      rinnovoBase: r.rinnovoBase,
+      rinnovoIvaInclusa: Math.round(r.rinnovoBase * (1 + ivaRate) * 100) / 100
+    })
+  } catch (error: any) {
+    return c.json({ success: false, error: error?.message }, 500)
+  }
+})
+
+app.delete('/api/leads/:id/sconto-rinnovi', requireAuth, async (c) => {
+  const leadId = c.req.param('id')
+  try {
+    if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const { ensureScontoRinnoviColumns } = await import('./modules/workflow-email-manager')
+    await ensureScontoRinnoviColumns(c.env.DB)
+    await c.env.DB.prepare(`
+      UPDATE leads SET
+        sconto_rinnovi_attivo = 0, sconto_rinnovi_percentuale = 0,
+        sconto_rinnovi_note = NULL, sconto_rinnovi_da = NULL, sconto_rinnovi_data = NULL,
+        updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(leadId).run()
+    return c.json({ success: true, message: 'Eccezione rimossa: i rinnovi tornano a tariffa di listino' })
   } catch (error: any) {
     return c.json({ success: false, error: error?.message }, 500)
   }
@@ -38437,8 +38576,9 @@ app.post('/api/oneshot-rigenera-html-contratto-9fx2v', async (c) => {
     }
 
     // 3b. 🏷️ Applica lo sconto registrato sul lead (se il prezzo del contratto è ancora a listino)
-    const { applyLeadDiscountToContractData, generateContractHtml } = await import('./modules/workflow-email-manager')
+    const { applyLeadDiscountToContractData, applyRinnovoScontoToContractData, generateContractHtml } = await import('./modules/workflow-email-manager')
     const discountRes = await applyLeadDiscountToContractData(c.env.DB, leadData, contractData)
+    await applyRinnovoScontoToContractData(c.env.DB, leadData, contractData)
     console.log(`🏷️ [ONESHOT] Sconto lead: ${discountRes.applied ? 'applicato' : 'non applicato'} (${discountRes.reason})`)
 
     // 4. Rigenera HTML
@@ -39870,7 +40010,8 @@ app.post('/api/oneshot-crea-e-completa-rinnovo-6nw4y', async (c) => {
       const codiceRinnovo = `${orig.codice_contratto}-R${annoRinnovo}`
       const ivaRate = lead.iva_esente ? 0 : lead.iva_agevolata ? 0.04 : 0.22
       const PREZZI: Record<string,Record<string,number>> = { 'eCura PRO': { BASE: 240, PLUS: 360 }, 'eCura': { BASE: 180 } }
-      const rinnovoBase = PREZZI[orig.servizio]?.[orig.piano] ?? 240
+      const { computeRinnovoScontato: _calcRinn } = await import('./modules/workflow-email-manager')
+      const rinnovoBase = _calcRinn(lead, PREZZI[orig.servizio]?.[orig.piano] ?? 240).rinnovoBase  // eccezione sconto rinnovi (default: listino)
       const rinnovoTotale = Math.round(rinnovoBase * (1 + ivaRate) * 100) / 100
 
       const dataScadenzaOrig = orig.data_scadenza ? new Date(orig.data_scadenza) : new Date()

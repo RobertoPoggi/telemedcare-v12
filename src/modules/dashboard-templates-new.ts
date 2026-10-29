@@ -5083,6 +5083,14 @@ export const leads_dashboard = `<!DOCTYPE html>
                                     title="\${hasSconto ? 'Sconto: ' + escapeHtml(lead.codice_sconto || '') + ' — clicca per rimuovere o cambiare' : 'Applica Sconto'}">
                                     🏷️
                                 </button>
+                                <button 
+                                    data-action="sconto-rinnovi"
+                                    data-lead-id="\${lead.id}"
+                                    data-sconto-perc="\${lead.sconto_percentuale || 0}"
+                                    class="px-2 py-1 \${Number(lead.sconto_rinnovi_attivo) === 1 ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-400 hover:bg-gray-500'} text-white text-xs rounded transition-colors action-btn"
+                                    title="\${Number(lead.sconto_rinnovi_attivo) === 1 ? 'Eccezione attiva: sconto ' + Number(lead.sconto_rinnovi_percentuale) + '% anche sui rinnovi — clicca per rimuovere/modificare' : 'Eccezione: estendi lo sconto anche ai rinnovi'}">
+                                    🔁
+                                </button>
                                 <button
                                     data-action="rateizzazione"
                                     data-lead-id="\${lead.id}"
@@ -5148,6 +5156,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                         else if (action === 'send-benvenuto') sendBenvenuto(leadId);
                         else if (action === 'genera-ddt') generaDDT(leadId);
                         else if (action === 'apply-discount') applyDiscount(leadId, this.getAttribute('data-codice-sconto'));
+                        else if (action === 'sconto-rinnovi') scontoRinnovi(leadId, this.getAttribute('data-sconto-perc'));
                         else if (action === 'rateizzazione') openRateizzazioneModal(leadId, this.getAttribute('data-nome'), parseFloat(this.getAttribute('data-prezzo') || '0'), this.getAttribute('data-rateizzato') === '1');
                     });
                 });
@@ -6014,6 +6023,59 @@ export const leads_dashboard = `<!DOCTYPE html>
         // ============================================
         // DISCOUNT FUNCTIONS
         // ============================================
+
+        async function scontoRinnovi(leadId, scontoPercLead) {
+            try {
+                const st = await (await fetch('/api/leads/' + leadId + '/sconto-rinnovi', { credentials: 'include' })).json();
+                if (!st.success) { alert('❌ ' + (st.error || 'Errore')); return; }
+                if (st.attivo) {
+                    const ch = prompt(
+                        '🔁 ECCEZIONE attiva sul lead ' + leadId + ':\\n' +
+                        'sconto ' + st.percentuale + '% anche sui RINNOVI (rinnovo € ' + st.rinnovoBase.toFixed(2) + ' + IVA = € ' + st.rinnovoIvaInclusa.toFixed(2) + ' IVA incl.)\\n\\n' +
+                        '• Lascia VUOTO e premi OK per RIMUOVERE l eccezione\\n' +
+                        '• Inserisci una nuova percentuale per MODIFICARE\\n' +
+                        '• Annulla per non fare nulla',
+                        String(st.percentuale)
+                    );
+                    if (ch === null) return;
+                    if (ch.trim() === '') {
+                        if (!confirm('Confermi la rimozione dell eccezione? I rinnovi futuri torneranno a tariffa di listino (€ ' + st.listinoRinnovo + ' + IVA).')) return;
+                        const r = await (await fetch('/api/leads/' + leadId + '/sconto-rinnovi', { method: 'DELETE', credentials: 'include' })).json();
+                        alert(r.success ? '✅ ' + r.message : '❌ ' + (r.error || 'Errore'));
+                        if (r.success) loadLeadsData();
+                        return;
+                    }
+                    await _doScontoRinnovi(leadId, ch.trim().replace(',', '.'));
+                } else {
+                    const def = Number(scontoPercLead) > 0 ? String(Number(scontoPercLead)) : '';
+                    const p = prompt(
+                        '🔁 ECCEZIONE COMMERCIALE — estendi lo sconto anche ai RINNOVI futuri\\n' +
+                        'Lead: ' + leadId + '\\n\\n' +
+                        'Di default i rinnovi NON sono scontati (rinnovo di listino € ' + st.listinoRinnovo + ' + IVA).\\n' +
+                        'Percentuale di sconto da applicare ai rinnovi:',
+                        def
+                    );
+                    if (p === null || !p.trim()) return;
+                    await _doScontoRinnovi(leadId, p.trim().replace(',', '.'));
+                }
+            } catch (err) {
+                alert('❌ Errore di comunicazione: ' + err.message);
+            }
+        }
+
+        async function _doScontoRinnovi(leadId, percentuale) {
+            const pct = Number(percentuale);
+            if (!(pct > 0 && pct < 100)) { alert('❌ Percentuale non valida'); return; }
+            if (!confirm('Confermi: sconto ' + pct + '% anche sui rinnovi del lead ' + leadId + '?\\n(Eccezione commerciale, vale solo per questo cliente)')) return;
+            const r = await (await fetch('/api/leads/' + leadId + '/sconto-rinnovi', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ percentuale: pct, applicato_da: 'operatore' })
+            })).json();
+            alert(r.success ? '✅ ' + r.message : '❌ ' + (r.error || 'Errore'));
+            if (r.success) loadLeadsData();
+        }
 
         async function applyDiscount(leadId, currentCodice) {
             // Se ha già uno sconto, chiedi se rimuovere o cambiare
