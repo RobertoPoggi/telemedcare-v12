@@ -865,8 +865,14 @@ async function generateContractForLead(ctx: WorkflowContext): Promise<WorkflowSt
   }
   
   const tipoServizio = piano
-  const prezzoBase = pricing.setupBase  // IVA ESCLUSA
-  const prezzoIvaInclusa = pricing.setupTotale  // IVA INCLUSA
+  // 🏷️ Prezzo effettivo del primo anno: listino meno lo sconto registrato sul lead
+  const { resolvePrimoAnnoPrezzo } = await import('./workflow-email-manager')
+  const primoAnnoOrch = await resolvePrimoAnnoPrezzo(ctx.db, ctx.leadData, pricing.setupBase)
+  const ivaRateOrch = (ctx.leadData as any).iva_esente ? 0 : (ctx.leadData as any).iva_agevolata ? 0.04 : 0.22
+  const prezzoBase = primoAnnoOrch.prezzoBase  // IVA ESCLUSA (scontata se il lead ha uno sconto)
+  const prezzoIvaInclusa = primoAnnoOrch.applied
+    ? Math.round(prezzoBase * (1 + ivaRateOrch) * 100) / 100
+    : pricing.setupTotale  // IVA INCLUSA (invariato senza sconto)
   
   const contractId = `CTR${Date.now()}`
   const contractCode = `CTR-${ctx.leadData.id}-${Date.now()}`
@@ -945,8 +951,14 @@ async function generateProformaForContract(ctx: WorkflowContext & { contractId: 
   }
   
   const tipoServizio = piano
-  const prezzoBase = pricing.setupBase  // IVA ESCLUSA
-  const prezzoIvaInclusa = pricing.setupTotale  // IVA INCLUSA
+  // 🏷️ Prezzo effettivo del primo anno: listino meno lo sconto registrato sul lead
+  const { resolvePrimoAnnoPrezzo } = await import('./workflow-email-manager')
+  const primoAnnoOrch = await resolvePrimoAnnoPrezzo(ctx.db, ctx.leadData, pricing.setupBase)
+  const ivaRateOrch = (ctx.leadData as any).iva_esente ? 0 : (ctx.leadData as any).iva_agevolata ? 0.04 : 0.22
+  const prezzoBase = primoAnnoOrch.prezzoBase  // IVA ESCLUSA (scontata se il lead ha uno sconto)
+  const prezzoIvaInclusa = primoAnnoOrch.applied
+    ? Math.round(prezzoBase * (1 + ivaRateOrch) * 100) / 100
+    : pricing.setupTotale  // IVA INCLUSA (invariato senza sconto)
   
   const proformaId = `PRF${Date.now()}`
   const numeroProforma = `PRF-${ctx.leadData.id}-${Date.now()}`
@@ -1011,6 +1023,10 @@ async function generateProformaForContract(ctx: WorkflowContext & { contractId: 
       tipoServizio,
       prezzoBase,
       prezzoIvaInclusa,
+      codiceSconto: primoAnnoOrch.codiceSconto,
+      scontoPercentuale: primoAnnoOrch.scontoPercentuale,
+      importoSconto: primoAnnoOrch.importoSconto,
+      prezzoListino: primoAnnoOrch.prezzoListino,
       dataScadenza: dataScadenza.toISOString()
     }
   }

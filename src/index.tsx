@@ -5468,7 +5468,9 @@ async function generaEInviaProforma(leadData: any, leadId: string, db: D1Databas
     const { calculatePrice } = await import('./modules/pricing-calculator')
     const pricingGEIP = calculatePrice(_srvTypeGEIP, pianoGEIP)
     const ivaRateGEIP = leadData.iva_esente ? 0 : leadData.iva_agevolata ? 0.04 : 0.22
-    const prezzoBaseGEIP = pricingGEIP.setupBase
+    // 🏷️ Prezzo effettivo del primo anno: listino meno lo sconto registrato sul lead
+    const primoAnnoGEIP = await WorkflowEmailManager.resolvePrimoAnnoPrezzo(db, { ...leadData, id: leadData.id || leadId }, pricingGEIP.setupBase)
+    const prezzoBaseGEIP = primoAnnoGEIP.prezzoBase
     const prezzoIvaGEIP  = Math.round(prezzoBaseGEIP * (1 + ivaRateGEIP) * 100) / 100
 
     const year  = new Date().getFullYear()
@@ -5506,6 +5508,10 @@ async function generaEInviaProforma(leadData: any, leadId: string, db: D1Databas
       servizio: `eCura ${_srvTypeGEIP}`,
       prezzoBase: prezzoBaseGEIP,
       prezzoIvaInclusa: prezzoIvaGEIP,
+      codiceSconto: primoAnnoGEIP.codiceSconto,
+      scontoPercentuale: primoAnnoGEIP.scontoPercentuale,
+      importoSconto: primoAnnoGEIP.importoSconto,
+      prezzoListino: primoAnnoGEIP.prezzoListino,
       dataScadenza: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
       rateizzazione_attiva: Boolean(leadData.rateizzazione_attiva),
       rateizzazione_note: leadData.rateizzazione_note || '',
@@ -36726,6 +36732,11 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
 
     // Calcola prezzi
     const pricing = calculatePrice(servizioType, piano.toUpperCase())
+    // 🏷️ Prezzo effettivo del primo anno: listino meno lo sconto registrato sul lead
+    const primoAnnoMS = await WorkflowEmailManager.resolvePrimoAnnoPrezzo(c.env.DB, lead, pricing.setupBase)
+    const ivaRateMS = lead.iva_esente ? 0 : lead.iva_agevolata ? 0.04 : 0.22
+    const importoIvaInclMS = Math.round(primoAnnoMS.prezzoBase * (1 + ivaRateMS) * 100) / 100
+    console.log(`💰 [MANUAL-SIGN] listino €${pricing.setupBase} → prezzo applicato €${primoAnnoMS.prezzoBase}${primoAnnoMS.applied ? ` (sconto -€${primoAnnoMS.importoSconto})` : ' (nessuno sconto)'}`)
     
     // Genera HTML contratto (semplificato)
     const contractHtml = `
@@ -36733,7 +36744,7 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
       <p><strong>Cliente:</strong> ${lead.nomeRichiedente} ${lead.cognomeRichiedente}</p>
       <p><strong>Assistito:</strong> ${lead.nomeAssistito} ${lead.cognomeAssistito}</p>
       <p><strong>Codice Contratto:</strong> ${contractCode}</p>
-      <p><strong>Importo:</strong> €${pricing.setupTotale} (IVA inclusa)</p>
+      <p><strong>Importo:</strong> €${importoIvaInclMS.toFixed(2)} (IVA inclusa)${primoAnnoMS.applied ? ` — sconto applicato: listino €${primoAnnoMS.prezzoListino.toFixed(2)}, -€${primoAnnoMS.importoSconto.toFixed(2)}` : ''}</p>
       <p><em>Firma manuale apposta dallo staff eCura</em></p>
     `
     
@@ -36759,9 +36770,9 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
       'MANUALE',
       'manual-sign',
       contractHtml,
-      (pricing.setupBase / 12).toFixed(2),  // prezzo_mensile = IVA ESCLUSA / 12
+      (primoAnnoMS.prezzoBase / 12).toFixed(2),  // prezzo_mensile = IVA ESCLUSA / 12
       12,
-      pricing.setupBase,  // ✅ prezzo_totale = IVA ESCLUSA (setupBase, non setupTotale)
+      primoAnnoMS.prezzoBase,  // ✅ prezzo_totale = IVA ESCLUSA (scontato se il lead ha uno sconto)
       servizio,
       piano,
       'SIGNED',
@@ -36794,7 +36805,7 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
       
       // ✅ IVA: calcola con aliquota corretta (4% Legge 104 o 22% standard)
       const ivaRateManual = lead.iva_esente ? 0 : lead.iva_agevolata ? 0.04 : 0.22
-      const prezzoBaseManual = pricing.setupBase  // IVA ESCLUSA
+      const prezzoBaseManual = primoAnnoMS.prezzoBase  // IVA ESCLUSA (già scontata se il lead ha uno sconto)
       const prezzoIvaInclusa = Math.round(prezzoBaseManual * (1 + ivaRateManual) * 100) / 100
 
       // Fetch rate di pagamento (se rateizzazione attiva)
@@ -36819,6 +36830,10 @@ app.post('/api/leads/:id/manual-sign', async (c) => {
         servizio: servizio,
         prezzoBase: prezzoBaseManual,        // IVA ESCLUSA (es. €390)
         prezzoIvaInclusa: prezzoIvaInclusa,  // IVA INCLUSA con aliquota corretta (es. €405,60 al 4%)
+        codiceSconto: primoAnnoMS.codiceSconto,
+        scontoPercentuale: primoAnnoMS.scontoPercentuale,
+        importoSconto: primoAnnoMS.importoSconto,
+        prezzoListino: primoAnnoMS.prezzoListino,
         dataScadenza: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         riserva_dominio: Boolean(lead.riserva_dominio),
         rateizzazione_attiva: Boolean(lead.rateizzazione_attiva),
@@ -36983,6 +36998,9 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
     const pricing = calculatePrice(servizioType, piano.toUpperCase())
     
     console.log(`💰 [PRICING] calculatePrice('${servizioType}', '${piano.toUpperCase()}') → base=€${pricing?.setupBase}, iva=€${pricing?.setupIva}, tot=€${pricing?.setupTotale}`)
+    // 🏷️ Prezzo effettivo del primo anno: listino meno lo sconto registrato sul lead
+    const primoAnnoSP = await WorkflowEmailManager.resolvePrimoAnnoPrezzo(c.env.DB, lead, pricing.setupBase)
+    console.log(`💰 [SEND-PROFORMA] listino €${pricing.setupBase} → prezzo applicato €${primoAnnoSP.prezzoBase}${primoAnnoSP.applied ? ` (sconto -€${primoAnnoSP.importoSconto})` : ' (nessuno sconto)'}`)
 
     
     // Genera numero proforma (l'ID sarà auto-generato da SQLite)
@@ -37007,15 +37025,19 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
 
     // ✅ FIX IVA AGEVOLATA: ricalcola prezzoIvaInclusa con aliquota corretta del lead
     const ivaRateProforma31161 = (lead as any).iva_esente ? 0 : (lead as any).iva_agevolata ? 0.04 : 0.22
-    const prezzoIvaInclusaProforma31161 = Math.round(pricing.setupBase * (1 + ivaRateProforma31161) * 100) / 100
+    const prezzoIvaInclusaProforma31161 = Math.round(primoAnnoSP.prezzoBase * (1 + ivaRateProforma31161) * 100) / 100
     const proformaData = {
       proformaId: '', // Sarà popolato dopo INSERT/UPDATE
       numeroProforma,
       proformaPdfUrl: '',
       tipoServizio: piano,
       servizio: servizio,
-      prezzoBase: pricing.setupBase,
+      prezzoBase: primoAnnoSP.prezzoBase,
       prezzoIvaInclusa: prezzoIvaInclusaProforma31161,  // ✅ IVA corretta (4% se agevolata, 22% standard)
+      codiceSconto: primoAnnoSP.codiceSconto,
+      scontoPercentuale: primoAnnoSP.scontoPercentuale,
+      importoSconto: primoAnnoSP.importoSconto,
+      prezzoListino: primoAnnoSP.prezzoListino,
       dataScadenza: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // ✅ 3 giorni massimo
       riserva_dominio: Boolean(lead.riserva_dominio),
       rateizzazione_attiva: Boolean(lead.rateizzazione_attiva),
@@ -37088,8 +37110,8 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
         new Date().toISOString().split('T')[0],
         new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // ✅ 3 giorni
         servizio,    // ✅ SERVIZIO COMPLETO (es. "eCura PREMIUM")
-        (pricing.setupBase / 12).toFixed(2), // prezzo_mensile (IVA ESCLUSA / 12)
-        pricing.setupBase, // ✅ REGOLA UNIVERSALE: prezzo_totale = IVA ESCLUSA
+        (primoAnnoSP.prezzoBase / 12).toFixed(2), // prezzo_mensile (IVA ESCLUSA / 12)
+        primoAnnoSP.prezzoBase, // ✅ REGOLA UNIVERSALE: prezzo_totale = IVA ESCLUSA (scontato se il lead ha uno sconto)
         nomeSendProforma,
         cognomeSendProforma,
         cfSendProforma,
@@ -37137,9 +37159,9 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
         capSendProforma,
         provinciaSendProforma,
         servizio,
-        (pricing.setupBase / 12).toFixed(2),  // ✅ IVA ESCLUSA / 12
+        (primoAnnoSP.prezzoBase / 12).toFixed(2),  // ✅ IVA ESCLUSA / 12
         12,
-        pricing.setupBase,  // ✅ IVA ESCLUSA (non setupTotale!)
+        primoAnnoSP.prezzoBase,  // ✅ IVA ESCLUSA (non setupTotale!) — scontata se il lead ha uno sconto
         lead.iva_agevolata ? 1 : 0,
         lead.iva_esente ? 1 : 0,
         'DRAFT',
@@ -37185,7 +37207,9 @@ app.post('/api/leads/:id/send-proforma', async (c) => {
         : `Proforma ${numeroProforma} creata, ma email non inviata: ${emailError}`,
       proformaId: proformaIdGenerated,
       numeroProforma,
-      importo: pricing.setupTotale.toFixed(2),
+      importo: prezzoIvaInclusaProforma31161.toFixed(2),
+      importoImponibile: primoAnnoSP.prezzoBase.toFixed(2),
+      scontoApplicato: primoAnnoSP.applied,
       servizio: servizio,     // ✅ es. "eCura PREMIUM"
       piano: piano,           // ✅ es. "AVANZATO"
       emailSent: emailSuccess,

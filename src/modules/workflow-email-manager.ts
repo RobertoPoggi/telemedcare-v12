@@ -196,6 +196,35 @@ export async function applyLeadDiscountToContractData(
 }
 
 /**
+ * 💶 Prezzo del PRIMO anno effettivo per un lead (IVA esclusa): listino meno l'eventuale sconto
+ * registrato sul lead (codice sconto, % o fisso, anche applicato a mano nel CRM).
+ * Da usare in OGNI percorso che crea contratti/proforma senza passare da un contratto già scontato
+ * (firma manuale, invio proforma manuale, proforma automatica da form, orchestrator).
+ */
+export async function resolvePrimoAnnoPrezzo(
+  db: any,
+  leadData: any,
+  listinoBase: number
+): Promise<{ applied: boolean; prezzoBase: number; prezzoListino: number; importoSconto: number; codiceSconto: string; scontoPercentuale: number }> {
+  const cd: any = { prezzoBase: Number(listinoBase) || 0 }
+  let applied = false
+  try {
+    const r = await applyLeadDiscountToContractData(db, leadData, cd)
+    applied = r.applied
+  } catch (e) {
+    console.warn('⚠️ [PREZZO] resolvePrimoAnnoPrezzo: sconto lead non letto, uso listino:', e)
+  }
+  return {
+    applied,
+    prezzoBase: Number(cd.prezzoBase) || 0,
+    prezzoListino: applied ? Number(cd.prezzoListino) : Number(listinoBase) || 0,
+    importoSconto: applied ? Number(cd.importoSconto) || 0 : 0,
+    codiceSconto: applied ? String(cd.codiceSconto || '') : '',
+    scontoPercentuale: applied ? Number(cd.scontoPercentuale) || 0 : 0,
+  }
+}
+
+/**
  * 🔁 ECCEZIONE: sconto esteso ai RINNOVI (per singolo lead, su decisione commerciale).
  * Di default i rinnovi NON sono scontati. Se sul lead è attivo `sconto_rinnovi_attivo`
  * la tariffa di rinnovo di listino viene ridotta della percentuale `sconto_rinnovi_percentuale`.
@@ -1585,6 +1614,11 @@ export async function inviaEmailProforma(
     prezzoBase: number
     prezzoIvaInclusa: number
     dataScadenza: string
+    // Sconto primo anno (opzionali)
+    codiceSconto?: string
+    scontoPercentuale?: number
+    importoSconto?: number
+    prezzoListino?: number
     // Rinnovo opzionali
     isRinnovo?: boolean
     annoRinnovo?: number
@@ -1683,7 +1717,7 @@ export async function inviaEmailProforma(
     // 🏷️ Banner sconto: iniettato in IMPORTO_BASE (campo HTML inline — funziona senza modificare il template DB)
     const bannerScontoHtml = hasScontoEmail
       ? `<span style="display:block; background:#fff8e1; border-left:3px solid #f59e0b; padding:6px 10px; margin-bottom:8px; border-radius:0 4px 4px 0; font-size:13px; color:#78350f;">` +
-        `🏷️ <strong>Sconto ${codiceSconto}${scontoPerc > 0 ? ' -' + scontoPerc + '%' : ''}</strong> applicato: ` +
+        `🏷️ <strong>Sconto${codiceSconto ? ' ' + codiceSconto : ''}${scontoPerc > 0 ? ' -' + scontoPerc + '%' : ''}</strong> applicato: ` +
         `<span style="text-decoration:line-through; color:#9ca3af;">€${prezzoListino.toFixed(2).replace('.', ',')}</span> ` +
         `→ <strong style="color:#15803d;">€${imponibile.toFixed(2).replace('.', ',')} </strong>` +
         `(<span style="color:#b91c1c;">-€${impSconto.toFixed(2).replace('.', ',')}</span>)` +
