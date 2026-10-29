@@ -1549,7 +1549,7 @@
 
         // ── REPORT SEO ────────────────────────────────────────────────────
         const ADMIN_TOKEN = '10296fac4ec63fe96ef12abdff4b7861790e4e4da7ba7ca41d3918eaf9cce1c2';
-        const LIVE_REPORT_URL = 'https://telemedcare-v12.pages.dev/api/analytics/live-seo-report';
+        const LIVE_REPORT_URL = '/api/analytics/live-seo-report'; // percorso relativo: stesso dominio della pagina (evita CORS su preview/alias)
         const STATIC_REPORT_URL = '/report-ecura-seo-2026.html';
 
         async function generaReportSEO() {

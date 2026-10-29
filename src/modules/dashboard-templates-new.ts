@@ -3728,7 +3728,7 @@ export const dashboard = `<!DOCTYPE html>
 
         // ── REPORT SEO ──────────────────────────────────────────────────────
         const ADMIN_TOKEN_RPT = '10296fac4ec63fe96ef12abdff4b7861790e4e4da7ba7ca41d3918eaf9cce1c2';
-        const LIVE_REPORT_URL = 'https://telemedcare-v12.pages.dev/api/analytics/live-seo-report';
+        const LIVE_REPORT_URL = '/api/analytics/live-seo-report'; // percorso relativo: stesso dominio della pagina (evita CORS su preview/alias)
 
         // Mostra il periodo nell'etichetta
         (function() {
