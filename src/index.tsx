@@ -49,10 +49,10 @@ import type { AuthSession, UserRole } from './modules/auth-service'
 
 // Import Dashboard Templates
 import { dashboard, leads_dashboard, data_dashboard, home, workflow_manager, admin_setup } from './modules/dashboard-templates-new'
-import { renderGoogleAdsDashboard } from './modules/google-ads-dashboard'
+import { renderGoogleAdsStudio } from './modules/google-ads-studio'
+import { renderSeoGeoStudio } from './modules/seo-geo-studio'
+import { createMarketingApi } from './modules/marketing-api'
 import { fetchFullAnalyticsReport, detectAuthMethod } from './modules/google-analytics'
-import { renderSeoManagerDashboard } from './modules/seo-manager-dashboard'
-import { renderAiMarketingDashboard } from './modules/ai-marketing-dashboard'
 import * as SignatureManager from './modules/signature-manager'
 import * as PaymentManager from './modules/payment-manager'
 import * as ClientConfigurationManager from './modules/client-configuration-manager'
@@ -34052,25 +34052,28 @@ app.get('/admin/workflow-manager', (c) => {
   return c.html(workflow_manager)
 })
 
+// Marketing Hub API (auth di sessione propria nel modulo)
+app.route('/api/marketing', createMarketingApi())
+
 // Google ADS Manager - Generatore annunci, keyword planner, export CSV
 app.get('/admin/google-ads', requireAuth, (c) => {
   c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
   c.header('X-TeleMedCare-Dashboard', 'google-ads')
-  return c.html(renderGoogleAdsDashboard())
+  return c.html(renderGoogleAdsStudio())
 })
 
 // SEO Manager - 12 moduli: Autopilot, Keyword, SERP, Competitor, Ricerca Profonda, Score, Link Interni/Esterni, Backlink, Immagini, Audience, YouTube
 app.get('/admin/seo-manager', requireAuth, (c) => {
   c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
   c.header('X-TeleMedCare-Dashboard', 'seo-manager')
-  return c.html(renderSeoManagerDashboard())
+  return c.html(renderSeoGeoStudio())
 })
 
 // AI Marketing Hub - 12 moduli AI-driven: Autopilot, Keyword, SERP, Competitor, Ricerca Profonda, Score, Link Interni/Esterni, Backlink, Immagini AI, Audience, YouTube
 app.get('/admin/ai-marketing', requireAuth, (c) => {
   c.header('Cache-Control', 'no-store, no-cache, must-revalidate')
   c.header('X-TeleMedCare-Dashboard', 'ai-marketing')
-  return c.html(renderAiMarketingDashboard())
+  return c.html(renderSeoGeoStudio())
 })
 
 // Route Test Contratti
