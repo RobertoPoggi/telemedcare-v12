@@ -298,23 +298,38 @@ export async function ensureAdsClickColumns(db: any): Promise<string[]> {
     { name: 'click_ts', def: 'INTEGER DEFAULT NULL' },
     { name: 'landing_page', def: 'TEXT DEFAULT NULL' },
   ]
-  let ok = true
+  // Si legge lo schema reale invece di fidarsi del testo dell'errore di ALTER TABLE
+  const present = async (): Promise<Set<string>> => {
+    const r = await db.prepare(`SELECT name FROM pragma_table_info('leads')`).all()
+    return new Set(((r?.results || []) as any[]).map(x => String(x.name)))
+  }
+  let have: Set<string>
+  try { have = await present() } catch (e: any) { log.push(`⚠️ Lettura schema leads fallita: ${e?.message}`); have = new Set() }
   for (const col of cols) {
+    if (have.has(col.name)) { log.push(`ℹ️ leads.${col.name} già esiste`); continue }
     try {
       await db.prepare(`ALTER TABLE leads ADD COLUMN ${col.name} ${col.def}`).run()
       log.push(`✅ leads.${col.name} aggiunto`)
     } catch (e: any) {
-      if (e?.message && e.message.includes('duplicate column')) log.push(`ℹ️ leads.${col.name} già esiste`)
-      else { ok = false; log.push(`⚠️ Errore leads.${col.name}: ${e?.message}`) }
+      if (e?.message && /duplicate column/i.test(e.message)) log.push(`ℹ️ leads.${col.name} già esiste`)
+      else { log.push(`⚠️ Errore leads.${col.name}: ${e?.message}`); console.error(`[ADS] ALTER leads.${col.name} fallito:`, e?.message) }
     }
   }
-  for (const idx of [
-    'CREATE INDEX IF NOT EXISTS idx_leads_gclid ON leads(gclid)',
-    'CREATE INDEX IF NOT EXISTS idx_leads_click_ts ON leads(click_ts)',
-  ]) {
-    try { await db.prepare(idx).run() } catch (e: any) { ok = false; log.push(`⚠️ Errore indice: ${e?.message}`) }
-  }
-  if (ok) _adsColumnsReady = true
+  // Pronto solo se tutte le colonne esistono davvero
+  try {
+    have = await present()
+    if (cols.every(c => have.has(c.name))) {
+      for (const idx of [
+        'CREATE INDEX IF NOT EXISTS idx_leads_gclid ON leads(gclid)',
+        'CREATE INDEX IF NOT EXISTS idx_leads_click_ts ON leads(click_ts)',
+      ]) {
+        try { await db.prepare(idx).run() } catch (e: any) { log.push(`⚠️ Errore indice: ${e?.message}`) }
+      }
+      _adsColumnsReady = true
+    } else {
+      log.push('⚠️ Colonne mancanti dopo la migrazione: ' + cols.filter(c => !have.has(c.name)).map(c => c.name).join(', '))
+    }
+  } catch (e: any) { log.push(`⚠️ Verifica schema fallita: ${e?.message}`) }
   return log
 }
 

@@ -23372,7 +23372,8 @@ app.get('/api/admin/ads-offline-conversions', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
     const { ensureAdsClickColumns } = await import('./modules/workflow-email-manager')
-    await ensureAdsClickColumns(c.env.DB)
+    const _colsLog = await ensureAdsClickColumns(c.env.DB)
+    if (_colsLog.some(l => l.startsWith('⚠️'))) return c.json({ success: false, error: 'Migrazione colonne click ID non riuscita', log: _colsLog }, 500)
 
     const DEFAULT_STATI = ['CONTRACT_SIGNED', 'SIGNED', 'PAYMENT_RECEIVED', 'ACTIVE', 'ATTIVO', 'CONVERTED']
     const statiQ = (c.req.query('stati') || '').split(',').map(x => x.trim().toUpperCase()).filter(x => /^[A-Z_]{2,40}$/.test(x))
@@ -32146,6 +32147,17 @@ function escHtml(s: string): string {
 // Genera l'HTML del report SEO live (equivalente a report-ecura-seo-2026.html)
 // con dati in tempo reale da GA4 + CRM D1
 // ============================================================
+app.get('/api/analytics/live-seo-report', async (c, next) => {
+  // Solo utenti CRM con sessione valida (il vecchio Bearer scritto nella pagina non era mai verificato)
+  try {
+    const m = (c.req.header('Cookie') || '').match(/(?:^|;\s*)session=([^;]+)/)
+    const sess: AuthSession | null = m ? JSON.parse(decodeURIComponent(m[1])) : null
+    if (!sess || !AuthService.isSessionValid(sess)) return c.json({ success: false, error: 'Non autenticato', login_url: '/login' }, 401)
+  } catch (_) {
+    return c.json({ success: false, error: 'Non autenticato', login_url: '/login' }, 401)
+  }
+  return next()
+})
 app.get('/api/analytics/live-seo-report', async (c) => {
   try {
     const serviceAccountJson = c.env?.GOOGLE_SERVICE_ACCOUNT_JSON

@@ -3687,7 +3687,6 @@ export const dashboard = `<!DOCTYPE html>
         window.saveNewAssistito = saveNewAssistito;
 
         // ── REPORT SEO ──────────────────────────────────────────────────────
-        const ADMIN_TOKEN_RPT = '10296fac4ec63fe96ef12abdff4b7861790e4e4da7ba7ca41d3918eaf9cce1c2';
         const LIVE_REPORT_URL = '/api/analytics/live-seo-report'; // percorso relativo: stesso dominio della pagina (evita CORS su preview/alias)
 
         // Mostra il periodo nell'etichetta
@@ -3731,7 +3730,7 @@ export const dashboard = `<!DOCTYPE html>
             if (msg)  msg.textContent  = 'Connessione a GA4 + CRM in corso…';
             if (spin) spin.style.display = 'inline-block';
             try {
-                const r = await fetch(url, { headers: { 'Authorization': 'Bearer ' + ADMIN_TOKEN_RPT } });
+                const r = await fetch(url, { credentials: 'same-origin' });
                 if (!r.ok) throw new Error('HTTP ' + r.status);
                 const html = await r.text();
                 const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
