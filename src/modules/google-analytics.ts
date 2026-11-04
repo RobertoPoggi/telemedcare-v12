@@ -143,10 +143,17 @@ const GA4_SCOPES = [
   'https://www.googleapis.com/auth/webmasters.readonly'
 ]
 
+// Cache in-memory del token (valido 1h): evita un token exchange per ogni query del report
+let _saTokenCache: { key: string; token: string; exp: number } | null = null
+
 async function getAccessToken(config: GoogleAnalyticsConfig): Promise<string> {
   // 1. Service Account — non scade mai, metodo preferito
   if (config.serviceAccountJson) {
-    return getServiceAccountToken(config.serviceAccountJson, GA4_SCOPES)
+    const key = String(config.serviceAccountJson.length) + ':' + config.serviceAccountJson.slice(-24)
+    if (_saTokenCache && _saTokenCache.key === key && _saTokenCache.exp > Date.now() + 120000) return _saTokenCache.token
+    const token = await getServiceAccountToken(config.serviceAccountJson, GA4_SCOPES)
+    _saTokenCache = { key, token, exp: Date.now() + 50 * 60 * 1000 }
+    return token
   }
 
   // 2. OAuth2 refresh token — legacy, scade ogni 7gg se app in Testing
@@ -241,6 +248,7 @@ export async function searchConsoleQuery(
     rowLimit?: number
     startRow?: number
     searchType?: string
+    dataState?: 'final' | 'all'
   }
 ): Promise<SearchConsoleResult> {
   if (!config.searchConsoleSiteUrl) throw new Error('searchConsoleSiteUrl not configured')
