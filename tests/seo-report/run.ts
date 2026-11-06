@@ -185,6 +185,24 @@ section('P1. Totale device vs totale: tolleranza di aggregazione')
   ok(PARAMS.deviceTolAbs === 2 && PARAMS.deviceTolRel === 0.002, 'tolleranza = la più permissiva tra ±2 sessioni e ±0,2%')
 }
 
+section('P1b. «Stessa query, dimensione diversa»: poche unità di scarto sono aggregazione, non errore (H1a/H1b/H1c)')
+{
+  // caso reale di produzione: 1316 vs 1317 sessioni · Δ −1 su macro-canali, source/medium e canali nativi
+  const h1 = (mutate: (i: ReportInput) => void) => { const g = generateReport(makeFixture({ mutate }), { diagnostic: true }); return ['H1a', 'H1b', 'H1c'].map(id => g.checks.find(c => c.id === id)!) }
+  for (const d of [1, -1, PARAMS.deviceTolAbs, -PARAMS.deviceTolAbs]) {
+    const rows = h1(i => { i.ga4.control!.sessions += d })
+    ok(rows.every(r => r.level === 'ok'), `Δ ${d >= 0 ? '+' : ''}${d} sessioni su macro-canali / source-medium / canali nativi → ✓ OK, il report si genera`)
+  }
+  const one = h1(i => { i.ga4.control!.sessions += 1 })
+  ok(one.every(r => /Δ [−-]1 \(entro ±\d/.test(r.value)), `valore e tolleranza scritti: «${one[0].value}»`)
+  const real = (() => { try { generateReport(makeFixture({ mutate: i => { i.ga4.control!.sessions += 1 } })); return 'generato' } catch (e: any) { return String(e.message) } })()
+  ok(real === 'generato', 'con Δ −1 il report NON viene bloccato (nessuna ReportAssertionError)')
+  const T = makeFixture().ga4.control!.sessions, tolSame = Math.max(PARAMS.deviceTolAbs, T * PARAMS.deviceTolRel), beyond = Math.floor(tolSame) + 1
+  ok(h1(i => { i.ga4.control!.sessions += beyond }).every(r => r.level === 'error'), `Δ ±${beyond} (oltre ±${tolSame.toFixed(1)}) resta errore bloccante`)
+  ok(h1(i => { i.ga4.control!.sessions -= beyond }).every(r => r.level === 'error'), `Δ −${beyond} resta errore bloccante`)
+  ok(h1(i => { i.ga4.smBase!.pop() }).some(r => r.level === 'error'), 'una riga source/medium perduta resta errore bloccante')
+}
+
 section('P2/P3. Rapporto organico su tutte le settimane complete; rotture = solo ribassi')
 {
   const o = generateReport(loaded.get('report-organic-over-clicks')!.input), om = o.model

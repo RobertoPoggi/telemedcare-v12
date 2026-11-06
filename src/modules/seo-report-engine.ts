@@ -755,7 +755,12 @@ export function runChecks(m: Model, R: PctRegistry): Check[] {
   const chanSum = Object.values(m.macro).reduce((a, b) => a + b, 0)
   const smSum = m.smTable.reduce((s, r) => s + r.sessions, 0)
   const natSum = m.nativeChannels.reduce((s, [, v]) => s + v, 0)
-  const eq = (id: string, label: string, v: number) => add(id, label, v === T ? 'ok' : 'error', `${fmtInt(v)} vs ${fmtInt(T)} sessioni · Δ ${sgn(v - T)}`)
+  // «Stessa query, dimensione diversa»: GA4 aggrega ogni query in modo indipendente, poche unita' di scarto sono aggregazione, non errore.
+  // Stessa tolleranza del device (la piu' permissiva tra ±deviceTolAbs sessioni e ±deviceTolRel del totale); oltre resta errore bloccante.
+  const sameQueryTol = Math.max(PARAMS.deviceTolAbs, T * PARAMS.deviceTolRel)
+  const sameQueryTolTxt = `±${fmtDec(sameQueryTol, Number.isInteger(sameQueryTol) ? 0 : 1)} sessioni`
+  const eq = (id: string, label: string, v: number) => add(id, label, Math.abs(v - T) <= sameQueryTol ? 'ok' : 'error',
+    `${fmtInt(v)} vs ${fmtInt(T)} sessioni · Δ ${sgn(v - T)}` + (Math.abs(v - T) <= sameQueryTol ? ` (entro ${sameQueryTolTxt})` : ` · oltre la tolleranza di aggregazione (${sameQueryTolTxt})`))
   if (m.totalSource === 'control') add('ctl', 'Totale del periodo (query GA4 senza dimensioni) = KPI', 'ok', `${fmtInt(T)} sessioni · ${win.start} → ${win.aggEnd} · fonte unica di verità per KPI, canali e source/medium`)
   else add('ctl', 'Totale del periodo (query GA4 senza dimensioni) = KPI', 'notice', `dato non disponibile: il totale è la somma source/medium (${fmtInt(T)} sessioni)`)
   eq('H1a', 'Quadratura macro-canali vs totale', chanSum)
