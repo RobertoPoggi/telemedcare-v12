@@ -3,8 +3,8 @@
 // Il totale e' la query GA4 SENZA dimensioni; macro-canali e source/medium vengono dalla query senza data sullo
 // stesso intervallo; la query datata serve solo per serie giornaliera e consolidamento. Finestre tagliate sui giorni consolidati.
 // ============================================================
-import { ga4RunReport, searchConsoleQuery, type GoogleAnalyticsConfig } from './google-analytics'
-import { computeWindows, detectConsolidation, addDays, addMonths, monthOf, PARAMS, type ReportInput, type BaseRow, type SmBaseRow, type GaMeta } from './seo-report-engine'
+import { ga4RunReport, searchConsoleQuery, GoogleApiError, sanitizeGoogleText, type GoogleAnalyticsConfig, type GoogleErrorKind } from './google-analytics'
+import { computeWindows, detectConsolidation, addDays, addMonths, monthOf, PARAMS, type ReportInput, type BaseRow, type SmBaseRow, type SmDetail, type GaMeta, type QueryStats, type QueryFailure } from './seo-report-engine'
 
 const ymd = (d: string) => d.replace(/-/g, '')
 const fromYmd = (d: string) => `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`
@@ -22,6 +22,16 @@ async function paged(config: GoogleAnalyticsConfig, body: Parameters<typeof ga4R
   return rows
 }
 
+/** F1: una query che alimenta KPI e quadrature è fallita → il report NON si genera (nessun PDF con sezioni vuote). */
+export class ReportUnavailableError extends Error {
+  kind: GoogleErrorKind
+  status: 'quota_exhausted' | 'unavailable'
+  constructor(kind: GoogleErrorKind, reason: string) {
+    super(`Report non disponibile: ${reason.charAt(0).toLowerCase()}${reason.slice(1)}`)
+    this.name = 'ReportUnavailableError'; this.kind = kind; this.status = kind === 'quota' ? 'quota_exhausted' : 'unavailable'
+  }
+}
+
 export interface CollectParams {
   now: Date; startDate: string; endDate: string; siteUrl: string; measurementId: string
   geoActivation: { date: string; label: string }
@@ -32,8 +42,24 @@ export async function collectReportInput(
 ): Promise<ReportInput> {
   const errors: string[] = []
   const win0 = computeWindows(p.now, p.startDate, p.endDate)
-  const safe = async <T>(label: string, fn: () => Promise<T>): Promise<T | null> => {
-    try { return await fn() } catch (e: any) { errors.push(`${label}: ${String(e?.message || e).slice(0, 300)}`); return null }
+  // Ogni query è contata: serve a scrivere «N query fallite su M totali». Messaggi sempre sintetici e su una riga (mai il body di Google).
+  const stats: QueryStats = { total: 0, failed: 0, failures: [] }
+  const kindOf = (e: any): GoogleErrorKind => (e instanceof GoogleApiError ? e.kind : 'other')
+  const msgOf = (e: any) => (e instanceof GoogleApiError ? e.message : sanitizeGoogleText(e?.message || e, 200))
+  const fail = (label: string, api: QueryFailure['api'], e: any) => {
+    const f: QueryFailure = { label, api, kind: kindOf(e), message: msgOf(e) }
+    stats.failed++; stats.failures.push(f); errors.push(`${label}: ${f.message}`)
+    return f
+  }
+  /** Sezione accessoria (pagine, device, paesi, Direct, serie mensile, GSC): se fallisce il report si genera e la dichiara. */
+  const safe = async <T>(label: string, fn: () => Promise<T>, api: QueryFailure['api'] = 'GA4'): Promise<T | null> => {
+    stats.total++
+    try { return await fn() } catch (e: any) { fail(label, api, e); return null }
+  }
+  /** Query di base (serie giornaliera, controllo senza dimensioni, canale × source × medium): se fallisce il report NON si genera. */
+  const required = async <T>(label: string, fn: () => Promise<T>): Promise<T> => {
+    stats.total++
+    try { return await fn() } catch (e: any) { const f = fail(label, 'GA4', e); throw new ReportUnavailableError(f.kind as GoogleErrorKind, f.message) }
   }
   const metaOf = (r: { metadata?: any }, range: string): GaMeta => ({ ...(r.metadata || {}), range })
 
@@ -41,21 +67,21 @@ export async function collectReportInput(
   const drDated = [{ startDate: win0.start, endDate: win0.ga4End }]
   let channelDimension: string | null = null
   let baseRows: BaseRow[] | null = null
+  const datedQuery = (dims: string[]) => paged(config, { dateRanges: drDated, dimensions: dims.map(name => ({ name })), metrics: [{ name: 'sessions' }] })
+  // Due nomi possibili per la dimensione canale: si passa al secondo SOLO se il primo è «query non valida» (400).
+  // Con quota esaurita, credenziali errate o errore del server riprovare con un altro nome brucerebbe solo altra quota.
   for (const dim of ['sessionDefaultChannelGroup', 'sessionDefaultChannelGrouping']) {
     try {
-      const rows = await paged(config, {
-        dateRanges: drDated,
-        dimensions: [{ name: 'date' }, { name: dim }, { name: 'sessionSource' }, { name: 'sessionMedium' }],
-        metrics: [{ name: 'sessions' }],
-      })
+      const rows = await datedQuery(['date', dim, 'sessionSource', 'sessionMedium'])
       baseRows = rows.map(r => ({ date: fromYmd(r.dimensions[0]), channelGrouping: r.dimensions[1], source: r.dimensions[2], medium: r.dimensions[3], sessions: parseInt(r.metrics[0] || '0', 10) }))
-      channelDimension = dim; break
-    } catch (e: any) { errors.push(`GA4 base (${dim}): ${String(e?.message || e).slice(0, 200)}`) }
+      channelDimension = dim; stats.total++; break
+    } catch (e: any) {
+      if (!(e instanceof GoogleApiError) || e.kind !== 'invalid') { stats.total++; const f = fail('GA4 serie giornaliera', 'GA4', e); throw new ReportUnavailableError(f.kind as GoogleErrorKind, f.message) }
+    }
   }
   if (!baseRows) {
-    baseRows = await safe('GA4 base (senza canale)', async () => (await paged(config, {
-      dateRanges: drDated, dimensions: [{ name: 'date' }, { name: 'sessionSource' }, { name: 'sessionMedium' }], metrics: [{ name: 'sessions' }],
-    })).map(r => ({ date: fromYmd(r.dimensions[0]), channelGrouping: 'n.d.', source: r.dimensions[1], medium: r.dimensions[2], sessions: parseInt(r.metrics[0] || '0', 10) })))
+    baseRows = await required('GA4 serie giornaliera (senza canale)', async () => (await datedQuery(['date', 'sessionSource', 'sessionMedium']))
+      .map(r => ({ date: fromYmd(r.dimensions[0]), channelGrouping: 'n.d.', source: r.dimensions[1], medium: r.dimensions[2], sessions: parseInt(r.metrics[0] || '0', 10) })))
   }
 
   // ── 2. Finestra definitiva: gli ultimi giorni in consolidamento sono esclusi da TUTTE le query non datate ──
@@ -66,22 +92,29 @@ export async function collectReportInput(
 
   // ── 3. Query SENZA data: stessa dateRanges, stessi filtri. Totale = query senza dimensioni (unica fonte di verita') ──
   let controlMeta: GaMeta | null = null
-  const control = await safe('GA4 controllo', async () => {
+  const control = await required('GA4 controllo', async () => {
     const r = await ga4RunReport(config, { dateRanges: dr, metrics: [{ name: 'sessions' }, { name: 'activeUsers' }, { name: 'newUsers' }, { name: 'bounceRate' }, { name: 'averageSessionDuration' }, { name: 'screenPageViews' }] })
     controlMeta = metaOf(r, drTxt)
     const v = r.rows[0]?.metrics || []
     return { sessions: num(v[0]), users: num(v[1]), newUsers: num(v[2]), bounceRate: num(v[3]), avgSessionDuration: num(v[4]), pageviews: num(v[5]) }
   })
-  // canale × source × medium senza data: fonte di macro-canali e tabella source/medium
+  // canale × source × medium senza data, UNA sola query con tutte le metriche (sessioni, utenti, bounce): prima erano due chiamate,
+  // una per i totali e una per utenti/bounce. Fonte di macro-canali e tabella source/medium.
   const smBaseDims = channelDimension ? [{ name: channelDimension }, { name: 'sessionSource' }, { name: 'sessionMedium' }] : [{ name: 'sessionSource' }, { name: 'sessionMedium' }]
-  const smBase: SmBaseRow[] | null = await safe('GA4 source/medium (senza data)', async () => (await paged(config, {
-    dateRanges: dr, dimensions: smBaseDims, metrics: [{ name: 'sessions' }],
-  })).map(r => channelDimension
-    ? { channelGrouping: r.dimensions[0], source: r.dimensions[1], medium: r.dimensions[2], sessions: parseInt(r.metrics[0] || '0', 10) }
-    : { channelGrouping: 'n.d.', source: r.dimensions[0], medium: r.dimensions[1], sessions: parseInt(r.metrics[0] || '0', 10) }))
-  const smDetail = await safe('GA4 source/medium (utenti, bounce)', async () => (await paged(config, {
-    dateRanges: dr, dimensions: [{ name: 'sessionSource' }, { name: 'sessionMedium' }], metrics: [{ name: 'activeUsers' }, { name: 'bounceRate' }],
-  })).map(r => ({ source: r.dimensions[0], medium: r.dimensions[1], users: num(r.metrics[0]), bounceRate: num(r.metrics[1]) })))
+  const off = channelDimension ? 1 : 0
+  const smRaw = await required('GA4 source/medium', async () => await paged(config, {
+    dateRanges: dr, dimensions: smBaseDims, metrics: [{ name: 'sessions' }, { name: 'activeUsers' }, { name: 'bounceRate' }],
+  }))
+  const smBase: SmBaseRow[] = smRaw.map(r => ({ channelGrouping: channelDimension ? r.dimensions[0] : 'n.d.', source: r.dimensions[off], medium: r.dimensions[off + 1], sessions: parseInt(r.metrics[0] || '0', 10) }))
+  // utenti e bounce per source/medium: se GA4 separa lo stesso source/medium in più canali si sommano gli utenti e si pesa il bounce sulle sessioni
+  const smAcc = new Map<string, { source: string; medium: string; sessions: number; users: number; bounceW: number }>()
+  for (const r of smRaw) {
+    const source = r.dimensions[off], medium = r.dimensions[off + 1], sess = parseInt(r.metrics[0] || '0', 10)
+    const e = smAcc.get(`${source}|||${medium}`) || { source, medium, sessions: 0, users: 0, bounceW: 0 }
+    e.sessions += sess; e.users += num(r.metrics[1]); e.bounceW += num(r.metrics[2]) * sess
+    smAcc.set(`${source}|||${medium}`, e)
+  }
+  const smDetail: SmDetail[] = [...smAcc.values()].map(e => ({ source: e.source, medium: e.medium, users: e.users, bounceRate: e.sessions > 0 ? e.bounceW / e.sessions : 0 }))
   const topPages = await safe('GA4 pagine', async () => (await ga4RunReport(config, {
     dateRanges: dr, dimensions: [{ name: 'pagePath' }], metrics: [{ name: 'screenPageViews' }, { name: 'sessions' }],
     orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }], limit: PARAMS.topPages,
@@ -117,10 +150,10 @@ export async function collectReportInput(
   let gsc: ReportInput['gsc'] = null
   if (config.searchConsoleSiteUrl && win.gscEnd >= win.start) {
     const q = (b: any) => searchConsoleQuery(config, { startDate: win.start, endDate: win.gscEnd, searchType: 'web', dataState: 'final', ...b })
-    const totals = await safe('GSC totali', async () => (await q({ dimensions: [] })).rows[0] || null)
-    const daily = await safe('GSC serie giornaliera', async () => (await q({ dimensions: ['date'], rowLimit: 25000 })).rows)
-    const queries = await safe('GSC query', async () => (await q({ dimensions: ['query'], rowLimit: Math.max(PARAMS.topQueries, PARAMS.hubQueries) })).rows)
-    const pages = await safe('GSC pagine', async () => (await q({ dimensions: ['page'], rowLimit: PARAMS.topPages })).rows)
+    const totals = await safe('GSC totali', async () => (await q({ dimensions: [] })).rows[0] || null, 'GSC')
+    const daily = await safe('GSC serie giornaliera', async () => (await q({ dimensions: ['date'], rowLimit: 25000 })).rows, 'GSC')
+    const queries = await safe('GSC query', async () => (await q({ dimensions: ['query'], rowLimit: Math.max(PARAMS.topQueries, PARAMS.hubQueries) })).rows, 'GSC')
+    const pages = await safe('GSC pagine', async () => (await q({ dimensions: ['page'], rowLimit: PARAMS.topPages })).rows, 'GSC')
     if (totals && daily) {
       gsc = {
         totals: { clicks: totals.clicks, impressions: totals.impressions, position: totals.position },
@@ -135,6 +168,7 @@ export async function collectReportInput(
   let crm: ReportInput['crm'] = null
   let crmError: string | undefined
   if (db) {
+    stats.total++
     try {
       const res = await db.prepare(`
         SELECT temperatura, status, canale_acquisizione AS canale, dettaglio_fonte AS dettaglio, COUNT(*) AS cnt
@@ -143,14 +177,14 @@ export async function collectReportInput(
         GROUP BY temperatura, status, canale_acquisizione, dettaglio_fonte
       `).bind(win.start, win.aggEnd).all()
       crm = { rows: (res.results as any[]).map(r => ({ temperatura: r.temperatura || 'n/a', status: r.status || 'UNKNOWN', canale: r.canale || '', dettaglio: r.dettaglio || '', count: Number(r.cnt) })) }
-    } catch (e: any) { crmError = String(e?.message || e).slice(0, 160); errors.push(`CRM: ${crmError}`) }
+    } catch (e: any) { crmError = sanitizeGoogleText(e?.message || e, 160); fail('CRM', 'CRM', e) }
   } else crmError = 'database non collegato'
 
   return {
     now: p.now, requestedStart: p.startDate, requestedEnd: p.endDate, siteUrl: p.siteUrl,
     measurementId: p.measurementId, ga4PropertyId: config.ga4PropertyId,
     ga4: { channelDimension, baseRows, smBase, queryEnd: smBase ? win.aggEnd : null, control, smDetail, topPages, devices, countries, directLanding, directBrowsers, monthly, monthlyRange: monthly ? monthlyRange : null, meta: { control: controlMeta, devices: devicesMeta } },
-    gsc, crm, crmError, geoActivation: p.geoActivation, errors,
+    gsc, crm, crmError, geoActivation: p.geoActivation, errors, queryStats: stats,
   }
 }
 void addDays

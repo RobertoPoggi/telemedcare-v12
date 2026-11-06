@@ -62,6 +62,8 @@ export const PARAMS = {
 // ── Tipi di input ───────────────────────────────────────────────────────────
 export interface BaseRow { date: string; channelGrouping: string; source: string; medium: string; sessions: number }
 export interface SmBaseRow { channelGrouping: string; source: string; medium: string; sessions: number }
+export interface QueryFailure { label: string; api: 'GA4' | 'GSC' | 'CRM'; kind: string; message: string }
+export interface QueryStats { total: number; failed: number; failures: QueryFailure[] }
 export interface SmDetail { source: string; medium: string; users: number; bounceRate: number }
 /** Metadati della risposta GA4 (servono a spiegare un eventuale scarto tra due chiamate). */
 export interface GaMeta { timeZone?: string; dataLossFromOtherRow?: boolean; subjectToThresholding?: boolean; sampled?: boolean; range?: string }
@@ -98,6 +100,8 @@ export interface ReportInput {
   crmError?: string
   geoActivation: { date: string; label: string }
   errors: string[]
+  /** Esito delle query della raccolta (GA4, Search Console, CRM): serve a dichiarare «N query fallite su M totali» e le sezioni mancanti. */
+  queryStats?: QueryStats
   sampleNote?: string   // se valorizzato il report e' un ESEMPIO (dati sintetici) e lo dichiara in copertina
 }
 

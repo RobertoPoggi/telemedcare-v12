@@ -351,7 +351,7 @@ var DEC={NO_ADS_BRAND:['Non pagare (marca)','mut'],NO_ADS_ORGANIC_WINS:['Non pag
 async function loadSeoInputs(btn){
   busy(btn,true,'Carico…');
   try{var r=await api('/ads/seo-inputs?giorni='+(Number($('siDays').value)||28));
-    if(!r.success){$('siOut').innerHTML='<div class="lint warn">'+(r.notConfigured?'GA4 / Search Console non collegati al CRM. ':'')+esc(r.error)+'</div>';return}
+    if(!r.success){$('siOut').innerHTML='<div class="lint warn">'+(r.notConfigured?'GA4 / Search Console non collegati al CRM. ':'')+esc(r.message||r.error)+'</div>';return}
     if(!r.available){$('siOut').innerHTML='<div class="lint warn">'+esc(r.reason||'Search Console non disponibile')+'</div>';return}
     var h='';
     if(!r.valid)h+='<div class="lint error"><span>⛔</span><span><b>Errore bloccante</b>: '+esc(r.blockingError)+'<br>'+r.blocking.map(function(b){return esc(b.msg)}).join('<br>')+'</span></div>';
@@ -439,6 +439,8 @@ async function loadToday(){
   var box=$('todayOut');if(!box)return;
   try{var r=await api('/ads/decisions');
     if(!r.success){box.textContent='Errore';return}
+    // F4: quota esaurita / nessun dato NON sono «dati insufficienti»: messaggio dedicato, mai «0/10»
+    if(r.status&&r.status!=='ok'){box.innerHTML='<div class="lint warn">'+esc(r.message||'Dati non disponibili')+'</div>';return}
     if(r.insufficient){box.innerHTML='<b>'+esc(r.insufficient)+'</b><div class="muted mt-1">Nessun suggerimento finché il campione è sotto il minimo: sarebbe un numero rassicurante e falso. Primo obiettivo: i primi '+10+' lead qualificati con click ID.</div>';return}
     if(!r.rows.length){box.innerHTML='<span class="muted">Nessuna decisione da prendere oggi.</span>';return}
     box.innerHTML='<ol class="list-decimal ml-5 space-y-1">'+r.rows.map(function(x){return '<li><b>'+esc(x.text)+'</b><div class="muted">'+esc(x.source)+'</div></li>'}).join('')+'</ol>';

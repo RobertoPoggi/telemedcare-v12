@@ -105,12 +105,12 @@ async function getServiceAccountToken(serviceAccountJson: string, scopes: string
   })
 
   if (!tokenRes.ok) {
-    const err = await tokenRes.text()
-    throw new Error(`Service Account token exchange failed: ${err}`)
+    const err = await tokenRes.text().catch(() => '')
+    throw new GoogleApiError(tokenRes.status, 'auth', `Autenticazione Google fallita (HTTP ${tokenRes.status}): ${sanitizeGoogleText(err, 120)}`)
   }
 
   const json = await tokenRes.json() as { access_token?: string; error?: string }
-  if (!json.access_token) throw new Error(`No access_token from Service Account: ${JSON.stringify(json)}`)
+  if (!json.access_token) throw new GoogleApiError(401, 'auth', 'Autenticazione Google fallita: nessun access token dal service account')
   return json.access_token
 }
 
@@ -128,11 +128,11 @@ async function getOAuth2Token(refreshToken: string, clientId: string, clientSecr
     }).toString()
   })
   if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`OAuth2 token refresh failed: ${err}`)
+    const err = await res.text().catch(() => '')
+    throw new GoogleApiError(res.status, 'auth', `Autenticazione Google fallita (HTTP ${res.status}): ${sanitizeGoogleText(err, 120)}`)
   }
   const json = await res.json() as { access_token?: string; error?: string }
-  if (!json.access_token) throw new Error(`No access_token in OAuth2 response: ${JSON.stringify(json)}`)
+  if (!json.access_token) throw new GoogleApiError(401, 'auth', 'Autenticazione Google fallita: nessun access token dal refresh token')
   return json.access_token
 }
 
@@ -188,6 +188,46 @@ export interface GA4ReportResult {
   metadata?: { timeZone?: string; dataLossFromOtherRow?: boolean; subjectToThresholding?: boolean; samplingCount?: number }
 }
 
+// ── Errori Google: sempre sintetici, mai il body grezzo (può essere una pagina HTML intera) ──
+
+export type GoogleErrorKind = 'quota' | 'auth' | 'invalid' | 'server' | 'other'
+export class GoogleApiError extends Error {
+  status: number
+  kind: GoogleErrorKind
+  constructor(status: number, kind: GoogleErrorKind, message: string) { super(message); this.name = 'GoogleApiError'; this.status = status; this.kind = kind }
+}
+/** Testo proveniente da Google → una riga: via i tag (anche se troncati), spazi collassati, tagliato. */
+export function sanitizeGoogleText(raw: unknown, max = 200): string {
+  return String(raw ?? '').replace(/<[^>]*(>|$)/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max)
+}
+/** Mappa lo status HTTP in un messaggio breve (F2). `api` = nome mostrato all'utente (GA4, Search Console). */
+export function describeGoogleError(api: string, status: number, body: string): GoogleApiError {
+  if (status === 429) return new GoogleApiError(status, 'quota', `Quota ${api} esaurita (riprova tra ~1h)`)
+  if (status === 401 || status === 403) return new GoogleApiError(status, 'auth', 'Credenziali Google non valide o permessi mancanti')
+  if (status === 400) {
+    let detail = String(body || '')
+    try { const j = JSON.parse(detail); if (j?.error?.message) detail = String(j.error.message) } catch (_) { /* body non JSON: lo ripulisce sanitizeGoogleText */ }
+    return new GoogleApiError(status, 'invalid', `Query ${api} non valida: ${sanitizeGoogleText(detail, 160)}`)
+  }
+  if (status >= 500) return new GoogleApiError(status, 'server', `Errore temporaneo ${api} (HTTP ${status})`)
+  return new GoogleApiError(status, 'other', `Errore ${api} (HTTP ${status})`)
+}
+
+// ── Cache in memoria + retry (F3): lo stesso report rigenerato nella stessa ora non deve costare due volte ──
+
+export const GA4_CACHE_TTL_MS = 20 * 60 * 1000
+export const GA4_RETRY_WAIT_MS = 2000
+const _ga4Cache = new Map<string, { at: number; res: GA4ReportResult }>()
+/** Punto di iniezione per i test: niente attese reali, nessuna rete. */
+export const ga4Net = {
+  sleep: (ms: number) => new Promise<void>(r => setTimeout(r, ms)),
+  now: () => Date.now(),
+  jitter: () => Math.floor(Math.random() * 500),
+  /** Chiamate HTTP effettivamente partite verso GA4 (cache hit escluse): serve ai test e alla diagnostica. */
+  calls: 0,
+}
+export function clearGa4Cache() { _ga4Cache.clear() }
+
 export async function ga4RunReport(
   config: GoogleAnalyticsConfig,
   body: {
@@ -200,19 +240,21 @@ export async function ga4RunReport(
     offset?: number
   }
 ): Promise<GA4ReportResult> {
+  // Chiave = periodo|dimensioni|metriche (+ filtro, ordine, paginazione: senza, due query diverse collidono)
+  const key = [config.ga4PropertyId, body.dateRanges.map(d => `${d.startDate}:${d.endDate}`).join(','), (body.dimensions || []).map(d => d.name).join(','), body.metrics.map(m => m.name).join(','),
+    JSON.stringify([body.dimensionFilter || null, body.orderBys || null, body.limit ?? null, body.offset ?? null])].join('|')
+  const hit = _ga4Cache.get(key)
+  if (hit && ga4Net.now() - hit.at < GA4_CACHE_TTL_MS) return hit.res
+
   const token = await getAccessToken(config)
   const url = `https://analyticsdata.googleapis.com/v1beta/properties/${config.ga4PropertyId}:runReport`
+  const send = () => { ga4Net.calls++; return fetch(url, { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }) }
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  })
+  let res = await send()
+  // Un solo retry su 429/5xx, dopo 2 s più jitter. Mai loop, mai retry multipli.
+  if (res.status === 429 || res.status >= 500) { await ga4Net.sleep(GA4_RETRY_WAIT_MS + ga4Net.jitter()); res = await send() }
 
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`GA4 runReport failed (${res.status}): ${err}`)
-  }
+  if (!res.ok) throw describeGoogleError('GA4', res.status, await res.text().catch(() => ''))
 
   const data = await res.json() as any
   const dimHeaders: string[] = (data.dimensionHeaders || []).map((h: any) => h.name)
@@ -223,10 +265,12 @@ export async function ga4RunReport(
   }))
 
   const md = data.metadata || {}
-  return {
+  const result: GA4ReportResult = {
     rows, rowCount: data.rowCount || rows.length, dimensionHeaders: dimHeaders, metricHeaders: metHeaders,
     metadata: { timeZone: md.timeZone, dataLossFromOtherRow: md.dataLossFromOtherRow, subjectToThresholding: md.subjectToThresholding?.valueOf?.() ?? md.subjectToThresholding, samplingCount: md.samplingMetadatas?.length },
   }
+  _ga4Cache.set(key, { at: ga4Net.now(), res: result })   // solo le risposte riuscite
+  return result
 }
 
 // ── Search Console API ───────────────────────────────────────
@@ -270,8 +314,7 @@ export async function searchConsoleQuery(
   })
 
   if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`Search Console query failed (${res.status}): ${err}`)
+    throw describeGoogleError('Search Console', res.status, await res.text().catch(() => ''))
   }
 
   const data = await res.json() as any

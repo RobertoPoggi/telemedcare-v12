@@ -189,6 +189,73 @@ export async function runAdsTests(ok: Ok, section: Section) {
   ok(ca.leads === 2 && ca.qualified === 1 && ca.clicks === 40 && ca.spend === 30, 'join campagna: lead del CRM + clic e costo del report importato (stessa campagna anche con maiuscole/spazi diversi)')
   ok(pl.total.spend === 30 && /importato/.test(pl.spendBasis), 'con report importato la spesa è quella del report (misurata), non quella manuale')
 
+  // ── A) utm_campaign dalla colonna, URL solo come fallback per i lead storici ──────────
+  section('A. Attribuzione campagna da leads.utm_campaign')
+  {
+    const col = D.adsAttribution({ gclid: 'gclidAAAA', landing_page: 'https://www.ecura.it/', utm_campaign: 'ecura_search_primo_lancio', q: 1 })
+    ok(col.campaign === 'ecura_search_primo_lancio' && col.via === 'utm_campaign', 'A: lead con colonna utm_campaign e landing_page SENZA parametri → campagna corretta, via=utm_campaign')
+    const both = D.adsAttribution({ gclid: 'gclidAAAA', landing_page: '?utm_campaign=da_url', utm_campaign: 'da_colonna', q: 1 })
+    ok(both.campaign === 'da_colonna', 'A: se colonna e URL discordano vince la colonna')
+    const hist = D.adsAttribution({ gclid: 'gclidAAAA', landing_page: '?utm_campaign=storica', utm_campaign: '   ', q: 1 })
+    ok(hist.campaign === 'storica' && hist.via === 'landing_page', 'A: colonna vuota (lead storico) → ripiego sull\'URL, via=landing_page')
+    const none = D.adsAttribution({ gclid: 'gclidAAAA', landing_page: 'https://www.ecura.it/', q: 1 })
+    ok(none.attributed && none.campaign === null && none.via === null, 'A: click ID senza alcuna campagna → attribuito ma senza campagna')
+    const pa = D.perfFromLeads([
+      { gclid: 'g1xxxxx', landing_page: 'https://www.ecura.it/', utm_campaign: 'Camp X', q: 1 },
+      { gclid: 'g2xxxxx', landing_page: '/', utm_campaign: 'Camp X', q: 0 },
+      { gclid: 'g3xxxxx', landing_page: '?utm_campaign=Camp X', q: 1 },
+      { gclid: 'g4xxxxx', landing_page: '/', q: 0 },
+    ], [], null)
+    const cx = pa.campaigns.find(c => c.campaign === 'Camp X')!
+    ok(cx.leads === 3 && cx.qualified === 2, `A: 3 lead in «Camp X» (2 dalla colonna + 1 storico dall'URL), 2 qualificati (${cx.leads}/${cx.qualified})`)
+    ok(pa.attribution.source === 'utm_campaign' && pa.attribution.coveredLeads === 2 && pa.attribution.fallbackLeads === 1 && pa.attribution.unattributedLeads === 1, `A: attribution = {source:'utm_campaign', coveredLeads:2, fallbackLeads:1} (${JSON.stringify(pa.attribution)})`)
+    ok(pa.campaigns.some(c => c.campaign === '(non attribuita)' && c.leads === 1), 'A: lead con click ID ma senza campagna → bucket «(non attribuita)»')
+    ok(D.cleanUtmCampaign('  ecura  <b>x</b>\n\tsearch ') === 'ecura b x /b search' && D.cleanUtmCampaign('   ') === null && D.cleanUtmCampaign(null) === null && D.cleanUtmCampaign('x'.repeat(500))!.length === 120, 'A: cleanUtmCampaign — una riga, senza markup né controlli, max 120, vuoto → null')
+    ok(D.referrerDomain('https://chatgpt.com/c/abc?x=1#y') === 'chatgpt.com' && D.referrerDomain('https://www.Perplexity.ai/search') === 'perplexity.ai' && D.referrerDomain('gemini.google.com') === 'gemini.google.com', 'F/B: referrerDomain → solo dominio, minuscolo, senza www/path/query')
+    ok(D.referrerDomain('') === null && D.referrerDomain('javascript:alert(1)') === null && D.referrerDomain('mario.rossi@mail.it') === null && D.referrerDomain('https://user:pw@evil.com/p') === 'evil.com', 'B: referrerDomain scarta ciò che non è un hostname e toglie userinfo (nessun dato personale)')
+
+    // migrazione additiva e idempotente (db finto con schema vivo)
+    const { ensureLeadAttributionColumns, resetLeadAttributionColumnsCache } = await import('../../src/modules/workflow-email-manager')
+    resetLeadAttributionColumnsCache() // la cache di isolate può essere stata accesa da test precedenti con db finti
+    const cols = new Set(['id', 'gclid']); const alters: string[] = []
+    const mkDb = (dupErr = false): any => ({ prepare: (sql: string) => ({
+      all: async () => ({ results: [...cols].map(name => ({ name })) }),
+      run: async () => { const m = /ADD COLUMN (\w+)/.exec(sql); if (!m) return {}; alters.push(m[1]); if (dupErr || cols.has(m[1])) throw new Error('duplicate column name: ' + m[1]); cols.add(m[1]); return {} },
+    }) })
+    await ensureLeadAttributionColumns(mkDb())
+    ok(cols.has('utm_campaign') && cols.has('first_referrer') && alters.length === 2, 'A/B: migrazione aggiunge utm_campaign e first_referrer')
+    const before = alters.length
+    resetLeadAttributionColumnsCache() // simula un nuovo isolate: lo schema ora ha già le colonne
+    await ensureLeadAttributionColumns(mkDb())
+    ok(alters.length === before, 'A/B: seconda esecuzione idempotente (nessun ALTER ripetuto)')
+    cols.delete('first_referrer'); resetLeadAttributionColumnsCache()
+    const lg = await ensureLeadAttributionColumns({ prepare: (sql: string) => ({ all: async () => ({ results: [] }), run: async () => { if (/ADD COLUMN/.test(sql)) throw new Error('duplicate column name: x'); return {} } }) } as any)
+    ok(!lg.some(l => l.startsWith('⚠️')), 'A/B: «duplicate column» (esecuzioni concorrenti) è ignorato, non è un errore')
+  }
+  // endpoint /performance: la campagna arriva dalla colonna anche se la landing non ha parametri
+  {
+    const { createMarketingApi } = await import('../../src/modules/marketing-api')
+    const hub = createMarketingApi()
+    const leadRows = [
+      { gclid: 'g1xxxxx', gbraid: null, wbraid: null, landing_page: 'https://www.ecura.it/', utm_campaign: 'ecura_search_primo_lancio', q: 1 },
+      { gclid: 'g2xxxxx', gbraid: null, wbraid: null, landing_page: 'https://www.ecura.it/', utm_campaign: 'ecura_search_primo_lancio', q: 0 },
+      { gclid: 'g3xxxxx', gbraid: null, wbraid: null, landing_page: '?utm_campaign=vecchia', utm_campaign: null, q: 1 },
+    ]
+    const db: any = { prepare: (sql: string) => { const q: any = { bind: () => q,
+      all: async () => {
+        if (/pragma_table_info/.test(sql)) return { results: ['id', 'gclid', 'gbraid', 'wbraid', 'landing_page', 'utm_campaign', 'first_referrer', 'created_at'].map(name => ({ name })) }
+        if (/COUNT\(\*\)/.test(sql)) return { results: [{ n: 10, q: 2 }] }
+        if (/FROM leads/.test(sql)) { ok(/utm_campaign, CASE/.test(sql) && !/json_extract/.test(sql), 'A: la query legge la colonna utm_campaign (nessun json_extract su landing_page)'); return { results: leadRows } }
+        return { results: [] }
+      }, first: async () => null, run: async () => ({ meta: {} }) }; return q } }
+    const cookie = 'session=' + encodeURIComponent(JSON.stringify({ expiresAt: new Date(Date.now() + 3600e3).toISOString(), user: { name: 't', email: 't@e.it' } }))
+    const r = await hub.request('/performance?giorni=28', { headers: { Cookie: cookie } }, { DB: db } as any)
+    const body: any = await r.json()
+    const names = JSON.stringify(body)
+    ok(r.status === 200 && /ecura_search_primo_lancio/.test(names), `A: /performance attribuisce i lead alla campagna dalla colonna (status ${r.status})`)
+    ok(body.attribution && body.attribution.source === 'utm_campaign' && body.attribution.coveredLeads === 2 && body.attribution.fallbackLeads === 1, `A: /performance dichiara attribution.source='utm_campaign', covered 2, fallback 1 (${JSON.stringify(body.attribution)})`)
+  }
+
   // ── F) Parte 6: Decisioni di oggi ──────────────────────────────────────────────────────
   section('F. Parte 6 — «Decisioni di oggi»')
   const dec = D.decisionsOfToday({

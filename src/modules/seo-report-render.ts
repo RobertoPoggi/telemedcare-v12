@@ -28,6 +28,21 @@ const ATTRIBUTION_CHECKS = ['ratiomax', 'ratio']   // anomalie di attribuzione G
 /** Avviso di finestra ridotta: se i giorni esclusi (lag + consolidamento) superano la soglia. */
 export const reducedWindowNote = (excludedDays: number): string => excludedDays > PARAMS.reducedWindowDays ? `finestra ridotta: i dati degli ultimi ${excludedDays} giorni non sono consolidati` : ''
 /** Banner in testa: massimo UNA frase. Nessun errore e nessuna anomalia = nessun banner. */
+/** F1/F3: sezioni non raccolte per errore delle API. «Dati parziali: N sezioni non disponibili per quota GA4». Null se tutte le query sono andate a buon fine. */
+const KIND_CAUSE: Record<string, string> = { quota: 'quota', auth: 'credenziali Google', invalid: 'query non valida', server: 'errore temporaneo', other: 'errore' }
+export function partialNote(st: ReportInput['queryStats']): { text: string; sections: string[]; line: string } | null {
+  if (!st || st.failed === 0) return null
+  const sections = st.failures.map(f => f.label.replace(/^(GA4|GSC) /, f.api === 'GSC' ? 'Search Console: ' : ''))
+  const causes = [...new Set(st.failures.map(f => f.kind === 'quota' ? `quota ${f.api === 'GSC' ? 'Search Console' : f.api}` : f.api === 'CRM' ? 'CRM non disponibile' : KIND_CAUSE[f.kind] || 'errore'))]
+  const why = causes.length ? ` per ${causes.join(' e ')}` : ''
+  const msgs = [...new Set(st.failures.map(f => f.message))].slice(0, 3)
+  return {
+    text: `Dati parziali: ${st.failed} ${st.failed === 1 ? 'sezione non disponibile' : 'sezioni non disponibili'}${why}`,
+    sections,
+    // una riga, mai il body di Google: «N query fallite su M totali»
+    line: `${st.failed} query fallite su ${st.total} totali · non disponibili: ${sections.join(', ')} · ${msgs.join(' · ')}`,
+  }
+}
 export function reportBanner(m: Model, errs: Check[], anoms: Check[]): string {
   const oneLine = (t: string) => t.replace(/\s+/g, ' ').replace(/[.;:\s]+$/, '')
   if (errs.length) {
@@ -36,11 +51,19 @@ export function reportBanner(m: Model, errs: Check[], anoms: Check[]): string {
   }
   const reduced = reducedWindowNote(m.excl.total)
   const attr = anoms.filter(a => ATTRIBUTION_CHECKS.includes(a.id)), other = anoms.filter(a => !ATTRIBUTION_CHECKS.includes(a.id))
-  if (!anoms.length && !reduced) return ''
+  const partial = partialNote(m.input.queryStats)
+  if (!anoms.length && !reduced && !partial) return ''
   const parts: string[] = []
   const wk = m.ratio.anomalous === 1 ? `1 settimana su ${m.ratio.fullCount} ha` : `${m.ratio.anomalous} settimane su ${m.ratio.fullCount} hanno`
   const tol = other.length === 1 ? 'un controllo è fuori tolleranza' : `${other.length} controlli sono fuori tolleranza`
-  if (attr.length && !other.length) parts.push(`Dati completi e quadrature verificate. ${wk} un'anomalia di attribuzione GA4 (non un calo di traffico): dettaglio in appendice`)
+  // Regola F: se una sezione manca per un errore, NESSUNA frase del documento dice che i dati sono completi o verificati.
+  if (partial) {
+    parts.push(partial.text)
+    if (attr.length) parts.push(`${wk} un'anomalia di attribuzione GA4 (non un calo di traffico)`)
+    if (other.length) parts.push(tol)
+    if (anoms.length) parts.push('dettaglio in appendice')
+  }
+  else if (attr.length && !other.length) parts.push(`Dati completi e quadrature verificate. ${wk} un'anomalia di attribuzione GA4 (non un calo di traffico): dettaglio in appendice`)
   else if (attr.length) parts.push(`Quadrature principali verificate. ${wk} un'anomalia di attribuzione GA4 (non un calo di traffico) e ${tol}: dettaglio in appendice`)
   else if (other.length) parts.push(`Quadrature principali verificate; ${tol}: dettaglio in appendice`)
   else parts.push('Dati e quadrature verificati')
@@ -83,6 +106,8 @@ export const dateCaption = (m: Model): string => `GA4: ${fmtDayY(m.win.aggEnd)} 
 // ── helpers di layout ───────────────────────────────────────────────────────
 const rng = (src: string, start: string, end: string, days: number, extra = '') =>
   `<div class="rng">Fonte: ${esc(src)} · intervallo effettivo ${start} → ${end} (${days} giorni)${extra ? ' · ' + extra : ''}</div>`
+/** Testo da fonte esterna → una riga senza markup, max 200 caratteri (difesa in profondità: gli errori arrivano già ripuliti). */
+const oneLineText = (t: string) => String(t ?? '').replace(/<[^>]*(>|$)/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200)
 const na = (what: string) => `<p style="color:#6b7280;font-size:.88rem">dato non disponibile — ${esc(what)}</p>`
 const kpi = (color: string, num: string, lbl: string, sub = '', numStyle = '') =>
   `<div class="kpi" style="border-top-color:${color}"><span class="num" style="${numStyle}">${num}</span><div class="lbl">${lbl}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`
@@ -95,8 +120,11 @@ function renderHtml(m: Model, checks: Check[], R: PctRegistry): string {
   const generatedAt = new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'short', timeStyle: 'medium' }).format(i.now).replace(',', '')
   const gaRange = `${w.start} → ${w.aggEnd}`
   const gscRange = m.gsc ? `${w.start} → ${w.gscEnd}` : 'n.d.'
+  // Una riga sola, sintetica: mai il body di Google (può essere una pagina HTML), mai un elenco di URL.
+  const pn = partialNote(i.queryStats)
+  const errLine = pn ? pn.line : i.errors.map(e => oneLineText(e)).join(' | ')
   const errorsBlock = i.errors.length
-    ? `<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:.85rem">⚠️ <strong>Avvisi:</strong> ${i.errors.map(e => esc(e)).join(' | ')}</div>` : ''
+    ? `<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:.85rem">⚠️ <strong>Avvisi:</strong> ${esc(errLine)}</div>` : ''
   const tailTxt = m.cons.tailDays ? `, più ${m.cons.tailDays} giorni in consolidamento (organico incompleto)` : ''
   const lagNote = `Giorni non consolidati esclusi: GA4 fino al ${fmtDayY(w.aggEnd)} (lag ${PARAMS.ga4LagDays} giorni${tailTxt}), GSC fino al ${fmtDayY(w.gscEnd)} (lag ${PARAMS.gscLagDays} giorni).`
 
@@ -517,7 +545,7 @@ ${PLACE_BANNER}
       <span>🔍 Search Console: ${esc(i.siteUrl)}</span>
       <span>🗄️ Lead CRM: ${leadsTotal == null ? 'n.d.' : leadsTotal}</span>
       <span>📡 Fonti distinte: ${m.smTable.length}</span>
-      ${i.errors.length ? `<span style="color:#fbbf24">⚠️ ${i.errors.length} avvisi</span>` : ''}
+      ${i.errors.length ? `<span style="color:#fbbf24">⚠️ ${i.queryStats ? `${i.queryStats.failed} query fallite su ${i.queryStats.total}` : `${i.errors.length} avvisi`}</span>` : ''}
     </div>
   </div>
 </div>
@@ -538,7 +566,7 @@ ${kpiHtml}
   </div>
   <div class="chart-box">
     <h3>📱 Device</h3>
-    <canvas id="deviceChart" height="220"></canvas>
+    ${i.ga4.devices ? '<canvas id="deviceChart" height="220"></canvas>' : na('device GA4 non recuperati')}
   </div>
 </div>
 <div class="charts-grid">
@@ -650,7 +678,7 @@ new Chart(document.getElementById('dailyChart'), {
 });
 
 // 2. Device
-new Chart(document.getElementById('deviceChart'), { type: 'doughnut',
+if (document.getElementById('deviceChart')) new Chart(document.getElementById('deviceChart'), { type: 'doughnut',
   data: { labels: D.devLabels, datasets: [{ data: D.devData, backgroundColor: ['#4285F4','#34A853','#FBBC05','#9CA3AF'], borderWidth: 2, borderColor: '#fff' }] },
   options: { responsive: true, cutout: '${DONUT_CUTOUT.device}%', plugins: legendBottom } });
 

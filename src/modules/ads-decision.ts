@@ -541,23 +541,47 @@ export async function applyTransition(db: any, planId: number | string, action: 
 export interface LeadPerfRow { gclid?: string | null; gbraid?: string | null; wbraid?: string | null; landing_page?: string | null; utm_campaign?: string | null; q: number | boolean }
 const qp = (url: string, k: string) => { const m = String(url || '').match(new RegExp('[?&]' + k + '=([^&#]+)', 'i')); if (!m) return ''; try { return decodeURIComponent(m[1].replace(/\+/g, ' ')) } catch (_) { return m[1] } }
 /** Un lead è «da ADS» se ha un click ID Google (gclid/gbraid/wbraid) OPPURE la landing aveva utm_medium=cpc.
- *  Campagna = colonna utm_campaign se esiste, altrimenti il parametro utm_campaign dell'URL di landing (la landing salva landing_page, non utm_campaign). */
-export function adsAttribution(r: LeadPerfRow): { attributed: boolean; campaign: string | null; byClickId: boolean } {
+ *  Campagna: la colonna `leads.utm_campaign` (salvata dal CRM al momento dell'invio del form) è la fonte primaria.
+ *  Solo se è vuota — lead storici, precedenti al salvataggio della colonna — si ripiega sul parametro utm_campaign
+ *  dell'URL in `landing_page` (che il form salva quando c'è un click ID). `via` dice quale delle due ha risposto.
+ *  Il fallback sta qui, in JS, e non in SQL: `landing_page` è un URL, non JSON, e json_extract() su una stringa
+ *  non-JSON fa fallire l'intera query. */
+export function adsAttribution(r: LeadPerfRow): { attributed: boolean; campaign: string | null; byClickId: boolean; via: 'utm_campaign' | 'landing_page' | null } {
   const byClickId = [r.gclid, r.gbraid, r.wbraid].some(x => !!x && String(x).trim() !== '')
   const lp = String(r.landing_page || '')
-  const campaign = (String(r.utm_campaign || '').trim() || qp(lp, 'utm_campaign') || '').trim() || null
+  const col = String(r.utm_campaign || '').trim()
+  const fromUrl = qp(lp, 'utm_campaign').trim()
+  const campaign = col || fromUrl || null
+  const via: 'utm_campaign' | 'landing_page' | null = col ? 'utm_campaign' : fromUrl ? 'landing_page' : null
   const cpc = /^(cpc|ppc|paid)/i.test(qp(lp, 'utm_medium'))
-  return { attributed: byClickId || (cpc && !!campaign), campaign, byClickId }
+  return { attributed: byClickId || (cpc && !!campaign), campaign, byClickId, via }
+}
+/** utm_campaign da salvare in leads: testo breve su una riga, senza caratteri di controllo. Vuoto → null (mai una stringa vuota). */
+export function cleanUtmCampaign(v: unknown): string | null {
+  const t = String(v ?? '').replace(/[\u0000-\u001f\u007f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120)
+  return t || null
+}
+/** first_referrer: SOLO il dominio (hostname minuscolo, senza «www.»), mai un URL con path o query string: non è un dato personale.
+ *  Accetta sia un URL completo sia un dominio nudo; scarta tutto ciò che non è un hostname valido. */
+export function referrerDomain(v: unknown): string | null {
+  let t = String(v ?? '').trim().toLowerCase()
+  if (!t) return null
+  const hasScheme = /^[a-z][a-z0-9+.-]*:\/\//.test(t)
+  if (!hasScheme && t.includes('@')) return null // un indirizzo email non è un referrer: mai trattenerne nemmeno il dominio
+  t = t.replace(/^[a-z][a-z0-9+.-]*:\/\//, '').split(/[\/?#]/)[0].replace(/^[^@]*@/, '').replace(/:\d+$/, '').replace(/^www\./, '')
+  return /^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(t) && t.length <= 100 ? t : null
 }
 export interface ImportedCampaign { campaign: string; impressions: number; clicks: number; cost: number; conversions: number }
-const NO_CAMPAIGN = '(senza utm_campaign)'
+const NO_CAMPAIGN = '(non attribuita)'
 /** Dalle righe lead (CRM) + ultimo report importato → input per buildPerformance. Il join è su click ID (attribuzione) e utm_campaign (campagna). */
 export function perfFromLeads(rows: LeadPerfRow[], imported: ImportedCampaign[], spendFallback: number | null) {
   const key = (s: string) => E.slugify(s)
   const groups = new Map<string, { campaign: string; leads: number; qualified: number }>()
   let leads = 0, qualified = 0
+  const attribution = { source: 'utm_campaign' as const, coveredLeads: 0, fallbackLeads: 0, unattributedLeads: 0 }
   for (const r of rows) {
     const a = adsAttribution(r); if (!a.attributed) continue
+    if (a.via === 'utm_campaign') attribution.coveredLeads++; else if (a.via === 'landing_page') attribution.fallbackLeads++; else attribution.unattributedLeads++
     const name = a.campaign || NO_CAMPAIGN, k = key(name)
     const g = groups.get(k) || { campaign: name, leads: 0, qualified: 0 }
     g.leads++; leads++; if (r.q) { g.qualified++; qualified++ }; groups.set(k, g)
@@ -570,7 +594,7 @@ export function perfFromLeads(rows: LeadPerfRow[], imported: ImportedCampaign[],
   }).sort((a, b) => b.qualified - a.qualified || b.leads - a.leads)
   const impTotal = imported.length ? { clicks: imported.reduce((s, c) => s + c.clicks, 0), cost: Math.round(imported.reduce((s, c) => s + c.cost, 0) * 100) / 100 } : null
   const total: PerfInput = { campaign: 'Totale ADS', leads, qualified, clicks: impTotal ? impTotal.clicks : null, spend: impTotal ? impTotal.cost : spendFallback }
-  return { total, campaigns, spendBasis: impTotal ? 'costo del report Google Ads importato' : spendFallback != null ? 'spesa del mese inserita a mano' : 'spesa non disponibile' }
+  return { total, campaigns, attribution, spendBasis: impTotal ? 'costo del report Google Ads importato' : spendFallback != null ? 'spesa del mese inserita a mano' : 'spesa non disponibile' }
 }
 /** cr misurato = lead qualificati con click ID / clic del report importato; solo sopra il campione minimo, altrimenti assunzione dichiarata. */
 export function measuredCr(total: PerfInput): { cr: number; source: 'misurato' | 'assunzione'; note: string } {

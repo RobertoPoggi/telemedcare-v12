@@ -9,6 +9,10 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { generateReport, reportBanner, reducedWindowNote } from '../../src/modules/seo-report-render'
 import { collectReportInput } from '../../src/modules/seo-report-data'
+import { clearGa4Cache, ga4Net, describeGoogleError, sanitizeGoogleText, GA4_CACHE_TTL_MS } from '../../src/modules/google-analytics'
+import { ReportUnavailableError } from '../../src/modules/seo-report-data'
+import { partialNote } from '../../src/modules/seo-report-render'
+import { createMarketingApi, QUOTA_MESSAGE, NO_DATA_MESSAGE } from '../../src/modules/marketing-api'
 import { ReportAssertionError, addDays, PctRegistry, checkPercentages, PARAMS, GEO_ACTIVATION, mapCrmChannel, CRM_UNSET, type ReportInput } from '../../src/modules/seo-report-engine'
 import { makeFixture } from './fixture'
 import { runAdsTests } from './ads-tests'
@@ -16,6 +20,10 @@ import { FIXTURES, fixtureJson, writeFixtures } from './gen-fixtures'
 
 if (process.argv.includes('--write-fixtures')) { writeFixtures(); process.exit(0) }
 
+// F3/7: la suite non fa MAI chiamate di rete reali. Ogni fetch fuori da un mock esplicito viene contata e rifiutata.
+let realNetCalls = 0
+;(globalThis as any).fetch = async (url: any) => { realNetCalls++; throw new Error('rete reale vietata nei test: ' + String(url).slice(0, 80)) }
+ga4Net.sleep = async () => {}   // il retry (2 s) non deve rallentare i test
 let fails = 0, passes = 0
 const ok = (c: boolean, msg: string) => { console.log(`${c ? 'PASS' : 'FAIL'}  ${msg}`); c ? passes++ : fails++ }
 const section = (t: string) => console.log(`\n── ${t}`)
@@ -348,11 +356,12 @@ mustFail('query senza data su intervallo diverso dalla serie', i => { i.ga4.quer
 
 // ── 6) dateRanges delle query (mock fetch) ───────────────────────────────────
 section('6. dateRanges delle query GA4 (A1/A2) con fetch simulato')
-async function runCollect(name: string) {
+async function runCollect(name: string, failWith?: (dims: string[]) => number | null, keepCache = false) {
   const f = loaded.get(name)!.input
   const reqs: { dims: string[]; body: any }[] = []
   const gscReqs: any[] = []
   const dbBinds: any[][] = []
+  if (!keepCache) clearGa4Cache()   // la cache GA4 (20 min) è per processo: ogni raccolta di test parte da cache vuota
   const origFetch = (globalThis as any).fetch
   const rowsIn = (dr: { startDate: string; endDate: string }) => f.ga4.baseRows!.filter(r => r.date >= dr.startDate && r.date <= dr.endDate)
   const ymd = (s: string) => s.replace(/-/g, '')
@@ -363,13 +372,15 @@ async function runCollect(name: string) {
     if (String(url).includes('analyticsdata')) {
       const dims: string[] = (body.dimensions || []).map((d: any) => d.name)
       reqs.push({ dims, body })
+      const st = failWith ? failWith(dims) : null
+      if (st) return { ok: false, status: st, json: async () => ({}), text: async () => '<html><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><title>Sorry</title></head><body><font face="arial">We\'re sorry... but your computer or network may be sending automated queries.</font></body></html>' }
       const src = rowsIn(body.dateRanges[0]), tot = src.reduce((s, r) => s + r.sessions, 0)
       const group = (key: (r: any) => string[]) => { const mp = new Map<string, number>(); for (const r of src) { const k = key(r); mp.set(k.join('|'), (mp.get(k.join('|')) || 0) + r.sessions) } return [...mp.entries()].map(([k, v]) => ({ dimensionValues: k.split('|').map(value => ({ value })), metricValues: [{ value: String(v) }] })) }
       let rows: any[]
       if (dims.length === 0) rows = [{ metricValues: [tot, Math.round(tot * 0.8), Math.round(tot * 0.7), 0.41, 95, tot * 2].map(v => ({ value: String(v) })) }]
       else if (dims[0] === 'date') rows = src.map(r => ({ dimensionValues: [ymd(r.date), ...(dims.length === 4 ? [r.channelGrouping, r.source, r.medium] : [r.source, r.medium])].map(value => ({ value })), metricValues: [{ value: String(r.sessions) }] }))
       else if (dims[0] === 'yearMonth') rows = group(r => [ymd(r.date).slice(0, 6), r.source, r.medium])
-      else if (dims.includes('sessionSource') && dims.length === 3) rows = group(r => [r.channelGrouping, r.source, r.medium])
+      else if (dims.includes('sessionSource') && dims.length === 3) rows = group(r => [r.channelGrouping, r.source, r.medium]).map(x => ({ ...x, metricValues: [x.metricValues[0], { value: String(Math.round(Number(x.metricValues[0].value) * 0.8)) }, { value: '0.4' }] }))
       else if (dims.includes('sessionSource') && dims.length === 2) rows = group(r => [r.source, r.medium]).map(x => ({ ...x, metricValues: [x.metricValues[0], { value: '0.4' }] }))
       else if (dims[0] === 'deviceCategory') rows = [{ dimensionValues: [{ value: 'mobile' }], metricValues: [{ value: String(tot) }] }]
       else rows = []
@@ -412,6 +423,127 @@ async function runCollect(name: string) {
   ok(reqs.find(r => r.dims[0] === 'yearMonth')!.body.dateRanges[0].endDate === '2026-10-28', 'serie mensile fino all’ultimo giorno consolidato')
   const gen = generateReport(input, { diagnostic: true })
   ok(gen.model.cons.tailDays === 3 && gen.errors.length === 0, `report dai dati simulati: ${gen.model.cons.tailDays} giorni in consolidamento, nessun errore`)
+}
+
+
+// ── F) Errori GA4: bloccanti / non bloccanti, messaggi sintetici, cache, retry, stato dell'Hub ──────────
+section('F. Errori GA4 — il report non dichiara il falso quando le query falliscono')
+{
+  const HTML_BODY = '<html><head><meta http-equiv="content-type"'
+  // F2 — messaggi per status
+  ok(describeGoogleError('GA4', 429, HTML_BODY).message === 'Quota GA4 esaurita (riprova tra ~1h)', 'F2: 429 → «Quota GA4 esaurita (riprova tra ~1h)»')
+  ok(describeGoogleError('GA4', 401, 'x').message === 'Credenziali Google non valide o permessi mancanti' && describeGoogleError('GA4', 403, 'x').message === 'Credenziali Google non valide o permessi mancanti', 'F2: 401/403 → credenziali non valide o permessi mancanti')
+  ok(describeGoogleError('GA4', 503, HTML_BODY).message === 'Errore temporaneo GA4 (HTTP 503)' && describeGoogleError('GA4', 500, '').message === 'Errore temporaneo GA4 (HTTP 500)', 'F2: 5xx → «Errore temporaneo GA4 (HTTP n)»')
+  ok(describeGoogleError('GA4', 418, 'x').message === 'Errore GA4 (HTTP 418)', 'F2: altro → «Errore GA4 (HTTP n)»')
+  const e400 = describeGoogleError('GA4', 400, '<html><body><b>Field foo is not a valid dimension.</b>' + 'x'.repeat(400) + '</body></html>').message
+  ok(/^Query GA4 non valida: /.test(e400) && !/[<>]/.test(e400) && e400.length <= 'Query GA4 non valida: '.length + 160, `F2: 400 → «Query GA4 non valida» + testo ripulito, max 160 caratteri (${e400.length})`)
+  ok(!/[<>]/.test(sanitizeGoogleText('<html><head><title>x</title></head><body>ciao <b>mondo</b> <scr')) && sanitizeGoogleText('a'.repeat(900)).length === 200, 'F2: sanitizzazione — via i tag (anche troncati), taglio a 200 caratteri')
+  ok(!/<html>|<head>|font face/.test(describeGoogleError('GA4', 429, HTML_BODY + '<font face="arial">').message), 'F2/3: un 429 non mostra mai il body della risposta')
+
+  // F1 — query base fallita (429): il report NON si genera
+  {
+    const errs: any[] = []
+    try { await runCollect('report-sane', dims => (dims.length === 0 ? 429 : null)) } catch (e) { errs.push(e) }
+    const e = errs[0]
+    ok(e instanceof ReportUnavailableError && e.status === 'quota_exhausted' && e.message === 'Report non disponibile: quota GA4 esaurita (riprova tra ~1h)', `F1: 429 sulla query base → nessun report, «${e?.message}»`)
+    ok(!!e && !/\n/.test(e.message) && !/<html>|<head>|font face/.test(e.message), 'F1: il messaggio è una sola riga, senza markup di Google')
+    const e2: any[] = []
+    try { await runCollect('report-sane', dims => (dims[0] === 'date' ? 429 : null)) } catch (e) { e2.push(e) }
+    ok(e2[0] instanceof ReportUnavailableError, 'F1: 429 sulla serie giornaliera → nessun report')
+    const e3: any[] = []
+    try { await runCollect('report-sane', dims => (dims.includes('sessionSource') && dims.length === 3 ? 503 : null)) } catch (e) { e3.push(e) }
+    ok(e3[0] instanceof ReportUnavailableError && e3[0].status === 'unavailable' && /errore temporaneo GA4 \(HTTP 503\)/.test(e3[0].message), 'F1: errore sulla tabella source/medium → nessun report (alimenta macro-canali e quadrature)')
+  }
+  // il fallback del nome dimensione canale scatta SOLO su «query non valida», non su 429
+  {
+    const { reqs } = await runCollect('report-sane', dims => (dims[0] === 'date' && dims.includes('sessionDefaultChannelGroup') ? 400 : null))
+    ok(reqs.filter(r => r.dims[0] === 'date').length === 2, 'dimensione canale: su 400 («query non valida») si prova il secondo nome')
+    let n429 = 0
+    try { await runCollect('report-sane', dims => { if (dims[0] === 'date') { n429++; return 429 } return null }) } catch (_) { /* atteso */ }
+    ok(n429 === 2, `dimensione canale: su 429 NESSUN secondo nome (solo il retry: ${n429} richieste = 1 + 1 retry, non 4)`)
+  }
+
+  // F1 — sezioni accessorie in 429: il PDF si genera, il banner lo dichiara
+  {
+    const { input } = await runCollect('report-sane', dims => (['country', 'deviceCategory', 'pagePath'].includes(dims[0]) ? 429 : null))
+    ok(input.queryStats!.failed === 3 && input.queryStats!.total >= 8, `F5: «${input.queryStats!.failed} query fallite su ${input.queryStats!.total} totali» (contatori dalla raccolta)`)
+    ok(input.ga4.countries === null && input.ga4.devices === null && input.ga4.topPages === null && input.ga4.control !== null, 'sezioni accessorie nulle, query base intatta')
+    const r = generateReport(input)
+    const text = r.html.replace(/<style[\s\S]*?<\/style>|<script[\s\S]*?<\/script>/g, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')
+    const bannerText = (r.html.match(/<div class="banner[^"]*">([\s\S]*?)<\/div>/) || [])[1] || ''
+    ok(!r.hardFailed && /Dati parziali: 3 sezioni non disponibili per quota GA4/.test(bannerText), `F1: PDF generato, banner «${bannerText.replace(/<[^>]+>/g, '').slice(0, 90)}»`)
+    ok(!/verificat/i.test(bannerText) && !/dati completi/i.test(text.slice(0, 600)), 'regola F: nessuna frase afferma che dati o quadrature sono «verificati/completi» quando una sezione manca')
+    ok(/dato non disponibile — pagine GA4 non recuperate/.test(text) && /dato non disponibile — paesi GA4 non recuperati/.test(text) && /dato non disponibile — device GA4 non recuperati/.test(text), 'sezioni interessate: «dato non disponibile», mai una tabella vuota')
+    ok(!/<canvas id="deviceChart"/.test(r.html), 'device assente: nessun grafico vuoto')
+    const avv = (r.html.match(/<strong>Avvisi:<\/strong>([\s\S]*?)<\/div>/) || [])[1] || ''
+    ok(/3 query fallite su \d+ totali/.test(avv) && !/\n/.test(avv) && avv.length < 420 && !/https?:\/\//.test(avv), `F5: riquadro avvisi su una riga, senza URL (${avv.length} caratteri)`)
+    ok(!/<html>|<head>|font face|meta http-equiv/.test(avv + bannerText), 'F3 (criterio): nessun markup di Google nel report')
+    ok(/3 query fallite su/.test(text.slice(0, 900)), 'intestazione: «N query fallite su M» al posto di «N avvisi»')
+    ok(partialNote({ total: 12, failed: 6, failures: [] } as any)?.text.startsWith('Dati parziali: 6 sezioni') === true && partialNote({ total: 12, failed: 0, failures: [] }) === null, 'partialNote: null se nessuna query è fallita')
+  }
+  // senza errori: nessun banner «Dati parziali»
+  {
+    const { input } = await runCollect('report-sane')
+    const r = generateReport(input)
+    ok(input.queryStats!.failed === 0 && !/Dati parziali/.test(r.html) && !/Avvisi:/.test(r.html), `nessuna query fallita (0 su ${input.queryStats!.total}) → nessun banner «Dati parziali», nessun riquadro avvisi`)
+  }
+
+  // F3 — source/medium unificata, cache, retry
+  {
+    const { reqs } = await runCollect('report-sane')
+    const sm = reqs.filter(r => r.body.dimensions && r.body.dimensions.some((d: any) => d.name === 'sessionSource') && r.dims[0] !== 'date' && r.dims[0] !== 'yearMonth' && r.dims[0] !== 'landingPagePlusQueryString' && r.dims[0] !== 'browser')
+    ok(sm.length === 1 && sm[0].body.metrics.map((m: any) => m.name).join(',') === 'sessions,activeUsers,bounceRate', `F3: una sola query source/medium con tutte le metriche (${sm.length} chiamata: ${sm[0]?.body.metrics.map((m: any) => m.name).join(',')})`)
+    const first = await runCollect('report-sane')
+    const second = await runCollect('report-sane', undefined, true)
+    ok(first.reqs.length > 0 && second.reqs.length === 0, `F3: due generazioni consecutive entro ${GA4_CACHE_TTL_MS / 60000} minuti → la seconda non fa nuove chiamate GA4 (${first.reqs.length} → ${second.reqs.length})`)
+    ok(GA4_CACHE_TTL_MS === 20 * 60 * 1000, 'F3: TTL della cache = 20 minuti')
+    let t = ga4Net.now; let clock = Date.now(); ga4Net.now = () => clock
+    clearGa4Cache(); await runCollect('report-sane', undefined, true); clock += GA4_CACHE_TTL_MS + 1000
+    const aged = await runCollect('report-sane', undefined, true)
+    ga4Net.now = t
+    ok(aged.reqs.length > 0, 'F3: oltre i 20 minuti la cache scade e GA4 viene interrogata di nuovo')
+    // retry: 429 una volta → un solo retry riuscito, nessun errore
+    let seen = 0, sleeps: number[] = []
+    const oldSleep = ga4Net.sleep; ga4Net.sleep = async ms => { sleeps.push(ms) }
+    const retried = await runCollect('report-sane', dims => (dims.length === 0 && ++seen === 1 ? 429 : null))
+    ga4Net.sleep = oldSleep
+    ok(retried.input.queryStats!.failed === 0 && sleeps.length === 1 && sleeps[0] >= 2000 && sleeps[0] < 3000, `F3: un 429 isolato → un solo retry dopo ${sleeps[0]} ms (2 s + jitter), report completo`)
+    // 429 persistente: un solo tentativo in più per query, mai loop
+    let persistent = 0
+    try { await runCollect('report-sane', dims => (dims.length === 0 ? (persistent++, 429) : null)) } catch (_) { /* atteso */ }
+    ok(persistent === 2, `F3: 429 persistente → 2 richieste in tutto (1 + 1 retry), nessun loop (${persistent})`)
+  }
+
+  // F4 — Hub: stato quota_exhausted ≠ nessun dato
+  {
+    const hub = createMarketingApi()
+    const fakeDb: any = { prepare: () => { const q: any = { bind: () => q, all: async () => ({ results: [] }), first: async () => null, run: async () => ({ meta: {} }) }; return q } }
+    const cookie = 'session=' + encodeURIComponent(JSON.stringify({ expiresAt: new Date(Date.now() + 3600e3).toISOString(), user: { name: 'test', email: 't@e.it' } }))
+    const env = { DB: fakeDb, GOOGLE_REFRESH_TOKEN: 'r', GOOGLE_OAUTH_CLIENT_ID: 'c', GOOGLE_OAUTH_CLIENT_SECRET: 's' }
+    const orig = (globalThis as any).fetch; let analyticsCalls = 0
+    ;(globalThis as any).fetch = async (url: string) => {
+      if (String(url).includes('oauth2.googleapis.com')) return { ok: true, status: 200, json: async () => ({ access_token: 't' }), text: async () => '{}' }
+      analyticsCalls++
+      return { ok: false, status: 429, json: async () => ({}), text: async () => '<html><head><title>429</title></head></html>' }
+    }
+    try {
+      clearGa4Cache()
+      const get = async (path: string, init?: any) => { const r = await hub.request(path, { ...init, headers: { Cookie: cookie, ...(init?.headers || {}) } }, env as any); return { status: r.status, body: await r.json() as any } }
+      const si = await get('/ads/seo-inputs?giorni=28')
+      ok(si.body.status === 'quota_exhausted' && si.body.message === QUOTA_MESSAGE && si.body.success === false, `F4: seo-inputs con GA4 in 429 → status «quota_exhausted» («${String(si.body.message).slice(0, 60)}…»)`)
+      ok(!JSON.stringify(si.body).includes('0/10') && !JSON.stringify(si.body).includes('dati insufficienti'), 'F4: seo-inputs in quota esaurita non contiene «dati insufficienti: 0/10»')
+      const dc = await get('/ads/decisions')
+      ok(dc.body.status === 'quota_exhausted' && dc.body.message === QUOTA_MESSAGE && dc.body.insufficient == null && !JSON.stringify(dc.body).includes('0/10'), 'F4: Decisioni di oggi in quota esaurita → messaggio di quota, MAI «dati insufficienti: 0/10»')
+      ok(/Riprova tra ~1h: i lead non sono zero/.test(dc.body.message), 'F4: il messaggio dice che i lead non sono zero')
+      const op = await get('/ads/optimize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targetQualifiedLeads: 10, maxCpl: 15 }) })
+      ok(op.body.status === 'quota_exhausted', 'F4: optimize espone lo stesso status')
+      for (const pth of ['/ads/lists', '/ads/projection']) { const x = await get(pth); ok(x.body.status === 'quota_exhausted', `F4: ${pth} → quota_exhausted`) }
+    } finally { (globalThis as any).fetch = orig }
+    ok(analyticsCalls > 0, `F4: il test ha davvero attraversato il codice GA4 (${analyticsCalls} chiamate simulate)`)
+    ok(NO_DATA_MESSAGE === 'Nessuna query disponibile nel periodo', 'F4: messaggio «no_data»')
+  }
+
+  ok(realNetCalls === 0, `F7: la suite non ha effettuato nessuna chiamata di rete reale (${realNetCalls})`)
 }
 
 await runAdsTests(ok, section)

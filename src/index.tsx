@@ -53,7 +53,8 @@ import { renderGoogleAdsStudio } from './modules/google-ads-studio'
 import { renderSeoGeoStudio } from './modules/seo-geo-studio'
 import { createMarketingApi } from './modules/marketing-api'
 import { fetchFullAnalyticsReport, detectAuthMethod } from './modules/google-analytics'
-import { collectReportInput } from './modules/seo-report-data'
+import { collectReportInput, ReportUnavailableError } from './modules/seo-report-data'
+import { cleanUtmCampaign, referrerDomain } from './modules/ads-decision'
 import { generateReport } from './modules/seo-report-render'
 import { ReportAssertionError, GEO_ACTIVATION } from './modules/seo-report-engine'
 import * as SignatureManager from './modules/signature-manager'
@@ -23469,6 +23470,7 @@ app.post('/api/leads/public', async (c) => {
             landing_variant, page_url,
             prezzo_anno, prezzo_rinnovo,
             gclid, gbraid, wbraid, click_ts, landing_page,
+            first_referrer,
             fonte: fonteBody } = body
 
     // Attribuzione Google Ads: validazione (il form invia i click ID solo con consenso marketing)
@@ -23490,6 +23492,21 @@ app.post('/api/leads/public', async (c) => {
         ).bind(_adsGclid, _adsGbraid, _adsWbraid, _adsTs, _adsLanding, leadIdForAds).run()
       } catch (adsErr: any) {
         console.error('⚠️ [LANDING] salvataggio click ID fallito (lead comunque salvato):', adsErr?.message)
+      }
+    }
+
+    // Attribuzione: campagna (utm_campaign) e dominio del primo accesso (first_referrer, solo hostname).
+    // UPDATE dopo l'INSERT, come per i click ID: se la colonna non è migrabile il lead resta comunque salvato.
+    const _utmCampaign = cleanUtmCampaign(utm_campaign), _firstRef = referrerDomain(first_referrer)
+    const _saveAttribution = async (leadIdForAttr: string, onlyIfEmpty: boolean) => {
+      if (!_utmCampaign && !_firstRef) return
+      try {
+        const { ensureLeadAttributionColumns } = await import('./modules/workflow-email-manager')
+        await ensureLeadAttributionColumns(c.env.DB)
+        const f = (col: string) => onlyIfEmpty ? `${col} = CASE WHEN ${col} IS NULL OR ${col} = '' THEN ? ELSE ${col} END` : `${col} = COALESCE(?, ${col})`
+        await c.env.DB.prepare(`UPDATE leads SET ${f('utm_campaign')}, ${f('first_referrer')} WHERE id = ?`).bind(_utmCampaign, _firstRef, leadIdForAttr).run()
+      } catch (attrErr: any) {
+        console.error('⚠️ [LANDING] salvataggio attribuzione fallito (lead comunque salvato):', attrErr?.message)
       }
     }
 
@@ -23542,6 +23559,7 @@ app.post('/api/leads/public', async (c) => {
       } catch (_) {}
       // Click ID: il lead esiste già, completa solo se mancanti (primo click vince)
       await _saveAdsClick((existing as any).id, true)
+      await _saveAttribution((existing as any).id, true)
       return c.json({ success: true, id: (existing as any).id, duplicate: true })
     }
 
@@ -23594,6 +23612,7 @@ app.post('/api/leads/public', async (c) => {
     ).run()
 
     await _saveAdsClick(leadId, false)
+    await _saveAttribution(leadId, false)
 
     console.log(`✅ [LANDING] Nuovo lead salvato: ${leadId} (${email}) — fonte: ${fonteEffettiva}`)
 
@@ -32225,6 +32244,13 @@ app.get('/api/analytics/live-seo-report', async (c) => {
         failures: e.failures.map((f: any) => ({ id: f.id, label: f.label, value: f.value })),
         hint: 'Aggiungi ?diagnostic=1 per generare comunque il report con il banner di errore bloccante'
       }, 500)
+    }
+    if (e instanceof ReportUnavailableError) {
+      // F1: una query base è fallita → nessun PDF con sezioni vuote, una sola riga di spiegazione
+      console.error('❌ live-seo-report non disponibile:', e.message)
+      const status = e.kind === 'quota' ? 429 : 503
+      if (c.req.query('format') === 'json') return c.json({ success: false, status: e.status, error: e.message }, status)
+      return c.html(`<!doctype html><html lang="it"><head><meta charset="utf-8"><title>Report non disponibile</title></head><body style="font-family:sans-serif;padding:32px"><p>${String(e.message).replace(/[<>&]/g, ' ')}</p></body></html>`, status)
     }
     console.error('❌ live-seo-report error:', e?.message, e?.stack)
     return c.json({ error: e?.message || 'unknown', stack: e?.stack?.slice(0, 500) }, 500)

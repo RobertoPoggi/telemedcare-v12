@@ -25,6 +25,8 @@ export interface ReportJson {
     adsAttributed: number | null; adsAttributedQualified: number | null
     byChannel: { channel: string; leads: number; qualified: number }[]
   }
+  /** Esito delle query di raccolta: distingue «quota esaurita / errore» da «nessun dato». */
+  sources: { total: number; failed: number; failures: { label: string; api: string; kind: string; message: string }[] } | null
   quality: { blocking: { id: string; label: string; value: string }[]; anomalies: { id: string; label: string }[] }
   notes: Record<string, string>
   generatedAt: string
@@ -95,6 +97,7 @@ export function buildReportJson(res: GenerateResult): ReportJson {
 
   return {
     period, channels, engines, aiTools, direct, gsc, leads,
+    sources: i.queryStats ? { total: i.queryStats.total, failed: i.queryStats.failed, failures: i.queryStats.failures.map(f => ({ label: f.label, api: f.api, kind: f.kind, message: f.message })) } : null,
     quality: {
       blocking: res.errors.map(e => ({ id: e.id, label: e.label, value: e.value })),
       anomalies: res.anomalies.map(a => ({ id: a.id, label: a.label })),

@@ -161,12 +161,14 @@ function normalizePlan(p: any): E.PlanData {
 
 
 // ═══════════════ ADS guidate dai dati SEO — helper (la logica pura è in ads-decision.ts) ═══════════════
-type SeoJsonRes = { ok: true; json: any } | { ok: false; error: string; notConfigured?: boolean }
+/** F4: tre esiti distinti. `quota_exhausted` NON è «nessun dato»: i lead non sono zero, GA4 non ha risposto. */
+export type HubStatus = 'ok' | 'quota_exhausted' | 'no_data' | 'unavailable'
+type SeoJsonRes = { ok: true; json: any } | { ok: false; error: string; notConfigured?: boolean; status: HubStatus }
 const _seoCache = new Map<string, { at: number; json: any }>()
 /** Parte 1 → Hub: stessa pipeline del PDF (collectSeoReportJson). Cache di 5 minuti per isolate: lo stesso periodo non rilancia GA4/GSC a ogni pannello. */
 async function loadSeoJson(env: any, days: number): Promise<SeoJsonRes> {
   const g = googleCfg(env)
-  if (!g.ok) return { ok: false, error: 'GA4 / Search Console non collegati (manca GOOGLE_SERVICE_ACCOUNT_JSON oppure OAuth)', notConfigured: true }
+  if (!g.ok) return { ok: false, error: 'GA4 / Search Console non collegati (manca GOOGLE_SERVICE_ACCOUNT_JSON oppure OAuth)', notConfigured: true, status: 'unavailable' }
   const now = new Date(); const end = now.toISOString().slice(0, 10); const start = new Date(now.getTime() - days * 864e5).toISOString().slice(0, 10)
   const key = `${days}|${end}`; const hit = _seoCache.get(key)
   if (hit && Date.now() - hit.at < 300000) return { ok: true, json: hit.json }
@@ -175,8 +177,13 @@ async function loadSeoJson(env: any, days: number): Promise<SeoJsonRes> {
     const json = await collectSeoReportJson(g.cfg, env.DB, { now, startDate: start, endDate: end, diagnostic: true })
     _seoCache.set(key, { at: Date.now(), json })
     return { ok: true, json }
-  } catch (e: any) { return { ok: false, error: String(e?.message || e).slice(0, 300) } }
+  } catch (e: any) {
+    const q = e?.status === 'quota_exhausted' || e?.kind === 'quota'
+    return { ok: false, status: q ? 'quota_exhausted' : 'unavailable', error: q ? QUOTA_MESSAGE : String(e?.message || e).replace(/<[^>]*(>|$)/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200) }
+  }
 }
+export const QUOTA_MESSAGE = 'Dati GA4 temporaneamente non disponibili (quota esaurita). Riprova tra ~1h: i lead non sono zero.'
+export const NO_DATA_MESSAGE = 'Nessuna query disponibile nel periodo'
 const clampDays = (v: any, d = 28) => Math.min(120, Math.max(7, Number(v) || d))
 
 /** Keyword attive: piani approvati/esportati/in corso + il preset «Primo lancio» (il piano di riferimento). */
@@ -199,7 +206,7 @@ async function loadImported(db: any): Promise<any | null> {
 }
 /** Lead attribuiti ad ADS (click ID o landing con utm_medium=cpc) con flag «qualificato» calcolato dalla definizione unica, + totale lead del periodo. */
 async function loadPerfRows(db: any, days: number) {
-  try { const { ensureAdsClickColumns } = await import('./workflow-email-manager'); await ensureAdsClickColumns(db) } catch (_) { /* colonne già presenti */ }
+  try { const m = await import('./workflow-email-manager'); await m.ensureAdsClickColumns(db); await m.ensureLeadAttributionColumns(db) } catch (_) { /* colonne già presenti */ }
   const since = new Date(Date.now() - days * 864e5).toISOString().slice(0, 19).replace('T', ' ')
   const hasUtm = await leadsHasColumn(db, 'utm_campaign')
   const q = async (sql: string, ...b: any[]) => { try { return (await db.prepare(sql).bind(...b).all()).results || [] } catch (_) { return null } }
@@ -454,7 +461,9 @@ export function createMarketingApi() {
         sample: b.sample, sufficient: b.sufficient, definition: b.definition,
         campaigns: b.campaigns, stops: b.stops, thresholds: b.thresholds, spendBasis: ap.perf.spendBasis, note: b.note,
         importedReport: ap.imported ? { kind: ap.imported.kind, savedAt: ap.imported.savedAt, totals: ap.imported.totals } : null,
-        attribution: ap.pr.hasUtmColumn ? 'click ID Google oppure landing con utm_medium=cpc; campagna da utm_campaign' : 'click ID Google oppure landing con utm_medium=cpc; la colonna utm_campaign non esiste nei lead: la campagna si legge dall\'URL di landing (landing_page)',
+        // Campagna = leads.utm_campaign; l'URL di landing_page è solo il fallback dei lead storici (prima del salvataggio della colonna)
+        attribution: { ...ap.perf.attribution, columnPresent: ap.pr.hasUtmColumn,
+          note: ap.perf.attribution.fallbackLeads > 0 ? `${ap.perf.attribution.fallbackLeads} lead attribuiti alla campagna leggendo l'URL di landing (storici, senza utm_campaign salvata)` : null },
       }
     } catch (e: any) { ext = { qualifiedLeads: null, qcpl: null, qualificationRate: null, definition: QUALIFIED_LEAD.definition, error: 'dato non disponibile: ' + String(e?.message || e).slice(0, 160) } }
     return c.json({ success: true, days, leads: Number((tot[0] as any)?.n || 0), leadsGoogle, byStatus, byChannel: byCampaign, spend, month, spendMonth, cpl: leadsGoogle && spendMonth ? +(spendMonth / leadsGoogle).toFixed(2) : null, target: { leadsMonth: [30, 40], cpl: [12, 15] }, ...ext })
@@ -478,22 +487,30 @@ export function createMarketingApi() {
   /** Query GSC classificate (Parte 2) a partire dal JSON della Parte 1 + guardrail bloccante sulle negative. */
   async function seoInputs(c: Ctx, days: number) {
     const r = await loadSeoJson(c.env, days)
-    if (!r.ok) return { ok: false as const, error: r.error, notConfigured: (r as any).notConfigured }
+    if (!r.ok) return { ok: false as const, error: r.error, notConfigured: (r as any).notConfigured, status: r.status }
     await ensureTables(c.env.DB)
     const inputs = D.buildSeoInputs(r.json, await activeKeywords(c.env.DB))
-    return { ok: true as const, json: r.json, inputs }
+    // GSC/GA4 parzialmente fallite per quota: i dati letti non sono «nessun dato»
+    const quotaPartial = !!r.json?.sources?.failures?.some((f: any) => f.kind === 'quota')
+    const status: HubStatus = !inputs.available ? (quotaPartial ? 'quota_exhausted' : 'unavailable') : (inputs.items && inputs.items.length > 0 ? 'ok' : 'no_data')
+    return { ok: true as const, json: r.json, inputs, status }
   }
+  /** F4: risposta uniforme quando GA4/GSC non hanno risposto. `quota_exhausted` ≠ «nessun dato». */
+  const seoFail = (c: Ctx, r: { error: string; notConfigured?: boolean; status: HubStatus }) =>
+    c.json({ success: false, status: r.status, error: r.error, message: r.status === 'quota_exhausted' ? QUOTA_MESSAGE : r.error, notConfigured: r.notConfigured }, 200)
+  const noDataResp = (c: Ctx, reason: string | null, status: HubStatus) =>
+    c.json({ success: false, status, error: reason || NO_DATA_MESSAGE, message: status === 'quota_exhausted' ? QUOTA_MESSAGE : (reason || NO_DATA_MESSAGE) }, 200)
   const periodDaysOf = (json: any, fallback: number) => Number(json?.gsc?.period?.days) > 0 ? Number(json.gsc.period.days) : fallback
 
   // Parte 2
   api.get('/ads/seo-inputs', async (c) => {
     const days = clampDays(c.req.query('giorni'))
     const r = await seoInputs(c, days)
-    if (!r.ok) return c.json({ success: false, error: r.error, notConfigured: r.notConfigured }, 200)
+    if (!r.ok) return seoFail(c, r)
     const i = r.inputs
     const blocked = i.blocking.length > 0
     return c.json({
-      success: true, valid: !blocked,
+      success: true, status: r.status, message: r.status === 'ok' ? null : r.status === 'quota_exhausted' ? QUOTA_MESSAGE : (i.reason || NO_DATA_MESSAGE), valid: !blocked,
       blockingError: blocked ? `${i.blocking.length} negativa/e colpiscono keyword attive: correggi prima di procedere` : null,
       period: r.json.gsc?.period || r.json.period || null, available: i.available, reason: i.reason,
       counts: i.counts, coverage: i.coverage, items: i.items, blocking: i.blocking, negativeCandidates: i.negativeCandidates,
@@ -522,8 +539,9 @@ export function createMarketingApi() {
     if (cap != null && !(cap > 0)) return c.json({ success: false, error: 'budgetCap (€/mese) deve essere maggiore di zero oppure assente' }, 400)
     const days = clampDays(b.giorni)
     const r = await seoInputs(c, days)
-    if (!r.ok) return c.json({ success: false, error: r.error, notConfigured: r.notConfigured }, 200)
-    if (!r.inputs.available || !r.inputs.items) return c.json({ success: false, error: r.inputs.reason || 'query Search Console non disponibili' }, 200)
+    if (!r.ok) return seoFail(c, r)
+    if (!r.inputs.available || !r.inputs.items) return noDataResp(c, r.inputs.reason || 'query Search Console non disponibili', r.status)
+    if (r.status === 'no_data') return noDataResp(c, NO_DATA_MESSAGE, 'no_data')
     const perf = await adsPerformance(c.env.DB, 90)
     const measured = D.measuredCr(perf.perf.total)
     const crDeclared = _num(b.cr)
@@ -531,7 +549,7 @@ export function createMarketingApi() {
     const cpcIn = _num(b.cpc)
     const inp: D.OptimizeInput = { targetQualifiedLeads: target, maxCpl, budgetCap: cap, cr: cr.cr, crSource: cr.source, cpc: cpcIn > 0 ? cpcIn : D.DEFAULTS.cpc, cpcSource: cpcIn > 0 ? 'inserito' : 'assunzione', periodDays: periodDaysOf(r.json, days), items: r.inputs.items }
     const out = D.optimizeBudget(inp)
-    return c.json({ success: true, ...out, crNote: cr.note, range: D.optimizeRange(inp), blocking: r.inputs.blocking, note: 'Proposta: nessuna campagna viene creata o modificata su Google Ads.' })
+    return c.json({ success: true, status: r.status, ...out, crNote: cr.note, range: D.optimizeRange(inp), blocking: r.inputs.blocking, note: 'Proposta: nessuna campagna viene creata o modificata su Google Ads.' })
   })
 
   // Parte 4 — import del report di Google Ads (CSV, nessuna API)
@@ -610,8 +628,16 @@ export function createMarketingApi() {
     await ensureTables(c.env.DB)
     const days = clampDays(c.req.query('giorni'))
     const perf = await adsPerformance(c.env.DB, 90)
-    if (!perf.built.sufficient) return c.json({ success: true, rows: [], insufficient: `${perf.built.sample.message} lead qualificati`, max: D.MAX_DECISIONS, qualified: perf.built.sample.qualified })
+    // F4: lo stato di GA4/GSC si legge PRIMA. Con quota esaurita il pannello dice «quota esaurita», mai «dati insufficienti: 0/10».
     const r = await seoInputs(c, days)
+    const status: HubStatus = r.ok ? r.status : r.status
+    if (status === 'quota_exhausted') return c.json({ success: true, status, message: QUOTA_MESSAGE, rows: [], insufficient: null, max: D.MAX_DECISIONS, qualified: perf.built.sample.qualified, seoAvailable: false, seoError: QUOTA_MESSAGE })
+    // «dati insufficienti: N/10» è consentito SOLO con status ok (dati letti, query classificate)
+    if (!perf.built.sufficient) {
+      if (status === 'ok') return c.json({ success: true, status, message: null, rows: [], insufficient: `${perf.built.sample.message} lead qualificati`, max: D.MAX_DECISIONS, qualified: perf.built.sample.qualified, seoAvailable: true, seoError: null })
+      const msg = status === 'no_data' ? NO_DATA_MESSAGE : (r.ok ? (r.inputs.reason || NO_DATA_MESSAGE) : r.error)
+      return c.json({ success: true, status, message: msg, rows: [], insufficient: null, max: D.MAX_DECISIONS, qualified: perf.built.sample.qualified, seoAvailable: r.ok, seoError: r.ok ? null : r.error })
+    }
     const items = r.ok && r.inputs.available && r.inputs.items ? r.inputs.items : []
     const cr = D.measuredCr(perf.perf.total)
     const terms = ((perf.imported?.terms || []) as any[]).map(t => ({ term: String(t.term), clicks: Number(t.clicks) || 0, conversions: Number(t.conversions) || 0 }))
@@ -619,15 +645,16 @@ export function createMarketingApi() {
       qualifiedTotal: perf.perf.total.qualified, measured: perf.built.campaigns, stops: perf.built.stops, maxCpl: D.DEFAULTS.maxCpl,
       terms, convTracked: terms.some(t => t.conversions > 0), items, cpc: D.DEFAULTS.cpc, cr: cr.cr, seoCostPerLead: D.DEFAULTS.seoCostPerLead,
     })
-    return c.json({ success: true, ...out, max: D.MAX_DECISIONS, qualified: perf.built.sample.qualified, seoAvailable: r.ok, seoError: r.ok ? null : r.error, crBasis: cr.source })
+    return c.json({ success: true, status, message: null, ...out, max: D.MAX_DECISIONS, qualified: perf.built.sample.qualified, seoAvailable: r.ok, seoError: r.ok ? null : r.error, crBasis: cr.source })
   })
 
   // Parte 7 — tre liste operative (JSON, oppure ?list=brief|geo|protect&format=csv)
   api.get('/ads/lists', async (c) => {
     const days = clampDays(c.req.query('giorni'))
     const r = await seoInputs(c, days)
-    if (!r.ok) return c.json({ success: false, error: r.error, notConfigured: r.notConfigured }, 200)
-    if (!r.inputs.available || !r.inputs.items) return c.json({ success: false, error: r.inputs.reason || 'query Search Console non disponibili' }, 200)
+    if (!r.ok) return seoFail(c, r)
+    if (!r.inputs.available || !r.inputs.items) return noDataResp(c, r.inputs.reason || 'query Search Console non disponibili', r.status)
+    if (r.status === 'no_data') return noDataResp(c, NO_DATA_MESSAGE, 'no_data')
     let pages: string[] = []; try { pages = await sitemapUrls() } catch (_) { pages = [] }
     const perf = await adsPerformance(c.env.DB, 90)
     const cr = D.measuredCr(perf.perf.total)
@@ -654,8 +681,9 @@ export function createMarketingApi() {
     const target = _num(c.req.query('target')) > 0 ? _num(c.req.query('target')) : 30
     const maxCpl = _num(c.req.query('maxCpl')) > 0 ? _num(c.req.query('maxCpl')) : D.DEFAULTS.maxCpl
     const r = await seoInputs(c, days)
-    if (!r.ok) return c.json({ success: false, error: r.error, notConfigured: r.notConfigured }, 200)
-    if (!r.inputs.available || !r.inputs.items) return c.json({ success: false, error: r.inputs.reason || 'query Search Console non disponibili' }, 200)
+    if (!r.ok) return seoFail(c, r)
+    if (!r.inputs.available || !r.inputs.items) return noDataResp(c, r.inputs.reason || 'query Search Console non disponibili', r.status)
+    if (r.status === 'no_data') return noDataResp(c, NO_DATA_MESSAGE, 'no_data')
     const perf = await adsPerformance(c.env.DB, 90)
     const cr = D.measuredCr(perf.perf.total)
     const inp: D.OptimizeInput = { targetQualifiedLeads: target, maxCpl, budgetCap: null, cr: cr.cr, crSource: cr.source, cpc: D.DEFAULTS.cpc, cpcSource: 'assunzione', periodDays: periodDaysOf(r.json, days), items: r.inputs.items }

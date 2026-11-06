@@ -288,6 +288,34 @@ export async function ensureScontoRinnoviColumns(db: any): Promise<string[]> {
  * Idempotente; in memoria per isolate evita ALTER ripetuti.
  */
 let _adsColumnsReady = false
+let _attributionColumnsReady = false
+/** Colonne di attribuzione sui lead: `utm_campaign` (campagna) e `first_referrer` (dominio del primo accesso, first-touch).
+ *  Migrazione ADDITIVA e idempotente: legge lo schema reale, aggiunge solo ciò che manca, non tocca le colonne esistenti.
+ *  Eseguita due volte non produce errori (se la colonna c'è già, o se un'altra richiesta l'ha appena creata, «duplicate column» è ignorato). */
+/** Solo per i test: azzera la cache «colonne già pronte» di questo isolate. */
+export function resetLeadAttributionColumnsCache() { _attributionColumnsReady = false }
+
+export async function ensureLeadAttributionColumns(db: any): Promise<string[]> {
+  const log: string[] = []
+  if (_attributionColumnsReady) return log
+  const cols = [
+    { name: 'utm_campaign', def: 'TEXT DEFAULT NULL' },
+    { name: 'first_referrer', def: 'TEXT DEFAULT NULL' },
+  ]
+  let have = new Set<string>()
+  try { const r = await db.prepare(`SELECT name FROM pragma_table_info('leads')`).all(); have = new Set(((r?.results || []) as any[]).map(x => String(x.name))) } catch (e: any) { log.push(`⚠️ Lettura schema leads fallita: ${e?.message}`) }
+  for (const col of cols) {
+    if (have.has(col.name)) { log.push(`ℹ️ leads.${col.name} già esiste`); continue }
+    try { await db.prepare(`ALTER TABLE leads ADD COLUMN ${col.name} ${col.def}`).run(); log.push(`✅ leads.${col.name} aggiunto`) }
+    catch (e: any) {
+      if (e?.message && /duplicate column/i.test(e.message)) log.push(`ℹ️ leads.${col.name} già esiste`)
+      else log.push(`⚠️ Errore leads.${col.name}: ${e?.message}`)
+    }
+  }
+  _attributionColumnsReady = !log.some(l => l.startsWith('⚠️'))
+  return log
+}
+
 export async function ensureAdsClickColumns(db: any): Promise<string[]> {
   const log: string[] = []
   if (_adsColumnsReady) return log
