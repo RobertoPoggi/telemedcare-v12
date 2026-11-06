@@ -8,6 +8,8 @@ import { Hono } from 'hono'
 import * as E from './ads-engine'
 import { searchConsoleQuery } from './google-analytics'
 import { isSessionValid } from './auth-service'
+import * as D from './ads-decision'
+import { qualifiedSql, mapCrmChannel, QUALIFIED_LEAD } from './seo-report-engine'
 
 type Ctx = any
 
@@ -40,8 +42,21 @@ async function ensureTables(db: any) {
     updated_at TEXT DEFAULT (datetime('now'))
   )`).run()
   await db.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL, description TEXT, updated_at TEXT DEFAULT (datetime('now')))`).run()
+  // Storico del ciclo di vita: ogni transizione (e ogni modifica) lascia una riga, anche se la bozza viene poi eliminata
+  await db.prepare(`CREATE TABLE IF NOT EXISTS ads_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    plan_id INTEGER,
+    azione TEXT NOT NULL,
+    da_stato TEXT,
+    a_stato TEXT,
+    utente TEXT,
+    note TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  )`).run()
   _ensured = true
 }
+
+const userName = (u: any) => String(u?.username || u?.email || 'utente')
 
 // ── OpenAI ─────────────────────────────────────────────────────────────
 function aiConfig(env: any) {
@@ -144,6 +159,69 @@ function normalizePlan(p: any): E.PlanData {
   }
 }
 
+
+// ═══════════════ ADS guidate dai dati SEO — helper (la logica pura è in ads-decision.ts) ═══════════════
+type SeoJsonRes = { ok: true; json: any } | { ok: false; error: string; notConfigured?: boolean }
+const _seoCache = new Map<string, { at: number; json: any }>()
+/** Parte 1 → Hub: stessa pipeline del PDF (collectSeoReportJson). Cache di 5 minuti per isolate: lo stesso periodo non rilancia GA4/GSC a ogni pannello. */
+async function loadSeoJson(env: any, days: number): Promise<SeoJsonRes> {
+  const g = googleCfg(env)
+  if (!g.ok) return { ok: false, error: 'GA4 / Search Console non collegati (manca GOOGLE_SERVICE_ACCOUNT_JSON oppure OAuth)', notConfigured: true }
+  const now = new Date(); const end = now.toISOString().slice(0, 10); const start = new Date(now.getTime() - days * 864e5).toISOString().slice(0, 10)
+  const key = `${days}|${end}`; const hit = _seoCache.get(key)
+  if (hit && Date.now() - hit.at < 300000) return { ok: true, json: hit.json }
+  try {
+    const { collectSeoReportJson } = await import('./seo-report-json')
+    const json = await collectSeoReportJson(g.cfg, env.DB, { now, startDate: start, endDate: end, diagnostic: true })
+    _seoCache.set(key, { at: Date.now(), json })
+    return { ok: true, json }
+  } catch (e: any) { return { ok: false, error: String(e?.message || e).slice(0, 300) } }
+}
+const clampDays = (v: any, d = 28) => Math.min(120, Math.max(7, Number(v) || d))
+
+/** Keyword attive: piani approvati/esportati/in corso + il preset «Primo lancio» (il piano di riferimento). */
+async function activeKeywords(db: any): Promise<D.ActiveKeyword[]> {
+  const out: D.ActiveKeyword[] = []
+  try {
+    const { results } = await db.prepare(`SELECT name, plan_json FROM ads_plans WHERE status IN ('approved','exported','running')`).all()
+    for (const r of (results || []) as any[]) { try { for (const g of JSON.parse(r.plan_json).adGroups || []) for (const k of g.keywords || []) out.push({ text: String(k.text), plan: String(r.name) }) } catch (_) { /* piano illeggibile */ } }
+  } catch (_) { /* tabella assente */ }
+  const preset = E.presetPrimoLancio()
+  for (const g of preset.adGroups) for (const k of g.keywords) out.push({ text: k.text, plan: preset.campaignName + ' (preset)' })
+  return out
+}
+
+async function leadsHasColumn(db: any, col: string): Promise<boolean> {
+  try { const r = await db.prepare(`SELECT name FROM pragma_table_info('leads')`).all(); return ((r.results || []) as any[]).some(x => x.name === col) } catch (_) { return false }
+}
+async function loadImported(db: any): Promise<any | null> {
+  try { const r: any = await db.prepare(`SELECT value, updated_at FROM settings WHERE key='ads_last_report'`).first(); return r ? { ...JSON.parse(r.value), savedAt: r.updated_at } : null } catch (_) { return null }
+}
+/** Lead attribuiti ad ADS (click ID o landing con utm_medium=cpc) con flag «qualificato» calcolato dalla definizione unica, + totale lead del periodo. */
+async function loadPerfRows(db: any, days: number) {
+  try { const { ensureAdsClickColumns } = await import('./workflow-email-manager'); await ensureAdsClickColumns(db) } catch (_) { /* colonne già presenti */ }
+  const since = new Date(Date.now() - days * 864e5).toISOString().slice(0, 19).replace('T', ' ')
+  const hasUtm = await leadsHasColumn(db, 'utm_campaign')
+  const q = async (sql: string, ...b: any[]) => { try { return (await db.prepare(sql).bind(...b).all()).results || [] } catch (_) { return null } }
+  const rows = await q(`SELECT gclid, gbraid, wbraid, landing_page, ${hasUtm ? 'utm_campaign' : "NULL AS utm_campaign"}, CASE WHEN ${qualifiedSql()} THEN 1 ELSE 0 END AS q
+    FROM leads WHERE created_at >= ? AND ((gclid IS NOT NULL AND gclid!='') OR (gbraid IS NOT NULL AND gbraid!='') OR (wbraid IS NOT NULL AND wbraid!='') OR landing_page LIKE '%utm_medium=cpc%')`, since)
+  const all = await q(`SELECT COUNT(*) AS n, COALESCE(SUM(CASE WHEN ${qualifiedSql()} THEN 1 ELSE 0 END),0) AS q FROM leads WHERE created_at >= ?`, since)
+  return { rows: rows as any[] | null, all: all ? { total: Number((all[0] as any)?.n || 0), qualified: Number((all[0] as any)?.q || 0) } : null, hasUtmColumn: hasUtm, since }
+}
+async function spendOfMonth(db: any): Promise<number | null> {
+  try { const r: any = await db.prepare(`SELECT value FROM settings WHERE key='ads_spend_log'`).first(); const v = r ? JSON.parse(r.value)[new Date().toISOString().slice(0, 7)] : null; return Number(v) > 0 ? Number(v) : null } catch (_) { return null }
+}
+/** Performance ADS misurata: la usano /performance, /ads/optimize (cr), /ads/decisions e /ads/projection. */
+async function adsPerformance(db: any, days: number) {
+  const pr = await loadPerfRows(db, days)
+  const imported = await loadImported(db)
+  const spend = await spendOfMonth(db)
+  const perf = D.perfFromLeads((pr.rows || []) as any[], (imported?.campaigns || []) as D.ImportedCampaign[], spend)
+  const built = D.buildPerformance({ total: perf.total, campaigns: perf.campaigns, maxCpl: D.DEFAULTS.maxCpl, seoCostPerLead: D.DEFAULTS.seoCostPerLead })
+  return { pr, imported, perf, built }
+}
+const _num = (v: any) => (v === '' || v == null ? NaN : Number(v))
+
 export function createMarketingApi() {
   const api = new Hono<any>()
 
@@ -206,10 +284,14 @@ export function createMarketingApi() {
     const plan = normalizePlan(b.plan); const u: any = c.get('user')
     const name = String(b.name || plan.campaignName).slice(0, 120)
     if (b.id) {
+      const prev: any = await c.env.DB.prepare('SELECT status FROM ads_plans WHERE id=?').bind(b.id).first()
+      if (prev && prev.status !== 'draft' && !D.canModify(prev.status)) return c.json({ success: false, error: `La bozza è nello stato «${D.LIFECYCLE[prev.status as D.PlanState]?.label || prev.status}»: non si modifica. Duplicala come nuova bozza.` }, 409)
       const r = await c.env.DB.prepare(`UPDATE ads_plans SET name=?, plan_json=?, status='draft', approved_by=NULL, approved_at=NULL, exported_at=NULL, updated_at=datetime('now') WHERE id=?`).bind(name, JSON.stringify(plan), b.id).run()
+      await D.logHistory(c.env.DB, { planId: b.id, azione: 'modifica', da: prev?.status || null, a: 'draft', utente: userName(u) })
       return c.json({ success: true, id: Number(b.id), status: 'draft', issues: E.lintPlan(plan), changed: r.meta?.changes ?? 1 })
     }
     const r = await c.env.DB.prepare(`INSERT INTO ads_plans (name,status,origin,plan_json,created_by) VALUES (?,?,?,?,?)`).bind(name, 'draft', plan.origin || 'preset', JSON.stringify(plan), u?.username || null).run()
+    await D.logHistory(c.env.DB, { planId: r.meta?.last_row_id, azione: 'crea', da: null, a: 'draft', utente: userName(u) })
     return c.json({ success: true, id: r.meta?.last_row_id, status: 'draft', issues: E.lintPlan(plan) })
   })
   // Approvazione: possibile solo senza errori di lint. Resta una decisione umana.
@@ -221,17 +303,29 @@ export function createMarketingApi() {
     const errors = issues.filter(i => i.level === 'error')
     if (errors.length) return c.json({ success: false, error: 'Ci sono ' + errors.length + ' errori da correggere prima dell\'approvazione', issues }, 409)
     const u: any = c.get('user')
-    await c.env.DB.prepare(`UPDATE ads_plans SET status='approved', approved_by=?, approved_at=datetime('now'), updated_at=datetime('now') WHERE id=?`).bind(u?.username || 'utente', r.id).run()
+    const t = D.transition('approva', r.status)
+    if (!t.ok) return c.json({ success: false, error: t.error }, 409)
+    await c.env.DB.prepare(`UPDATE ads_plans SET status='approved', approved_by=?, approved_at=datetime('now'), updated_at=datetime('now') WHERE id=?`).bind(userName(u), r.id).run()
+    await D.logHistory(c.env.DB, { planId: r.id, azione: 'approva', da: r.status, a: 'approved', utente: userName(u) })
     return c.json({ success: true, status: 'approved', issues })
   })
   api.post('/plans/:id/revoke', async (c) => {
     await ensureTables(c.env.DB)
-    await c.env.DB.prepare(`UPDATE ads_plans SET status='draft', approved_by=NULL, approved_at=NULL, updated_at=datetime('now') WHERE id=?`).bind(c.req.param('id')).run()
+    const r: any = await c.env.DB.prepare('SELECT id,status FROM ads_plans WHERE id=?').bind(c.req.param('id')).first()
+    if (!r) return c.json({ success: false, error: 'Bozza non trovata' }, 404)
+    const t = D.transition('revoca', r.status)
+    if (!t.ok) return c.json({ success: false, error: t.error }, 409)
+    await c.env.DB.prepare(`UPDATE ads_plans SET status='draft', approved_by=NULL, approved_at=NULL, updated_at=datetime('now') WHERE id=?`).bind(r.id).run()
+    await D.logHistory(c.env.DB, { planId: r.id, azione: 'revoca', da: r.status, a: 'draft', utente: userName(c.get('user')) })
     return c.json({ success: true, status: 'draft' })
   })
   api.delete('/plans/:id', async (c) => {
     await ensureTables(c.env.DB)
-    await c.env.DB.prepare('DELETE FROM ads_plans WHERE id=?').bind(c.req.param('id')).run()
+    const r: any = await c.env.DB.prepare('SELECT id,status FROM ads_plans WHERE id=?').bind(c.req.param('id')).first()
+    if (!r) return c.json({ success: false, error: 'Bozza non trovata' }, 404)
+    if (r.status !== 'draft') return c.json({ success: false, error: `Si elimina solo una bozza: questa è «${D.LIFECYCLE[r.status as D.PlanState]?.label || r.status}». Revocala (se approvata) o archiviala.` }, 409)
+    await c.env.DB.prepare('DELETE FROM ads_plans WHERE id=?').bind(r.id).run()
+    await D.logHistory(c.env.DB, { planId: r.id, azione: 'elimina', da: r.status, a: null, utente: userName(c.get('user')) })
     return c.json({ success: true })
   })
   // CSV per Google Ads Editor: solo bozze approvate (Campaign Status sempre "Paused")
@@ -243,7 +337,10 @@ export function createMarketingApi() {
     const plan = JSON.parse(r.plan_json)
     const errors = E.lintPlan(plan).filter(i => i.level === 'error')
     if (errors.length) return c.json({ success: false, error: 'Errori di validazione nel piano', issues: errors }, 409)
-    await c.env.DB.prepare(`UPDATE ads_plans SET status='exported', exported_at=datetime('now') WHERE id=?`).bind(r.id).run()
+    if (r.status === 'approved') {
+      await c.env.DB.prepare(`UPDATE ads_plans SET status='exported', exported_at=datetime('now') WHERE id=?`).bind(r.id).run()
+      await D.logHistory(c.env.DB, { planId: r.id, azione: 'esporta', da: 'approved', a: 'exported', utente: userName(c.get('user')) })
+    } else await D.logHistory(c.env.DB, { planId: r.id, azione: 'riesporta', da: r.status, a: r.status, utente: userName(c.get('user')) })
     const fname = 'google-ads-editor_' + E.slugify(plan.campaignName) + '_' + new Date().toISOString().slice(0, 10) + '.csv'
     return new Response(E.buildEditorCsv(plan), { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="' + fname + '"', 'Cache-Control': 'no-store' } })
   })
@@ -346,7 +443,21 @@ export function createMarketingApi() {
     const month = new Date().toISOString().slice(0, 7)
     const leadsGoogle = Number((withClick[0] as any)?.n || 0)
     const spendMonth = Number(spend[month] || 0)
-    return c.json({ success: true, days, leads: Number((tot[0] as any)?.n || 0), leadsGoogle, byStatus, byChannel: byCampaign, spend, month, spendMonth, cpl: leadsGoogle && spendMonth ? +(spendMonth / leadsGoogle).toFixed(2) : null, target: { leadsMonth: [30, 40], cpl: [12, 15] } })
+    // Parte 5: misura sui lead QUALIFICATI (definizione unica QUALIFIED_LEAD), complessiva e per campagna (join su click ID e utm_campaign)
+    let ext: any = {}
+    try {
+      const ap = await adsPerformance(c.env.DB, days)
+      const b = ap.built
+      ext = {
+        qualifiedLeads: b.overall.qualified, qcpl: b.overall.qcpl, qualificationRate: b.overall.qualificationRate,
+        qualifiedLeadsAll: ap.pr.all ? ap.pr.all.qualified : null,
+        sample: b.sample, sufficient: b.sufficient, definition: b.definition,
+        campaigns: b.campaigns, stops: b.stops, thresholds: b.thresholds, spendBasis: ap.perf.spendBasis, note: b.note,
+        importedReport: ap.imported ? { kind: ap.imported.kind, savedAt: ap.imported.savedAt, totals: ap.imported.totals } : null,
+        attribution: ap.pr.hasUtmColumn ? 'click ID Google oppure landing con utm_medium=cpc; campagna da utm_campaign' : 'click ID Google oppure landing con utm_medium=cpc; la colonna utm_campaign non esiste nei lead: la campagna si legge dall\'URL di landing (landing_page)',
+      }
+    } catch (e: any) { ext = { qualifiedLeads: null, qcpl: null, qualificationRate: null, definition: QUALIFIED_LEAD.definition, error: 'dato non disponibile: ' + String(e?.message || e).slice(0, 160) } }
+    return c.json({ success: true, days, leads: Number((tot[0] as any)?.n || 0), leadsGoogle, byStatus, byChannel: byCampaign, spend, month, spendMonth, cpl: leadsGoogle && spendMonth ? +(spendMonth / leadsGoogle).toFixed(2) : null, target: { leadsMonth: [30, 40], cpl: [12, 15] }, ...ext })
   })
   api.post('/spend', async (c) => {
     await ensureTables(c.env.DB)
@@ -358,6 +469,216 @@ export function createMarketingApi() {
     log[month] = amount
     await c.env.DB.prepare(`INSERT INTO settings (key,value,description,updated_at) VALUES ('ads_spend_log',?,'Spesa Google Ads inserita a mano (EUR per mese)',datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=datetime('now')`).bind(JSON.stringify(log)).run()
     return c.json({ success: true, spend: log })
+  })
+
+
+  // ═══════════════ ADS guidate dai dati SEO (Parti 2-7) ═══════════════
+  // Nessuna di queste rotte scrive su Google Ads: producono proposte e liste. L'approvazione resta umana.
+
+  /** Query GSC classificate (Parte 2) a partire dal JSON della Parte 1 + guardrail bloccante sulle negative. */
+  async function seoInputs(c: Ctx, days: number) {
+    const r = await loadSeoJson(c.env, days)
+    if (!r.ok) return { ok: false as const, error: r.error, notConfigured: (r as any).notConfigured }
+    await ensureTables(c.env.DB)
+    const inputs = D.buildSeoInputs(r.json, await activeKeywords(c.env.DB))
+    return { ok: true as const, json: r.json, inputs }
+  }
+  const periodDaysOf = (json: any, fallback: number) => Number(json?.gsc?.period?.days) > 0 ? Number(json.gsc.period.days) : fallback
+
+  // Parte 2
+  api.get('/ads/seo-inputs', async (c) => {
+    const days = clampDays(c.req.query('giorni'))
+    const r = await seoInputs(c, days)
+    if (!r.ok) return c.json({ success: false, error: r.error, notConfigured: r.notConfigured }, 200)
+    const i = r.inputs
+    const blocked = i.blocking.length > 0
+    return c.json({
+      success: true, valid: !blocked,
+      blockingError: blocked ? `${i.blocking.length} negativa/e colpiscono keyword attive: correggi prima di procedere` : null,
+      period: r.json.gsc?.period || r.json.period || null, available: i.available, reason: i.reason,
+      counts: i.counts, coverage: i.coverage, items: i.items, blocking: i.blocking, negativeCandidates: i.negativeCandidates,
+      ctrTarget: i.ctrTarget, thresholds: D.THRESHOLDS, basis: 'misurato (Search Console) — i clic persi sono una stima: CTR_target è un\'assunzione',
+      notes: r.json.notes,
+    })
+  })
+  // Guardrail bloccante usabile da chiunque proponga negative (UI, import): 409 se una negativa uccide una keyword attiva
+  api.post('/ads/negatives/validate', async (c) => {
+    await ensureTables(c.env.DB)
+    const b: any = await c.req.json().catch(() => ({}))
+    const negs = (Array.isArray(b.negatives) ? b.negatives : []).map((x: any) => String(x).trim()).filter(Boolean).slice(0, 500)
+    const col = D.negativeCollisions(negs, await activeKeywords(c.env.DB))
+    if (col.length) return c.json({ success: false, valid: false, level: 'error', error: `${col.length} negativa/e bloccano keyword attive`, blocking: col }, 409)
+    return c.json({ success: true, valid: true, blocking: [] })
+  })
+
+  // Parte 3
+  api.post('/ads/optimize', async (c) => {
+    await ensureTables(c.env.DB)
+    const b: any = await c.req.json().catch(() => ({}))
+    const target = _num(b.targetQualifiedLeads), maxCpl = _num(b.maxCpl)
+    if (!(target > 0) || target > 100000) return c.json({ success: false, error: 'targetQualifiedLeads (lead qualificati/mese) deve essere un numero maggiore di zero' }, 400)
+    if (!(maxCpl > 0) || maxCpl > 10000) return c.json({ success: false, error: 'maxCpl (costo massimo per lead qualificato, €) deve essere un numero maggiore di zero' }, 400)
+    const cap = b.budgetCap == null || b.budgetCap === '' ? null : _num(b.budgetCap)
+    if (cap != null && !(cap > 0)) return c.json({ success: false, error: 'budgetCap (€/mese) deve essere maggiore di zero oppure assente' }, 400)
+    const days = clampDays(b.giorni)
+    const r = await seoInputs(c, days)
+    if (!r.ok) return c.json({ success: false, error: r.error, notConfigured: r.notConfigured }, 200)
+    if (!r.inputs.available || !r.inputs.items) return c.json({ success: false, error: r.inputs.reason || 'query Search Console non disponibili' }, 200)
+    const perf = await adsPerformance(c.env.DB, 90)
+    const measured = D.measuredCr(perf.perf.total)
+    const crDeclared = _num(b.cr)
+    const cr = crDeclared > 0 && crDeclared < 1 ? { cr: crDeclared, source: 'assunzione' as const, note: `cr dichiarato dall'utente (${crDeclared}), non misurato` } : measured
+    const cpcIn = _num(b.cpc)
+    const inp: D.OptimizeInput = { targetQualifiedLeads: target, maxCpl, budgetCap: cap, cr: cr.cr, crSource: cr.source, cpc: cpcIn > 0 ? cpcIn : D.DEFAULTS.cpc, cpcSource: cpcIn > 0 ? 'inserito' : 'assunzione', periodDays: periodDaysOf(r.json, days), items: r.inputs.items }
+    const out = D.optimizeBudget(inp)
+    return c.json({ success: true, ...out, crNote: cr.note, range: D.optimizeRange(inp), blocking: r.inputs.blocking, note: 'Proposta: nessuna campagna viene creata o modificata su Google Ads.' })
+  })
+
+  // Parte 4 — import del report di Google Ads (CSV, nessuna API)
+  api.post('/ads/import-report', async (c) => {
+    await ensureTables(c.env.DB)
+    const b: any = await c.req.json().catch(() => null)
+    if (!b || typeof b !== 'object') return c.json({ success: false, error: 'Richiesta non valida: invia un JSON con il campo «csv»' }, 400)
+    const csv = String(b.csv || '')
+    if (csv.length > 2_000_000) return c.json({ success: false, error: 'File troppo grande (max 2 MB)' }, 413)
+    const min = Math.min(100, Math.max(1, Number(b.minClicks) || 15))
+    const rep = D.parseAdsReport(csv, min)
+    if (!rep.ok) return c.json({ success: false, error: rep.error }, 400)
+    // aggregato per campagna (join con i lead su utm_campaign) + termini per le decisioni
+    const camp = new Map<string, D.ImportedCampaign>()
+    for (const r of rep.rows) {
+      const name = r.campaign || '(senza campagna)'
+      const e = camp.get(name) || { campaign: name, impressions: 0, clicks: 0, cost: 0, conversions: 0 }
+      e.impressions += r.impressions; e.clicks += r.clicks; e.cost += r.cost; e.conversions += r.conversions; camp.set(name, e)
+    }
+    const campaigns = [...camp.values()].map(x => ({ ...x, cost: Math.round(x.cost * 100) / 100 }))
+    const terms = rep.kind === 'search_terms' ? rep.rows.map(r => ({ term: r.search_term, campaign: r.campaign, clicks: r.clicks, impressions: r.impressions, cost: r.cost, conversions: r.conversions })).sort((a, z) => z.clicks - a.clicks).slice(0, 400) : []
+    const u: any = c.get('user')
+    // Un report per volta: sostituisce il precedente (il periodo coperto lo dichiara il file, non l'import)
+    const prev = await loadImported(c.env.DB)
+    const saved = rep.kind === 'campaigns' && prev?.terms?.length ? { ...prev, campaigns, kind: 'campaigns', totals: rep.totals } : { kind: rep.kind, campaigns, terms: terms.length ? terms : (prev?.terms || []), totals: rep.totals }
+    await c.env.DB.prepare(`INSERT INTO settings (key,value,description,updated_at) VALUES ('ads_last_report',?,'Ultimo report Google Ads importato (campagne e termini)',datetime('now')) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=datetime('now')`).bind(JSON.stringify(saved)).run()
+    await D.logHistory(c.env.DB, { planId: b.planId || null, azione: 'importa', da: null, a: null, utente: userName(u), note: `${rep.kind}: ${rep.totals!.rows} righe, ${rep.totals!.clicks} clic, ${rep.totals!.cost} €` })
+    // guardrail: le negative proposte non devono colpire keyword attive
+    const negCol = rep.analysis ? D.negativeCollisions(rep.analysis.negatives.map((n: any) => n.term), await activeKeywords(c.env.DB)) : []
+    return c.json({
+      success: true, kind: rep.kind, totals: rep.totals, warnings: rep.warnings, campaigns,
+      terms: terms.slice(0, 100).map(t => ({ search_term: t.term, campaign: t.campaign, impressions: t.impressions, clicks: t.clicks, cost: t.cost, conversions: t.conversions })),
+      negatives: rep.analysis ? rep.analysis.negatives.slice(0, 200) : [], review: rep.analysis ? rep.analysis.review.slice(0, 200) : [],
+      noConvData: rep.analysis ? rep.analysis.noConvData : null, blocking: negCol, basis: 'misurato (report Google Ads)',
+    })
+  })
+
+  // Parte 4 — ciclo di vita: azioni di stato (attiva, pausa, riprendi, archivia) + duplica + storico
+  api.get('/ads/lifecycle', (c) => c.json({ success: true, states: D.LIFECYCLE, transitions: D.TRANSITIONS }))
+  api.post('/plans/:id/action', async (c) => {
+    await ensureTables(c.env.DB)
+    const b: any = await c.req.json().catch(() => ({}))
+    const action = String(b.action || '')
+    // approva / revoca / esporta hanno rotte dedicate (lint, CSV); qui le altre transizioni manuali
+    if (['approva', 'revoca', 'esporta'].includes(action)) return c.json({ success: false, error: `«${action}» si fa dalla scheda della bozza (controlli di validazione e file CSV)` }, 400)
+    const r = await D.applyTransition(c.env.DB, c.req.param('id'), action, userName(c.get('user')), b.note ? String(b.note).slice(0, 300) : undefined)
+    if (!r.ok) return c.json({ success: false, error: r.error }, r.status as any)
+    return c.json({ success: true, from: r.from, status: r.to, actions: D.LIFECYCLE[r.to as D.PlanState].actions })
+  })
+  api.post('/plans/:id/duplicate', async (c) => {
+    await ensureTables(c.env.DB)
+    const r: any = await c.env.DB.prepare('SELECT * FROM ads_plans WHERE id=?').bind(c.req.param('id')).first()
+    if (!r) return c.json({ success: false, error: 'Bozza non trovata' }, 404)
+    if (r.status !== 'archived') return c.json({ success: false, error: `«duplica» è disponibile solo per una campagna archiviata (questa è «${D.LIFECYCLE[r.status as D.PlanState]?.label || r.status}»)` }, 409)
+    const u: any = c.get('user')
+    const name = (String(r.name) + ' (copia)').slice(0, 120)
+    const ins = await c.env.DB.prepare(`INSERT INTO ads_plans (name,status,origin,plan_json,created_by) VALUES (?,?,?,?,?)`).bind(name, 'draft', r.origin, r.plan_json, userName(u)).run()
+    const id = ins.meta?.last_row_id
+    await D.logHistory(c.env.DB, { planId: r.id, azione: 'duplica', da: 'archived', a: 'archived', utente: userName(u), note: `nuova bozza #${id}` })
+    await D.logHistory(c.env.DB, { planId: id, azione: 'crea', da: null, a: 'draft', utente: userName(u), note: `duplicata dalla #${r.id}` })
+    return c.json({ success: true, id, status: 'draft' })
+  })
+  api.get('/plans/:id/history', async (c) => {
+    await ensureTables(c.env.DB)
+    const { results } = await c.env.DB.prepare('SELECT id,plan_id,azione,da_stato,a_stato,utente,note,created_at FROM ads_history WHERE plan_id=? ORDER BY id DESC LIMIT 200').bind(c.req.param('id')).all()
+    return c.json({ success: true, history: results || [] })
+  })
+  api.get('/ads/history', async (c) => {
+    await ensureTables(c.env.DB)
+    const { results } = await c.env.DB.prepare('SELECT id,plan_id,azione,da_stato,a_stato,utente,note,created_at FROM ads_history ORDER BY id DESC LIMIT 100').all()
+    return c.json({ success: true, history: results || [] })
+  })
+
+  // Parte 6 — «Decisioni di oggi» (max 5 righe, ognuna col numero che la genera)
+  api.get('/ads/decisions', async (c) => {
+    await ensureTables(c.env.DB)
+    const days = clampDays(c.req.query('giorni'))
+    const perf = await adsPerformance(c.env.DB, 90)
+    if (!perf.built.sufficient) return c.json({ success: true, rows: [], insufficient: `${perf.built.sample.message} lead qualificati`, max: D.MAX_DECISIONS, qualified: perf.built.sample.qualified })
+    const r = await seoInputs(c, days)
+    const items = r.ok && r.inputs.available && r.inputs.items ? r.inputs.items : []
+    const cr = D.measuredCr(perf.perf.total)
+    const terms = ((perf.imported?.terms || []) as any[]).map(t => ({ term: String(t.term), clicks: Number(t.clicks) || 0, conversions: Number(t.conversions) || 0 }))
+    const out = D.decisionsOfToday({
+      qualifiedTotal: perf.perf.total.qualified, measured: perf.built.campaigns, stops: perf.built.stops, maxCpl: D.DEFAULTS.maxCpl,
+      terms, convTracked: terms.some(t => t.conversions > 0), items, cpc: D.DEFAULTS.cpc, cr: cr.cr, seoCostPerLead: D.DEFAULTS.seoCostPerLead,
+    })
+    return c.json({ success: true, ...out, max: D.MAX_DECISIONS, qualified: perf.built.sample.qualified, seoAvailable: r.ok, seoError: r.ok ? null : r.error, crBasis: cr.source })
+  })
+
+  // Parte 7 — tre liste operative (JSON, oppure ?list=brief|geo|protect&format=csv)
+  api.get('/ads/lists', async (c) => {
+    const days = clampDays(c.req.query('giorni'))
+    const r = await seoInputs(c, days)
+    if (!r.ok) return c.json({ success: false, error: r.error, notConfigured: r.notConfigured }, 200)
+    if (!r.inputs.available || !r.inputs.items) return c.json({ success: false, error: r.inputs.reason || 'query Search Console non disponibili' }, 200)
+    let pages: string[] = []; try { pages = await sitemapUrls() } catch (_) { pages = [] }
+    const perf = await adsPerformance(c.env.DB, 90)
+    const cr = D.measuredCr(perf.perf.total)
+    const L = D.buildLists(r.inputs.items, { periodDays: periodDaysOf(r.json, days), cpc: D.DEFAULTS.cpc, cr: cr.cr, seoCostPerLead: D.DEFAULTS.seoCostPerLead, pages })
+    const which = String(c.req.query('list') || '')
+    if (c.req.query('format') === 'csv') {
+      if (!['brief', 'geo', 'protect'].includes(which)) return c.json({ success: false, error: 'Indica list=brief, geo oppure protect' }, 400)
+      const names: any = { brief: 'brief-contenuto', geo: 'azioni-geo-aeo', protect: 'query-da-proteggere' }
+      return new Response(D.toCsv((L as any)[which], (D.LIST_COLUMNS as any)[which]), { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="ecura_${names[which]}_${new Date().toISOString().slice(0, 10)}.csv"`, 'Cache-Control': 'no-store' } })
+    }
+    return c.json({
+      success: true, period: r.json.gsc?.period || null, counts: { brief: L.brief.length, geo: L.geo.length, protect: L.protect.length },
+      brief: L.brief, geo: L.geo, protect: L.protect, sitemapAvailable: pages.length > 0,
+      assumptions: [`QCPL stimato ${L.qcplEstimated ?? 'n.d.'} € = CPC ${D.DEFAULTS.cpc} € / cr ${cr.cr} (${cr.source}) contro costo SEO ${D.DEFAULTS.seoCostPerLead} € per lead (assunzione dichiarata): ${L.adsNotWorth ? 'le ADS non convengono' : 'le ADS convengono'}`,
+        'titolo e H2 proposti sono bozze generate da regole, non da AI: il redattore li rivede'],
+      note: 'Le liste partono dalle stesse query della Parte 2. Se una query protetta scende oltre la posizione ' + D.THRESHOLDS.organicWinsMaxPos + ' compare tra le candidate ADS alla prossima lettura.',
+    })
+  })
+
+  // Parte 7 — proiezione del moltiplicatore («proiezione, non previsione»)
+  api.get('/ads/projection', async (c) => {
+    await ensureTables(c.env.DB)
+    const days = clampDays(c.req.query('giorni'))
+    const target = _num(c.req.query('target')) > 0 ? _num(c.req.query('target')) : 30
+    const maxCpl = _num(c.req.query('maxCpl')) > 0 ? _num(c.req.query('maxCpl')) : D.DEFAULTS.maxCpl
+    const r = await seoInputs(c, days)
+    if (!r.ok) return c.json({ success: false, error: r.error, notConfigured: r.notConfigured }, 200)
+    if (!r.inputs.available || !r.inputs.items) return c.json({ success: false, error: r.inputs.reason || 'query Search Console non disponibili' }, 200)
+    const perf = await adsPerformance(c.env.DB, 90)
+    const cr = D.measuredCr(perf.perf.total)
+    const inp: D.OptimizeInput = { targetQualifiedLeads: target, maxCpl, budgetCap: null, cr: cr.cr, crSource: cr.source, cpc: D.DEFAULTS.cpc, cpcSource: 'assunzione', periodDays: periodDaysOf(r.json, days), items: r.inputs.items }
+    const rng = D.optimizeRange(inp)
+    // lead organici dei due mesi precedenti (stessa mappatura canale CRM del report)
+    const now = new Date(); const y = now.getUTCFullYear(), mo = now.getUTCMonth()
+    const months = [2, 1].map(k => { const d = new Date(Date.UTC(y, mo - k, 1)); return { month: d.toISOString().slice(0, 7), days: new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate() } })
+    let previousMonths: { month: string; organicLeads: number; days: number }[] | undefined
+    try {
+      const { results } = await c.env.DB.prepare(`SELECT substr(created_at,1,7) AS m, canale_acquisizione AS canale, dettaglio_fonte AS dettaglio, COUNT(*) AS n FROM leads WHERE substr(created_at,1,7) >= ? AND substr(created_at,1,7) <= ? GROUP BY 1,2,3`).bind(months[0].month, months[1].month).all()
+      previousMonths = months.map(mm => {
+        let tot = 0, ads = 0
+        for (const x of (results || []) as any[]) if (x.m === mm.month) { tot += Number(x.n); const mp = mapCrmChannel(x.canale || '', x.dettaglio || ''); if (mp.ga.length === 1 && mp.ga[0] === 'Paid') ads += Number(x.n) }
+        return { month: mm.month, organicLeads: tot - ads, days: mm.days }
+      })
+    } catch (_) { previousMonths = undefined }
+    const L = r.json.leads
+    const proj = D.projectMultiplier({
+      totalLeads: L ? L.total : null, adsAttributedLeads: L ? L.adsAttributed : null, periodDays: Number(r.json.period?.days) || days,
+      ads: { min: { leads: rng.min.leads, budgetMonth: rng.min.budgetMonth }, max: { leads: rng.max.leads, budgetMonth: rng.max.budgetMonth } },
+      adsBasis: cr.source === 'misurato' ? 'misurato' : 'stimato', previousMonths,
+    })
+    return c.json({ success: true, ...proj, optimizeInput: { target, maxCpl, cr: cr.cr, crSource: cr.source, cpc: D.DEFAULTS.cpc }, adsRange: rng, period: r.json.period })
   })
 
   // ═══════════════ SEO / GEO ═══════════════
@@ -406,7 +727,8 @@ export function createMarketingApi() {
     const info = E.extractPageInfo(pg.text, url)
     const body = textOf(pg.text).slice(0, 7000)
     const sys = 'Sei un redattore SEO italiano. Rispondi SOLO con JSON valido. Scrivi domande e risposte per una FAQ, usando ESCLUSIVAMENTE informazioni presenti nel TESTO fornito. Se un dato non è nel testo, non scrivere la domanda. Regole: ' + E.BRAND_RULES.join(' ') + ' Ogni risposta: 25-60 parole, frase iniziale autosufficiente, nessun superlativo, nessuna promessa sanitaria.'
-    const user = 'URL: ' + url + '\nTitolo: ' + info.title + '\n\nTESTO:\n' + body + '\n\nFAQ già presenti: ' + info.faq.map(f => f.q).join(' | ') + '\n\nRestituisci JSON: {"faqs":[{"q":string,"a":string}]} con 4-6 elementi, diversi dalle FAQ già presenti.'
+    const focus = typeof b.query === 'string' && b.query.trim() ? '\nDOMANDA DA COPRIRE (query di ricerca reale): «' + b.query.trim().slice(0, 120) + '». Scrivi la domanda corrispondente SOLO se il testo contiene la risposta.' : ''
+    const user = 'URL: ' + url + '\nTitolo: ' + info.title + focus + '\n\nTESTO:\n' + body + '\n\nFAQ già presenti: ' + info.faq.map(f => f.q).join(' | ') + '\n\nRestituisci JSON: {"faqs":[{"q":string,"a":string}]} con 4-6 elementi, diversi dalle FAQ già presenti.'
     const r = await aiJson(c.env, sys, user)
     if (!r.ok) return c.json({ success: false, error: r.error, notConfigured: /non configurata/.test(r.error) })
     const bad = /sidly|il migliore|numero 1|rimborsabil|inps/i

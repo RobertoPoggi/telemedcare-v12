@@ -32208,6 +32208,11 @@ app.get('/api/analytics/live-seo-report', async (c) => {
       measurementId: 'G-5DY4TY34WK',
       geoActivation: { date: GEO_ACTIVATION.date, label: GEO_ACTIVATION.label },
     })
+    // ?format=json → stessi dati del PDF (stesso modello, stesse query), in forma machine-readable per il Marketing Hub
+    if (c.req.query('format') === 'json') {
+      const { buildReportJson } = await import('./modules/seo-report-json')
+      return c.json({ success: true, ...buildReportJson(generateReport(input, { diagnostic: true })) })
+    }
     const result = generateReport(input, { diagnostic })
     return c.html(result.html)
   } catch (e: any) {

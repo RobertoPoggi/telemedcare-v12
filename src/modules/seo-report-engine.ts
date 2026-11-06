@@ -53,6 +53,7 @@ export const PARAMS = {
   minBaselineMonths: 3,       // mesi pre-attivazione GEO con dati GA4 per parlare di baseline
   geoMonths: 12,              // mesi della serie AI/GEO (l'ultimo e' parziale)
   topQueries: 15,
+  hubQueries: 1000,           // righe GSC per query richieste: il report ne mostra le prime topQueries, il Hub (JSON) le classifica tutte
   topPages: 10,
   smTableRows: 30,
   per: 100,                   // base del rapporto «lead per 100 sessioni»
@@ -299,6 +300,26 @@ export interface RatioAnalysis {
   deviating: number                // settimane distanti dalla mediana oltre ratioBreak (descrittivo)
   breaks: WeekRow[]                // rotture = SOLO ribassi oltre ratioBreak sotto la mediana delle settimane complete precedenti
   outsideRun: { from: string; to: string; len: number } | null
+}
+
+// ── Lead qualificato: UNICA definizione (report e Marketing Hub la importano, non la ridefiniscono) ─────────
+export const QUALIFIED_LEAD = {
+  temperatures: ['caldo', 'tiepido'],
+  statuses: ['CONTRACT_SENT', 'CONTRACT_SIGNED', 'CONVERTED'],
+  /** testo restituito nel JSON del report come `qualifiedDefinition` */
+  definition: 'temperatura in (caldo,tiepido) OR status in (CONTRACT_SENT,CONTRACT_SIGNED,CONVERTED)',
+  /** campione minimo di lead qualificati sotto il quale il Hub non produce percentuali né raccomandazioni */
+  minSample: 10,
+} as const
+export function isQualifiedLead(temperatura: string | null | undefined, status: string | null | undefined): boolean {
+  const t = String(temperatura || '').trim().toLowerCase(), st = String(status || '').trim().toUpperCase()
+  return (QUALIFIED_LEAD.temperatures as readonly string[]).includes(t) || (QUALIFIED_LEAD.statuses as readonly string[]).includes(st)
+}
+/** Frammento SQL (D1/SQLite) generato dalla stessa costante: nessuna seconda definizione scritta a mano. */
+export function qualifiedSql(alias = ''): string {
+  const p = alias ? alias + '.' : ''
+  const q = (xs: readonly string[]) => xs.map(x => `'${x}'`).join(',')
+  return `(LOWER(COALESCE(${p}temperatura,'')) IN (${q(QUALIFIED_LEAD.temperatures)}) OR UPPER(COALESCE(${p}status,'')) IN (${q(QUALIFIED_LEAD.statuses)}))`
 }
 
 // ── Mappatura CRM → canale GA4 (UNICA, usata per il rapporto lead / 100 sessioni) ─────────

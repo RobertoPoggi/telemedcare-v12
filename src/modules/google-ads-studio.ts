@@ -15,6 +15,8 @@ const BODY = String.raw`
       <button class="btn btn-s" onclick="newFromPreset()">Nuova dal piano &laquo;Primo lancio&raquo;</button>
       <span id="stChip"></span>
     </div>
+    <div id="lcBox" class="mt-2"></div>
+    <div id="histBox"></div>
   </div>
   <div id="planBox"><div class="card muted">Caricamento…</div></div>
   <datalist id="smlist"></datalist>
@@ -49,12 +51,54 @@ const BODY = String.raw`
     <button class="btn btn-p" onclick="loadGsc(this)">Carica dati (ultimi 28 giorni)</button>
   </div>
   <div id="gscOut"></div>
+  <div class="card">
+    <h2 class="font-bold text-lg mb-1">Query classificate per decisione</h2>
+    <p class="muted mb-3">Legge lo stesso report SEO del PDF (stessi numeri) e assegna a ogni query una decisione con la motivazione. <b>Misurato</b>: posizione e impressioni da Search Console. <b>Stimato</b>: i clic persi (il CTR obiettivo oltre la posizione 3 è un'assunzione).</p>
+    <div class="flex gap-3 items-end flex-wrap"><div><label class="l">Giorni</label><input type="number" id="siDays" value="28" min="7" max="120" style="width:90px"></div><button class="btn btn-p" onclick="loadSeoInputs(this)">Classifica le query</button></div>
+    <div id="siOut" class="mt-3"></div>
+  </div>
+  <div class="card">
+    <h2 class="font-bold text-lg mb-1">Budget giornaliero minimo per il target</h2>
+    <p class="muted mb-3">Propone, non esegue: nessuna campagna viene creata o modificata su Google Ads. Se il tasso di conversione non è misurato il risultato è marcato <b>stima da verificare</b>.</p>
+    <div class="grid md:grid-cols-5 gap-3 mb-3">
+      <div><label class="l">Lead qualificati/mese (target)</label><input type="number" id="opT" value="30" min="1"></div>
+      <div><label class="l">Costo max per lead qualificato €</label><input type="number" id="opC" value="15" min="1" step="0.5"></div>
+      <div><label class="l">Tetto budget €/mese (facoltativo)</label><input type="number" id="opB" min="1"></div>
+      <div><label class="l">Conversione clic→lead (facoltativo)</label><input type="number" id="opR" min="0.001" max="0.5" step="0.005" placeholder="es. 0.03"></div>
+      <div><label class="l">CPC reale € (facoltativo)</label><input type="number" id="opP" min="0.05" step="0.05"></div>
+    </div>
+    <button class="btn btn-p" onclick="runOptimize(this)">Calcola</button>
+    <div id="opOut" class="mt-3"></div>
+  </div>
+  <div class="card">
+    <h2 class="font-bold text-lg mb-1">Moltiplicatore: organico + ADS</h2>
+    <p class="muted mb-3">Etichetta fissa: <b>«proiezione, non previsione»</b>. Usa il target e il costo massimo del box qui sopra.</p>
+    <button class="btn btn-p" onclick="runProjection(this)">Calcola la proiezione</button>
+    <div id="prOut" class="mt-3"></div>
+  </div>
+  <div class="card">
+    <h2 class="font-bold text-lg mb-1">Lavoro che le ADS restituiscono al SEO</h2>
+    <p class="muted mb-3">Tre liste dalle stesse query, scaricabili in CSV: contenuti da scrivere, domande per FAQ/GEO e posizioni da proteggere.</p>
+    <button class="btn btn-p" onclick="loadLists(this)">Genera le liste</button>
+    <div id="lsOut" class="mt-3"></div>
+  </div>
 </div>
 
 <div data-tab="risultati" style="display:none">
+  <div class="card" style="border-left:5px solid #2563eb">
+    <h2 class="font-bold text-lg mb-2">Decisioni di oggi</h2>
+    <div id="todayOut" class="muted">Caricamento…</div>
+  </div>
   <div class="card">
     <h2 class="font-bold text-lg mb-2">Risultati dal CRM</h2>
     <div id="perfOut" class="muted">Caricamento…</div>
+    <div id="perfQ" class="mt-3"></div>
+  </div>
+  <div class="card">
+    <h3 class="font-bold mb-2">Importa il report di Google Ads</h3>
+    <p class="muted mb-2">In Google Ads: Campagne (oppure Parole chiave → Termini di ricerca) → Scarica → CSV. Nessuna connessione automatica: il file lo carichi tu. Rende misurati clic, costo e conversioni oggi solo stimati.</p>
+    <div class="flex gap-3 items-end flex-wrap"><div style="min-width:260px;flex:1"><label class="l">File CSV</label><input type="file" id="irFile" accept=".csv,.txt,.tsv"></div><button class="btn btn-p" onclick="importReport(this)">Importa</button></div>
+    <div id="irOut" class="mt-3"></div>
   </div>
   <div class="card">
     <h3 class="font-bold mb-2">Spesa del mese (la inserisci tu, dal conto Google Ads)</h3>
@@ -168,11 +212,11 @@ document.addEventListener('input',function(e){
 function addGroup(){collect();S.plan.adGroups.push({name:'Nuovo gruppo',finalUrl:'https://www.ecura.it/',keywords:[],negatives:[],headlines:[],descriptions:[],path1:'',path2:''});S.dirty=true;renderPlan()}
 function delGroup(i){if(!confirm('Rimuovere questo gruppo dalla bozza?'))return;collect();S.plan.adGroups.splice(i,1);S.dirty=true;renderPlan()}
 function updStatus(){
-  var st=S.meta?S.meta.status:'nuova';var lab={draft:'Bozza',approved:'Approvata',exported:'Esportata',nuova:'Non salvata'}[st]||st;
-  $('stChip').innerHTML='<span class="chip '+(st==='draft'||st==='nuova'?'warn':'ok')+'">'+lab+(S.dirty?' · modifiche non salvate':'')+'</span>';
+  var st=S.meta?S.meta.status:'nuova';var lab={draft:'Bozza',approved:'Approvata',exported:'Esportata',running:'Attiva',paused:'In pausa',archived:'Archiviata',nuova:'Non salvata'}[st]||st;
+  $('stChip').innerHTML='<span class="chip '+(st==='draft'||st==='nuova'?'warn':st==='paused'||st==='archived'?'mut':'ok')+'">'+lab+(S.dirty?' · modifiche non salvate':'')+'</span>';renderLc();
   var ap=$('btnApprove'),rv=$('btnRevoke'),cv=$('btnCsv');if(!ap)return;
-  ap.style.display=(st==='approved'||st==='exported')&&!S.dirty?'none':'';ap.disabled=!S.id||S.dirty;
-  rv.style.display=(st==='approved'||st==='exported')?'':'none';cv.disabled=!(S.id&&!S.dirty&&(st==='approved'||st==='exported'));
+  ap.style.display=(st==='draft'||st==='nuova'||S.dirty)?'':'none';ap.disabled=!S.id||S.dirty;
+  rv.style.display=(st==='approved')?'':'none';cv.disabled=!(S.id&&!S.dirty&&(st==='approved'||st==='exported'));
   $('stHint').textContent=!S.id?'Salva la bozza per poterla approvare.':S.dirty?'Salva le modifiche: dopo ogni modifica serve una nuova approvazione.':st==='draft'?'Controlla e approva: solo allora il CSV è scaricabile.':'';
 }
 async function doLint(btn){collect();busy(btn,true,'Controllo…');try{var r=await api('/lint',{method:'POST',body:{plan:S.plan}});$('lintOut').innerHTML=r.success?lintHtml(r.issues):'<div class="lint error">'+esc(r.error)+'</div>'}finally{busy(btn,false)}}
@@ -197,7 +241,7 @@ async function downloadCsv(btn){
     if(!res.ok){var j=await res.json().catch(function(){return {}});toast(j.error||'Errore');return}
     var cd=res.headers.get('content-disposition')||'';var m=cd.match(/filename="([^"]+)"/);
     var blob=await res.blob();var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=m?m[1]:'google-ads-editor.csv';document.body.appendChild(a);a.click();a.remove();
-    S.meta.status='exported';updStatus();listPlans(true);toast('CSV scaricato. Campaign Status = Paused.');
+    if(S.meta.status==='approved')S.meta.status='exported';updStatus();listPlans(true);toast('CSV scaricato. Campaign Status = Paused.');
   }finally{busy(btn,false)}
 }
 async function doForecast(){
@@ -262,7 +306,7 @@ async function loadGsc(btn){
 }
 async function loadPerf(){
   var r=await api('/performance');if(!r.success){$('perfOut').textContent='Errore';return}
-  $('spMonth').value=r.month;$('spAmount').value=r.spend[r.month]||'';
+  $('spMonth').value=r.month;$('spAmount').value=r.spend[r.month]||'';renderPerfQ(r);
   $('perfOut').innerHTML='<div class="grid md:grid-cols-4 gap-3 mb-3"><div class="card" style="margin:0"><div class="muted">Lead ultimi '+r.days+' gg</div><div class="text-2xl font-bold">'+r.leads+'</div></div><div class="card" style="margin:0"><div class="muted">Con click ID Google</div><div class="text-2xl font-bold">'+r.leadsGoogle+'</div></div><div class="card" style="margin:0"><div class="muted">Spesa '+r.month+'</div><div class="text-2xl font-bold">'+(r.spendMonth?eur(r.spendMonth):'—')+'</div></div><div class="card" style="margin:0"><div class="muted">Costo per contatto</div><div class="text-2xl font-bold">'+(r.cpl?eur(r.cpl):'—')+'</div></div></div>'+
    '<div class="muted mb-2">Obiettivo: '+r.target.leadsMonth[0]+'-'+r.target.leadsMonth[1]+' contatti/mese a '+r.target.cpl[0]+'-'+r.target.cpl[1]+' € l\'uno. «Con click ID Google» conta solo i lead arrivati da un clic sugli annunci con consenso marketing: è una stima per difetto.</div>'+
    '<h3 class="font-bold mt-3 mb-1">Per canale</h3>'+r.byChannel.map(function(c){return '<span class="chip info">'+esc(c.canale)+': '+c.n+'</span>'}).join('')+
@@ -272,7 +316,136 @@ async function saveSpend(){var r=await api('/spend',{method:'POST',body:{month:$
 function renderChk(){var st={};try{st=JSON.parse(localStorage.getItem('adsChk')||'{}')}catch(e){}
   $('chk').innerHTML=CHECK.map(function(t,i){return '<label class="block py-1 text-sm"><input type="checkbox" '+(st[i]?'checked':'')+' onchange="chkSet('+i+',this.checked)"> '+esc(t)+'</label>'}).join('')}
 function chkSet(i,v){var st={};try{st=JSON.parse(localStorage.getItem('adsChk')||'{}')}catch(e){}st[i]=v;localStorage.setItem('adsChk',JSON.stringify(st))}
-window.onTab=function(id){if(id==='pagine'&&!$('pgList').dataset.ok){$('pgList').dataset.ok=1;loadSitemap()}if(id==='risultati')loadPerf();if(id==='lancio')renderChk()};
+
+/* ═══ ADS guidate dai dati SEO: ciclo di vita, classificazione, ottimizzatore, proiezione, liste, import, decisioni ═══ */
+var LCN={draft:'Bozza',approved:'Approvata',exported:'Esportata',running:'Attiva',paused:'In pausa',archived:'Archiviata'};
+var ACTL={attiva:'Segna come attiva',pausa:'Metti in pausa',riprendi:'Riprendi',archivia:'Archivia',duplica:'Duplica come nuova bozza'};
+var BAS=function(b){return '<span class="chip '+(b==='misurato'?'ok':'warn')+'">'+esc(b)+'</span>'};
+var fx=function(n,d){return n==null||isNaN(n)?'n.d.':Number(n).toFixed(d==null?2:d).replace('.',',')};
+function renderLc(){
+  var b=$('lcBox');if(!b)return;
+  var st=S.meta&&S.id?S.meta.status:null;
+  if(!st){b.innerHTML='';$('histBox').innerHTML='';return}
+  var acts={exported:['attiva'],running:['pausa'],paused:['riprendi','archivia'],archived:['duplica']}[st]||[];
+  var h='<div class="flex flex-wrap gap-2 items-center"><span class="muted">Stato nel CRM: <b>'+esc(LCN[st]||st)+'</b>. Il CRM non scrive su Google Ads: le azioni registrano ciò che fai tu.</span>';
+  acts.forEach(function(a){h+='<button class="btn btn-s" onclick="lcAct(\''+a+'\',this)">'+ACTL[a]+'</button>'});
+  h+='<button class="btn btn-s" onclick="showHist()">Storico</button></div>';
+  b.innerHTML=h;
+}
+async function lcAct(a,btn){
+  if(a==='duplica'){busy(btn,true,'');try{var d=await api('/plans/'+S.id+'/duplicate',{method:'POST'});if(!d.success){toast(d.error||'Errore');return}toast('Nuova bozza #'+d.id);await listPlans(true);await loadPlan(d.id)}finally{busy(btn,false)}return}
+  var msg={attiva:'Confermi di aver caricato il CSV in Google Ads Editor e attivato la campagna? Qui si registra solo lo stato: non tocca Google Ads.',pausa:'Metti in pausa nel CRM? Ricordati di metterla in pausa anche in Google Ads.',archivia:'Archiviare la campagna? Resta nello storico.'}[a];
+  if(msg&&!confirm(msg))return;
+  busy(btn,true,'');
+  try{var r=await api('/plans/'+S.id+'/action',{method:'POST',body:{action:a}});
+    if(!r.success){toast(r.error||'Errore');return}
+    S.meta.status=r.status;updStatus();listPlans(true);toast('Stato: '+(LCN[r.status]||r.status));
+  }finally{busy(btn,false)}
+}
+async function showHist(){
+  var r=await api('/plans/'+S.id+'/history');if(!r.success){toast(r.error||'Errore');return}
+  $('histBox').innerHTML=r.history.length?'<table class="t mt-2"><tr><th>Quando</th><th>Azione</th><th>Da</th><th>A</th><th>Utente</th><th>Note</th></tr>'+r.history.map(function(x){return '<tr><td>'+esc(x.created_at||'')+'</td><td>'+esc(x.azione)+'</td><td>'+esc(LCN[x.da_stato]||x.da_stato||'')+'</td><td>'+esc(LCN[x.a_stato]||x.a_stato||'')+'</td><td>'+esc(x.utente||'')+'</td><td>'+esc(x.note||'')+'</td></tr>'}).join('')+'</table>':'<div class="muted mt-2">Nessuna transizione registrata.</div>';
+}
+
+var DEC={NO_ADS_BRAND:['Non pagare (marca)','mut'],NO_ADS_ORGANIC_WINS:['Non pagare (organico vince)','ok'],ADS_OPPORTUNITY:['Opportunità ADS','info'],ADS_TEST:['Test ADS','warn'],SEO_ONLY:['Solo SEO','mut'],NEGATIVE:['Negativa (informativa)','bad']};
+async function loadSeoInputs(btn){
+  busy(btn,true,'Carico…');
+  try{var r=await api('/ads/seo-inputs?giorni='+(Number($('siDays').value)||28));
+    if(!r.success){$('siOut').innerHTML='<div class="lint warn">'+(r.notConfigured?'GA4 / Search Console non collegati al CRM. ':'')+esc(r.error)+'</div>';return}
+    if(!r.available){$('siOut').innerHTML='<div class="lint warn">'+esc(r.reason||'Search Console non disponibile')+'</div>';return}
+    var h='';
+    if(!r.valid)h+='<div class="lint error"><span>⛔</span><span><b>Errore bloccante</b>: '+esc(r.blockingError)+'<br>'+r.blocking.map(function(b){return esc(b.msg)}).join('<br>')+'</span></div>';
+    h+='<div class="mb-2">'+Object.keys(r.counts).map(function(k){return '<span class="chip '+DEC[k][1]+'">'+DEC[k][0]+': '+r.counts[k]+'</span>'}).join(' ')+'</div>';
+    h+='<div class="muted mb-2">'+r.coverage.queries+' query ('+r.coverage.withClicks+' con clic, tutte classificate). Clic persi = impressioni × (CTR obiettivo − CTR attuale): CTR obiettivo '+fx(r.ctrTarget.upTo3)+' fino a pos. 3, poi decrescente (assunzione, non misurata). '+BAS('misurato')+' posizione e impressioni · '+BAS('stimato')+' clic persi.</div>';
+    h+='<table class="t"><tr><th>Query</th><th>Pos.</th><th>Impr.</th><th>Clic</th><th>Decisione</th><th>Perché</th><th>Clic persi (stima)</th></tr>'+r.items.slice(0,300).map(function(i){var d=DEC[i.decision];return '<tr><td>'+esc(i.query)+(i.blocking?' <span class="chip bad">blocca keyword attiva</span>':'')+'</td><td>'+fx(i.position,1)+'</td><td>'+i.impressions+'</td><td>'+i.clicks+'</td><td><span class="chip '+d[1]+'">'+d[0]+'</span></td><td>'+esc(i.reason)+'</td><td>'+i.lostClicksEstimate+'</td></tr>'}).join('')+'</table>';
+    $('siOut').innerHTML=h;
+  }finally{busy(btn,false)}
+}
+
+async function runOptimize(btn){
+  var body={targetQualifiedLeads:Number($('opT').value),maxCpl:Number($('opC').value)};
+  if($('opB').value)body.budgetCap=Number($('opB').value);if($('opR').value)body.cr=Number($('opR').value);if($('opP').value)body.cpc=Number($('opP').value);
+  busy(btn,true,'Calcolo…');
+  try{var r=await api('/ads/optimize',{method:'POST',body:body});
+    if(!r.success){$('opOut').innerHTML='<div class="lint warn">'+esc(r.error||'Errore')+'</div>';return}
+    var h='<div class="lint '+(r.reachable?'info':'warn')+'"><span>'+(r.reachable?'✅':'⚠️')+'</span><span><b>'+esc(r.verdict)+'</b> · '+BAS(r.basis)+(r.basis==='stimato'?' <b>'+esc(r.estimate)+'</b>':'')+'<br>'+esc(r.crNote||'')+'</span></div>';
+    h+='<h3 class="font-bold mt-3 mb-1">I 7 passaggi</h3><table class="t"><tr><th>#</th><th>Passaggio</th><th>Formula</th><th>Risultato</th></tr>'+r.steps.map(function(s){return '<tr><td>'+s.n+'</td><td>'+esc(s.title)+'</td><td><code>'+esc(s.formula)+'</code></td><td>'+esc(s.result)+'</td></tr>'}).join('')+'</table>';
+    h+='<h3 class="font-bold mt-3 mb-1">Per bucket</h3><table class="t"><tr><th>Query</th><th>Tipo</th><th>Pos.</th><th>Clic/mese</th><th>Lead attesi</th><th>Costo/mese €</th><th>QCPL stimato €</th><th>Assegnato</th></tr>'+r.buckets.map(function(b){return '<tr><td>'+esc(b.query)+'</td><td>'+esc(b.decision)+'</td><td>'+fx(b.position,1)+'</td><td>'+b.clicks+'</td><td>'+b.leadsExpected+'</td><td>'+fx(b.cost)+'</td><td>'+fx(b.qcplEstimated)+(b.cpcCapped?' <span class="chip warn">CPC oltre soglia</span>':'')+'</td><td>'+(b.allocated?b.allocatedLeads+' lead · '+fx(b.allocatedCost)+' €':'—')+'</td></tr>'}).join('')+'<tr><td colspan="4"><b>Totale</b></td><td><b>'+r.totals.leads+'</b></td><td><b>'+fx(r.totals.budgetMonth)+'</b></td><td>'+fx(r.totals.qcpl)+'</td><td><b>'+fx(r.totals.budgetDay)+' €/giorno</b></td></tr></table>';
+    if(!r.reachable)h+='<div class="lint warn mt-2"><span>⚠️</span><span>Target non raggiungibile: massimo ottenibile <b>'+r.maxObtainable+'</b> lead qualificati/mese, mancano <b>'+r.missing+'</b>.</span></div>';
+    h+='<h3 class="font-bold mt-3 mb-1">Assunzioni e loro effetto</h3><table class="t"><tr><th>Assunzione</th><th>Valore</th><th>Origine</th><th>Effetto</th></tr>'+r.assumptions.map(function(a){return '<tr><td>'+esc(a.name)+'</td><td>'+esc(String(a.value))+'</td><td>'+esc(a.source)+'</td><td>'+esc(a.effect)+'</td></tr>'}).join('')+'</table>';
+    $('opOut').innerHTML=h;
+  }finally{busy(btn,false)}
+}
+
+async function runProjection(btn){
+  busy(btn,true,'Calcolo…');
+  try{var r=await api('/ads/projection?target='+(Number($('opT').value)||30)+'&maxCpl='+(Number($('opC').value)||15));
+    if(!r.success){$('prOut').innerHTML='<div class="lint warn">'+esc(r.error||'Errore')+'</div>';return}
+    if(!r.available){$('prOut').innerHTML='<div class="lint warn"><b>'+esc(r.label)+'</b> — '+esc(r.reason)+'</div>';return}
+    var h='<div class="lint info"><span>📐</span><span><b>«'+esc(r.label)+'»</b>'+(r.organic.unstable?' · lead organici instabili: intervallo, non un numero singolo':'')+'</span></div>';
+    h+='<table class="t mt-2"><tr><th>#</th><th>Grandezza</th><th>Formula</th><th>Valore</th><th>Base</th></tr>'+r.formula.map(function(f){return '<tr><td>'+f.n+'</td><td>'+esc(f.label)+'</td><td><code>'+esc(f.formula)+'</code></td><td>'+esc(f.value)+'</td><td>'+BAS(f.basis)+'</td></tr>'}).join('')+'</table>';
+    h+='<h3 class="font-bold mt-3 mb-1">Assunzioni</h3><ul class="list-disc ml-5 text-sm">'+r.assumptions.map(function(a){return '<li>'+esc(a)+'</li>'}).join('')+'</ul>';
+    $('prOut').innerHTML=h;
+  }finally{busy(btn,false)}
+}
+
+function csvLink(list,label){return '<a class="btn btn-s" href="/api/marketing/ads/lists?list='+list+'&format=csv" download>'+label+'</a>'}
+async function loadLists(btn){
+  busy(btn,true,'Genero…');
+  try{var r=await api('/ads/lists');
+    if(!r.success){$('lsOut').innerHTML='<div class="lint warn">'+esc(r.error||'Errore')+'</div>';return}
+    var h='<div class="muted mb-2">'+r.assumptions.map(esc).join(' · ')+'</div>';
+    h+='<h3 class="font-bold mt-2 mb-1">Brief di contenuto ('+r.counts.brief+') '+csvLink('brief','Scarica CSV')+'</h3>'+(r.brief.length?'<table class="t"><tr><th>Query</th><th>Impr.</th><th>Pos.</th><th>Clic persi/mese</th><th>Titolo proposto</th><th>H2 da coprire</th><th>Pagina più vicina</th></tr>'+r.brief.slice(0,100).map(function(b){return '<tr><td>'+esc(b.query)+'</td><td>'+b.impressions+'</td><td>'+fx(b.position,1)+'</td><td>'+b.lostClicksMonth+'</td><td>'+esc(b.proposedTitle)+'</td><td>'+b.h2.map(esc).join(' · ')+'</td><td>'+(b.closestPage?'<a target="_blank" href="'+esc(b.closestPage)+'">'+esc(b.closestPage.replace('https://www.ecura.it',''))+'</a>':'<span class="muted">nessuna: serve una pagina nuova</span>')+'</td></tr>'}).join('')+'</table>':'<div class="muted">Nessuna query in questa lista.</div>');
+    h+='<h3 class="font-bold mt-4 mb-1">Azioni GEO/AEO ('+r.counts.geo+') '+csvLink('geo','Scarica CSV')+'</h3>'+(r.geo.length?'<table class="t"><tr><th>Query</th><th>Impr.</th><th>Pos.</th><th>Pagina suggerita</th><th></th></tr>'+r.geo.slice(0,100).map(function(g,i){return '<tr><td>'+esc(g.query)+'</td><td>'+g.impressions+'</td><td>'+fx(g.position,1)+'</td><td>'+esc(g.suggestedPage||'(scegli)')+'</td><td><button class="btn btn-p" data-q="'+esc(g.query)+'" data-u="'+esc(g.suggestedPage||'')+'" onclick="genFaq(this)">genera FAQ da questa query</button></td></tr>'}).join('')+'</table><div id="faqOut"></div>':'<div class="muted">Nessuna query in questa lista.</div>');
+    h+='<h3 class="font-bold mt-4 mb-1">Query da proteggere ('+r.counts.protect+') '+csvLink('protect','Scarica CSV')+'</h3>'+(r.protect.length?'<table class="t"><tr><th>Query</th><th>Tipo</th><th>Pos.</th><th>Impr.</th><th>Clic</th><th>Regola</th></tr>'+r.protect.slice(0,100).map(function(p){return '<tr><td>'+esc(p.query)+'</td><td>'+esc(p.kind)+'</td><td>'+fx(p.position,1)+'</td><td>'+p.impressions+'</td><td>'+p.clicks+'</td><td>'+esc(p.rule)+'</td></tr>'}).join('')+'</table>':'<div class="muted">Nessuna query in questa lista.</div>');
+    $('lsOut').innerHTML=h;
+  }finally{busy(btn,false)}
+}
+async function genFaq(btn){
+  var url=btn.getAttribute('data-u')||prompt('Pagina del sito su cui pubblicare la FAQ (URL completo, https://www.ecura.it/...)','https://www.ecura.it/');
+  if(!url)return;
+  busy(btn,true,'Genero…');
+  try{var r=await api('/seo/answers',{method:'POST',body:{url:url,query:btn.getAttribute('data-q')}});
+    if(!r.success){$('faqOut').innerHTML='<div class="lint warn">'+(r.notConfigured?'OpenAI non configurata. ':'')+esc(r.error||'Errore')+'</div>';return}
+    $('faqOut').innerHTML='<div class="card mt-2"><b>Bozza FAQ per «'+esc(btn.getAttribute('data-q'))+'»</b> · '+esc(r.page.title||r.page.url)+'<div class="muted mb-2">'+esc(r.warning||'')+'</div>'+r.faqs.map(function(f){return '<div class="mb-2"><b>'+esc(f.q)+'</b><br>'+esc(f.a)+'</div>'}).join('')+'<details><summary>JSON-LD</summary><pre style="white-space:pre-wrap">'+esc(r.jsonld)+'</pre></details></div>';
+  }finally{busy(btn,false)}
+}
+
+async function importReport(btn){
+  var csv=await readFile($('irFile'));if(!csv){toast('Scegli un file CSV');return}
+  busy(btn,true,'Importo…');
+  try{var r=await api('/ads/import-report',{method:'POST',body:{csv:csv}});
+    if(!r.success){$('irOut').innerHTML='<div class="lint error"><span>⛔</span><span>'+esc(r.error||'Errore')+'</span></div>';return}
+    var t=r.totals,h='<div class="lint info"><span>✅</span><span>Importato report <b>'+(r.kind==='search_terms'?'termini di ricerca':'campagne')+'</b>: '+t.rows+' righe · '+t.impressions+' impr. · '+t.clicks+' clic · '+fx(t.cost)+' € · '+t.conversions+' conversioni · '+BAS('misurato')+'</span></div>';
+    if(r.warnings&&r.warnings.length)h+='<div class="lint warn mt-2"><span>⚠️</span><span>'+r.warnings.map(esc).join('<br>')+'</span></div>';
+    if(r.blocking&&r.blocking.length)h+='<div class="lint error mt-2"><span>⛔</span><span><b>Errore bloccante</b>: '+r.blocking.map(function(b){return esc(b.msg)}).join('<br>')+'</span></div>';
+    h+='<table class="t mt-2"><tr><th>Campagna</th><th>Impr.</th><th>Clic</th><th>Costo €</th><th>Conv.</th></tr>'+r.campaigns.map(function(c){return '<tr><td>'+esc(c.campaign)+'</td><td>'+c.impressions+'</td><td>'+c.clicks+'</td><td>'+fx(c.cost)+'</td><td>'+c.conversions+'</td></tr>'}).join('')+'</table>';
+    if(r.terms&&r.terms.length)h+='<table class="t mt-2"><tr><th>Termine</th><th>Clic</th><th>Costo €</th><th>Conv.</th></tr>'+r.terms.slice(0,50).map(function(x){return '<tr><td>'+esc(x.search_term)+'</td><td>'+x.clicks+'</td><td>'+fx(x.cost)+'</td><td>'+x.conversions+'</td></tr>'}).join('')+'</table>';
+    $('irOut').innerHTML=h;loadPerf();loadToday();
+  }finally{busy(btn,false)}
+}
+
+function renderPerfQ(r){
+  var b=$('perfQ');if(!b)return;
+  if(r.qualifiedLeads==null){b.innerHTML='<div class="lint warn">'+esc(r.error||'Lead qualificati non disponibili')+'</div>';return}
+  var h='<h3 class="font-bold mb-1">Lead qualificati (ADS)</h3><div class="muted mb-2">Definizione: <code>'+esc(r.definition)+'</code> · '+BAS('misurato')+' · '+esc(r.attribution||'')+' · spesa: '+esc(r.spendBasis||'')+'</div>';
+  if(!r.sufficient){h+='<div class="lint warn"><span>⏳</span><span><b>'+esc(r.sample.message)+'</b>: nessuna percentuale, nessun QCPL e nessuna raccomandazione finché non ci sono '+r.sample.minimum+' lead qualificati con click ID.</span></div>';b.innerHTML=h;return}
+  h+='<div class="grid md:grid-cols-3 gap-3 mb-3"><div class="card" style="margin:0"><div class="muted">Lead qualificati</div><div class="text-2xl font-bold">'+r.qualifiedLeads+'</div></div><div class="card" style="margin:0"><div class="muted">QCPL</div><div class="text-2xl font-bold">'+(r.qcpl==null?'n.d.':fx(r.qcpl)+' €')+'</div></div><div class="card" style="margin:0"><div class="muted">Quota qualificati</div><div class="text-2xl font-bold">'+(r.qualificationRate==null?'n.d.':fx(r.qualificationRate*100,1)+'%')+'</div></div></div>';
+  h+='<table class="t"><tr><th>Campagna</th><th>Lead</th><th>Qualificati</th><th>Clic</th><th>Spesa €</th><th>QCPL €</th><th>Quota</th></tr>'+r.campaigns.map(function(c){return '<tr><td>'+esc(c.campaign)+'</td><td>'+c.leads+'</td><td>'+c.qualified+'</td><td>'+(c.clicks==null?'n.d.':c.clicks)+'</td><td>'+(c.spend==null?'n.d.':fx(c.spend))+'</td><td>'+(c.qcpl==null?esc(c.note||'n.d.'):fx(c.qcpl))+'</td><td>'+(c.qualificationRate==null?'n.d.':fx(c.qualificationRate*100,1)+'%')+'</td></tr>'}).join('')+'</table>';
+  h+=r.stops.length?'<h3 class="font-bold mt-3 mb-1">Raccomandazioni di stop (non eseguite)</h3>'+r.stops.map(function(s){return '<div class="lint warn"><span>🛑</span><span><b>'+esc(s.campaign)+'</b> — '+esc(s.text)+'</span></div>'}).join(''):'<div class="muted mt-2">Nessuna soglia di stop superata.</div>';
+  b.innerHTML=h;
+}
+async function loadToday(){
+  var box=$('todayOut');if(!box)return;
+  try{var r=await api('/ads/decisions');
+    if(!r.success){box.textContent='Errore';return}
+    if(r.insufficient){box.innerHTML='<b>'+esc(r.insufficient)+'</b><div class="muted mt-1">Nessun suggerimento finché il campione è sotto il minimo: sarebbe un numero rassicurante e falso. Primo obiettivo: i primi '+10+' lead qualificati con click ID.</div>';return}
+    if(!r.rows.length){box.innerHTML='<span class="muted">Nessuna decisione da prendere oggi.</span>';return}
+    box.innerHTML='<ol class="list-decimal ml-5 space-y-1">'+r.rows.map(function(x){return '<li><b>'+esc(x.text)+'</b><div class="muted">'+esc(x.source)+'</div></li>'}).join('')+'</ol>';
+  }catch(e){box.textContent='Errore'}
+}
+
+window.onTab=function(id){if(id==='pagine'&&!$('pgList').dataset.ok){$('pgList').dataset.ok=1;loadSitemap()}if(id==='risultati'){loadPerf();loadToday()}if(id==='lancio')renderChk()};
 (async function init(){
   loadHealth();
   try{var r=await api('/preset');S.regionsAll=r.plan.regions;S.preset=r.plan}catch(e){}

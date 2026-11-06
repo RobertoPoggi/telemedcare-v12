@@ -11,6 +11,7 @@ import { generateReport, reportBanner, reducedWindowNote } from '../../src/modul
 import { collectReportInput } from '../../src/modules/seo-report-data'
 import { ReportAssertionError, addDays, PctRegistry, checkPercentages, PARAMS, GEO_ACTIVATION, mapCrmChannel, CRM_UNSET, type ReportInput } from '../../src/modules/seo-report-engine'
 import { makeFixture } from './fixture'
+import { runAdsTests } from './ads-tests'
 import { FIXTURES, fixtureJson, writeFixtures } from './gen-fixtures'
 
 if (process.argv.includes('--write-fixtures')) { writeFixtures(); process.exit(0) }
@@ -412,6 +413,8 @@ async function runCollect(name: string) {
   const gen = generateReport(input, { diagnostic: true })
   ok(gen.model.cons.tailDays === 3 && gen.errors.length === 0, `report dai dati simulati: ${gen.model.cons.tailDays} giorni in consolidamento, nessun errore`)
 }
+
+await runAdsTests(ok, section)
 
 // ── 7) Lint sul sorgente del generatore ──────────────────────────────────────
 section('7. Sorgente del generatore: niente percentuali né divisori letterali')

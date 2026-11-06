@@ -141,7 +141,7 @@ const tokens = (s: string) => norm(s).split(/[\s]+/).filter(Boolean)
 const slug = (s: string) => norm(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
 export { slug as slugify }
 
-function phraseContained(neg: string, kw: string): boolean {
+export function phraseContained(neg: string, kw: string): boolean {
   const n = tokens(neg), k = tokens(kw)
   if (!n.length || n.length > k.length) return false
   for (let i = 0; i <= k.length - n.length; i++) {

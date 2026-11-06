@@ -119,7 +119,7 @@ export async function collectReportInput(
     const q = (b: any) => searchConsoleQuery(config, { startDate: win.start, endDate: win.gscEnd, searchType: 'web', dataState: 'final', ...b })
     const totals = await safe('GSC totali', async () => (await q({ dimensions: [] })).rows[0] || null)
     const daily = await safe('GSC serie giornaliera', async () => (await q({ dimensions: ['date'], rowLimit: 25000 })).rows)
-    const queries = await safe('GSC query', async () => (await q({ dimensions: ['query'], rowLimit: PARAMS.topQueries })).rows)
+    const queries = await safe('GSC query', async () => (await q({ dimensions: ['query'], rowLimit: Math.max(PARAMS.topQueries, PARAMS.hubQueries) })).rows)
     const pages = await safe('GSC pagine', async () => (await q({ dimensions: ['page'], rowLimit: PARAMS.topPages })).rows)
     if (totals && daily) {
       gsc = {
