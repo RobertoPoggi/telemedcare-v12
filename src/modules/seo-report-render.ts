@@ -23,6 +23,30 @@ const DONUT_CUTOUT = { device: 55, macro: 52, crm: 55 }
 const QA_COL = { label: 34, status: 14 }
 
 export interface GenerateOptions { diagnostic?: boolean }
+
+const ATTRIBUTION_CHECKS = ['ratiomax', 'ratio']   // anomalie di attribuzione GA4 (non un calo di traffico)
+/** Avviso di finestra ridotta: se i giorni esclusi (lag + consolidamento) superano la soglia. */
+export const reducedWindowNote = (excludedDays: number): string => excludedDays > PARAMS.reducedWindowDays ? `finestra ridotta: i dati degli ultimi ${excludedDays} giorni non sono consolidati` : ''
+/** Banner in testa: massimo UNA frase. Nessun errore e nessuna anomalia = nessun banner. */
+export function reportBanner(m: Model, errs: Check[], anoms: Check[]): string {
+  const oneLine = (t: string) => t.replace(/\s+/g, ' ').replace(/[.;:\s]+$/, '')
+  if (errs.length) {
+    const first = errs[0]
+    return `<div class="banner banner-err">🔴 Report non generato: ${esc(oneLine(`${first.label} — ${first.value}`).slice(0, 220))}${errs.length > 1 ? esc(` (+${errs.length - 1} altri controlli bloccanti)`) : ''}.</div>`
+  }
+  const reduced = reducedWindowNote(m.excl.total)
+  const attr = anoms.filter(a => ATTRIBUTION_CHECKS.includes(a.id)), other = anoms.filter(a => !ATTRIBUTION_CHECKS.includes(a.id))
+  if (!anoms.length && !reduced) return ''
+  const parts: string[] = []
+  const wk = m.ratio.anomalous === 1 ? `1 settimana su ${m.ratio.fullCount} ha` : `${m.ratio.anomalous} settimane su ${m.ratio.fullCount} hanno`
+  const tol = other.length === 1 ? 'un controllo è fuori tolleranza' : `${other.length} controlli sono fuori tolleranza`
+  if (attr.length && !other.length) parts.push(`Dati completi e quadrature verificate. ${wk} un'anomalia di attribuzione GA4 (non un calo di traffico): dettaglio in appendice`)
+  else if (attr.length) parts.push(`Quadrature principali verificate. ${wk} un'anomalia di attribuzione GA4 (non un calo di traffico) e ${tol}: dettaglio in appendice`)
+  else if (other.length) parts.push(`Quadrature principali verificate; ${tol}: dettaglio in appendice`)
+  else parts.push('Dati e quadrature verificati')
+  if (reduced) parts.push(reduced)
+  return `<div class="banner banner-anom">🟠 ${esc(parts.join('; '))}.</div>`
+}
 export interface GenerateResult { html: string; model: Model; checks: Check[]; pct: ReturnType<typeof checkPercentages>; hardFailed: boolean; errors: Check[]; anomalies: Check[] }
 
 /** Livelli: 🔴 errore bloccante (il report NON si genera), 🟠 anomalia (banner arancione + elenco), 🟡 avviso di metodo (solo riga in tabella). */
@@ -37,15 +61,24 @@ export function generateReport(input: ReportInput, opts: GenerateOptions = {}): 
   const hardFailed = errs.length > 0
   if (hardFailed && !opts.diagnostic) throw new ReportAssertionError(errs)
   const anoms = anomalies(checks)
-  const li = (c: Check) => `<li><strong>${esc(c.label)}</strong> — ${esc(c.value)}</li>`
-  const bannerErr = errs.length ? `<div class="banner banner-err">🔴 Errore bloccante — report NON utilizzabile (generato solo in modalità diagnostica)<ul>${errs.map(li).join('')}</ul></div>` : ''
-  const bannerAn = anoms.length ? `<div class="banner banner-anom">🟠 Anomalia — report generato, da verificare prima dell’uso<ul>${anoms.map(li).join('')}</ul></div>` : ''
+  // Un solo banner, una sola frase, in linguaggio di business. L'elenco puntuale sta nell'appendice «Qualità del dato».
+  const bannerHtml = reportBanner(m, errs, anoms)
   const pctText = pct.ok
     ? `<span class="qa-ok">✓ OK</span></td><td>${pct.total} percentuali registrate; ${pct.textClaims} citate nel testo, ciascuna con calcolo gemello in tabella (stessi due numeri, stesso decimale)`
     : `${statusCell('error')}</td><td>${esc(pct.problems.join(' · '))}`
-  const html = html0.replace(PLACE_BANNER, bannerErr + bannerAn).replace(PLACE_PCT, `<tr><td>Coerenza percentuali testo vs tabelle</td><td>${pctText}</td></tr>`)
+  const html = html0.replace(PLACE_BANNER, bannerHtml).replace(PLACE_PCT, `<tr><td>Coerenza percentuali testo vs tabelle</td><td>${pctText}</td></tr>`)
   return { html, model: m, checks, pct, hardFailed, errors: errs, anomalies: anoms }
 }
+
+/** Intestazione: periodo effettivo, giorni esclusi e causa di ciascuna esclusione, in una riga sola. */
+export function periodLine(m: Model): string {
+  const e = m.excl
+  const causes = [e.lag ? `${e.lag} per lag GA4` : '', e.consolidation ? `${e.consolidation} perché l'organico non è ancora consolidato` : ''].filter(Boolean).join(', ')
+  return `Periodo ${fmtDay(m.win.start)} → ${fmtDay(m.win.aggEnd)} (${m.periodDaysGa4} giorni). ${e.total ? `Esclusi ${e.total} giorni: ${causes}.` : 'Nessun giorno escluso.'}`
+}
+
+/** Caption delle date: generato SEMPRE dalle stesse variabili di data usate per costruire i grafici (mai scritto a mano). */
+export const dateCaption = (m: Model): string => `GA4: ${fmtDayY(m.win.aggEnd)} · GSC: ${m.gsc ? fmtDayY(m.win.gscEnd) : 'n.d.'} · periodo comune: ${fmtDayY(m.win.commonEnd)}`
 
 // ── helpers di layout ───────────────────────────────────────────────────────
 const rng = (src: string, start: string, end: string, days: number, extra = '') =>
@@ -105,9 +138,9 @@ function renderHtml(m: Model, checks: Check[], R: PctRegistry): string {
   }).join('')
   const sanity = m.trendSanity
   const sanityNote = sanity && sanity.flagged
-    ? `<div class="note-box"><strong>Sanità del trend:</strong> l’organico GA4 scende di ${R.PS(m.trend[1].ma28.cur! - m.trend[1].ma28.prev!, m.trend[1].ma28.prev!, 1, 'text')} (MA${PARAMS.maLong}) mentre i click Search Console variano di ${R.PS(m.trend[2].ma28.cur! - m.trend[2].ma28.prev!, m.trend[2].ma28.prev!, 1, 'text')}: il calo GA4 supera il doppio di quello GSC. <strong>Possibile problema di consolidamento o di attribuzione GA4, non un calo di traffico.</strong></div>` : ''
+    ? `<div class="note-box"><strong>Sanità del trend:</strong> GA4 e GSC descrivono andamenti diversi (organico GA4 ${R.PS(m.trend[1].ma28.cur! - m.trend[1].ma28.prev!, m.trend[1].ma28.prev!, 1, 'text')} vs click GSC ${R.PS(m.trend[2].ma28.cur! - m.trend[2].ma28.prev!, m.trend[2].ma28.prev!, 1, 'text')}, MA${PARAMS.maLong}). La causa più probabile è l’attribuzione GA4, non il traffico: il click GSC è la misura di riferimento.</div>` : ''
   const consNote = m.cons.tailDays
-    ? `<div class="note-box"><strong>Ultimi ${m.cons.tailDays} giorni in consolidamento</strong> (${fmtDay(m.cons.tailDates[0])} → ${fmtDay(m.cons.tailDates[m.cons.tailDates.length - 1])}): organico GA4 pari a ${R.P(m.cons.tailMean as number, m.cons.refMean as number, 1, 'text')} della media dei ${m.cons.refDays} giorni precedenti, sotto la soglia di ${R.PM(PARAMS.consolidationMinShare * 100, 0)}. Esclusi da aggregati, trend e rapporto settimanale; nei grafici sono tratteggiati.</div>` : ''
+    ? `<div class="note-box"><strong>Ultimi ${m.cons.tailDays} giorni in consolidamento</strong> (${fmtDay(m.cons.tailDates[0])} → ${fmtDay(m.cons.tailDates[m.cons.tailDates.length - 1])}): organico GA4 pari a ${R.P(m.cons.tailMean as number, m.cons.refMean as number, 1, 'text')} della media dei ${m.cons.refDays} giorni precedenti; ${m.cons.weakDays} giorni su ${PARAMS.consolidationTailDays} sotto la soglia di ${R.PM(PARAMS.consolidationMinShare * 100, 0)} (ne servono almeno ${PARAMS.consolidationMinDays}). Esclusi da aggregati, trend e rapporto settimanale; nei grafici sono tratteggiati.</div>` : ''
   const trendBox = `
 <h3>Lettura del trend — media mobile a ${PARAMS.maLong} giorni (strutturale) e a ${PARAMS.maShort} giorni (breve)</h3>
 <table><thead><tr><th>Serie</th><th style="text-align:center">MA${PARAMS.maLong} ultimo giorno consolidato</th><th style="text-align:center">MA${PARAMS.maLong} ${PARAMS.maLong} giorni prima</th><th style="text-align:center">Variazione</th><th>Verdetto (solo MA${PARAMS.maLong})</th><th style="text-align:center">Indicatore di breve MA${PARAMS.maShort}</th></tr></thead><tbody>${trendRows}</tbody></table>
@@ -188,7 +221,7 @@ ${rng(`Search Console · ${i.siteUrl} · tipo web · dataState final`, w.start, 
     <table><thead><tr><th>Query di ricerca</th><th style="text-align:center">Click</th><th style="text-align:center">Impressioni</th><th style="text-align:center">Posizione</th></tr></thead><tbody>${qRows || '<tr><td colspan="4">dato non disponibile</td></tr>'}
     ${top.length ? `<tr style="background:#fef3c7;font-weight:700"><td>CTR medio delle top ${top.length} query (Σ click / Σ impressioni)</td><td style="text-align:center">${fmtInt(topC)}</td><td style="text-align:center">${fmtInt(topI)}</td><td style="text-align:center">${R.P(topC, topI, 1)}</td></tr>
     <tr><td>di cui query di marca (${brandN} query): quota dei click delle top ${top.length}</td><td style="text-align:center">${fmtInt(brandC)}</td><td style="text-align:center">–</td><td style="text-align:center">${R.P(brandC, topC, 1)}</td></tr>` : ''}</tbody></table>
-    <div class="cap">Il CTR di sito è uno solo (sopra): click / impressioni sull'intero periodo. Il CTR delle top ${top.length} query è un'altra grandezza, calcolata esplicitamente sulla riga di totale. Le query di marca (contengono «ecura» / «e cura») sono mostrate, non rimosse.</div>
+    <div class="cap">Il CTR di sito è uno solo (sopra): click / impressioni sull'intero periodo (vedi definizione di CTR in appendice). Il CTR delle top ${top.length} query è un'altra grandezza, calcolata esplicitamente sulla riga di totale. Le query di marca (contengono «ecura» / «e cura») sono mostrate, non rimosse.</div>
   </div>
   <div class="chart-box" style="overflow:auto"><h3>Top pagine per click organici</h3>
     <table><thead><tr><th>Pagina</th><th style="text-align:center">Click</th><th style="text-align:center">Impr.</th><th style="text-align:center">Pos.</th></tr></thead><tbody>${pRows || '<tr><td colspan="4">dato non disponibile</td></tr>'}</tbody></table>
@@ -202,12 +235,12 @@ ${rng(`Search Console · ${i.siteUrl} · tipo web · dataState final`, w.start, 
   let ratioBlock = ''
   if (m.gsc) {
     const rt = m.ratio
-    const stateLabel = (x: WeekRow) => x.state === 'partial' ? 'parziale — esclusa' : x.state === 'unreliable' ? 'dato GA4 non affidabile — esclusa' : x.state === 'break' ? 'rottura' : 'regolare'
+    const stateLabel = (x: WeekRow) => x.state === 'partial' ? 'parziale — esclusa' : x.state === 'unreliable' ? 'dato GA4 non affidabile — conta nel rapporto, esclusa dalle rotture' : x.state === 'break' ? 'rottura (ribasso)' : 'regolare'
     const stateCol = (x: WeekRow) => x.state === 'partial' ? '#6b7280' : x.state === 'ok' ? '#166534' : '#b91c1c'
     const wr = m.weeks.map(x => `<tr><td>${fmtDay(x.weekStart)} → ${fmtDay(x.weekEnd)}</td><td style="text-align:center">${x.days}${x.days < PARAMS.weekDays ? ` / ${PARAMS.weekDays}` : ''}</td><td style="text-align:center">${fmtInt(x.ga4Org)}</td><td style="text-align:center">${x.gscClicks == null ? 'n.d.' : fmtInt(x.gscClicks)}</td><td style="text-align:center;font-weight:700">${x.ratio == null ? '–' : R.P(x.ga4Org, x.gscClicks as number, 1)}</td><td style="color:${stateCol(x)}">${stateLabel(x)}</td></tr>`).join('')
-    const summary = rt.reliableCount
-      ? `<tr style="background:#eff6ff;font-weight:700"><td>Settimane affidabili (${rt.reliableCount} su ${rt.fullCount} complete)</td><td></td><td style="text-align:center">${fmtInt(rt.sumGa)}</td><td style="text-align:center">${fmtInt(rt.sumGsc)}</td><td style="text-align:center">${R.P(rt.sumGa, rt.sumGsc, 1)}</td><td>rapporto medio · mediana ${rt.median == null ? 'n.d.' : R.P(rt.median, 1, 1)} · settimane distanti dalla mediana oltre ${R.PM(PARAMS.ratioBreak * 100, 0)}: ${rt.deviating}</td></tr>`
-      : `<tr><td colspan="6">nessuna settimana completa affidabile nel periodo</td></tr>`
+    const summary = rt.fullCount
+      ? `<tr style="background:#eff6ff;font-weight:700"><td>Periodo: tutte le settimane complete (${rt.fullCount})</td><td></td><td style="text-align:center">${fmtInt(rt.sumGa)}</td><td style="text-align:center">${fmtInt(rt.sumGsc)}</td><td style="text-align:center">${R.P(rt.sumGa, rt.sumGsc, 1)}</td><td>${rt.fullCount} settimane complete, di cui ${rt.anomalous} con attribuzione GA4 anomala · mediana ${rt.median == null ? 'n.d.' : R.P(rt.median, 1, 1)} · settimane distanti dalla mediana oltre ${R.PM(PARAMS.ratioBreak * 100, 0)}: ${rt.deviating}</td></tr>`
+      : `<tr><td colspan="6">nessuna settimana completa nel periodo</td></tr>`
     ratioBlock = `
 <h3>Organico: sessioni GA4 vs click Search Console — rapporto settimanale</h3>
 ${rng('GA4 (sessioni con source google e medium organic) e Search Console (click)', w.start, w.commonEnd, m.common.days, 'periodo comune ai due strumenti, solo giorni consolidati')}
@@ -215,7 +248,7 @@ ${rng('GA4 (sessioni con source google e medium organic) e Search Console (click
 ${summary}</tbody></table>
 <div class="info-box"><strong>Perché GA4 e Search Console non coincidono — e perché il rapporto può superare il ${R.PM(PARAMS.per, 0)}.</strong> I due strumenti misurano eventi diversi: un click in SERP non è una sessione GA4. Lo scarto atteso (sessioni inferiori ai click) deriva da: (1) click che non producono un pageview perché JavaScript è disattivato o il tag non fa in tempo a partire; (2) consenso cookie / Consent Mode: senza consenso GA4 non registra la sessione, e la quota di consenso cambia nel tempo; (3) script blocker e browser con protezione dal tracciamento; (4) abbandono prima del caricamento della pagina; (5) lag di consolidamento e fusi orari diversi dei due strumenti.
   <br>Un rapporto <strong>superiore al ${R.PM(PARAMS.per, 0)}</strong> (sessioni GA4 più numerose dei click) non è un traffico in più: nasce da (a) fusi orari e confini di giornata diversi tra GA4 e Search Console; (b) più sessioni GA4 generate dallo stesso click (ritorni alla pagina, riapertura da cronologia, scadenza della sessione dopo inattività); (c) sessioni con source «google» e medium «organic» assegnate per override manuale o per parametri UTM scritti a mano, non per ricerca reale; (d) modellazione dei dati con Consent Mode, che stima le sessioni senza consenso. Per questo ogni settimana con sessioni GA4 oltre ${fmtDec(PARAMS.ratioMax, 2)} volte i click è marcata «dato GA4 non affidabile» ed <strong>esclusa</strong> dal rapporto medio; il fattore ${fmtDec(PARAMS.ratioMax, 2)} copre solo il fuso orario.
-  <br><strong>Come si usa il rapporto:</strong> il suo livello dipende dalla quota di consenso cookie, quindi non esiste una fascia «giusta». L’allarme scatta sulle <em>rotture</em>: scostamento superiore a ${R.PM(PARAMS.ratioBreak * 100, 0)} dalla mediana delle ${PARAMS.ratioBaselineWeeks} settimane affidabili precedenti, oppure ${PARAMS.ratioBandRun} settimane consecutive fuori dalla banda ${R.PM(PARAMS.ratioBandLow * 100, 0)}–${R.PM(PARAMS.ratioBandHigh * 100, 0)}, oppure un rapporto sopra ${R.PM(PARAMS.ratioMax * 100, 0)} (impossibile). Le settimane parziali non entrano nel calcolo.</div>`
+  <br><strong>Come si usa il rapporto:</strong> il suo livello dipende dalla quota di consenso cookie, quindi non esiste una fascia «giusta». Il rapporto del periodo è calcolato su <em>tutte</em> le settimane complete: le settimane marcate «dato GA4 non affidabile» non vengono sottratte. L’allarme scatta sulle <em>rotture</em>, che sono solo cadute: rapporto oltre ${R.PM(PARAMS.ratioBreak * 100, 0)} sotto la mediana delle ${PARAMS.ratioBaselineWeeks} settimane complete precedenti, oppure ${PARAMS.ratioBandRun} settimane consecutive fuori dalla banda ${R.PM(PARAMS.ratioBandLow * 100, 0)}–${R.PM(PARAMS.ratioBandHigh * 100, 0)}, (una salita è coperta dal limite di ${R.PM(PARAMS.ratioMax * 100, 0)}, oltre il quale il dato è impossibile). Solo la settimana parziale in corso non entra nel calcolo.</div>`
   }
 
   // ── 4. AI / GEO ──
@@ -367,8 +400,8 @@ ${srcBlock}
     <tr><td>GA4 — serie mensile AI/GEO (intervallo proprio)</td><td>${geoRange ? geoRange.start : 'n.d.'}</td><td>${geoRange ? geoRange.end : 'n.d.'}</td><td style="text-align:center">${m.geo ? m.geo.monthsQueried + ' mesi' : 'n.d.'}</td><td>${PARAMS.geoMonths} mesi interi fino all’ultimo giorno aggregato; ultimo mese parziale</td></tr>`
   const qualityBlock = `
 <div class="section qa-page">
-<h2>🧪 Qualità del dato e metodo</h2>
-<p style="font-size:.88rem">Ogni riga è calcolata a runtime dalle stesse query che alimentano il report. Tre livelli: <span class="qa-fail">🔴 errore bloccante</span> (quadrature hard: il report non si genera), <span class="qa-warn">🟠 anomalia</span> (il report si genera con banner in testa ed elenco puntuale), <span class="qa-notice">🟡 avviso di metodo</span> (nessun banner, solo la riga in tabella).</p>
+<h2>🧪 Appendice — Qualità del dato e metodo</h2>
+<p style="font-size:.88rem">Ogni riga è calcolata a runtime dalle stesse query che alimentano il report. Tre livelli: <span class="qa-fail">🔴 errore bloccante</span> (quadrature hard: il report non si genera), <span class="qa-warn">🟠 anomalia</span> (il report si genera; in testa resta una sola frase, l’elenco puntuale è in questa tabella), <span class="qa-notice">🟡 avviso di metodo</span> (nessun banner, solo la riga in tabella).</p>
 <table><thead><tr><th style="width:${QA_COL.label}%">Controllo</th><th style="width:${QA_COL.status}%">Esito</th><th>Valore calcolato</th></tr></thead><tbody>${qRows}${PLACE_PCT}</tbody></table>
 <h3>Intervalli effettivamente usati da ogni fonte</h3>
 <table><thead><tr><th>Fonte</th><th>startDate</th><th>endDate</th><th style="text-align:center">Giorni</th><th>Nota</th></tr></thead><tbody>${srcRows}</tbody></table>
@@ -378,7 +411,7 @@ ${srcBlock}
   <li><strong>Serie giornaliera</strong> = query con la dimensione data. Una sessione che attraversa la mezzanotte è contata su due date: la somma datata supera il totale di N sessioni (<em>sessioni a cavallo della mezzanotte</em>, N = somma datata − totale senza dimensioni). N è atteso e dichiarato; la tolleranza di ${R.PM(PARAMS.tolerance * 100, 1)} copre solo questo caso, oltre resta errore bloccante. <strong>Totale device</strong> = stessa dateRanges, nessuna data: deve coincidere esattamente.</li>
   <li><strong>CTR</strong> di sito = click / impressioni sull’intero periodo GSC. Il <strong>CTR delle top ${PARAMS.topQueries} query</strong> è un’altra grandezza (Σ click / Σ impressioni delle sole ${PARAMS.topQueries} query) e non va confuso con il CTR di sito. <strong>Click al giorno</strong> = click / giorni effettivi dopo il taglio dei giorni non consolidati.</li>
   <li><strong>MA${PARAMS.maShort}</strong> = media dei ${PARAMS.maShort} giorni terminanti nella data indicata: indicatore di breve, senza verdetto. <strong>MA${PARAMS.maLong}</strong> = media dei ${PARAMS.maLong} giorni terminanti nella data indicata, esclusi i giorni in consolidamento: è l’unica base del verdetto «in calo / stabile / in aumento» (confronto con la MA${PARAMS.maLong} di ${PARAMS.maLong} giorni prima).</li>
-  <li><strong>Giorni in consolidamento</strong>: se la media organica degli ultimi ${PARAMS.consolidationTailDays} giorni è sotto ${R.PM(PARAMS.consolidationMinShare * 100, 0)} della media dei ${PARAMS.consolidationRefDays} giorni precedenti, quei giorni sono esclusi da aggregati e trend e tratteggiati nei grafici. Lag GA4 ${PARAMS.ga4LagDays} giorni, GSC ${PARAMS.gscLagDays}.</li>
+  <li><strong>Giorni in consolidamento</strong>: se in almeno ${PARAMS.consolidationMinDays} degli ultimi ${PARAMS.consolidationTailDays} giorni l’organico è sotto ${R.PM(PARAMS.consolidationMinShare * 100, 0)} della media dei ${PARAMS.consolidationRefDays} giorni precedenti (una singola giornata debole non basta), quei ${PARAMS.consolidationTailDays} giorni sono esclusi da aggregati e trend e tratteggiati nei grafici. Lag GA4 ${PARAMS.ga4LagDays} giorni, GSC ${PARAMS.gscLagDays}.</li>
   <li><strong>Google organic</strong> = sessioni con <code>sessionSource = google</code> e <code>sessionMedium = organic</code> (non il channel group, che comprende Discover, News e referral google.* riclassificati). <strong>Macro-canali</strong>: SEO (tutti i motori organici), AI (assistenti AI), Direct, Paid, Social, Altro.</li>
   <li><strong>Rapporto organico</strong> = sessioni GA4 google / organic ÷ click GSC, su settimane complete (lun–dom) e affidabili: sono escluse le settimane con sessioni oltre ${fmtDec(PARAMS.ratioMax, 2)} volte i click.</li>
   <li><strong>Quota Direct</strong> = sessioni Direct ÷ sessioni totali.</li>
@@ -437,6 +470,7 @@ ${i.ga4.countries.map(c => `<tr><td>${esc(c.country)}</td><td style="text-align:
     aggCount: m.aggCount,
     weekLabels, weekPartial,
     weekSeries: CHART_CHANNELS.map(c => ({ name: c, data: fullWeeks.map(x => x.byChannel[c]), color: CH_COLOR[c] })),
+    commonCount: m.dates.filter(d => d <= m.win.commonEnd).length,
     gaOrg: m.gaOrgDaily, gaOrgMa: m.gaOrgMa7.map((v, k) => (v == null || k >= m.aggCount ? null : Math.round(v * 100) / 100)),
     gsc: m.gscDaily, gscMa: m.gscMa7.map(v => (v == null ? null : Math.round(v * 100) / 100)),
     gscEndLabel: fmtDay(w.gscEnd), ga4EndLabel: fmtDay(w.aggEnd),
@@ -477,8 +511,7 @@ ${PLACE_BANNER}
     ${i.sampleNote ? `<div style="margin-top:12px;background:#fbbf24;color:#3b2a00;border-radius:8px;padding:8px 14px;font-weight:700;font-size:.85rem;max-width:760px">${esc(i.sampleNote)}</div>` : ''}
     <h1 style="margin-top:16px">Report Analytics Live — eCura</h1>
     <p class="subtitle">Analisi dettagliata per fonte di acquisizione: SEO tradizionale (motore per motore), AI/GEO (tool per tool), Direct, ADS.<br>
-    Periodo analizzato: <strong>${w.start}</strong> → <strong>${w.aggEnd}</strong> (${m.periodDaysGa4} giorni).<br>
-    <span style="font-size:.85rem;opacity:.85">Periodo richiesto fino al ${esc(i.requestedEnd)}: ${esc(lagNote)}</span></p>
+    <span id="periodo-effettivo">${esc(periodLine(m))}</span></p>
     <div class="meta">
       <span>📊 GA4: ${esc(i.measurementId)}</span>
       <span>🔍 Search Console: ${esc(i.siteUrl)}</span>
@@ -513,7 +546,7 @@ ${kpiHtml}
     <h3>Organico: sessioni GA4 vs click Search Console</h3>
     <div class="panel"><canvas id="orgGaChart" height="62"></canvas></div>
     <div class="panel"><canvas id="orgGscChart" height="62"></canvas></div>
-    <div class="cap">Due pannelli separati con lo stesso asse temporale (nessun doppio asse): sopra le sessioni GA4 di Google organic, sotto i click di Search Console. Linea sottile: dato giornaliero; linea spessa: media mobile a ${PARAMS.maShort} giorni. ${m.gsc ? `Search Console termina il ${fmtDayY(w.gscEnd)} (un giorno prima di GA4: lag diverso).` : 'Search Console: dato non disponibile.'} ${esc(lagNote)}</div>
+    <div class="cap">Due pannelli separati con lo stesso asse temporale (nessun doppio asse): sopra le sessioni GA4 di Google organic, sotto i click di Search Console. Linea sottile: dato giornaliero; linea spessa: media mobile a ${PARAMS.maShort} giorni. Entrambe le serie sono ritagliate al periodo comune; i giorni di Search Console oltre tale data restano visibili solo nei KPI di Search Console e nella tabella settimanale. ${esc(dateCaption(m))}</div>
   </div>
   <div class="chart-box">
     <h3>Sessioni per settimana (lun–dom)</h3>
@@ -585,13 +618,13 @@ ${smTable}
 <!-- 7. CRM -->
 ${crmBlock}
 
-<!-- Qualità del dato e metodo -->
-${qualityBlock}
-
 <!-- Insight -->
 ${insights}
 
 ${geoBlockCountry}
+
+<!-- Appendice: Qualità del dato e metodo (dopo il Geografico) -->
+${qualityBlock}
 
 </div><!-- /container -->
 
@@ -624,16 +657,17 @@ new Chart(document.getElementById('deviceChart'), { type: 'doughnut',
 // 3. Organico: due pannelli, stessa scala temporale
 const orgOpts = (title, last) => ({ responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } } },
   scales: { x: { title: { display: last, text: 'giorno (gg/mm)', font: { size: 10 } }, ticks: { maxTicksLimit: 16, display: true } }, y: ax(title) } });
+// entrambe le serie sono ritagliate al PERIODO COMUNE (D.commonCount giorni): stesso inizio, stessa fine
+const cut = a => a.slice(0, D.commonCount);
 new Chart(document.getElementById('orgGaChart'), { type: 'line',
-  data: { labels: D.labels, datasets: [
-    { label: 'Sessioni GA4 Google organic — giornaliero (sessioni/giorno); tratteggio = in consolidamento, escluso dagli aggregati', data: D.gaOrg, borderColor: 'rgba(66,133,244,.45)', borderWidth: 1, pointRadius: 1.5, tension: 0,
-      segment: { borderDash: c => c.p1DataIndex >= D.aggCount ? [4, 3] : undefined, borderColor: c => c.p1DataIndex >= D.aggCount ? 'rgba(220,38,38,.8)' : undefined } },
-    { label: 'Media mobile ${PARAMS.maShort} giorni (sessioni/giorno), indicatore di breve', data: D.gaOrgMa, borderColor: '#1d4ed8', borderWidth: 2.5, pointRadius: 0, tension: .25 } ] },
+  data: { labels: cut(D.labels), datasets: [
+    { label: 'Sessioni GA4 Google organic — giornaliero (sessioni/giorno)', data: cut(D.gaOrg), borderColor: 'rgba(66,133,244,.45)', borderWidth: 1, pointRadius: 1.5, tension: 0 },
+    { label: 'Media mobile ${PARAMS.maShort} giorni (sessioni/giorno), indicatore di breve', data: cut(D.gaOrgMa), borderColor: '#1d4ed8', borderWidth: 2.5, pointRadius: 0, tension: .25 } ] },
   options: orgOpts('sessioni GA4 al giorno', false) });
 new Chart(document.getElementById('orgGscChart'), { type: 'line',
-  data: { labels: D.labels, datasets: [
-    { label: 'Click Search Console — giornaliero (click/giorno)', data: D.gsc, borderColor: 'rgba(217,119,6,.5)', borderWidth: 1, pointRadius: 1.5, tension: 0, spanGaps: false },
-    { label: 'Media mobile ${PARAMS.maShort} giorni (click/giorno), indicatore di breve', data: D.gscMa, borderColor: '#b45309', borderWidth: 2.5, pointRadius: 0, tension: .25, spanGaps: false } ] },
+  data: { labels: cut(D.labels), datasets: [
+    { label: 'Click Search Console — giornaliero (click/giorno)', data: cut(D.gsc), borderColor: 'rgba(217,119,6,.5)', borderWidth: 1, pointRadius: 1.5, tension: 0, spanGaps: false },
+    { label: 'Media mobile ${PARAMS.maShort} giorni (click/giorno), indicatore di breve', data: cut(D.gscMa), borderColor: '#b45309', borderWidth: 2.5, pointRadius: 0, tension: .25, spanGaps: false } ] },
   options: orgOpts('click GSC al giorno', true) });
 
 // 4. Settimanale per canale

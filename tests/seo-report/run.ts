@@ -7,9 +7,9 @@
 // Uso: node scripts/test-seo-report.cjs [--write-fixtures] [--html out.html]
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { generateReport } from '../../src/modules/seo-report-render'
+import { generateReport, reportBanner, reducedWindowNote } from '../../src/modules/seo-report-render'
 import { collectReportInput } from '../../src/modules/seo-report-data'
-import { ReportAssertionError, PctRegistry, checkPercentages, PARAMS, GEO_ACTIVATION, mapCrmChannel, CRM_UNSET, type ReportInput } from '../../src/modules/seo-report-engine'
+import { ReportAssertionError, addDays, PctRegistry, checkPercentages, PARAMS, GEO_ACTIVATION, mapCrmChannel, CRM_UNSET, type ReportInput } from '../../src/modules/seo-report-engine'
 import { makeFixture } from './fixture'
 import { FIXTURES, fixtureJson, writeFixtures } from './gen-fixtures'
 
@@ -59,12 +59,12 @@ ok(N === sane.expected.midnight && m.midnight === N, `serie giornaliera ${dailyS
 ok(N >= 0 && N / m.total <= PARAMS.tolerance, `N entro la tolleranza della sola mezzanotte (${N} ≤ ${(PARAMS.tolerance * m.total).toFixed(1)})`)
 ok(/Sessioni a cavallo della mezzanotte/.test(ht) && /atteso, non è un errore/.test(ht), 'riga «Sessioni a cavallo della mezzanotte … atteso, non è un errore» valorizzata')
 ok(new RegExp(`${N} = somma serie giornaliera`).test(ht), `la riga riporta N = ${N} con la differenza esplicita`)
-ok(sane.input.ga4.devices!.reduce((s, d) => s + d.sessions, 0) === m.total, 'totale device = totale (coincidenza esatta, senza tolleranza)')
+ok(sane.input.ga4.devices!.reduce((s, d) => s + d.sessions, 0) === m.total, 'totale device = totale sul caso sano')
 ok(g.checks.find(c => c.id === 'dev')!.level === 'ok', 'controllo device: ok')
 ok(m.gsc != null && Math.abs(m.gsc.ctr - m.gsc.clicks / m.gsc.impressions) < 1e-12 && g.checks.find(c => c.id === 'ctr')!.level === 'ok', 'CTR di sito ricalcolabile = click / impressioni')
 ok(g.pct.ok && g.pct.textClaims > 0, `percentuali del testo = percentuali delle tabelle (${g.pct.total} registrate, ${g.pct.textClaims} citate nel testo)`)
 ok(g.errors.length === 0 && g.anomalies.length === 0, `nessun errore bloccante, nessuna anomalia (${ids(g.errors)} / ${ids(g.anomalies)})`)
-ok(!/class="banner/.test(h), 'nessun banner (solo avvisi di metodo nelle righe di tabella)')
+ok(!/class="banner/.test(h), 'P7: nessun errore e nessuna anomalia → nessun banner (solo avvisi di metodo nelle righe di tabella)')
 ok(g.checks.filter(c => c.level === 'notice').map(c => c.id).sort().join(',') === 'aicrm,direct,geo,sample', `avvisi 🟡 motivati: ${g.checks.filter(c => c.level === 'notice').map(c => c.id).sort().join(', ')}`)
 ok(m.win.start === '2026-08-09' && m.win.aggEnd === '2026-10-31' && m.win.gscEnd === '2026-11-01', `finestre: GA4 ${m.win.start} → ${m.win.aggEnd} (lag ${PARAMS.ga4LagDays}), GSC → ${m.win.gscEnd}`)
 ok(PARAMS.ga4LagDays === 4, 'GA4_LAG_DAYS = 4')
@@ -75,7 +75,7 @@ ok(/indicatore di breve, nessun giudizio/.test(ht), 'MA7 mostrata come indicator
 ok(m.trend.every(t => t.endDate <= m.dates[m.aggCount - 1]), 'le MA terminano nell’ultimo giorno consolidato')
 
 // A4/A5: rapporto settimanale
-ok(m.weeks.filter(w => w.full).every(w => w.state === 'ok') && m.ratio.reliableCount === m.ratio.fullCount, `tutte le ${m.ratio.fullCount} settimane complete sono affidabili (ratio ≤ ${PARAMS.ratioMax})`)
+ok(m.weeks.filter(w => w.full).every(w => w.state === 'ok') && m.ratio.unreliable.length === 0 && m.ratio.anomalous === 0, `tutte le ${m.ratio.fullCount} settimane complete sono regolari (ratio ≤ ${PARAMS.ratioMax})`)
 ok(m.ratio.median != null && /mediana/.test(ht) && /settimane distanti dalla mediana/.test(ht), 'mediana del periodo e numero di settimane distanti dalla mediana mostrati')
 {
   // A5: nessuna fascia assoluta 75–90 come allarme: nel generatore non esistono soglie 0,75 / 0,90 sul rapporto
@@ -150,19 +150,161 @@ section('4. Organico GA4 > click GSC (A4/A5)')
   const w = om.weeks.find(x => x.weekStart === '2026-09-14')!
   ok(w.state === 'unreliable' && w.ga4Org > (w.gscClicks as number) * PARAMS.ratioMax, `settimana ${w.weekStart}: organico ${w.ga4Org} > click ${w.gscClicks} × ${PARAMS.ratioMax} → non affidabile`)
   ok(/dato GA4 non affidabile/.test(ot), 'settimana marcata «dato GA4 non affidabile»')
-  const rel = om.weeks.filter(x => x.state === 'ok')
-  ok(om.ratio.sumGa === rel.reduce((s, x) => s + x.ga4Org, 0) && om.ratio.reliableCount === rel.length && om.ratio.unreliable.length === 1, 'settimana non affidabile ESCLUSA dal rapporto medio')
+  const allFull = om.weeks.filter(x => x.full)
+  ok(om.ratio.sumGa === allFull.reduce((s, x) => s + x.ga4Org, 0) && om.ratio.sumGsc === allFull.reduce((s, x) => s + (x.gscClicks as number), 0) && om.ratio.unreliable.length === 1, 'P2: la settimana non affidabile resta nel rapporto del periodo (denominatore = click di TUTTE le settimane complete)')
   ok(!om.weeks.some(x => x.state === 'break' && x.weekStart === '2026-09-14'), 'una settimana non affidabile non è contata anche come rottura')
   const r = generateReport(loaded.get('report-ratio-rupture')!.input).model
-  ok(r.ratio.breaks.some(x => x.weekStart === '2026-10-12') && r.weeks.find(x => x.weekStart === '2026-10-12')!.state === 'break', `rottura rilevata: sett. 2026-10-12 oltre ±${PARAMS.ratioBreak} dalla mediana delle precedenti`)
+  ok(r.ratio.breaks.some(x => x.weekStart === '2026-10-12') && r.weeks.find(x => x.weekStart === '2026-10-12')!.state === 'break', `rottura rilevata: sett. 2026-10-12 oltre ${PARAMS.ratioBreak} SOTTO la mediana delle precedenti`)
   ok(PARAMS.ratioBandRun === 3 && PARAMS.ratioBandLow === 0.6 && PARAMS.ratioBandHigh === 1.1 && PARAMS.ratioMax === 1.05, 'parametri A5: 3 settimane fuori 0,60–1,10; oltre 1,05 impossibile')
 }
 
-// Sanità del trend GA4 vs GSC
+// P5: sanità del trend = distanza tra i due tassi di variazione
 {
   const f = makeFixture({ mutate: i => { for (const r of i.ga4.baseRows!) if (r.source === 'google' && r.medium === 'organic' && r.date >= '2026-10-04') r.sessions = Math.max(0, Math.round(r.sessions * 0.15)) } })
-  const gg = generateReport(f, { diagnostic: true })
-  ok(gg.model.trendSanity != null && gg.model.trendSanity.flagged && /possibile problema di consolidamento o di attribuzione GA4, non un calo di traffico/.test(text(gg.html)), 'GA4 cala più del doppio di GSC → «possibile problema di consolidamento o di attribuzione GA4, non un calo di traffico»')
+  const gg = generateReport(f, { diagnostic: true }), sn = gg.model.trendSanity!
+  const row = gg.checks.find(c => c.id === 'trendsanity')!
+  ok(sn != null && sn.flagged && Math.abs(Math.abs(sn.ga4Rel - sn.gscRel) - sn.gap) < 1e-12 && sn.gap > PARAMS.trendGap && row.level === 'notice', `P5: distanza ${(sn.gap * 100).toFixed(1)} punti > ${PARAMS.trendGap * 100} → 🟡 informativo (non anomalia)`)
+  ok(/GA4 e GSC descrivono andamenti diversi/.test(text(gg.html)) && /attribuzione GA4, non il traffico/.test(text(gg.html)) && /misura di riferimento/.test(text(gg.html)), 'P5: testo «GA4 e GSC descrivono andamenti diversi … il click GSC è la misura di riferimento» con entrambi i valori')
+  ok(!gg.anomalies.some(a => a.id === 'trendsanity') && !gg.errors.some(a => a.id === 'trendsanity'), 'P5: la divergenza non è mai un’anomalia né un errore')
+  // direzioni opposte (+24 / −3 = 27 punti) NON sono «nessuna divergenza»
+  const opp = makeFixture({ mutate: i => { for (const d of i.gsc!.daily) if (d.date >= '2026-09-20') d.clicks = Math.round(d.clicks * 0.5) } })
+  const oo = generateReport(opp, { diagnostic: true }), so = oo.model.trendSanity!
+  ok(so.ga4Rel > 0 && so.gscRel < so.ga4Rel && so.gap > PARAMS.trendGap && oo.checks.find(c => c.id === 'trendsanity')!.level === 'notice' && !/andamenti coerenti/.test(oo.checks.find(c => c.id === 'trendsanity')!.value), `P5: GA4 ${(so.ga4Rel * 100).toFixed(0)}% vs GSC ${(so.gscRel * 100).toFixed(0)}% (direzioni opposte) → NON «nessuna divergenza»`)
+  ok(generateReport(sane.input).checks.find(c => c.id === 'trendsanity')!.level === 'ok' && generateReport(sane.input).model.trendSanity!.gap <= PARAMS.trendGap, 'P5: caso sano (distanza ≤ 15 punti) → ✓ OK')
+}
+
+// ── Correzione mirata: i 9 punti ────────────────────────────────────────────
+section('P1. Totale device vs totale: tolleranza di aggregazione')
+{
+  const T = m.total, tolRel = Math.max(PARAMS.deviceTolAbs, T * PARAMS.deviceTolRel)
+  const devCheck = (delta: number) => { const r = generateReport(makeFixture({ mutate: i => { i.ga4.devices![0].sessions += delta } }), { diagnostic: true }); return r.checks.find(c => c.id === 'dev')! }
+  for (const d of [0, 1, -1, PARAMS.deviceTolAbs, -PARAMS.deviceTolAbs]) ok(devCheck(d).level === 'ok', `Δ ${d >= 0 ? '+' : ''}${d} sessioni → ✓ OK`)
+  ok(/entro ±/.test(devCheck(1).value) && /Δ \+1 \(entro ±/.test(devCheck(1).value), 'la tolleranza adottata è scritta accanto al valore (Δ +1 (entro ±…))')
+  const over = Math.floor(tolRel) + 1
+  ok(devCheck(over).level === 'anomaly' && devCheck(-over).level === 'anomaly', `Δ ±${over} sessioni (oltre la tolleranza ±${tolRel.toFixed(1)}) → 🟠 anomalia`)
+  ok(PARAMS.deviceTolAbs === 2 && PARAMS.deviceTolRel === 0.002, 'tolleranza = la più permissiva tra ±2 sessioni e ±0,2%')
+}
+
+section('P2/P3. Rapporto organico su tutte le settimane complete; rotture = solo ribassi')
+{
+  const o = generateReport(loaded.get('report-organic-over-clicks')!.input), om = o.model
+  const full = om.weeks.filter(x => x.full)
+  ok(om.ratio.fullCount === full.length && om.ratio.sumGsc === full.reduce((s, x) => s + (x.gscClicks as number), 0), `denominatore = somma dei click GSC di tutte le ${full.length} settimane complete (fissato prima di vedere i dati)`)
+  ok(om.ratio.median === [...full.map(x => x.ratio as number)].sort((a, b) => a - b)[Math.floor(full.length / 2)] || Math.abs((om.ratio.median as number) - (() => { const v = full.map(x => x.ratio as number).sort((a, b) => a - b); return v.length % 2 ? v[(v.length - 1) / 2] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2 })()) < 1e-12, 'mediana calcolata su TUTTE le settimane complete')
+  const row = o.checks.find(c => c.id === 'ratio')!
+  ok(new RegExp(`${om.ratio.fullCount} settimane complete, di cui ${om.ratio.anomalous} con attribuzione GA4 anomala`).test(row.value), `accanto al valore: «${om.ratio.fullCount} settimane complete, di cui ${om.ratio.anomalous} con attribuzione GA4 anomala»`)
+  ok(new RegExp(`${om.ratio.fullCount} settimane complete, di cui ${om.ratio.anomalous} con attribuzione GA4 anomala`).test(text(o.html)), 'lo stesso conteggio è nella tabella settimanale del report')
+  // il rapporto con la settimana alta NON è quello calcolato sul sottoinsieme
+  const subset = full.filter(x => x.state === 'ok')
+  ok(om.ratio.sumGa / om.ratio.sumGsc > subset.reduce((s, x) => s + x.ga4Org, 0) / subset.reduce((s, x) => s + (x.gscClicks as number), 0), 'il rapporto del periodo non viene abbassato dall’esclusione delle settimane alte')
+  ok(!om.ratio.breaks.some(x => x.state === 'unreliable'), 'le settimane non affidabili non entrano nel calcolo delle rotture')
+  // una SALITA non è una rottura: settimana a rapporto sano ma alto (≤ 1,05) con mediana bassa
+  const up = makeFixture({ mutate: i => { for (const r of i.ga4.baseRows!) if (r.source === 'google' && r.medium === 'organic' && r.date >= '2026-10-12' && r.date <= '2026-10-18') r.sessions = Math.round(r.sessions * 1.25) } })
+  const gu = generateReport(up, { diagnostic: true })
+  ok(gu.model.ratio.breaks.length === 0 && gu.model.weeks.every(w => w.state !== 'break'), `una salita (sett. 2026-10-12 al ${((gu.model.weeks.find(w => w.weekStart === '2026-10-12')!.ratio as number) * 100).toFixed(0)}) non è una rottura`)
+  ok(gu.checks.find(c => c.id === 'ratio')!.value.includes('nessuna rottura'), 'se le rotture sono zero il report scrive «nessuna rottura»')
+  // un ribasso oltre il 30% sotto la mediana precedente è una rottura, scritta con settimana e valore
+  const rp = generateReport(loaded.get('report-ratio-rupture')!.input), rw = rp.model.ratio.breaks[0]
+  const rv = rp.checks.find(c => c.id === 'ratio')!.value
+  ok(rp.model.ratio.breaks.length === 1 && rw.ratio! < 1 && new RegExp(`1 rottura — sett\\. ${rw.weekStart.slice(8, 10)}/${rw.weekStart.slice(5, 7)} al ${(rw.ratio! * 100).toFixed(1).replace('.', ',')}%`).test(rv), `rottura scritta con settimana e valore: «${rv.match(/\d rottur[ae] — [^·]*/)?.[0]}»`)
+  const prevMed = (() => { const full2 = rp.model.weeks.filter(x => x.full); const k = full2.indexOf(rp.model.weeks.find(x => x.weekStart === rw.weekStart)!); const v = full2.slice(Math.max(0, k - PARAMS.ratioBaselineWeeks), k).map(x => x.ratio as number).sort((a, b) => a - b); return v.length % 2 ? v[(v.length - 1) / 2] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2 })()
+  ok((rw.ratio as number) < prevMed * (1 - PARAMS.ratioBreak), 'la rottura è oltre il 30% SOTTO la mediana delle settimane complete precedenti')
+}
+
+section('P4/P6. Periodo comune nel grafico e caption generato dalle date')
+{
+  const dd = generateReport(loaded.get('report-sane')!.input), dm = dd.model
+  const common = dm.dates.filter(d => d <= dm.win.commonEnd).length
+  ok(/commonCount":\d+/.test(dd.html) && new RegExp(`"commonCount":${common}`).test(dd.html), `grafico a due pannelli: entrambe le serie ritagliate a ${common} giorni (periodo comune, fino al ${dm.win.commonEnd})`)
+  ok(/const cut = a => a\.slice\(0, D\.commonCount\)/.test(dd.html) && (dd.html.match(/cut\(D\./g) || []).length === 6, 'sei serie (GA4 + MA, GSC + MA, due asse delle etichette) passano per lo stesso ritaglio')
+  const cap = `GA4: ${dm.win.aggEnd.slice(8, 10)}/${dm.win.aggEnd.slice(5, 7)}/${dm.win.aggEnd.slice(0, 4)} · GSC: ${dm.win.gscEnd.slice(8, 10)}/${dm.win.gscEnd.slice(5, 7)}/${dm.win.gscEnd.slice(0, 4)} · periodo comune: ${dm.win.commonEnd.slice(8, 10)}/${dm.win.commonEnd.slice(5, 7)}/${dm.win.commonEnd.slice(0, 4)}`
+  ok(text(dd.html).includes(cap), `caption generato dalle variabili: «${cap}»`)
+  ok(!/un giorno prima di GA4/.test(dd.html) && !/lag diverso/.test(dd.html), 'la frase residua «un giorno prima di GA4: lag diverso» non esiste più')
+  ok(/giorni di Search Console oltre tale data restano visibili solo nei KPI di Search Console e nella tabella settimanale/.test(text(dd.html)), 'caption: i giorni GSC in più restano solo nei KPI GSC e nella tabella settimanale')
+  // ogni data nel testo del report proviene da una variabile calcolata (stesso principio delle percentuali)
+  const allowed = new Set<string>()
+  const addIso = (d: string) => { if (!d) return; allowed.add(d); allowed.add(`${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`); allowed.add(`${d.slice(8, 10)}/${d.slice(5, 7)}`) }
+  for (const d of dm.dates) addIso(d)
+  for (const d of [dm.win.start, dm.win.today, dm.win.ga4End, dm.win.aggEnd, dm.win.gscEnd, dm.win.commonEnd, dm.win.ga4Cut, dm.win.gscCut, dm.input.requestedStart, dm.input.requestedEnd, dm.input.geoActivation.date, dm.geo?.range.start || '', dm.geo?.range.end || '']) addIso(d)
+  for (const w of dm.weeks) { addIso(w.weekStart); addIso(w.weekEnd) }
+  for (const d of [dm.win.ga4Cut, dm.win.gscCut, dm.win.aggEnd, dm.win.gscEnd]) addIso(addDays(d, 1))
+  const bodyText = text(dd.html.replace(/<span class="pill">[\s\S]*?<\/span>/, '').replace(/<footer>[\s\S]*?<\/footer>/, '').replace(/<script[\s\S]*?<\/script>/g, ''))
+  // solo date calendariali valide (gg ≤ 31, mm ≤ 12): le frazioni dei lead CRM (es. «56/67») non sono date
+  const isDate = (t: string) => { const m = t.match(/^(?:\d{4}-(\d{2})-(\d{2})|(\d{2})\/(\d{2})(?:\/\d{4})?)$/); if (!m) return false; const mm = +(m[1] || m[4]), dd = +(m[2] || m[3]); return mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31 }
+  const found = [...bodyText.matchAll(/(?<![\d\/])(\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4}|\d{2}\/\d{2})(?![\d\/])/g)].map(x => x[1]).filter(isDate)
+  const stray = [...new Set(found.filter(d => !allowed.has(d) && !/^\d{4}-\d{2}$/.test(d)))]
+  ok(stray.length === 0, `ogni data del testo coincide con una variabile calcolata (${new Set(found).size} date distinte controllate)${stray.length ? ' → ESTRANEE: ' + stray.join(', ') : ''}`)
+  // il test FALLISCE se una data scritta a mano non coincide con la variabile
+  const wrong = bodyText + ' Search Console termina il 03/11/2026 (un giorno prima di GA4)'
+  const wrongFound = [...wrong.matchAll(/(?<![\d\/])(\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4}|\d{2}\/\d{2})(?![\d\/])/g)].map(x => x[1]).filter(isDate).filter(d => !allowed.has(d))
+  ok(wrongFound.includes('03/11/2026') || dm.win.gscEnd === '2026-11-03', 'MUTAZIONE «data scritta a mano diversa dalla variabile» → il controllo sulle date la rileva')
+  const cc = generateReport(loaded.get('report-consolidating')!.input).model
+  ok(cc.win.commonEnd === cc.win.aggEnd && cc.dates.filter(d => d <= cc.win.commonEnd).length === cc.aggCount, 'con consolidamento: periodo comune = ultimo giorno consolidato (la coda non entra nel confronto)')
+}
+
+section('P7. Banner unico, una frase, linguaggio di business')
+{
+  const bannerSentences = (html: string) => { const b = html.match(/<div class="banner[^"]*">([\s\S]*?)<\/div>/); return b ? text(b[1]).trim() : '' }
+  const count = (html: string) => (html.match(/class="banner/g) || []).length
+  const o = generateReport(loaded.get('report-organic-over-clicks')!.input), ob = bannerSentences(o.html)
+  ok(count(o.html) === 1 && !/<ul>/.test(o.html.match(/<div class="banner[^"]*">[\s\S]*?<\/div>/)![0]), 'anomalie di attribuzione → UN solo banner, senza elenco tecnico in testa')
+  ok(new RegExp(`^🟠 Dati completi e quadrature verificate\\. ${o.model.ratio.anomalous} settimana su ${o.model.ratio.fullCount} ha un'anomalia di attribuzione GA4 \\(non un calo di traffico\\): dettaglio in appendice\\.$`).test(ob), `banner 🟠: «${ob}»`)
+  ok((ob.replace(/dettaglio in appendice/, '').match(/[.!?](\s|$)/g) || []).length <= 2 && ob.length < 220, 'il banner contiene al massimo una frase (più l’incipit fisso)')
+  ok(!/ratiomax|H1a|H2|Totale device/.test(o.html.match(/<div class="banner[^"]*">[\s\S]*?<\/div>/)![0]), 'nessun nome di controllo o termine tecnico nel banner')
+  ok(/Appendice — Qualità del dato e metodo/.test(o.html) && o.html.indexOf('dato GA4 non affidabile') > 0 && text(o.html.slice(o.html.indexOf('Appendice — Qualità'))).includes('«dato GA4 non affidabile»'), 'l’elenco puntuale delle anomalie è nella tabella in appendice')
+  const e = (() => { try { generateReport(loaded.get('report-midnight-wide')!.input); return '' } catch (x: any) { return String(x.message) } })()
+  const ed = generateReport(loaded.get('report-midnight-wide')!.input, { diagnostic: true }), eb = bannerSentences(ed.html)
+  ok(e.startsWith('REPORT_ASSERT_FAILED') && /^🔴 Report non generato: /.test(eb) && count(ed.html) === 1, `errore bloccante → «${eb.slice(0, 110)}…» (un solo banner 🔴)`)
+  ok(count(generateReport(sane.input).html) === 0, 'nessun errore, nessuna anomalia → nessun banner')
+  const dv = generateReport(loaded.get('report-device-mismatch')!.input), dvb = bannerSentences(dv.html)
+  ok(count(dv.html) === 1 && /fuori tolleranza: dettaglio in appendice/.test(dvb), `anomalia non di attribuzione → una frase senza elenco: «${dvb}»`)
+}
+
+section('P8. Appendice «Qualità del dato e metodo» dopo il Geografico')
+{
+  const ap = generateReport(sane.input), hh = ap.html
+  const iGeo = hh.indexOf('🌍 Geografico'), iApp = hh.indexOf('Appendice — Qualità del dato e metodo'), iDef = hh.indexOf('Definizioni di metodo'), iCrm = hh.indexOf('Qualità Lead CRM')
+  ok(iGeo > 0 && iApp > iGeo, 'la sezione «Appendice — Qualità del dato e metodo» è DOPO il Geografico')
+  ok(iApp > iCrm && iDef > iApp && hh.indexOf('<footer>') > iDef, 'ordine: … CRM → Insight → Geografico → Appendice (tabella + definizioni) → footer')
+  ok(!/<h2>🧪 Qualità del dato e metodo<\/h2>/.test(hh) && (hh.match(/Qualità del dato e metodo/g) || []).length >= 1, 'il titolo non compare più tra le sezioni principali')
+  const tbl = hh.slice(iApp)
+  ok(ap.checks.every(c => tbl.includes(c.label.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'))), `nessuna riga di controllo eliminata: ${ap.checks.length} righe presenti in appendice`)
+  ok(/vedi definizione di CTR in appendice/.test(text(hh.slice(0, iApp))), 'rimando «vedi definizione di CTR in appendice» dalla sezione Search Console')
+}
+
+section('P9. Intestazione: periodo effettivo, giorni esclusi e causa; consolidamento 2 giorni su 3 al 35%')
+{
+  const pe = (html: string) => text((html.match(/<span id="periodo-effettivo">([\s\S]*?)<\/span>/) || [])[1] || '')
+  const a = generateReport(sane.input), am = a.model
+  const dd = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`
+  ok(pe(a.html).trim() === `Periodo ${dd(am.win.start)} → ${dd(am.win.aggEnd)} (${am.periodDaysGa4} giorni). Esclusi ${am.excl.total} giorni: ${am.excl.lag} per lag GA4.`, `intestazione (una riga): «${pe(a.html).trim()}»`)
+  ok(am.excl.lag === PARAMS.ga4LagDays && am.excl.consolidation === 0 && am.excl.total === PARAMS.ga4LagDays, 'giorni esclusi = lag GA4 (4) + consolidamento (0), derivati dalle date')
+  const c = generateReport(loaded.get('report-consolidating')!.input), cm = c.model
+  ok(pe(c.html).trim() === `Periodo ${dd(cm.win.start)} → ${dd(cm.win.aggEnd)} (${cm.periodDaysGa4} giorni). Esclusi ${cm.excl.total} giorni: ${cm.excl.lag} per lag GA4, ${cm.excl.consolidation} perché l'organico non è ancora consolidato.`, `con consolidamento: «${pe(c.html).trim()}»`)
+  // lag 4 + coda 3 = 7 giorni: NON supera la soglia (> 7) → nessun avviso di finestra ridotta, nessun banner senza anomalie
+  ok(cm.excl.total === PARAMS.ga4LagDays + PARAMS.consolidationTailDays && cm.excl.total === PARAMS.reducedWindowDays, `giorni esclusi con consolidamento = ${cm.excl.lag} + ${cm.excl.consolidation} = ${cm.excl.total} (soglia: oltre ${PARAMS.reducedWindowDays})`)
+  ok(reducedWindowNote(PARAMS.reducedWindowDays) === '' && !/finestra ridotta/.test(text(c.html)), 'esattamente 7 giorni esclusi: nessun avviso di finestra ridotta')
+  const rn = reducedWindowNote(PARAMS.reducedWindowDays + 1)
+  ok(rn === 'finestra ridotta: i dati degli ultimi 8 giorni non sono consolidati', `oltre 7 giorni esclusi → «${rn}»`)
+  // con più di 7 giorni esclusi l'avviso va NELLO STESSO banner (nessuna voce separata)
+  const wide = { ...cm, excl: { ...cm.excl, total: PARAMS.reducedWindowDays + 1 } }
+  const wb = reportBanner(wide, [], []), wa = reportBanner(wide, [], generateReport(loaded.get('report-organic-over-clicks')!.input).anomalies)
+  ok((wb.match(/class="banner/g) || []).length === 1 && text(wb).includes('finestra ridotta: i dati degli ultimi 8 giorni non sono consolidati'), `senza anomalie: un solo banner con l'avviso: «${text(wb).trim()}»`)
+  ok((wa.match(/class="banner/g) || []).length === 1 && /Dati completi e quadrature verificate\./.test(text(wa)) && text(wa).includes('finestra ridotta'), `con anomalia di attribuzione: avviso nello STESSO banner: «${text(wa).trim()}»`)
+  ok(reportBanner(cm, [], []) === '' , 'consolidamento con 7 giorni esclusi e nessuna anomalia → nessun banner')
+  ok(!/finestra ridotta/.test(text(a.html)), 'nessun avviso di finestra ridotta se i giorni esclusi non superano la soglia')
+  // trigger: 2 giorni su 3 sotto il 35%
+  ok(PARAMS.consolidationMinShare === 0.35 && PARAMS.consolidationMinDays === 2 && PARAMS.consolidationTailDays === 3, 'parametri: soglia 35%, almeno 2 giorni su 3')
+  const dayOrg = (i: ReportInput, d: string, f: number) => { for (const r of i.ga4.baseRows!) if (r.source === 'google' && r.medium === 'organic' && r.date === d) r.sessions = Math.round(r.sessions * f) }
+  const lastDays = ['2026-10-29', '2026-10-30', '2026-10-31']
+  const one = generateReport(makeFixture({ mutate: i => dayOrg(i, lastDays[2], 0) }), { diagnostic: true })
+  ok(one.model.cons.weakDays === 1 && one.model.cons.tailDays === 0 && one.model.excl.consolidation === 0, 'una SOLA giornata debole (organico a zero) NON scatta il trigger')
+  const weekend = generateReport(makeFixture({ mutate: i => { dayOrg(i, lastDays[2], 0.1) } }), { diagnostic: true })
+  ok(weekend.model.cons.tailDays === 0, 'una giornata molto debole isolata non accorcia la finestra')
+  const two = generateReport(makeFixture({ mutate: i => { dayOrg(i, lastDays[1], 0); dayOrg(i, lastDays[2], 0) } }), { diagnostic: true })
+  ok(two.model.cons.weakDays >= 2 && two.model.cons.tailDays === 3, `2 giorni su 3 sotto il 35% (${two.model.cons.weakDays} deboli) → scatta: ${two.model.cons.tailDays} giorni esclusi`)
+  const between = generateReport(makeFixture({ mutate: i => { dayOrg(i, lastDays[1], 0.5); dayOrg(i, lastDays[2], 0.5) } }), { diagnostic: true })
+  ok(between.model.cons.tailDays === 0, 'giorni al 50% della media (sopra il 35%) NON scattano: la soglia non è più il 50%')
 }
 
 // ── 5) Mutazioni: il test DEVE fallire se una quadratura è rotta ─────────────
@@ -181,8 +323,8 @@ mustFail('query senza data su intervallo diverso dalla serie', i => { i.ga4.quer
 }
 {
   // solo anomalie → il report si genera (niente 🔴)
-  const r = generateReport(makeFixture({ mutate: i => { i.ga4.devices![0].sessions += 2 } }))
-  ok(r.anomalies.some(a => a.id === 'dev') && !r.hardFailed, 'MUTAZIONE device ≠ KPI → 🟠 anomalia, report comunque generato')
+  const r = generateReport(makeFixture({ mutate: i => { i.ga4.devices![0].sessions += 12 } }))
+  ok(r.anomalies.some(a => a.id === 'dev') && !r.hardFailed, 'MUTAZIONE device ≠ KPI oltre la tolleranza → 🟠 anomalia, report comunque generato')
 }
 
 // ── 6) dateRanges delle query (mock fetch) ───────────────────────────────────

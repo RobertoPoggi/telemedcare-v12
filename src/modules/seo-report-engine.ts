@@ -26,6 +26,8 @@ export const PARAMS = {
   ga4LagDays: 4,              // GA4: ultimo giorno incluso = oggi − 4 (attribuzione per canale non ancora consolidata prima)
   gscLagDays: 3,              // GSC: ultimo giorno incluso = oggi − 3 (dataState: final)
   tolerance: 0.006,           // SOLO sessioni a cavallo della mezzanotte: somma datata vs totale senza dimensioni
+  deviceTolAbs: 2,            // totale device vs totale: scarto ammesso in sessioni (aggregazione indipendente delle query GA4)…
+  deviceTolRel: 0.002,        // …oppure in quota del totale: vale la piu' permissiva delle due. Unico controllo con tolleranza
   toleranceGsc: 0.005,        // somma click giornalieri GSC vs totale GSC
   directAlert: 0.25,          // quota Direct oltre la quale si avvisa di possibile sotto-attribuzione
   notSetWarn: 0.05,           // quota (not set)/(other) oltre la quale si avvisa
@@ -38,11 +40,14 @@ export const PARAMS = {
   ratioBaselineMin: 3,        // minimo di settimane affidabili per valutare la rottura
   consolidationTailDays: 3,   // ultimi giorni valutati per il consolidamento dell'organico
   consolidationRefDays: 28,   // giorni di riferimento (precedenti alla coda) per la media di confronto
-  consolidationMinShare: 0.5, // organico della coda sotto questa frazione del riferimento = in consolidamento
+  consolidationMinShare: 0.35, // un giorno della coda e' «debole» se il suo organico e' sotto questa frazione della media di riferimento
+  consolidationMinDays: 2,    // la condizione deve persistere su almeno questi giorni (su consolidationTailDays): una giornata debole isolata non basta
+  reducedWindowDays: 7,       // se i giorni esclusi (lag + consolidamento) superano questo valore compare l'avviso di finestra ridotta
   maShort: 7,                 // media mobile breve: indicatore, senza verdetto
   maLong: 28,                 // media mobile strutturale: unica base del verdetto di trend
   weekDays: 7,                // giorni di una settimana lun–dom
   minCrmSourceCoverage: 0.5,  // copertura minima del campo fonte lead per non segnalare il campo come inaffidabile
+  trendGap: 0.15,             // sanita' del trend: |variazione MA28 organico GA4 − variazione MA28 click GSC| entro questa distanza (punti)
   trendBand: 0.10,            // variazione MA28 oltre questa fascia = 'in aumento/in calo' (convenzione di lettura, non test statistico)
   minChannelSample: 30,       // sotto questa numerosita' le percentuali per canale sono dichiarate non affidabili
   minBaselineMonths: 3,       // mesi pre-attivazione GEO con dati GA4 per parlare di baseline
@@ -283,11 +288,17 @@ export interface TrendRow { label: string; unit: string; endDate: string; prev28
 export interface Consolidation {
   evaluated: boolean; tailDays: number; tailDates: string[]
   tailMean: number | null; refMean: number | null; refDays: number; ratio: number | null
+  weakDays: number                 // giorni della coda con organico sotto la soglia (servono consolidationMinDays)
 }
 export interface RatioAnalysis {
-  fullCount: number; reliableCount: number; unreliable: WeekRow[]
-  sumGa: number; sumGsc: number; median: number | null; deviating: number
-  breaks: WeekRow[]; outsideRun: { from: string; to: string; len: number } | null
+  fullCount: number                // settimane complete (lun–dom): denominatore FISSO dell'indicatore, nessuna esclusione
+  unreliable: WeekRow[]            // settimane con GA4 > GSC × ratioMax: marcate, restano nel rapporto, escluse dalle rotture
+  anomalous: number                // settimane complete con attribuzione GA4 anomala (non affidabili + rotture)
+  sumGa: number; sumGsc: number    // somme su TUTTE le settimane complete
+  median: number | null            // mediana su TUTTE le settimane complete
+  deviating: number                // settimane distanti dalla mediana oltre ratioBreak (descrittivo)
+  breaks: WeekRow[]                // rotture = SOLO ribassi oltre ratioBreak sotto la mediana delle settimane complete precedenti
+  outsideRun: { from: string; to: string; len: number } | null
 }
 
 // ── Mappatura CRM → canale GA4 (UNICA, usata per il rapporto lead / 100 sessioni) ─────────
@@ -322,6 +333,7 @@ export interface Model {
   periodDaysGa4: number            // giorni aggregati GA4 (start → aggEnd)
   periodDaysGsc: number
   downloadedDays: number           // giorni scaricati (start → ga4End), compresa la coda in consolidamento
+  excl: { lag: number; consolidation: number; total: number }   // giorni esclusi dal periodo richiesto, con la causa
   ok: boolean                      // base query disponibile
   total: number                    // totale del periodo: query SENZA dimensioni (unica fonte di verita')
   totalSource: 'control' | 'breakdown' | 'dated'
@@ -358,7 +370,7 @@ export interface Model {
   }
   common: { ga4Org: number; gscClicks: number; days: number; ratio: number | null }
   trend: TrendRow[]
-  trendSanity: null | { ga4Rel: number; gscRel: number; flagged: boolean }
+  trendSanity: null | { ga4Rel: number; gscRel: number; gap: number; flagged: boolean }   // gap = |Δ GA4 − Δ GSC| in frazione (punti / 100)
   direct: null | { total: number; withParams: number; inApp: number; inAppEvidence: boolean }
   geo: null | {
     months: { month: string; total: number; ai: number; partial: boolean }[]
@@ -410,7 +422,7 @@ export function trendVerdict(cur: number | null, prev: number | null): { rel: nu
 /** Consolidamento dell'organico: se la media degli ultimi giorni e' sotto la frazione dichiarata della
  *  media dei giorni precedenti, quegli ultimi giorni sono "in consolidamento" (GA4 non ha ancora attribuito il canale). */
 export function detectConsolidation(base: BaseRow[] | null, start: string, ga4End: string): Consolidation {
-  const none: Consolidation = { evaluated: false, tailDays: 0, tailDates: [], tailMean: null, refMean: null, refDays: 0, ratio: null }
+  const none: Consolidation = { evaluated: false, tailDays: 0, tailDates: [], tailMean: null, refMean: null, refDays: 0, ratio: null, weakDays: 0 }
   if (!base || ga4End < start) return none
   const org = new Map<string, number>()
   for (const r of base) {
@@ -426,13 +438,18 @@ export function detectConsolidation(base: BaseRow[] | null, start: string, ga4En
   const mean = (ds: string[]) => ds.reduce((s, d) => s + (org.get(d) || 0), 0) / ds.length
   const tailMean = mean(tailDates), refMean = mean(refDates)
   const ratio = refMean > 0 ? tailMean / refMean : null
-  const incomplete = ratio != null && ratio < PARAMS.consolidationMinShare
-  return { evaluated: true, tailDays: incomplete ? n : 0, tailDates: incomplete ? tailDates : [], tailMean, refMean, refDays: refDates.length, ratio }
+  // La condizione deve persistere: almeno consolidationMinDays giorni su n sotto la soglia (una giornata debole isolata, es. weekend o festivo, non basta)
+  const weakDays = refMean > 0 ? tailDates.filter(d => (org.get(d) || 0) / refMean < PARAMS.consolidationMinShare).length : 0
+  const incomplete = ratio != null && weakDays >= PARAMS.consolidationMinDays
+  return { evaluated: true, tailDays: incomplete ? n : 0, tailDates: incomplete ? tailDates : [], tailMean, refMean, refDays: refDates.length, ratio, weakDays }
 }
 
-/** Rapporto settimanale GA4 Google organic / click GSC: affidabilita', mediana, rotture (non livelli). */
+/** Rapporto settimanale GA4 Google organic / click GSC.
+ *  Il rapporto del periodo e la mediana si calcolano su TUTTE le settimane complete (denominatore fissato prima di vedere i dati).
+ *  Le settimane con GA4 > GSC × ratioMax sono MARCATE «non affidabili» ma non vengono sottratte dall'indicatore: sono solo escluse dalle rotture.
+ *  Una rottura e' solo una CADUTA (la salita e' gia' coperta da ratioMax). */
 export function analyseRatio(weeks: WeekRow[], hasGsc: boolean): RatioAnalysis {
-  const out: RatioAnalysis = { fullCount: 0, reliableCount: 0, unreliable: [], sumGa: 0, sumGsc: 0, median: null, deviating: 0, breaks: [], outsideRun: null }
+  const out: RatioAnalysis = { fullCount: 0, unreliable: [], anomalous: 0, sumGa: 0, sumGsc: 0, median: null, deviating: 0, breaks: [], outsideRun: null }
   if (!hasGsc) return out
   const full = weeks.filter(w => w.full && (w.gscClicks || 0) > 0)
   out.fullCount = full.length
@@ -441,26 +458,34 @@ export function analyseRatio(weeks: WeekRow[], hasGsc: boolean): RatioAnalysis {
     w.ratio = w.ga4Org / (w.gscClicks as number)
     if (w.ratio > PARAMS.ratioMax) { w.state = 'unreliable'; out.unreliable.push(w) } else w.state = 'ok'
   }
-  const reliable = full.filter(w => w.state === 'ok')
-  out.reliableCount = reliable.length
-  out.sumGa = reliable.reduce((s, w) => s + w.ga4Org, 0)
-  out.sumGsc = reliable.reduce((s, w) => s + (w.gscClicks as number), 0)
-  out.median = median(reliable.map(w => w.ratio as number))
-  if (out.median != null && out.median > 0) out.deviating = reliable.filter(w => Math.abs((w.ratio as number) - out.median!) / out.median! > PARAMS.ratioBreak).length
-  // rottura 1: scostamento dalla mediana delle settimane affidabili precedenti
-  reliable.forEach((w, k) => {
-    const prev = reliable.slice(Math.max(0, k - PARAMS.ratioBaselineWeeks), k).map(x => x.ratio as number)
+  out.sumGa = full.reduce((s, w) => s + w.ga4Org, 0)
+  out.sumGsc = full.reduce((s, w) => s + (w.gscClicks as number), 0)
+  out.median = median(full.map(w => w.ratio as number))
+  if (out.median != null && out.median > 0) out.deviating = full.filter(w => Math.abs((w.ratio as number) - out.median!) / out.median! > PARAMS.ratioBreak).length
+  // rottura 1: SOLO ribasso oltre ratioBreak sotto la mediana delle settimane complete precedenti (ultime ratioBaselineWeeks)
+  full.forEach((w, k) => {
+    if (w.state !== 'ok') return                      // le settimane non affidabili non entrano nel calcolo delle rotture
+    const prev = full.slice(Math.max(0, k - PARAMS.ratioBaselineWeeks), k).map(x => x.ratio as number)
     if (prev.length < PARAMS.ratioBaselineMin) return
     const med = median(prev)!
-    if (med > 0 && Math.abs((w.ratio as number) - med) / med > PARAMS.ratioBreak) { w.state = 'break'; out.breaks.push(w) }
+    if (med > 0 && (w.ratio as number) < med * (1 - PARAMS.ratioBreak)) { w.state = 'break'; out.breaks.push(w) }
   })
-  // rottura 2: settimane consecutive fuori dalla banda di plausibilita'
-  let run = 0, from = ''
+  // rottura 2: settimane consecutive fuori dalla banda di plausibilita' (anche le settimane della serie contano come anomale)
+  const bandWeeks = new Set<string>()
+  let runWeeks: WeekRow[] = []
+  const closeRun = () => {
+    if (runWeeks.length >= PARAMS.ratioBandRun) {
+      runWeeks.forEach(x => bandWeeks.add(x.weekStart))
+      if (!out.outsideRun) out.outsideRun = { from: runWeeks[0].weekStart, to: runWeeks[runWeeks.length - 1].weekStart, len: runWeeks.length }
+    }
+    runWeeks = []
+  }
   for (const w of full) {
     const outside = (w.ratio as number) < PARAMS.ratioBandLow || (w.ratio as number) > PARAMS.ratioBandHigh
-    if (outside) { if (run === 0) from = w.weekStart; run++ } else run = 0
-    if (run >= PARAMS.ratioBandRun && !out.outsideRun) out.outsideRun = { from, to: w.weekStart, len: run }
+    if (outside) runWeeks.push(w); else closeRun()
   }
+  closeRun()
+  out.anomalous = full.filter(w => w.state === 'unreliable' || w.state === 'break' || bandWeeks.has(w.weekStart)).length
   return out
 }
 
@@ -470,6 +495,9 @@ export function buildModel(input: ReportInput): Model {
   const cons = detectConsolidation(base, win0.start, win0.ga4End)
   const win = computeWindows(input.now, input.requestedStart, input.requestedEnd, cons.tailDays)
   const downloadedDays = Math.max(0, diffDaysInclusive(win.start, win.ga4End))
+  // giorni esclusi dal periodo richiesto (fino a oggi), con la causa: lag GA4 + coda in consolidamento
+  const reqCeil = input.requestedEnd > win.today ? win.today : input.requestedEnd
+  const exLag = Math.max(0, diffDaysInclusive(addDays(win.ga4Cut, 1), reqCeil))
   const periodDaysGa4 = Math.max(0, diffDaysInclusive(win.start, win.aggEnd))
   const periodDaysGsc = Math.max(0, diffDaysInclusive(win.start, win.gscEnd))
   const dates = downloadedDays > 0 ? dateRange(win.start, win.ga4End) : []
@@ -478,10 +506,10 @@ export function buildModel(input: ReportInput): Model {
   const series = Object.fromEntries(CHART_CHANNELS.map(c => [c, zeros()])) as Record<ChartChannel, number[]>
 
   const m: Model = {
-    input, win, periodDaysGa4, periodDaysGsc, downloadedDays, ok: !!base && periodDaysGa4 > 0, total: 0, totalSource: 'control',
+    input, win, periodDaysGa4, periodDaysGsc, downloadedDays, excl: { lag: exLag, consolidation: cons.tailDays, total: exLag + cons.tailDays }, ok: !!base && periodDaysGa4 > 0, total: 0, totalSource: 'control',
     dates, aggCount, cons, series, dailyTotal: zeros(), ma7Total: [], gaOrgDaily: zeros(), gaOrgMa7: [], gscDaily: [], gscMa7: [],
     dailySumAgg: 0, midnight: 0, weeks: [],
-    ratio: { fullCount: 0, reliableCount: 0, unreliable: [], sumGa: 0, sumGsc: 0, median: null, deviating: 0, breaks: [], outsideRun: null },
+    ratio: { fullCount: 0, unreliable: [], anomalous: 0, sumGa: 0, sumGsc: 0, median: null, deviating: 0, breaks: [], outsideRun: null },
     macro: { SEO: 0, AI: 0, Direct: 0, Paid: 0, Social: 0, Altro: 0 },
     seoEngines: [], aiTools: [], paidSources: [], googleOrganic: 0, smTable: [], nativeChannels: [], notSet: 0,
     excludedRows: { count: 0, sessions: 0, maxDate: null },
@@ -622,8 +650,9 @@ export function buildModel(input: ReportInput): Model {
   if (input.gsc && m.trend.length === 3) {
     const a = trendVerdict(m.trend[1].ma28.cur, m.trend[1].ma28.prev), g = trendVerdict(m.trend[2].ma28.cur, m.trend[2].ma28.prev)
     if (a && g) {
-      const dropGa = -a.rel, dropGsc = Math.max(0, -g.rel)
-      m.trendSanity = { ga4Rel: a.rel, gscRel: g.rel, flagged: dropGa > PARAMS.trendBand && dropGa > 2 * dropGsc }
+      // differenza tra i due tassi di variazione (in punti): serie che si muovono in direzioni opposte NON sono «nessuna divergenza»
+      const gap = Math.abs(a.rel - g.rel)
+      m.trendSanity = { ga4Rel: a.rel, gscRel: g.rel, gap, flagged: gap > PARAMS.trendGap }
     }
   }
 
@@ -750,9 +779,13 @@ export function runChecks(m: Model, R: PctRegistry): Check[] {
   if (dev) {
     const ds = dev.reduce((s, d) => s + d.sessions, 0)
     const meta = (x: GaMeta | null) => x ? `fuso ${x.timeZone ?? 'n.d.'}, thresholding ${x.subjectToThresholding ? 'sì' : 'no'}, dati in «other» ${x.dataLossFromOtherRow ? 'sì' : 'no'}, intervallo ${x.range ?? 'n.d.'}` : 'metadata n.d.'
-    add('dev', 'Totale device vs totale (stessa dateRanges, nessuna tolleranza)', ds === T ? 'ok' : 'anomaly',
-      `${fmtInt(ds)} vs ${fmtInt(T)} sessioni · Δ ${sgn(ds - T)}` + (ds === T ? '' : ` · metadata GA4 — controllo: ${meta(g4.meta.control)} · device: ${meta(g4.meta.devices)}`))
-  } else add('dev', 'Totale device vs totale (stessa dateRanges, nessuna tolleranza)', 'notice', 'dato non disponibile')
+    // Unico controllo con tolleranza: GA4 aggrega ogni query in modo indipendente, pochi punti di scarto non sono diagnosticabili.
+    const devTol = Math.max(PARAMS.deviceTolAbs, T * PARAMS.deviceTolRel)
+    const devOk = Math.abs(ds - T) <= devTol
+    const tolTxt = `±${fmtDec(devTol, Number.isInteger(devTol) ? 0 : 1)} sessioni = la più permissiva tra ±${PARAMS.deviceTolAbs} sessioni e ±${R.PM(PARAMS.deviceTolRel * 100, 1)} del totale`
+    add('dev', 'Totale device vs totale (stessa dateRanges; tolleranza di aggregazione GA4)', devOk ? 'ok' : 'anomaly',
+      `${fmtInt(ds)} vs ${fmtInt(T)} sessioni · Δ ${sgn(ds - T)}` + (devOk ? ` (entro ${tolTxt})` : ` · oltre la tolleranza (${tolTxt}) · metadata GA4 — controllo: ${meta(g4.meta.control)} · device: ${meta(g4.meta.devices)}`))
+  } else add('dev', 'Totale device vs totale (stessa dateRanges; tolleranza di aggregazione GA4)', 'notice', 'dato non disponibile')
 
   // Coerenza finestra delle query senza data con l'ultimo giorno aggregato
   if (g4.queryEnd != null) add('qend', 'Query senza data sullo stesso intervallo della serie', g4.queryEnd === win.aggEnd ? 'ok' : 'error',
@@ -778,7 +811,7 @@ export function runChecks(m: Model, R: PctRegistry): Check[] {
   if (!c.evaluated) add('cons', 'Consolidamento dell’organico negli ultimi giorni', 'notice', `non valutabile: servono almeno ${PARAMS.maShort * 2} giorni di riferimento prima della coda (disponibili ${c.refDays})`)
   else if (c.ratio == null) add('cons', 'Consolidamento dell’organico negli ultimi giorni', 'notice', 'non valutabile: media di riferimento a zero sessioni organiche')
   else add('cons', 'Consolidamento dell’organico negli ultimi giorni', c.tailDays ? 'notice' : 'ok',
-    `organico ultimi ${PARAMS.consolidationTailDays} gg: ${fmtDec(c.tailMean as number, 1)} sessioni/giorno vs media ${c.refDays} gg precedenti ${fmtDec(c.refMean as number, 1)} = ${R.P(c.tailMean as number, c.refMean as number, 1)} (soglia ${R.PM(PARAMS.consolidationMinShare * 100, 0)})` +
+    `organico ultimi ${PARAMS.consolidationTailDays} gg: ${fmtDec(c.tailMean as number, 1)} sessioni/giorno vs media ${c.refDays} gg precedenti ${fmtDec(c.refMean as number, 1)} = ${R.P(c.tailMean as number, c.refMean as number, 1)} · giorni sotto la soglia di ${R.PM(PARAMS.consolidationMinShare * 100, 0)}: ${c.weakDays} su ${PARAMS.consolidationTailDays} (ne servono almeno ${PARAMS.consolidationMinDays})` +
       (c.tailDays ? ` · IN CONSOLIDAMENTO: ${c.tailDates[0]} → ${c.tailDates[c.tailDates.length - 1]} esclusi da aggregati e trend, tratteggiati nei grafici` : ' · nessun giorno escluso'))
 
   // ── Avvisi di metodo / anomalie sul contenuto ──
@@ -802,21 +835,22 @@ export function runChecks(m: Model, R: PctRegistry): Check[] {
     const wlab = (w: WeekRow) => `sett. ${fmtDay(w.weekStart)} ${R.P(w.ga4Org, w.gscClicks as number, 1)}`
     add('ratiomax', `Organico GA4 ≤ click GSC × ${fmtDec(PARAMS.ratioMax, 2)} su ogni settimana completa`, r.unreliable.length ? 'anomaly' : 'ok',
       r.unreliable.length
-        ? `${r.unreliable.length} settimane su ${r.fullCount} con sessioni organiche GA4 > click GSC × ${fmtDec(PARAMS.ratioMax, 2)}: «dato GA4 non affidabile», escluse dal rapporto medio (${r.unreliable.map(wlab).join('; ')})`
+        ? `${r.unreliable.length} settimane su ${r.fullCount} con sessioni organiche GA4 > click GSC × ${fmtDec(PARAMS.ratioMax, 2)}: «dato GA4 non affidabile» (marcate; restano nel rapporto del periodo, escluse solo dal calcolo delle rotture) — ${r.unreliable.map(wlab).join('; ')}`
         : `nessuna settimana fuori limite su ${r.fullCount} settimane complete (il margine copre il fuso orario GA4 vs Search Console)`)
     const rupture = r.breaks.length > 0 || !!r.outsideRun
-    add('ratio', 'Rapporto sessioni Google organic (GA4) / click GSC — rotture', !r.reliableCount ? 'notice' : rupture ? 'anomaly' : 'ok',
-      !r.reliableCount ? 'nessuna settimana completa affidabile' :
-        `settimane affidabili ${r.reliableCount}/${r.fullCount}: ${fmtInt(r.sumGa)} sessioni / ${fmtInt(r.sumGsc)} click = ${R.P(r.sumGa, r.sumGsc, 1)} · mediana ${r.median == null ? 'n.d.' : R.P(r.median, 1, 1)}, ` +
+    const ruptureTxt = r.breaks.length ? `${r.breaks.length} ${r.breaks.length === 1 ? 'rottura' : 'rotture'} — ${r.breaks.map(w => `sett. ${fmtDay(w.weekStart)} al ${R.P(w.ga4Org, w.gscClicks as number, 1)}`).join('; ')}` : 'nessuna rottura'
+    add('ratio', 'Rapporto sessioni Google organic (GA4) / click GSC — rotture', !r.fullCount ? 'notice' : rupture ? 'anomaly' : 'ok',
+      !r.fullCount ? 'nessuna settimana completa nel periodo' :
+        `${R.P(r.sumGa, r.sumGsc, 1)} — ${r.fullCount} settimane complete, di cui ${r.anomalous} con attribuzione GA4 anomala (${fmtInt(r.sumGa)} sessioni / ${fmtInt(r.sumGsc)} click su tutte le settimane complete) · mediana ${r.median == null ? 'n.d.' : R.P(r.median, 1, 1)}, ` +
         `settimane distanti dalla mediana oltre ${R.PM(PARAMS.ratioBreak * 100, 0)}: ${r.deviating}` +
-        ` · rotture (scostamento > ${R.PM(PARAMS.ratioBreak * 100, 0)} dalla mediana delle ${PARAMS.ratioBaselineWeeks} settimane precedenti): ${r.breaks.length}` +
+        ` · ${ruptureTxt} (rottura = solo ribasso oltre ${R.PM(PARAMS.ratioBreak * 100, 0)} sotto la mediana delle ${PARAMS.ratioBaselineWeeks} settimane complete precedenti)` +
         (r.outsideRun ? ` · ${r.outsideRun.len} settimane consecutive fuori banda ${R.PM(PARAMS.ratioBandLow * 100, 0)}–${R.PM(PARAMS.ratioBandHigh * 100, 0)} (da ${fmtDay(r.outsideRun.from)})` : ` · nessuna serie di ${PARAMS.ratioBandRun} settimane fuori banda`))
-    // Sanita' del trend: GA4 non deve raccontare un calo molto piu' forte di GSC
+    // Sanita' del trend: distanza tra i due tassi di variazione MA28 (punti), non solo «GA4 cala il doppio»
     const s = m.trendSanity
     add('trendsanity', 'Sanità del trend organico: GA4 vs Search Console', !s ? 'notice' : s.flagged ? 'notice' : 'ok',
       !s ? 'non valutabile (servono 2 finestre MA28 complete)' :
-        `MA28 organico GA4 ${R.PS(m.trend[1].ma28.cur! - m.trend[1].ma28.prev!, m.trend[1].ma28.prev!, 1)} · click GSC ${R.PS(m.trend[2].ma28.cur! - m.trend[2].ma28.prev!, m.trend[2].ma28.prev!, 1)}` +
-        (s.flagged ? ' · possibile problema di consolidamento o di attribuzione GA4, non un calo di traffico' : ' · nessuna divergenza'))
+        `MA28 organico GA4 ${R.PS(m.trend[1].ma28.cur! - m.trend[1].ma28.prev!, m.trend[1].ma28.prev!, 1)} · click GSC ${R.PS(m.trend[2].ma28.cur! - m.trend[2].ma28.prev!, m.trend[2].ma28.prev!, 1)} · distanza ${fmtDec(s.gap * 100, 1)} punti (limite ${fmtDec(PARAMS.trendGap * 100, 0)} punti)` +
+        (s.flagged ? ' · GA4 e GSC descrivono andamenti diversi: la causa più probabile è l’attribuzione GA4, non il traffico; il click GSC è la misura di riferimento' : ' · andamenti coerenti'))
   } else {
     add('ratio', 'Rapporto sessioni Google organic (GA4) / click GSC — rotture', 'notice', 'dato non disponibile (Search Console non raggiungibile)')
   }

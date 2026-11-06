@@ -12,7 +12,7 @@ export const FIXTURES: FixtureDef[] = [
   { name: 'report-organic-over-clicks', description: 'Una settimana con organico GA4 > click GSC × 1,05: marcata non affidabile ed esclusa dal rapporto medio.', opts: { gaOrganicBoost: [{ week: '2026-09-14', factor: 3 }] }, expected: { errors: [], anomalies: ['ratiomax'], midnight: 7, tailDays: 0 } },
   { name: 'report-ratio-rupture', description: 'Una settimana con rapporto crollato (rottura rispetto alla mediana delle precedenti): anomalia.', opts: { gaOrganicBoost: [{ week: '2026-10-12', factor: 0.4 }] }, expected: { errors: [], anomalies: ['ratio'], midnight: 7, tailDays: 0 } },
   { name: 'report-midnight-wide', description: 'Scarto serie datata − totale oltre la tolleranza della sola mezzanotte: errore bloccante.', opts: { midnight: 45 }, expected: { errors: ['H2'], anomalies: [], midnight: 45, tailDays: 0 } },
-  { name: 'report-device-mismatch', description: 'Totale device ≠ totale (stessa dateRanges): anomalia.', opts: { mutate: i => { i.ga4.devices![0].sessions += 3 } }, expected: { errors: [], anomalies: ['dev'], midnight: 7, tailDays: 0 } },
+  { name: 'report-device-mismatch', description: 'Totale device ≠ totale oltre la tolleranza di aggregazione (max(2 sessioni, 0,2%)): anomalia.', opts: { mutate: i => { i.ga4.devices![0].sessions += 12 } }, expected: { errors: [], anomalies: ['dev'], midnight: 7, tailDays: 0 } },
 ]
 
 export const fixtureJson = (d: FixtureDef) => JSON.stringify({ name: d.name, description: d.description, synthetic: true, expected: d.expected, input: makeFixture(d.opts) }, null, 1) + '\n'

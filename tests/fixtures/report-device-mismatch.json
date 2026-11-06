@@ -1,6 +1,6 @@
 {
  "name": "report-device-mismatch",
- "description": "Totale device ≠ totale (stessa dateRanges): anomalia.",
+ "description": "Totale device ≠ totale oltre la tolleranza di aggregazione (max(2 sessioni, 0,2%)): anomalia.",
  "synthetic": true,
  "expected": {
   "errors": [],
@@ -2860,7 +2860,7 @@
    "devices": [
     {
      "device": "mobile",
-     "sessions": 927
+     "sessions": 936
     },
     {
      "device": "desktop",
