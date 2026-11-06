@@ -55,7 +55,7 @@ import { createMarketingApi } from './modules/marketing-api'
 import { fetchFullAnalyticsReport, detectAuthMethod } from './modules/google-analytics'
 import { collectReportInput } from './modules/seo-report-data'
 import { generateReport } from './modules/seo-report-render'
-import { ReportAssertionError } from './modules/seo-report-engine'
+import { ReportAssertionError, GEO_ACTIVATION } from './modules/seo-report-engine'
 import * as SignatureManager from './modules/signature-manager'
 import * as PaymentManager from './modules/payment-manager'
 import * as ClientConfigurationManager from './modules/client-configuration-manager'
@@ -32206,7 +32206,7 @@ app.get('/api/analytics/live-seo-report', async (c) => {
       endDate,
       siteUrl: scSiteUrl,
       measurementId: 'G-5DY4TY34WK',
-      geoActivation: { date: '2026-08-06', label: 'pubblicazione llms.txt (commit 19c1b6c)' },
+      geoActivation: { date: GEO_ACTIVATION.date, label: GEO_ACTIVATION.label },
     })
     const result = generateReport(input, { diagnostic })
     return c.html(result.html)
@@ -32218,7 +32218,7 @@ app.get('/api/analytics/live-seo-report', async (c) => {
         success: false,
         error: 'Report non generato: controllo di quadratura fallito',
         failures: e.failures.map((f: any) => ({ id: f.id, label: f.label, value: f.value })),
-        hint: 'Aggiungi ?diagnostic=1 per generare comunque il report con il banner di anomalia'
+        hint: 'Aggiungi ?diagnostic=1 per generare comunque il report con il banner di errore bloccante'
       }, 500)
     }
     console.error('❌ live-seo-report error:', e?.message, e?.stack)

@@ -7,4 +7,4 @@ const input = makeFixture({ now: '2026-11-04T10:05:30Z', start: '2026-08-09', re
 input.sampleNote = 'ESEMPIO con dati SINTETICI generati da fixture di test — NON sono dati reali eCura. Serve a mostrare layout, controlli e quadrature.'
 const g = generateReport(input)
 writeFileSync(process.argv[2] || '/tmp/report-sample.html', g.html)
-console.log('ok', g.hardFailed ? 'HARD-FAIL' : 'no-hard-fail')
+console.log('ok', 'errori:', g.errors.length, 'anomalie:', g.anomalies.length)

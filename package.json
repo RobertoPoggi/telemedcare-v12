@@ -8,6 +8,8 @@
     "dev:vite": "vite",
     "build": "node scripts/test-seo-report.cjs && node scripts/ci-build.cjs",
     "test:seo-report": "node scripts/test-seo-report.cjs",
+    "test:report": "node scripts/test-seo-report.cjs",
+    "fixtures:report": "node scripts/test-seo-report.cjs --write-fixtures",
     "preview": "wrangler pages dev dist",
     "deploy": "npm run build && wrangler pages deploy dist",
     "deploy:prod": "./scripts/deploy-production.sh",

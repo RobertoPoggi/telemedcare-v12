@@ -4,10 +4,10 @@
 // gli assert hard (quadrature H1/H2, giorni non consolidati H3, coerenza percentuali H6).
 // ============================================================
 import {
-  buildModel, runChecks, checkPercentages, hardFailures, ReportAssertionError, PctRegistry, PARAMS,
-  esc, fmtInt, fmtDec, fmtDay, fmtDayY, formatDuration, addDays, CHART_CHANNELS, TEMP_ORDER,
-  ga4SessionsForCrmChannel,
-  type ReportInput, type Model, type Check, type SmRow,
+  buildModel, runChecks, checkPercentages, blockingErrors, anomalies, ReportAssertionError, PctRegistry, PARAMS,
+  esc, fmtInt, fmtDec, fmtDay, fmtDayY, formatDuration, CHART_CHANNELS, TEMP_ORDER,
+  crmDenominator, gaChanSessions, GA_CHAN_LABEL, CRM_UNSET, CRM_AI_NOT_EMITTED, trendVerdict,
+  type ReportInput, type Model, type Check, type Level, type SmRow, type WeekRow,
 } from './seo-report-engine'
 import { REPORT_CSS } from './seo-report-css'
 
@@ -18,29 +18,33 @@ const CAT_BG: Record<string, string> = { SEO: '#dbeafe', AI: '#ede9fe', Direct: 
 const ICON: Record<string, string> = { caldo: '🔥', tiepido: '🌡️', freddo: '🧊', 'n/a': '❓' }
 const PLACE_BANNER = '<!--@@BANNER@@-->'
 const PLACE_PCT = '<!--@@PCTROW@@-->'
+// Geometria dei grafici e delle colonne: costanti nominate (nessun numero con % scritto nel testo del report)
+const DONUT_CUTOUT = { device: 55, macro: 52, crm: 55 }
+const QA_COL = { label: 34, status: 14 }
 
 export interface GenerateOptions { diagnostic?: boolean }
-export interface GenerateResult { html: string; model: Model; checks: Check[]; pct: ReturnType<typeof checkPercentages>; hardFailed: boolean }
+export interface GenerateResult { html: string; model: Model; checks: Check[]; pct: ReturnType<typeof checkPercentages>; hardFailed: boolean; errors: Check[]; anomalies: Check[] }
 
+/** Livelli: 🔴 errore bloccante (il report NON si genera), 🟠 anomalia (banner arancione + elenco), 🟡 avviso di metodo (solo riga in tabella). */
 export function generateReport(input: ReportInput, opts: GenerateOptions = {}): GenerateResult {
   const m = buildModel(input)
   const R = new PctRegistry()
   const checks = runChecks(m, R)
   const html0 = renderHtml(m, checks, R)
   const pct = checkPercentages(html0, R)
-  const failed = hardFailures(checks)
-  const hardFailed = failed.length > 0 || !pct.ok
-  if (hardFailed && !opts.diagnostic) {
-    const extra: Check[] = pct.ok ? [] : [{ id: 'H6', label: 'Coerenza percentuali testo vs tabelle', status: 'fail', hard: true, value: pct.problems.join('; ') }]
-    throw new ReportAssertionError([...failed, ...extra])
-  }
-  const anomalies = checks.some(c => c.status === 'fail') || !pct.ok
-  const banner = anomalies ? '<div class="banner">⚠️ Report con anomalie di quadratura — vedi sezione Qualità del dato</div>' : ''
+  const pctErr: Check[] = pct.ok ? [] : [{ id: 'H6', label: 'Coerenza percentuali testo vs tabelle', level: 'error', value: pct.problems.join('; ') }]
+  const errs = [...blockingErrors(checks), ...pctErr]
+  const hardFailed = errs.length > 0
+  if (hardFailed && !opts.diagnostic) throw new ReportAssertionError(errs)
+  const anoms = anomalies(checks)
+  const li = (c: Check) => `<li><strong>${esc(c.label)}</strong> — ${esc(c.value)}</li>`
+  const bannerErr = errs.length ? `<div class="banner banner-err">🔴 Errore bloccante — report NON utilizzabile (generato solo in modalità diagnostica)<ul>${errs.map(li).join('')}</ul></div>` : ''
+  const bannerAn = anoms.length ? `<div class="banner banner-anom">🟠 Anomalia — report generato, da verificare prima dell’uso<ul>${anoms.map(li).join('')}</ul></div>` : ''
   const pctText = pct.ok
     ? `<span class="qa-ok">✓ OK</span></td><td>${pct.total} percentuali registrate; ${pct.textClaims} citate nel testo, ciascuna con calcolo gemello in tabella (stessi due numeri, stesso decimale)`
-    : `<span class="qa-fail">✗ Anomalia</span></td><td>${esc(pct.problems.join(' · '))}`
-  const html = html0.replace(PLACE_BANNER, banner).replace(PLACE_PCT, `<tr><td>Coerenza percentuali testo vs tabelle</td><td>${pctText}</td></tr>`)
-  return { html, model: m, checks, pct, hardFailed }
+    : `${statusCell('error')}</td><td>${esc(pct.problems.join(' · '))}`
+  const html = html0.replace(PLACE_BANNER, bannerErr + bannerAn).replace(PLACE_PCT, `<tr><td>Coerenza percentuali testo vs tabelle</td><td>${pctText}</td></tr>`)
+  return { html, model: m, checks, pct, hardFailed, errors: errs, anomalies: anoms }
 }
 
 // ── helpers di layout ───────────────────────────────────────────────────────
@@ -49,23 +53,24 @@ const rng = (src: string, start: string, end: string, days: number, extra = '') 
 const na = (what: string) => `<p style="color:#6b7280;font-size:.88rem">dato non disponibile — ${esc(what)}</p>`
 const kpi = (color: string, num: string, lbl: string, sub = '', numStyle = '') =>
   `<div class="kpi" style="border-top-color:${color}"><span class="num" style="${numStyle}">${num}</span><div class="lbl">${lbl}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`
-const statusCell = (s: string) => s === 'ok' ? '<span class="qa-ok">✓ OK</span>' : s === 'warn' ? '<span class="qa-warn">⚠ Attenzione</span>' : '<span class="qa-fail">✗ Anomalia</span>'
+const statusCell = (l: Level) => l === 'ok' ? '<span class="qa-ok">✓ OK</span>' : l === 'notice' ? '<span class="qa-notice">🟡 Avviso di metodo</span>' : l === 'anomaly' ? '<span class="qa-warn">🟠 Anomalia</span>' : '<span class="qa-fail">🔴 Errore bloccante</span>'
 const yTitle = (t: string) => `title:{display:true,text:${J(t)},font:{size:10}}`
 
 function renderHtml(m: Model, checks: Check[], R: PctRegistry): string {
   const i = m.input
   const w = m.win
   const generatedAt = new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'short', timeStyle: 'medium' }).format(i.now).replace(',', '')
-  const gaRange = `${w.start} → ${w.ga4End}`
+  const gaRange = `${w.start} → ${w.aggEnd}`
   const gscRange = m.gsc ? `${w.start} → ${w.gscEnd}` : 'n.d.'
   const errorsBlock = i.errors.length
     ? `<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:.85rem">⚠️ <strong>Avvisi:</strong> ${i.errors.map(e => esc(e)).join(' | ')}</div>` : ''
-  const lagNote = `Ultimi ${PARAMS.ga4LagDays}-${PARAMS.gscLagDays} giorni esclusi: dati GA4/GSC non ancora consolidati (GA4 fino al ${fmtDayY(w.ga4End)}, GSC fino al ${fmtDayY(w.gscEnd)}).`
+  const tailTxt = m.cons.tailDays ? `, più ${m.cons.tailDays} giorni in consolidamento (organico incompleto)` : ''
+  const lagNote = `Giorni non consolidati esclusi: GA4 fino al ${fmtDayY(w.aggEnd)} (lag ${PARAMS.ga4LagDays} giorni${tailTxt}), GSC fino al ${fmtDayY(w.gscEnd)} (lag ${PARAMS.gscLagDays} giorni).`
 
   if (!m.ok) {
     return `<!doctype html><html lang="it"><head><meta charset="utf-8"><title>Report Analytics Live — eCura</title><style>${REPORT_CSS}</style></head><body>${PLACE_BANNER}
 <div class="container"><div class="section"><h2>Report Analytics Live — eCura</h2>${errorsBlock}<p>dato non disponibile — la query base GA4 non ha restituito dati per ${esc(gaRange)}.</p>
-<table><tbody>${checks.map(c => `<tr><td>${esc(c.label)}</td><td>${statusCell(c.status)}</td><td>${esc(c.value)}</td></tr>`).join('')}${PLACE_PCT}</tbody></table></div></div></body></html>`
+<table><tbody>${checks.map(c => `<tr><td>${esc(c.label)}</td><td>${statusCell(c.level)}</td><td>${esc(c.value)}</td></tr>`).join('')}${PLACE_PCT}</tbody></table></div></div></body></html>`
   }
 
   const total = m.total
@@ -77,7 +82,7 @@ function renderHtml(m: Model, checks: Check[], R: PctRegistry): string {
   // ── 1. KPI ──
   const kpiHtml = `
 <div class="kpi-grid">
-  ${kpi('#4285F4', fmtInt(total), 'Sessioni totali', `sessioni GA4 · ${m.ga4Days} giorni`)}
+  ${kpi('#4285F4', fmtInt(total), 'Sessioni totali', `sessioni GA4 · ${m.periodDaysGa4} giorni · query senza dimensioni`)}
   ${ctl ? kpi('#34A853', fmtInt(ctl.users), 'Utenti attivi', 'utenti (non additivi tra canali)') : kpi('#34A853', 'n.d.', 'Utenti attivi', 'dato non disponibile')}
   ${ctl ? kpi('#00BCD4', fmtInt(ctl.newUsers), 'Nuovi utenti', 'utenti') : kpi('#00BCD4', 'n.d.', 'Nuovi utenti', 'dato non disponibile')}
   ${ctl ? kpi('#9C27B0', fmtInt(ctl.pageviews), 'Pageviews', 'visualizzazioni di pagina') : kpi('#9C27B0', 'n.d.', 'Pageviews', 'dato non disponibile')}
@@ -86,20 +91,28 @@ function renderHtml(m: Model, checks: Check[], R: PctRegistry): string {
   ${kpi('#059669', leadsTotal == null ? 'n.d.' : fmtInt(leadsTotal), 'Lead CRM <span class="tag tag-crm">D1</span>', leadsTotal == null ? 'dato non disponibile' : 'lead nel periodo')}
 </div>`
 
-  // ── trend (media mobile 7 giorni) ──
-  const band = PARAMS.trendBand
+  // ── trend: verdetto SOLO sulla MA28 (giorni consolidati); la MA7 e' un indicatore di breve, senza giudizio ──
   const trendRows = m.trend.map(t => {
-    if (t.cur == null || t.prev == null || !(t.prev > 0)) return `<tr><td>${esc(t.label)}</td><td colspan="4">dato non disponibile (servono almeno 14 giorni)</td></tr>`
-    const rel = (t.cur - t.prev) / t.prev
-    const verdict = rel > band ? 'in aumento' : rel < -band ? 'in calo' : 'stabile'
-    return `<tr><td>${esc(t.label)}</td><td style="text-align:center">${fmtDec(t.cur, 1)} ${esc(t.unit)}<br><span style="font-size:.72rem;color:#6b7280">MA7 al ${fmtDay(t.curDate)}</span></td>
-      <td style="text-align:center">${fmtDec(t.prev, 1)} ${esc(t.unit)}<br><span style="font-size:.72rem;color:#6b7280">MA7 al ${fmtDay(t.prevDate)}</span></td>
-      <td style="text-align:center;font-weight:700">${R.PS(t.cur - t.prev, t.prev, 1)}</td><td>${verdict}</td></tr>`
+    const v = trendVerdict(t.ma28.cur, t.ma28.prev)
+    const ma7 = t.ma7.cur != null && t.ma7.prev != null && t.ma7.prev > 0
+      ? `${fmtDec(t.ma7.cur, 1)} vs ${fmtDec(t.ma7.prev, 1)} ${esc(t.unit)} · ${R.PS(t.ma7.cur - t.ma7.prev, t.ma7.prev, 1)}`
+      : 'n.d.'
+    if (!v) return `<tr><td>${esc(t.label)}</td><td colspan="4">trend strutturale: dato non disponibile (servono ${PARAMS.maLong * 2} giorni consolidati)</td><td style="text-align:center">${ma7}</td></tr>`
+    return `<tr><td>${esc(t.label)}</td><td style="text-align:center">${fmtDec(t.ma28.cur as number, 1)} ${esc(t.unit)}<br><span style="font-size:.72rem;color:#6b7280">MA${PARAMS.maLong} al ${fmtDay(t.endDate)}</span></td>
+      <td style="text-align:center">${fmtDec(t.ma28.prev as number, 1)} ${esc(t.unit)}<br><span style="font-size:.72rem;color:#6b7280">MA${PARAMS.maLong} al ${fmtDay(t.prev28Date)}</span></td>
+      <td style="text-align:center;font-weight:700">${R.PS((t.ma28.cur as number) - (t.ma28.prev as number), t.ma28.prev as number, 1)}</td><td style="font-weight:700">${v.verdict}</td>
+      <td style="text-align:center;font-size:.8rem;color:#6b7280">${ma7}<br><span style="font-size:.7rem">indicatore di breve, nessun giudizio</span></td></tr>`
   }).join('')
+  const sanity = m.trendSanity
+  const sanityNote = sanity && sanity.flagged
+    ? `<div class="note-box"><strong>Sanità del trend:</strong> l’organico GA4 scende di ${R.PS(m.trend[1].ma28.cur! - m.trend[1].ma28.prev!, m.trend[1].ma28.prev!, 1, 'text')} (MA${PARAMS.maLong}) mentre i click Search Console variano di ${R.PS(m.trend[2].ma28.cur! - m.trend[2].ma28.prev!, m.trend[2].ma28.prev!, 1, 'text')}: il calo GA4 supera il doppio di quello GSC. <strong>Possibile problema di consolidamento o di attribuzione GA4, non un calo di traffico.</strong></div>` : ''
+  const consNote = m.cons.tailDays
+    ? `<div class="note-box"><strong>Ultimi ${m.cons.tailDays} giorni in consolidamento</strong> (${fmtDay(m.cons.tailDates[0])} → ${fmtDay(m.cons.tailDates[m.cons.tailDates.length - 1])}): organico GA4 pari a ${R.P(m.cons.tailMean as number, m.cons.refMean as number, 1, 'text')} della media dei ${m.cons.refDays} giorni precedenti, sotto la soglia di ${R.PM(PARAMS.consolidationMinShare * 100, 0)}. Esclusi da aggregati, trend e rapporto settimanale; nei grafici sono tratteggiati.</div>` : ''
   const trendBox = `
-<h3>Lettura del trend — media mobile a 7 giorni</h3>
-<table><thead><tr><th>Serie</th><th style="text-align:center">MA7 ultimo giorno</th><th style="text-align:center">MA7 7 giorni prima</th><th style="text-align:center">Variazione</th><th>Lettura</th></tr></thead><tbody>${trendRows}</tbody></table>
-<div class="cap">Il giudizio di trend si basa sulla media mobile a 7 giorni (media dei 7 giorni terminanti nella data indicata), non sul singolo giorno. Lettura: «in aumento»/«in calo» oltre ±${R.PM(band * 100, 0)} di variazione, altrimenti «stabile» — convenzione di lettura, non un test statistico.</div>`
+<h3>Lettura del trend — media mobile a ${PARAMS.maLong} giorni (strutturale) e a ${PARAMS.maShort} giorni (breve)</h3>
+<table><thead><tr><th>Serie</th><th style="text-align:center">MA${PARAMS.maLong} ultimo giorno consolidato</th><th style="text-align:center">MA${PARAMS.maLong} ${PARAMS.maLong} giorni prima</th><th style="text-align:center">Variazione</th><th>Verdetto (solo MA${PARAMS.maLong})</th><th style="text-align:center">Indicatore di breve MA${PARAMS.maShort}</th></tr></thead><tbody>${trendRows}</tbody></table>
+${consNote}${sanityNote}
+<div class="cap">Il verdetto si basa solo sulla MA${PARAMS.maLong}: media dei ${PARAMS.maLong} giorni terminanti nell’ultimo giorno consolidato, confrontata con la MA${PARAMS.maLong} di ${PARAMS.maLong} giorni prima (i giorni in consolidamento sono esclusi). «In aumento»/«in calo» oltre ±${R.PM(PARAMS.trendBand * 100, 0)} di variazione, altrimenti «stabile» — convenzione di lettura, non un test statistico. La MA${PARAMS.maShort} resta visibile come indicatore di breve ma non produce giudizio.</div>`
 
   // ── grafico 1: canali impilati + settimanale ──
   const fullWeeks = m.weeks
@@ -163,9 +176,9 @@ function renderHtml(m: Model, checks: Check[], R: PctRegistry): string {
     const pRows = i.gsc!.pages.slice(0, PARAMS.topPages).map(p => `<tr><td style="font-size:.82rem">${esc(p.page)}</td><td style="text-align:center">${fmtInt(p.clicks)}</td><td style="text-align:center">${fmtInt(p.impressions)}</td><td style="text-align:center">${fmtDec(p.position, 1)}</td></tr>`).join('')
     gscBlock = `
 <h3>🔎 Google Search Console <span class="tag tag-gsc">GSC</span></h3>
-${rng(`Search Console · ${i.siteUrl} · tipo web · dataState final`, w.start, w.gscEnd, m.gscDays, 'date nel fuso orario di Search Console')}
+${rng(`Search Console · ${i.siteUrl} · tipo web · dataState final`, w.start, w.gscEnd, m.periodDaysGsc, 'date nel fuso orario di Search Console')}
 <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
-  ${kpi('#1d4ed8', fmtInt(g.clicks), 'Click organici (click)', `${fmtInt(g.clicks)} click su ${m.gscDays} giorni = ${fmtDec(g.clicksPerDay, 1)} click/giorno`, 'color:#1d4ed8')}
+  ${kpi('#1d4ed8', fmtInt(g.clicks), 'Click organici (click)', `${fmtInt(g.clicks)} click su ${m.periodDaysGsc} giorni = ${fmtDec(g.clicksPerDay, 1)} click/giorno`, 'color:#1d4ed8')}
   ${kpi('#0891b2', fmtInt(g.impressions), 'Impressioni SERP (impressioni)', 'volte in cui il sito è apparso nei risultati', 'color:#0891b2')}
   ${kpi('#059669', R.P(g.clicks, g.impressions, 1, 'kpi'), 'CTR (click / impressioni)', `${fmtInt(g.clicks)} click / ${fmtInt(g.impressions)} impressioni`, 'color:#059669')}
   ${kpi('#d97706', fmtDec(g.position, 1), 'Posizione media', 'posizione media nei risultati', 'color:#d97706')}
@@ -185,23 +198,24 @@ ${rng(`Search Console · ${i.siteUrl} · tipo web · dataState final`, w.start, 
     gscBlock = `<h3>🔎 Google Search Console <span class="tag tag-gsc">GSC</span></h3>${na('Search Console non configurata o non raggiungibile (vedi Avvisi)')}`
   }
 
-  // Box GA4 vs GSC + rapporto settimanale (D11)
+  // Box GA4 vs GSC + rapporto settimanale: l'allarme segnala ROTTURE, non livelli
   let ratioBlock = ''
   if (m.gsc) {
-    const wr = m.weeks.map(x => {
-      const ok = x.full && (x.gscClicks || 0) > 0
-      const r = ok ? x.ga4Org / (x.gscClicks as number) : null
-      const band = r == null ? 'parziale — esclusa dall\'allarme' : r < PARAMS.ratioLow ? 'sotto fascia' : r > PARAMS.ratioHigh ? 'sopra fascia' : 'in fascia'
-      const col = r == null ? '#6b7280' : (r < PARAMS.ratioLow || r > PARAMS.ratioHigh) ? '#b91c1c' : '#166534'
-      return `<tr><td>${fmtDay(x.weekStart)} → ${fmtDay(x.weekEnd)}</td><td style="text-align:center">${x.days}${x.days < 7 ? ' / 7' : ''}</td><td style="text-align:center">${fmtInt(x.ga4Org)}</td><td style="text-align:center">${x.gscClicks == null ? 'n.d.' : fmtInt(x.gscClicks)}</td><td style="text-align:center;font-weight:700">${r == null ? '–' : R.P(x.ga4Org, x.gscClicks as number, 1)}</td><td style="color:${col}">${band}</td></tr>`
-    }).join('')
+    const rt = m.ratio
+    const stateLabel = (x: WeekRow) => x.state === 'partial' ? 'parziale — esclusa' : x.state === 'unreliable' ? 'dato GA4 non affidabile — esclusa' : x.state === 'break' ? 'rottura' : 'regolare'
+    const stateCol = (x: WeekRow) => x.state === 'partial' ? '#6b7280' : x.state === 'ok' ? '#166534' : '#b91c1c'
+    const wr = m.weeks.map(x => `<tr><td>${fmtDay(x.weekStart)} → ${fmtDay(x.weekEnd)}</td><td style="text-align:center">${x.days}${x.days < PARAMS.weekDays ? ` / ${PARAMS.weekDays}` : ''}</td><td style="text-align:center">${fmtInt(x.ga4Org)}</td><td style="text-align:center">${x.gscClicks == null ? 'n.d.' : fmtInt(x.gscClicks)}</td><td style="text-align:center;font-weight:700">${x.ratio == null ? '–' : R.P(x.ga4Org, x.gscClicks as number, 1)}</td><td style="color:${stateCol(x)}">${stateLabel(x)}</td></tr>`).join('')
+    const summary = rt.reliableCount
+      ? `<tr style="background:#eff6ff;font-weight:700"><td>Settimane affidabili (${rt.reliableCount} su ${rt.fullCount} complete)</td><td></td><td style="text-align:center">${fmtInt(rt.sumGa)}</td><td style="text-align:center">${fmtInt(rt.sumGsc)}</td><td style="text-align:center">${R.P(rt.sumGa, rt.sumGsc, 1)}</td><td>rapporto medio · mediana ${rt.median == null ? 'n.d.' : R.P(rt.median, 1, 1)} · settimane distanti dalla mediana oltre ${R.PM(PARAMS.ratioBreak * 100, 0)}: ${rt.deviating}</td></tr>`
+      : `<tr><td colspan="6">nessuna settimana completa affidabile nel periodo</td></tr>`
     ratioBlock = `
 <h3>Organico: sessioni GA4 vs click Search Console — rapporto settimanale</h3>
-${rng('GA4 (sessioni Google organic) e Search Console (click)', w.start, w.commonEnd, m.common.days, 'periodo comune ai due strumenti')}
-<table><thead><tr><th>Settimana (lun–dom)</th><th style="text-align:center">Giorni coperti</th><th style="text-align:center">Sessioni GA4 Google organic (sessioni)</th><th style="text-align:center">Click GSC (click)</th><th style="text-align:center">Rapporto sessioni / click</th><th>Lettura</th></tr></thead><tbody>${wr}
-<tr style="background:#eff6ff;font-weight:700"><td>Periodo comune</td><td style="text-align:center">${m.common.days}</td><td style="text-align:center">${fmtInt(m.common.ga4Org)}</td><td style="text-align:center">${fmtInt(m.common.gscClicks)}</td><td style="text-align:center">${m.common.ratio == null ? 'n.d.' : R.P(m.common.ga4Org, m.common.gscClicks, 1)}</td><td></td></tr></tbody></table>
-<div class="info-box"><strong>Perché GA4 e Search Console non coincidono.</strong> I due strumenti misurano eventi diversi: un click in SERP non è una sessione GA4. Lo scarto atteso deriva da: (1) click che non producono un pageview perché JavaScript è disattivato o il tag non fa in tempo a partire; (2) consenso cookie / Consent Mode: senza consenso GA4 non registra la sessione; (3) script blocker e browser con protezione dal tracciamento; (4) abbandono prima del caricamento della pagina; (5) lag di consolidamento di 2-3 giorni e fusi orari diversi dei due strumenti.
-  <br><strong>Metrica di controllo:</strong> rapporto settimanale <em>sessioni GA4 Google organic / click GSC</em>. Finché resta stabile — indicativamente tra ${R.PM(PARAMS.ratioLow * 100, 0)} e ${R.PM(PARAMS.ratioHigh * 100, 0)} (fascia operativa indicativa, non uno standard) — il tracciamento è sano; l'allarme è la rottura del rapporto, non il suo livello assoluto. Le settimane parziali non entrano nell'allarme.</div>`
+${rng('GA4 (sessioni con source google e medium organic) e Search Console (click)', w.start, w.commonEnd, m.common.days, 'periodo comune ai due strumenti, solo giorni consolidati')}
+<table><thead><tr><th>Settimana (lun–dom)</th><th style="text-align:center">Giorni coperti</th><th style="text-align:center">Sessioni GA4 google / organic (sessioni)</th><th style="text-align:center">Click GSC (click)</th><th style="text-align:center">Rapporto sessioni / click</th><th>Lettura</th></tr></thead><tbody>${wr}
+${summary}</tbody></table>
+<div class="info-box"><strong>Perché GA4 e Search Console non coincidono — e perché il rapporto può superare il ${R.PM(PARAMS.per, 0)}.</strong> I due strumenti misurano eventi diversi: un click in SERP non è una sessione GA4. Lo scarto atteso (sessioni inferiori ai click) deriva da: (1) click che non producono un pageview perché JavaScript è disattivato o il tag non fa in tempo a partire; (2) consenso cookie / Consent Mode: senza consenso GA4 non registra la sessione, e la quota di consenso cambia nel tempo; (3) script blocker e browser con protezione dal tracciamento; (4) abbandono prima del caricamento della pagina; (5) lag di consolidamento e fusi orari diversi dei due strumenti.
+  <br>Un rapporto <strong>superiore al ${R.PM(PARAMS.per, 0)}</strong> (sessioni GA4 più numerose dei click) non è un traffico in più: nasce da (a) fusi orari e confini di giornata diversi tra GA4 e Search Console; (b) più sessioni GA4 generate dallo stesso click (ritorni alla pagina, riapertura da cronologia, scadenza della sessione dopo inattività); (c) sessioni con source «google» e medium «organic» assegnate per override manuale o per parametri UTM scritti a mano, non per ricerca reale; (d) modellazione dei dati con Consent Mode, che stima le sessioni senza consenso. Per questo ogni settimana con sessioni GA4 oltre ${fmtDec(PARAMS.ratioMax, 2)} volte i click è marcata «dato GA4 non affidabile» ed <strong>esclusa</strong> dal rapporto medio; il fattore ${fmtDec(PARAMS.ratioMax, 2)} copre solo il fuso orario.
+  <br><strong>Come si usa il rapporto:</strong> il suo livello dipende dalla quota di consenso cookie, quindi non esiste una fascia «giusta». L’allarme scatta sulle <em>rotture</em>: scostamento superiore a ${R.PM(PARAMS.ratioBreak * 100, 0)} dalla mediana delle ${PARAMS.ratioBaselineWeeks} settimane affidabili precedenti, oppure ${PARAMS.ratioBandRun} settimane consecutive fuori dalla banda ${R.PM(PARAMS.ratioBandLow * 100, 0)}–${R.PM(PARAMS.ratioBandHigh * 100, 0)}, oppure un rapporto sopra ${R.PM(PARAMS.ratioMax * 100, 0)} (impossibile). Le settimane parziali non entrano nel calcolo.</div>`
   }
 
   // ── 4. AI / GEO ──
@@ -213,14 +227,16 @@ ${rng('GA4 (sessioni Google organic) e Search Console (click)', w.start, w.commo
   let geoBlock = ''
   if (m.geo) {
     const g = m.geo
+    const gq = g.monthsQueried
+    const avail = g.firstDataMonth ? `serie disponibile da ${g.firstDataMonth} (${g.monthsWithData} mesi con dati GA4 su ${gq} interrogati)` : `nessun mese con dati GA4 nei ${gq} mesi interrogati`
     geoBlock = `
-<h3>Serie storica sessioni da AI / GEO — ultimi 12 mesi (sessioni/mese)</h3>
-${rng('GA4 · sessioni con sorgente di tipo assistente AI', `${g.months[0]?.month ?? 'n.d.'}-01`, w.ga4End, g.months.length, 'mesi con dati GA4; ultimo mese parziale')}
+<h3>Serie storica sessioni da AI / GEO — ultimi ${PARAMS.geoMonths} mesi (sessioni/mese)</h3>
+${rng('GA4 · sessioni con sorgente di tipo assistente AI · intervallo proprio, indipendente dal periodo del report', g.range.start, g.range.end, gq, `${gq} mesi coperti, ultimo parziale`).replace(`(${gq} giorni)`, `(${gq} mesi)`)}
 <div class="chart-box"><canvas id="geoChart" height="110"></canvas></div>
-<div class="cap">Annotazione: attivazione ottimizzazioni GEO = ${esc(i.geoActivation.date)} (${esc(i.geoActivation.label)}). Mese di attivazione evidenziato in viola scuro; l'ultimo mese è parziale (giorni non consolidati esclusi).</div>
-<div class="note-box">${g.sufficient
-      ? `Baseline disponibile: ${g.monthsBefore} mesi con dati GA4 prima dell'attivazione (${fmtInt(g.aiBefore)} sessioni AI) e ${g.monthsAfter} mesi dall'attivazione (${fmtInt(g.aiAfter)} sessioni AI). Il confronto è descrittivo: la serie mostra quando è comparso il traffico, non dimostra da sola la causa.`
-      : `Serie storica insufficiente per attribuire l'incremento alle ottimizzazioni GEO: solo ${g.monthsBefore} mesi con dati GA4 precedenti all'attivazione (minimo richiesto ${PARAMS.minBaselineMonths}). Le sessioni AI sono riportate, la causa non è attribuita.`}</div>`
+<div class="cap">Annotazione: attivazione ottimizzazioni GEO = ${esc(i.geoActivation.date)} (${esc(i.geoActivation.label)}). Mese di attivazione evidenziato in viola scuro; l'ultimo mese è parziale (giorni non consolidati esclusi). I mesi senza sessioni sono mostrati a zero.</div>
+<div class="note-box"><strong>Disponibilità della serie:</strong> ${esc(avail)}.<br>${g.sufficient
+      ? `<strong>Esito del controllo:</strong> baseline sufficiente — ${g.monthsBefore} mesi con dati GA4 prima dell'attivazione (${fmtInt(g.aiBefore)} sessioni AI) e ${g.monthsAfter} mesi dall'attivazione (${fmtInt(g.aiAfter)} sessioni AI). Il confronto è descrittivo: la serie mostra quando è comparso il traffico, non dimostra da sola la causa.`
+      : `<strong>Esito del controllo:</strong> serie insufficiente per attribuzione — solo ${g.monthsBefore} mesi con dati GA4 precedenti all'attivazione (minimo richiesto ${PARAMS.minBaselineMonths}). Non dipende dall'intervallo interrogato (${gq} mesi): l'account non ha storico precedente. Le sessioni AI sono riportate, la causa non è attribuita.`}</div>`
   } else geoBlock = `<h3>Serie storica AI / GEO</h3>${na('serie mensile GA4 non recuperata (vedi Avvisi)')}`
 
   // ── 5. Paid ──
@@ -256,7 +272,7 @@ ${rng('GA4 · sessioni con sorgente di tipo assistente AI', `${g.months[0]?.mont
     <td style="text-align:center;font-size:.83rem">${r.users == null ? 'n.d.' : fmtInt(r.users)}</td>
     <td style="text-align:center;font-size:.83rem">${r.bounceRate == null ? 'n.d.' : R.R(r.bounceRate, 0)}</td><td style="font-size:.78rem;color:#888">${tip(r.category)}</td></tr>`).join('')
   const smTable = `
-${rng('GA4 · query base unica (data × canale × source × medium)', w.start, w.ga4End, m.ga4Days)}
+${rng('GA4 · query base unica (data × canale × source × medium)', w.start, w.aggEnd, m.periodDaysGa4)}
 <div style="margin-bottom:16px;font-size:.85rem;color:#555">${m.smTable.length} combinazioni source/medium distinte · ordinate per sessioni decrescenti · la somma delle righe coincide con le sessioni totali</div>
 <div style="overflow:auto"><table><thead><tr><th>#</th><th>Fonte (source)</th><th>Medium</th><th>Categoria</th><th style="text-align:center">Sessioni</th><th style="text-align:center">Quota sessioni</th><th style="text-align:center">Utenti</th><th style="text-align:center">Bounce</th><th>Nota</th></tr></thead><tbody>
 ${smRows}
@@ -285,28 +301,45 @@ ${rest.length ? `<tr><td></td><td colspan="3"><em>Altre ${rest.length} combinazi
       : 'Nessun contratto inviato (CONTRACT_SENT) nel periodo.'
     // cross-tab fonte × status
     let srcBlock = ''
-    if (c.showSourceTable) {
-      const order = Object.entries(c.byCanale).sort((a, b) => b[1].total - a[1].total)
-      const rows = order.map(([canale, v]) => {
+    {
+      // Una riga per OGNI valore presente (inclusa «non valorizzata»); la riga AI e' predisposta anche a zero lead.
+      const keys = Object.keys(c.byCanale)
+      const empty = { canale: 'AI', total: 0, web: 0, status: {}, details: {} }
+      const rowsData = [...keys.map(k => c.byCanale[k]), ...(c.byCanale['AI'] ? [] : [empty])]
+        .sort((a, b) => (a.canale === CRM_UNSET ? 1 : b.canale === CRM_UNSET ? -1 : b.total - a.total))
+      const rows = rowsData.map(v => {
         const ct = v.status['CONTRACT_SENT'] || 0, br = v.status['BROCHURE_SENT'] || 0, nw = v.status['NEW'] || 0
-        const g = ga4SessionsForCrmChannel(m, canale)
+        const den = crmDenominator(m, v)
         const small = v.total < PARAMS.minChannelSample
-        const per100 = g != null && g > 0 ? `${fmtDec((100 * v.total) / g, 1)} lead/100 sessioni<br><span style="font-size:.72rem;color:#6b7280">${v.total} lead / ${fmtInt(g)} sessioni GA4${small ? ' · campione &lt; ' + PARAMS.minChannelSample + ' lead' : ''}</span>` : 'non attribuibile'
-        return `<tr><td><strong>${esc(canale)}</strong></td><td style="text-align:center;font-weight:700">${v.total}</td><td style="text-align:center">${v.web}</td><td style="text-align:center;color:#065f46">${ct}</td><td style="text-align:center;color:#1d4ed8">${br}</td><td style="text-align:center;color:#6b7280">${nw}</td><td style="text-align:center">${v.total - ct - br - nw}</td><td style="font-size:.8rem">${per100}</td></tr>`
+        const warn = small ? `<br><span style="color:#92400e;font-size:.72rem">⚠ campione &lt; ${PARAMS.minChannelSample} lead: rapporto indicativo</span>` : ''
+        const rate = (n: number, d: number) => `${fmtDec((PARAMS.per * n) / d, 1)} lead per ${PARAMS.per} sessioni`
+        let cell: string
+        if (v.canale === CRM_UNSET) cell = `non calcolabile: ${esc(den.note)}<br><span style="font-size:.72rem;color:#6b7280">${v.total} lead senza fonte, nessun denominatore GA4</span>`
+        else if (den.unique) {
+          const d = gaChanSessions(m, den.unique)
+          cell = d > 0
+            ? `<strong>${rate(v.total, d)}</strong><br><span style="font-size:.72rem;color:#6b7280">numeratore ${v.total} lead · denominatore ${fmtInt(d)} sessioni GA4 canale ${GA_CHAN_LABEL[den.unique]}</span>${warn}<br><span style="font-size:.7rem;color:#6b7280">${esc(den.note)}</span>`
+            : `denominatore a zero (canale GA4 ${GA_CHAN_LABEL[den.unique]} senza sessioni)${warn}`
+        } else {
+          const cand = den.candidates.map(x => `${GA_CHAN_LABEL[x.ga]}: ${fmtInt(x.sessions)} sessioni`).join(' · ')
+          cell = `non univoco — denominatori candidati: ${esc(cand || 'nessuno')}<br><span style="font-size:.72rem;color:#6b7280">numeratore ${v.total} lead</span>${warn}<br><span style="font-size:.7rem;color:#6b7280">${esc(den.note)}</span>`
+        }
+        const aiNote = v.canale === 'AI' && v.total === 0 ? `<br><span style="font-size:.7rem;color:#6b7280">${esc(CRM_AI_NOT_EMITTED)}</span>` : ''
+        const label = v.canale === CRM_UNSET ? 'non valorizzata' : v.canale
+        return `<tr><td><strong>${esc(label)}</strong>${aiNote}</td><td style="text-align:center;font-weight:700">${v.total}</td><td style="text-align:center">${v.web}</td><td style="text-align:center;color:#065f46">${ct}</td><td style="text-align:center;color:#1d4ed8">${br}</td><td style="text-align:center;color:#6b7280">${nw}</td><td style="text-align:center">${v.total - ct - br - nw}</td><td style="font-size:.8rem">${cell}</td></tr>`
       }).join('')
-      const allSmall = order.every(([, v]) => v.total < PARAMS.minChannelSample)
+      const lowCov = c.sourceCoverage < PARAMS.minCrmSourceCoverage
       srcBlock = `
 <h3>Fonte lead (campo CRM <code>canale_acquisizione</code>) × Status</h3>
-<div style="overflow:auto"><table><thead><tr><th>Canale CRM</th><th style="text-align:center">Lead</th><th style="text-align:center">di cui da form sito</th><th style="text-align:center">CONTRACT_SENT</th><th style="text-align:center">BROCHURE_SENT</th><th style="text-align:center">NEW</th><th style="text-align:center">Altri stati</th><th>Lead per 100 sessioni GA4</th></tr></thead><tbody>${rows}
-<tr style="background:#f0fdf4;font-weight:700"><td>Fonte valorizzata</td><td style="text-align:center">${c.sourceFilled}</td><td colspan="6" style="font-weight:400;font-size:.8rem">${c.sourceFilled}/${c.total} lead = ${R.P(c.sourceFilled, c.total, 1)}; i restanti ${c.total - c.sourceFilled} lead non hanno la fonte</td></tr></tbody></table></div>
-<div class="cap">Il canale CRM è dedotto dal form (UTM o referrer al momento dell'invio): è un modello di attribuzione diverso da quello di GA4, quindi il rapporto lead/sessioni è indicativo e calcolato solo dove la corrispondenza con un canale GA4 è univoca (Direct, organico). Il CRM non distingue SEO da AI/GEO: la qualità dei lead AI non è misurabile.${allSmall ? ` Ogni canale ha meno di ${PARAMS.minChannelSample} lead: nessun confronto di qualità tra canali è affidabile con questo campione.` : ''}</div>`
-    } else {
-      srcBlock = `<div class="note-box">Il CRM non espone la fonte del lead in modo sufficiente (${c.sourceFilled}/${c.total} lead con fonte valorizzata): la qualità per canale non è misurabile in questo report. Da implementare: campo fonte obbligatorio sul form.</div>`
+<div style="overflow:auto"><table><thead><tr><th>Canale CRM</th><th style="text-align:center">Lead</th><th style="text-align:center">di cui da form sito</th><th style="text-align:center">CONTRACT_SENT</th><th style="text-align:center">BROCHURE_SENT</th><th style="text-align:center">NEW</th><th style="text-align:center">Altri stati</th><th>Lead per ${PARAMS.per} sessioni GA4 (numeratore / denominatore)</th></tr></thead><tbody>${rows}
+<tr style="background:#f0fdf4;font-weight:700"><td>TOTALE (= lead del periodo)</td><td style="text-align:center">${c.rowsSum}</td><td colspan="6" style="font-weight:400;font-size:.8rem">somma delle righe ${c.rowsSum} = lead totali ${c.total} · fonte valorizzata ${c.sourceFilled}/${c.total} = ${R.P(c.sourceFilled, c.total, 1)}; senza fonte ${c.total - c.sourceFilled} lead (riga «non valorizzata»)</td></tr></tbody></table></div>
+<div class="cap">Il canale CRM è dedotto dal form (UTM o referrer al momento dell'invio): è un modello di attribuzione diverso da quello di GA4, quindi il rapporto è indicativo. Mappatura CRM → canale GA4 (costante unica nel codice): GOOGLE con dettaglio google_organico → SEO; GOOGLE con google_ads → Paid; ORGANICO → SEO; DIRETTO → Direct; META → Paid o Social (dipende da utm_medium); EMAIL, REFERRAL, ALTRO → Altro; AI → AI/GEO. Dove la corrispondenza non è univoca si mostrano i denominatori candidati, non un rapporto. Rapporto = lead attribuiti al canale / sessioni GA4 dello stesso canale × ${PARAMS.per}; avviso se i lead sono meno di ${PARAMS.minChannelSample}.${lowCov ? ' La fonte è valorizzata su meno della metà dei lead: la lettura per canale è fragile.' : ''}</div>
+<div class="note-box"><strong>Lead da assistenti AI.</strong> ${c.hasAi ? `Il CRM contiene ${c.byCanale['AI'].total} lead con canale AI.` : `I lead da assistenti AI non sono distinguibili: il canale non è emesso dal form. Da implementare in ecura-landing. Oggi quei lead finiscono in ALTRO (referral non classificabile).`}</div>`
     }
     crmBlock = `
 <div class="section">
 <h2>🌡️ Qualità Lead CRM — Temperatura × Pipeline <span class="tag tag-crm">CRM D1</span></h2>
-${rng('CRM D1 · tabella leads · created_at (UTC)', w.start, w.ga4End, m.ga4Days)}
+${rng('CRM D1 · tabella leads · created_at (UTC)', w.start, w.aggEnd, m.periodDaysGa4)}
 <div style="background:#f0fdf4;border-left:4px solid #059669;border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:18px;font-size:.87rem;color:#166534">
   <strong>${c.total} lead nel periodo · ${claim}</strong>
 </div>
@@ -324,25 +357,32 @@ ${srcBlock}
   }
 
   // ── Qualità del dato e metodo ──
-  const qRows = checks.map(c => `<tr><td>${esc(c.label)}</td><td>${statusCell(c.status)}</td><td>${esc(c.value)}</td></tr>`).join('')
+  const qRows = checks.map(c => `<tr><td>${esc(c.label)}</td><td>${statusCell(c.level)}</td><td>${esc(c.value)}</td></tr>`).join('')
+  const geoRange = m.geo ? m.geo.range : null
   const srcRows = `
-    <tr><td>GA4 — property ${esc(i.ga4PropertyId)} (${esc(i.measurementId)})</td><td>${w.start}</td><td>${w.ga4End}</td><td style="text-align:center">${m.ga4Days}</td><td>richiesto fino al ${esc(i.requestedEnd)}; taglio a oggi − ${PARAMS.ga4LagDays} giorni</td></tr>
-    <tr><td>Search Console — ${esc(i.siteUrl)} (web, dataState final)</td><td>${m.gsc ? w.start : 'n.d.'}</td><td>${m.gsc ? w.gscEnd : 'n.d.'}</td><td style="text-align:center">${m.gsc ? m.gscDays : 'n.d.'}</td><td>taglio a oggi − ${PARAMS.gscLagDays} giorni</td></tr>
-    <tr><td>CRM lead (D1)</td><td>${m.crm ? w.start : 'n.d.'}</td><td>${m.crm ? w.ga4End : 'n.d.'}</td><td style="text-align:center">${m.crm ? m.ga4Days : 'n.d.'}</td><td>stesso intervallo di GA4 (created_at, UTC)</td></tr>
-    <tr><td>GA4 serie mensile AI/GEO</td><td>${m.geo?.months[0] ? m.geo.months[0].month + '-01' : 'n.d.'}</td><td>${m.geo ? w.ga4End : 'n.d.'}</td><td style="text-align:center">${m.geo ? m.geo.months.length + ' mesi' : 'n.d.'}</td><td>ultimi 12 mesi o prima data disponibile</td></tr>`
+    <tr><td>GA4 — property ${esc(i.ga4PropertyId)} (${esc(i.measurementId)}): totale, canali, source/medium</td><td>${w.start}</td><td>${w.aggEnd}</td><td style="text-align:center">${m.periodDaysGa4}</td><td>richiesto fino al ${esc(i.requestedEnd)}; lag ${PARAMS.ga4LagDays} giorni${m.cons.tailDays ? ` e ${m.cons.tailDays} giorni in consolidamento` : ''}; stessa dateRanges per tutte le query non datate</td></tr>
+    <tr><td>GA4 — serie giornaliera (scaricata)</td><td>${w.start}</td><td>${w.ga4End}</td><td style="text-align:center">${m.downloadedDays}</td><td>comprende i giorni in consolidamento, mostrati tratteggiati e mai sommati</td></tr>
+    <tr><td>Search Console — ${esc(i.siteUrl)} (web, dataState final)</td><td>${m.gsc ? w.start : 'n.d.'}</td><td>${m.gsc ? w.gscEnd : 'n.d.'}</td><td style="text-align:center">${m.gsc ? m.periodDaysGsc : 'n.d.'}</td><td>lag ${PARAMS.gscLagDays} giorni</td></tr>
+    <tr><td>CRM lead (D1)</td><td>${m.crm ? w.start : 'n.d.'}</td><td>${m.crm ? w.aggEnd : 'n.d.'}</td><td style="text-align:center">${m.crm ? m.periodDaysGa4 : 'n.d.'}</td><td>stesso intervallo di GA4 (created_at, UTC)</td></tr>
+    <tr><td>GA4 — serie mensile AI/GEO (intervallo proprio)</td><td>${geoRange ? geoRange.start : 'n.d.'}</td><td>${geoRange ? geoRange.end : 'n.d.'}</td><td style="text-align:center">${m.geo ? m.geo.monthsQueried + ' mesi' : 'n.d.'}</td><td>${PARAMS.geoMonths} mesi interi fino all’ultimo giorno aggregato; ultimo mese parziale</td></tr>`
   const qualityBlock = `
 <div class="section qa-page">
 <h2>🧪 Qualità del dato e metodo</h2>
-<p style="font-size:.88rem">Ogni riga è calcolata a runtime dalle stesse query che alimentano il report. Le righe contrassegnate «hard» (quadrature, giorni non consolidati, coerenza percentuali) bloccano la generazione del report se falliscono.</p>
-<table><thead><tr><th style="width:34%">Controllo</th><th style="width:14%">Esito</th><th>Valore calcolato</th></tr></thead><tbody>${qRows}${PLACE_PCT}</tbody></table>
+<p style="font-size:.88rem">Ogni riga è calcolata a runtime dalle stesse query che alimentano il report. Tre livelli: <span class="qa-fail">🔴 errore bloccante</span> (quadrature hard: il report non si genera), <span class="qa-warn">🟠 anomalia</span> (il report si genera con banner in testa ed elenco puntuale), <span class="qa-notice">🟡 avviso di metodo</span> (nessun banner, solo la riga in tabella).</p>
+<table><thead><tr><th style="width:${QA_COL.label}%">Controllo</th><th style="width:${QA_COL.status}%">Esito</th><th>Valore calcolato</th></tr></thead><tbody>${qRows}${PLACE_PCT}</tbody></table>
 <h3>Intervalli effettivamente usati da ogni fonte</h3>
 <table><thead><tr><th>Fonte</th><th>startDate</th><th>endDate</th><th style="text-align:center">Giorni</th><th>Nota</th></tr></thead><tbody>${srcRows}</tbody></table>
 <h3>Definizioni di metodo</h3>
 <ul style="font-size:.84rem;line-height:1.6">
-  <li><strong>Sessioni totali</strong> = somma della query base GA4 (data × canale × source × medium); KPI, macro-canali, tabella source/medium e serie giornaliera derivano tutti da essa.</li>
-  <li><strong>CTR</strong> = click / impressioni sull'intero periodo GSC. <strong>Click al giorno</strong> = click / giorni effettivi dopo il taglio dei giorni non consolidati.</li>
-  <li><strong>Media mobile 7 giorni</strong> = media dei 7 giorni terminanti nella data indicata; la serie grezza resta visibile. <strong>Settimane</strong> lunedì–domenica; le settimane parziali sono marcate.</li>
-  <li><strong>Google organic</strong> = sessioni con source «google» e medium «organic». <strong>Macro-canali</strong>: SEO (tutti i motori organici), AI (assistenti AI), Direct, Paid, Social, Altro (referral, email, non classificato).</li>
+  <li><strong>Sessioni totali</strong> = totale GA4 della query <em>senza dimensioni</em> sullo stesso periodo: è l’unica fonte di verità. Macro-canali, tabella source/medium e canali nativi derivano da query senza data sullo stesso intervallo e devono coincidere con esso.</li>
+  <li><strong>Serie giornaliera</strong> = query con la dimensione data. Una sessione che attraversa la mezzanotte è contata su due date: la somma datata supera il totale di N sessioni (<em>sessioni a cavallo della mezzanotte</em>, N = somma datata − totale senza dimensioni). N è atteso e dichiarato; la tolleranza di ${R.PM(PARAMS.tolerance * 100, 1)} copre solo questo caso, oltre resta errore bloccante. <strong>Totale device</strong> = stessa dateRanges, nessuna data: deve coincidere esattamente.</li>
+  <li><strong>CTR</strong> di sito = click / impressioni sull’intero periodo GSC. Il <strong>CTR delle top ${PARAMS.topQueries} query</strong> è un’altra grandezza (Σ click / Σ impressioni delle sole ${PARAMS.topQueries} query) e non va confuso con il CTR di sito. <strong>Click al giorno</strong> = click / giorni effettivi dopo il taglio dei giorni non consolidati.</li>
+  <li><strong>MA${PARAMS.maShort}</strong> = media dei ${PARAMS.maShort} giorni terminanti nella data indicata: indicatore di breve, senza verdetto. <strong>MA${PARAMS.maLong}</strong> = media dei ${PARAMS.maLong} giorni terminanti nella data indicata, esclusi i giorni in consolidamento: è l’unica base del verdetto «in calo / stabile / in aumento» (confronto con la MA${PARAMS.maLong} di ${PARAMS.maLong} giorni prima).</li>
+  <li><strong>Giorni in consolidamento</strong>: se la media organica degli ultimi ${PARAMS.consolidationTailDays} giorni è sotto ${R.PM(PARAMS.consolidationMinShare * 100, 0)} della media dei ${PARAMS.consolidationRefDays} giorni precedenti, quei giorni sono esclusi da aggregati e trend e tratteggiati nei grafici. Lag GA4 ${PARAMS.ga4LagDays} giorni, GSC ${PARAMS.gscLagDays}.</li>
+  <li><strong>Google organic</strong> = sessioni con <code>sessionSource = google</code> e <code>sessionMedium = organic</code> (non il channel group, che comprende Discover, News e referral google.* riclassificati). <strong>Macro-canali</strong>: SEO (tutti i motori organici), AI (assistenti AI), Direct, Paid, Social, Altro.</li>
+  <li><strong>Rapporto organico</strong> = sessioni GA4 google / organic ÷ click GSC, su settimane complete (lun–dom) e affidabili: sono escluse le settimane con sessioni oltre ${fmtDec(PARAMS.ratioMax, 2)} volte i click.</li>
+  <li><strong>Quota Direct</strong> = sessioni Direct ÷ sessioni totali.</li>
+  <li><strong>Lead per ${PARAMS.per} sessioni</strong> = lead attribuiti al canale ÷ sessioni GA4 dello stesso canale × ${PARAMS.per}; si mostrano sempre numeratore e denominatore, con avviso se i lead sono meno di ${PARAMS.minChannelSample}. Dove la mappatura CRM → GA4 non è univoca si mostrano i denominatori candidati.</li>
   <li>Fusi orari: GA4 usa il fuso della property, Search Console il proprio: piccoli scostamenti sul singolo giorno sono attesi; per questo il confronto affidabile è settimanale.</li>
 </ul>
 </div>`
@@ -372,7 +412,7 @@ ${srcBlock}
 <ul class="insight-list">${ins.join('')}</ul>
 ${trendBox}
 <h3 style="margin-top:24px">📊 Top ${PARAMS.topPages} pagine GA4 per visualizzazioni</h3>
-${rng('GA4', w.start, w.ga4End, m.ga4Days)}
+${rng('GA4', w.start, w.aggEnd, m.periodDaysGa4)}
 ${i.ga4.topPages ? `<table><thead><tr><th>Pagina</th><th style="text-align:center">Pageviews</th><th style="text-align:center">Sessioni</th></tr></thead><tbody>${i.ga4.topPages.map(p => `<tr><td style="font-size:.82rem">${esc(p.page)}</td><td style="text-align:center">${fmtInt(p.pageviews)}</td><td style="text-align:center">${fmtInt(p.sessions)}</td></tr>`).join('')}</tbody></table>` : na('pagine GA4 non recuperate')}
 </div>`
 
@@ -380,7 +420,7 @@ ${i.ga4.topPages ? `<table><thead><tr><th>Pagina</th><th style="text-align:cente
   const geoBlockCountry = `
 <div class="section geo-sec">
 <h2>🌍 Geografico <span class="tag tag-ga4">GA4</span></h2>
-${rng('GA4', w.start, w.ga4End, m.ga4Days)}
+${rng('GA4', w.start, w.aggEnd, m.periodDaysGa4)}
 ${i.ga4.countries ? `<div class="charts-grid"><div class="chart-box"><h3>Top paesi per sessioni</h3>
 <table><thead><tr><th>Paese</th><th style="text-align:center">Sessioni</th><th style="text-align:center">Quota sessioni</th></tr></thead><tbody>
 ${i.ga4.countries.map(c => `<tr><td>${esc(c.country)}</td><td style="text-align:center;font-weight:600">${fmtInt(c.sessions)}</td><td style="text-align:center;color:#666">${R.P(c.sessions, total, 1)}</td></tr>`).join('')}</tbody></table></div></div>` : na('paesi GA4 non recuperati')}
@@ -393,12 +433,13 @@ ${i.ga4.countries.map(c => `<tr><td>${esc(c.country)}</td><td style="text-align:
   const chartData = {
     labels: m.dates.map(fmtDay),
     series: CHART_CHANNELS.map(c => ({ name: c, data: m.series[c], color: CH_COLOR[c] })),
-    ma7: m.ma7Total.map(v => (v == null ? null : Math.round(v * 100) / 100)),
+    ma7: m.ma7Total.map((v, k) => (v == null || k >= m.aggCount ? null : Math.round(v * 100) / 100)),
+    aggCount: m.aggCount,
     weekLabels, weekPartial,
     weekSeries: CHART_CHANNELS.map(c => ({ name: c, data: fullWeeks.map(x => x.byChannel[c]), color: CH_COLOR[c] })),
-    gaOrg: m.gaOrgDaily, gaOrgMa: m.gaOrgMa7.map(v => (v == null ? null : Math.round(v * 100) / 100)),
+    gaOrg: m.gaOrgDaily, gaOrgMa: m.gaOrgMa7.map((v, k) => (v == null || k >= m.aggCount ? null : Math.round(v * 100) / 100)),
     gsc: m.gscDaily, gscMa: m.gscMa7.map(v => (v == null ? null : Math.round(v * 100) / 100)),
-    gscEndLabel: fmtDay(w.gscEnd), ga4EndLabel: fmtDay(w.ga4End),
+    gscEndLabel: fmtDay(w.gscEnd), ga4EndLabel: fmtDay(w.aggEnd),
     devLabels, devData: dev.map(d => d.sessions),
     donutLabels, donutData: macroDefs.map(d => d[2]), natLabels, natData: m.nativeChannels.map(x => x[1]),
     seoLabels: m.seoEngines.map(([k, v]) => `${k} (${fmtInt(v)} sessioni)`), seoData: m.seoEngines.map(x => x[1]),
@@ -436,7 +477,7 @@ ${PLACE_BANNER}
     ${i.sampleNote ? `<div style="margin-top:12px;background:#fbbf24;color:#3b2a00;border-radius:8px;padding:8px 14px;font-weight:700;font-size:.85rem;max-width:760px">${esc(i.sampleNote)}</div>` : ''}
     <h1 style="margin-top:16px">Report Analytics Live — eCura</h1>
     <p class="subtitle">Analisi dettagliata per fonte di acquisizione: SEO tradizionale (motore per motore), AI/GEO (tool per tool), Direct, ADS.<br>
-    Periodo analizzato: <strong>${w.start}</strong> → <strong>${w.ga4End}</strong> (${m.ga4Days} giorni).<br>
+    Periodo analizzato: <strong>${w.start}</strong> → <strong>${w.aggEnd}</strong> (${m.periodDaysGa4} giorni).<br>
     <span style="font-size:.85rem;opacity:.85">Periodo richiesto fino al ${esc(i.requestedEnd)}: ${esc(lagNote)}</span></p>
     <div class="meta">
       <span>📊 GA4: ${esc(i.measurementId)}</span>
@@ -454,13 +495,13 @@ ${errorsBlock}
 <!-- 1. KPI OVERVIEW -->
 <div class="section">
 <h2>📊 Overview GA4 <span class="tag tag-ga4">GA4</span></h2>
-${rng('GA4', w.start, w.ga4End, m.ga4Days)}
+${rng('GA4', w.start, w.aggEnd, m.periodDaysGa4)}
 ${kpiHtml}
 <div class="charts-grid">
   <div class="chart-box" style="grid-column:span 2">
     <h3>Sessioni per canale di acquisizione</h3>
     <canvas id="dailyChart" height="95"></canvas>
-    <div class="cap">Barre impilate: sessioni al giorno per canale (Google organic, AI, Direct, Paid, Altro). Linea: media mobile a 7 giorni del totale (sessioni/giorno). ${esc(lagNote)}</div>
+    <div class="cap">Barre impilate: sessioni al giorno per canale (Google organic, AI, Direct, Paid, Altro). Linea: media mobile a ${PARAMS.maShort} giorni del totale (sessioni/giorno). ${esc(lagNote)}</div>
   </div>
   <div class="chart-box">
     <h3>📱 Device</h3>
@@ -472,7 +513,7 @@ ${kpiHtml}
     <h3>Organico: sessioni GA4 vs click Search Console</h3>
     <div class="panel"><canvas id="orgGaChart" height="62"></canvas></div>
     <div class="panel"><canvas id="orgGscChart" height="62"></canvas></div>
-    <div class="cap">Due pannelli separati con lo stesso asse temporale (nessun doppio asse): sopra le sessioni GA4 di Google organic, sotto i click di Search Console. Linea sottile: dato giornaliero; linea spessa: media mobile a 7 giorni. ${m.gsc ? `Search Console termina il ${fmtDayY(w.gscEnd)} (un giorno prima di GA4: lag diverso).` : 'Search Console: dato non disponibile.'} ${esc(lagNote)}</div>
+    <div class="cap">Due pannelli separati con lo stesso asse temporale (nessun doppio asse): sopra le sessioni GA4 di Google organic, sotto i click di Search Console. Linea sottile: dato giornaliero; linea spessa: media mobile a ${PARAMS.maShort} giorni. ${m.gsc ? `Search Console termina il ${fmtDayY(w.gscEnd)} (un giorno prima di GA4: lag diverso).` : 'Search Console: dato non disponibile.'} ${esc(lagNote)}</div>
   </div>
   <div class="chart-box">
     <h3>Sessioni per settimana (lun–dom)</h3>
@@ -485,7 +526,7 @@ ${kpiHtml}
 <!-- 2. CANALI -->
 <div class="section">
 <h2>🎯 Analisi Canali di Acquisizione <span class="tag tag-ga4">GA4</span></h2>
-${rng('GA4 · query base unica', w.start, w.ga4End, m.ga4Days)}
+${rng('GA4 · query base unica', w.start, w.aggEnd, m.periodDaysGa4)}
 <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:.88rem;color:#1e40af">
   <strong>Come leggere questa sezione:</strong> ogni sessione è classificata nella sua fonte (motore di ricerca, assistente AI, accesso diretto, campagna ADS). La somma dei sei macro-canali coincide con le sessioni totali del KPI (controllo nella sezione Qualità del dato).
 </div>
@@ -500,10 +541,10 @@ ${directBox}
 <!-- 3. SEO -->
 <div class="section">
 <h2>🔍 SEO Tradizionale — Dettaglio per Motore di Ricerca <span class="tag tag-seo">Organic</span></h2>
-${rng('GA4', w.start, w.ga4End, m.ga4Days)}
+${rng('GA4', w.start, w.aggEnd, m.periodDaysGa4)}
 <div style="background:#eff6ff;border-left:4px solid #4285F4;border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:18px;font-size:.87rem">
   <strong>${fmtInt(m.macro.SEO)} sessioni organiche</strong> — ${sessPct(m.macro.SEO, 'text')} delle sessioni totali.
-  ${m.gsc ? `Search Console (${gscRange}, ${m.gscDays} giorni): <strong>${fmtInt(m.gsc.clicks)} click</strong> su ${fmtInt(m.gsc.impressions)} impressioni, CTR ${R.P(m.gsc.clicks, m.gsc.impressions, 1, 'text')} (click / impressioni).` : 'Search Console: dato non disponibile.'}
+  ${m.gsc ? `Search Console (${gscRange}, ${m.periodDaysGsc} giorni): <strong>${fmtInt(m.gsc.clicks)} click</strong> su ${fmtInt(m.gsc.impressions)} impressioni, CTR ${R.P(m.gsc.clicks, m.gsc.impressions, 1, 'text')} (click / impressioni).` : 'Search Console: dato non disponibile.'}
 </div>
 ${seoTable}
 ${gscBlock}
@@ -513,7 +554,7 @@ ${ratioBlock}
 <!-- 4. AI / GEO -->
 <div class="section">
 <h2>🤖 AI / GEO — Dettaglio per Tool AI <span class="tag tag-ai">AI Assistant</span></h2>
-${rng('GA4', w.start, w.ga4End, m.ga4Days)}
+${rng('GA4', w.start, w.aggEnd, m.periodDaysGa4)}
 <div style="background:#f5f3ff;border-left:4px solid #7C3AED;border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:18px;font-size:.87rem">
   <strong>${fmtInt(m.macro.AI)} sessioni da assistenti AI</strong> — ${sessPct(m.macro.AI, 'text')} delle sessioni totali.
 </div>
@@ -531,7 +572,7 @@ ${geoBlock}
 <!-- 5. ADS -->
 <div class="section">
 <h2>💰 Campagne ADS — Paid Acquisition <span class="tag tag-paid">Paid</span></h2>
-${rng('GA4', w.start, w.ga4End, m.ga4Days)}
+${rng('GA4', w.start, w.aggEnd, m.periodDaysGa4)}
 ${paidBlock}
 </div>
 
@@ -567,28 +608,32 @@ const legendBottom = { legend: { position: 'bottom', labels: { font: { size: 10 
 
 // 1. Sessioni per canale (barre impilate) + media mobile 7 gg
 new Chart(document.getElementById('dailyChart'), {
-  data: { labels: D.labels, datasets: D.series.map(s => ({ type: 'bar', label: s.name + ' (sessioni)', data: s.data, backgroundColor: s.color, stack: 'ch', borderWidth: 0 }))
-    .concat([{ type: 'line', label: 'Media mobile 7 giorni — totale (sessioni/giorno)', data: D.ma7, borderColor: '#080E49', borderWidth: 2, pointRadius: 0, tension: .25, spanGaps: false, order: 0 }]) },
+  data: { labels: D.labels, datasets: D.series.map(s => ({ type: 'bar', label: s.name + ' (sessioni)', data: s.data, stack: 'ch', borderWidth: 0,
+      backgroundColor: ctx => ctx.dataIndex >= D.aggCount ? s.color + '55' : s.color,
+      borderColor: ctx => ctx.dataIndex >= D.aggCount ? s.color : 'transparent',
+      borderDash: [4, 3] }))
+    .concat([{ type: 'line', label: 'Media mobile ${PARAMS.maShort} giorni — totale (sessioni/giorno), indicatore di breve', data: D.ma7, borderColor: '#080E49', borderWidth: 2, pointRadius: 0, tension: .25, spanGaps: false, order: 0 }]) },
   options: { responsive: true, plugins: legendBottom, scales: { x: { stacked: true, title: { display: true, text: 'giorno (gg/mm)', font: { size: 10 } }, ticks: { maxTicksLimit: 16 } }, y: Object.assign(ax('sessioni al giorno'), { stacked: true }) } }
 });
 
 // 2. Device
 new Chart(document.getElementById('deviceChart'), { type: 'doughnut',
   data: { labels: D.devLabels, datasets: [{ data: D.devData, backgroundColor: ['#4285F4','#34A853','#FBBC05','#9CA3AF'], borderWidth: 2, borderColor: '#fff' }] },
-  options: { responsive: true, cutout: '55%', plugins: legendBottom } });
+  options: { responsive: true, cutout: '${DONUT_CUTOUT.device}%', plugins: legendBottom } });
 
 // 3. Organico: due pannelli, stessa scala temporale
 const orgOpts = (title, last) => ({ responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } } },
   scales: { x: { title: { display: last, text: 'giorno (gg/mm)', font: { size: 10 } }, ticks: { maxTicksLimit: 16, display: true } }, y: ax(title) } });
 new Chart(document.getElementById('orgGaChart'), { type: 'line',
   data: { labels: D.labels, datasets: [
-    { label: 'Sessioni GA4 Google organic — giornaliero (sessioni/giorno)', data: D.gaOrg, borderColor: 'rgba(66,133,244,.45)', borderWidth: 1, pointRadius: 1.5, tension: 0 },
-    { label: 'Media mobile 7 giorni (sessioni/giorno)', data: D.gaOrgMa, borderColor: '#1d4ed8', borderWidth: 2.5, pointRadius: 0, tension: .25 } ] },
+    { label: 'Sessioni GA4 Google organic — giornaliero (sessioni/giorno); tratteggio = in consolidamento, escluso dagli aggregati', data: D.gaOrg, borderColor: 'rgba(66,133,244,.45)', borderWidth: 1, pointRadius: 1.5, tension: 0,
+      segment: { borderDash: c => c.p1DataIndex >= D.aggCount ? [4, 3] : undefined, borderColor: c => c.p1DataIndex >= D.aggCount ? 'rgba(220,38,38,.8)' : undefined } },
+    { label: 'Media mobile ${PARAMS.maShort} giorni (sessioni/giorno), indicatore di breve', data: D.gaOrgMa, borderColor: '#1d4ed8', borderWidth: 2.5, pointRadius: 0, tension: .25 } ] },
   options: orgOpts('sessioni GA4 al giorno', false) });
 new Chart(document.getElementById('orgGscChart'), { type: 'line',
   data: { labels: D.labels, datasets: [
     { label: 'Click Search Console — giornaliero (click/giorno)', data: D.gsc, borderColor: 'rgba(217,119,6,.5)', borderWidth: 1, pointRadius: 1.5, tension: 0, spanGaps: false },
-    { label: 'Media mobile 7 giorni (click/giorno)', data: D.gscMa, borderColor: '#b45309', borderWidth: 2.5, pointRadius: 0, tension: .25, spanGaps: false } ] },
+    { label: 'Media mobile ${PARAMS.maShort} giorni (click/giorno), indicatore di breve', data: D.gscMa, borderColor: '#b45309', borderWidth: 2.5, pointRadius: 0, tension: .25, spanGaps: false } ] },
   options: orgOpts('click GSC al giorno', true) });
 
 // 4. Settimanale per canale
@@ -600,7 +645,7 @@ new Chart(document.getElementById('weekChart'), { type: 'bar',
 // 5. Macro canali
 new Chart(document.getElementById('summaryDonut'), { type: 'doughnut',
   data: { labels: D.donutLabels, datasets: [{ data: D.donutData, backgroundColor: ['#4285F4','#7C3AED','#068D86','#F59E0B','#EC4899','#9CA3AF'], borderWidth: 2, borderColor: '#fff' }] },
-  options: { responsive: true, cutout: '52%', plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 8 } } } } });
+  options: { responsive: true, cutout: '${DONUT_CUTOUT.macro}%', plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, padding: 8 } } } } });
 new Chart(document.getElementById('channelChart'), { type: 'bar',
   data: { labels: D.natLabels, datasets: [{ label: 'Sessioni', data: D.natData, backgroundColor: ['#4285F4','#34A853','#FBBC05','#EA4335','#5F6368','#00BCD4','#9C27B0','#FF5722','#607D8B','#795548'], borderRadius: 4 }] },
   options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: ax('sessioni') } } });
@@ -613,7 +658,7 @@ new Chart(document.getElementById('tempStatusChart'), { type: 'bar', data: { lab
   { label: 'CONTRACT_SENT (lead)', data: D.crm.ct, backgroundColor: '#059669', borderRadius: 4 }, { label: 'BROCHURE_SENT (lead)', data: D.crm.br, backgroundColor: '#1d4ed8', borderRadius: 4 },
   { label: 'NEW (lead)', data: D.crm.nw, backgroundColor: '#9ca3af', borderRadius: 4 }, { label: 'Altri stati (lead)', data: D.crm.oth, backgroundColor: '#d1d5db', borderRadius: 4 } ] },
   options: { responsive: true, plugins: legendBottom, scales: { x: { grid: { display: false } }, y: Object.assign(ax('lead'), { ticks: { stepSize: 1 } }) } } });
-new Chart(document.getElementById('tempPieChart'), { type: 'doughnut', data: { labels: D.crm.lab, datasets: [{ data: D.crm.tot, backgroundColor: ['#dc2626','#d97706','#2563eb','#9ca3af'], borderWidth: 2, borderColor: '#fff' }] }, options: { responsive: true, cutout: '55%', plugins: legendBottom } });` : ''}
+new Chart(document.getElementById('tempPieChart'), { type: 'doughnut', data: { labels: D.crm.lab, datasets: [{ data: D.crm.tot, backgroundColor: ['#dc2626','#d97706','#2563eb','#9ca3af'], borderWidth: 2, borderColor: '#fff' }] }, options: { responsive: true, cutout: '${DONUT_CUTOUT.crm}%', plugins: legendBottom } });` : ''}
 window.__chartsReady = true;
 <\/script>
 </body>

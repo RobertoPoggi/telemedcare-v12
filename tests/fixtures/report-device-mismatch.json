@@ -1,0 +1,5808 @@
+{
+ "name": "report-device-mismatch",
+ "description": "Totale device ≠ totale (stessa dateRanges): anomalia.",
+ "synthetic": true,
+ "expected": {
+  "errors": [],
+  "anomalies": [
+   "dev"
+  ],
+  "midnight": 7,
+  "tailDays": 0
+ },
+ "input": {
+  "now": "2026-11-04T10:05:30.000Z",
+  "requestedStart": "2026-08-09",
+  "requestedEnd": "2026-11-04",
+  "siteUrl": "sc-domain:ecura.it",
+  "measurementId": "G-5DY4TY34WK",
+  "ga4PropertyId": "000000000",
+  "ga4": {
+   "channelDimension": "sessionDefaultChannelGroup",
+   "baseRows": [
+    {
+     "date": "2026-08-09",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 4
+    },
+    {
+     "date": "2026-08-09",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-09",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "date": "2026-08-10",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "date": "2026-08-10",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-10",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-10",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-10",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-11",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "date": "2026-08-11",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-11",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-11",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-12",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "date": "2026-08-12",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-12",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-12",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-08-12",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-13",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "date": "2026-08-13",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-13",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-13",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-08-14",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "date": "2026-08-14",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-14",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-14",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-08-15",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "date": "2026-08-15",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-15",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-16",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 4
+    },
+    {
+     "date": "2026-08-16",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-16",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-16",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-08-17",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "date": "2026-08-17",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-17",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-17",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "date": "2026-08-17",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-18",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "date": "2026-08-18",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-18",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-18",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "date": "2026-08-19",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "date": "2026-08-19",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-19",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-08-20",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "date": "2026-08-20",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-20",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-20",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-08-21",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "date": "2026-08-21",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-21",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-08-22",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 3
+    },
+    {
+     "date": "2026-08-22",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-22",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-22",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-08-22",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-23",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "date": "2026-08-23",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-23",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-23",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "date": "2026-08-23",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-24",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 4
+    },
+    {
+     "date": "2026-08-24",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-24",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-24",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-08-25",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 3
+    },
+    {
+     "date": "2026-08-25",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-25",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "date": "2026-08-25",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-26",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "date": "2026-08-26",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-26",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-26",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-08-27",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 4
+    },
+    {
+     "date": "2026-08-27",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-27",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-27",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-08-27",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-28",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "date": "2026-08-28",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-28",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-28",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "date": "2026-08-28",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-29",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "date": "2026-08-29",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-29",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "date": "2026-08-29",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-30",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "date": "2026-08-30",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-08-30",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "date": "2026-08-30",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-08-31",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 8
+    },
+    {
+     "date": "2026-08-31",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-08-31",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "date": "2026-09-01",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "date": "2026-09-01",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-01",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-01",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-09-02",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 4
+    },
+    {
+     "date": "2026-09-02",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-02",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-02",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "date": "2026-09-03",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "date": "2026-09-03",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-09-03",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-03",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "date": "2026-09-03",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-04",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "date": "2026-09-04",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-09-04",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-04",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-09-05",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 4
+    },
+    {
+     "date": "2026-09-05",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-09-05",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-05",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "date": "2026-09-05",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-06",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 4
+    },
+    {
+     "date": "2026-09-06",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-09-06",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-06",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-09-07",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "date": "2026-09-07",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-09-07",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-07",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "date": "2026-09-07",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-08",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "date": "2026-09-08",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-09-08",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-08",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "date": "2026-09-08",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-09",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 8
+    },
+    {
+     "date": "2026-09-09",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-09",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-09",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-09-10",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "date": "2026-09-10",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-09-10",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-10",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "date": "2026-09-10",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-11",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "date": "2026-09-11",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-09-11",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-11",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "date": "2026-09-11",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-12",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "date": "2026-09-12",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-09-12",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-12",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "date": "2026-09-12",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-13",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "date": "2026-09-13",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-09-13",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-13",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-09-13",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-14",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "date": "2026-09-14",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-09-14",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-14",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "date": "2026-09-14",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-15",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 8
+    },
+    {
+     "date": "2026-09-15",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-09-15",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-15",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "date": "2026-09-16",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "date": "2026-09-16",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-09-16",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-16",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "date": "2026-09-17",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "date": "2026-09-17",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-09-17",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-17",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-09-17",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-18",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "date": "2026-09-18",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-18",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-18",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "date": "2026-09-18",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-19",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "date": "2026-09-19",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-09-19",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-19",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "date": "2026-09-20",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 10
+    },
+    {
+     "date": "2026-09-20",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-09-20",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-20",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-09-20",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-21",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "date": "2026-09-21",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-09-21",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-21",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "date": "2026-09-21",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-22",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 8
+    },
+    {
+     "date": "2026-09-22",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-09-22",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-22",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "date": "2026-09-22",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-23",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "date": "2026-09-23",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-09-23",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-23",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "date": "2026-09-23",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-24",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 8
+    },
+    {
+     "date": "2026-09-24",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-09-24",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-24",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-09-25",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "date": "2026-09-25",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-09-25",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-25",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "date": "2026-09-25",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-26",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "date": "2026-09-26",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-09-26",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-26",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-09-26",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-27",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "date": "2026-09-27",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-09-27",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-27",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "date": "2026-09-27",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-28",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 8
+    },
+    {
+     "date": "2026-09-28",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-09-28",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-28",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "date": "2026-09-28",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-29",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "date": "2026-09-29",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-09-29",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-29",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "date": "2026-09-29",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-30",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 10
+    },
+    {
+     "date": "2026-09-30",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-09-30",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-09-30",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "date": "2026-09-30",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-01",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "date": "2026-10-01",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-01",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-01",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "date": "2026-10-01",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-02",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "date": "2026-10-02",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-02",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-02",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "date": "2026-10-02",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-03",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "date": "2026-10-03",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-10-03",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-03",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "date": "2026-10-03",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-04",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "date": "2026-10-04",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-04",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-04",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "date": "2026-10-05",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "date": "2026-10-05",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-10-05",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-05",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "date": "2026-10-05",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-06",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "date": "2026-10-06",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-06",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-06",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-10-06",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-07",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "date": "2026-10-07",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-07",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-07",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "date": "2026-10-07",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-08",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "date": "2026-10-08",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-10-08",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-08",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "date": "2026-10-09",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "date": "2026-10-09",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-10-09",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-09",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "date": "2026-10-10",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 11
+    },
+    {
+     "date": "2026-10-10",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-10",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-10",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "date": "2026-10-11",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 8
+    },
+    {
+     "date": "2026-10-11",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-11",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-11",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 8
+    },
+    {
+     "date": "2026-10-11",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-12",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 10
+    },
+    {
+     "date": "2026-10-12",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-10-12",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-12",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "date": "2026-10-12",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-13",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "date": "2026-10-13",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-13",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-13",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-10-14",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 10
+    },
+    {
+     "date": "2026-10-14",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-10-14",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-14",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "date": "2026-10-14",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-15",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 11
+    },
+    {
+     "date": "2026-10-15",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-15",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-15",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 8
+    },
+    {
+     "date": "2026-10-15",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-16",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "date": "2026-10-16",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-16",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-16",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-10-16",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-17",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "date": "2026-10-17",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-10-17",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-17",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "date": "2026-10-17",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-18",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 12
+    },
+    {
+     "date": "2026-10-18",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-10-18",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-18",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 8
+    },
+    {
+     "date": "2026-10-18",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-19",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 12
+    },
+    {
+     "date": "2026-10-19",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 4
+    },
+    {
+     "date": "2026-10-19",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-19",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-10-20",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 8
+    },
+    {
+     "date": "2026-10-20",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-20",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-20",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 8
+    },
+    {
+     "date": "2026-10-20",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-21",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "date": "2026-10-21",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-21",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-21",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "date": "2026-10-21",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-22",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "date": "2026-10-22",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-22",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-22",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 8
+    },
+    {
+     "date": "2026-10-22",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-23",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "date": "2026-10-23",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-10-23",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-23",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "date": "2026-10-23",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-24",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "date": "2026-10-24",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-24",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-24",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "date": "2026-10-24",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-25",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 10
+    },
+    {
+     "date": "2026-10-25",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 4
+    },
+    {
+     "date": "2026-10-25",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-25",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-10-25",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-26",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 12
+    },
+    {
+     "date": "2026-10-26",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-26",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-26",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 8
+    },
+    {
+     "date": "2026-10-26",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-27",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "date": "2026-10-27",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-27",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-27",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 9
+    },
+    {
+     "date": "2026-10-27",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-28",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 10
+    },
+    {
+     "date": "2026-10-28",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-28",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-28",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 8
+    },
+    {
+     "date": "2026-10-28",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-29",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 10
+    },
+    {
+     "date": "2026-10-29",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "date": "2026-10-29",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-29",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "date": "2026-10-29",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-30",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 10
+    },
+    {
+     "date": "2026-10-30",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 4
+    },
+    {
+     "date": "2026-10-30",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-30",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "date": "2026-10-30",
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-31",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "date": "2026-10-31",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "date": "2026-10-31",
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-10-31",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "date": "2026-11-01",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 2
+    },
+    {
+     "date": "2026-11-01",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-11-01",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 1
+    },
+    {
+     "date": "2026-11-02",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 2
+    },
+    {
+     "date": "2026-11-02",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 1
+    },
+    {
+     "date": "2026-11-03",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 1
+    },
+    {
+     "date": "2026-11-03",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 1
+    },
+    {
+     "date": "2026-11-04",
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 1
+    },
+    {
+     "date": "2026-11-04",
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "date": "2026-11-04",
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 1
+    }
+   ],
+   "smBase": [
+    {
+     "channelGrouping": "Organic Search",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 584
+    },
+    {
+     "channelGrouping": "Referral",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 188
+    },
+    {
+     "channelGrouping": "Direct",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 417
+    },
+    {
+     "channelGrouping": "Referral",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 76
+    },
+    {
+     "channelGrouping": "Paid Search",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 55
+    }
+   ],
+   "queryEnd": "2026-10-31",
+   "control": {
+    "sessions": 1320,
+    "users": 1056,
+    "newUsers": 990,
+    "bounceRate": 0.41,
+    "avgSessionDuration": 95,
+    "pageviews": 2772
+   },
+   "smDetail": [
+    {
+     "source": "google",
+     "medium": "organic",
+     "users": 467,
+     "bounceRate": 0.4
+    },
+    {
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "users": 150,
+     "bounceRate": 0.4
+    },
+    {
+     "source": "(direct)",
+     "medium": "(none)",
+     "users": 334,
+     "bounceRate": 0.4
+    },
+    {
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "users": 61,
+     "bounceRate": 0.4
+    },
+    {
+     "source": "google",
+     "medium": "cpc",
+     "users": 44,
+     "bounceRate": 0.4
+    }
+   ],
+   "topPages": [
+    {
+     "page": "/",
+     "pageviews": 500,
+     "sessions": 400
+    },
+    {
+     "page": "/blog/",
+     "pageviews": 120,
+     "sessions": 90
+    }
+   ],
+   "devices": [
+    {
+     "device": "mobile",
+     "sessions": 927
+    },
+    {
+     "device": "desktop",
+     "sessions": 343
+    },
+    {
+     "device": "tablet",
+     "sessions": 53
+    }
+   ],
+   "countries": [
+    {
+     "country": "Italy",
+     "sessions": 1254
+    },
+    {
+     "country": "Switzerland",
+     "sessions": 26
+    }
+   ],
+   "directLanding": [
+    {
+     "landing": "/",
+     "sessions": 300
+    },
+    {
+     "landing": "/?utm_source=newsletter",
+     "sessions": 20
+    },
+    {
+     "landing": "/?gclid=abc",
+     "sessions": 5
+    }
+   ],
+   "directBrowsers": [
+    {
+     "browser": "Chrome",
+     "sessions": 250
+    },
+    {
+     "browser": "Safari (in-app)",
+     "sessions": 40
+    },
+    {
+     "browser": "Instagram In-App",
+     "sessions": 10
+    }
+   ],
+   "monthly": [
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 4
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 4
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 3
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 4
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 3
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 4
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-08",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 8
+    },
+    {
+     "month": "2026-08",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-08",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 4
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 4
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 4
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 8
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 8
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 10
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 8
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 8
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 8
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 10
+    },
+    {
+     "month": "2026-09",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-09",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-09",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "month": "2026-09",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 6
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 11
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 3
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 8
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 8
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 10
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 10
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 11
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 8
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 12
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 8
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 12
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 4
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 8
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 8
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 5
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 8
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 9
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 7
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 10
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 4
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 12
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 8
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 9
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 10
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 8
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 10
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 3
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 6
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 10
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 4
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 4
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "cpc",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "google",
+     "medium": "organic",
+     "sessions": 7
+    },
+    {
+     "month": "2026-10",
+     "source": "chatgpt.com",
+     "medium": "referral",
+     "sessions": 2
+    },
+    {
+     "month": "2026-10",
+     "source": "perplexity.ai",
+     "medium": "referral",
+     "sessions": 1
+    },
+    {
+     "month": "2026-10",
+     "source": "(direct)",
+     "medium": "(none)",
+     "sessions": 5
+    }
+   ],
+   "monthlyRange": {
+    "start": "2025-11-01",
+    "end": "2026-10-31"
+   },
+   "meta": {
+    "control": {
+     "timeZone": "Europe/Rome",
+     "range": "2026-08-09 → 2026-10-31",
+     "subjectToThresholding": false,
+     "dataLossFromOtherRow": false
+    },
+    "devices": {
+     "timeZone": "Europe/Rome",
+     "range": "2026-08-09 → 2026-10-31",
+     "subjectToThresholding": false,
+     "dataLossFromOtherRow": false
+    }
+   }
+  },
+  "gsc": {
+   "totals": {
+    "clicks": 756,
+    "impressions": 12383,
+    "position": 14.2
+   },
+   "daily": [
+    {
+     "date": "2026-08-09",
+     "clicks": 9,
+     "impressions": 119
+    },
+    {
+     "date": "2026-08-10",
+     "clicks": 6,
+     "impressions": 80
+    },
+    {
+     "date": "2026-08-11",
+     "clicks": 6,
+     "impressions": 120
+    },
+    {
+     "date": "2026-08-12",
+     "clicks": 4,
+     "impressions": 83
+    },
+    {
+     "date": "2026-08-13",
+     "clicks": 5,
+     "impressions": 92
+    },
+    {
+     "date": "2026-08-14",
+     "clicks": 4,
+     "impressions": 130
+    },
+    {
+     "date": "2026-08-15",
+     "clicks": 7,
+     "impressions": 104
+    },
+    {
+     "date": "2026-08-16",
+     "clicks": 4,
+     "impressions": 109
+    },
+    {
+     "date": "2026-08-17",
+     "clicks": 8,
+     "impressions": 86
+    },
+    {
+     "date": "2026-08-18",
+     "clicks": 6,
+     "impressions": 77
+    },
+    {
+     "date": "2026-08-19",
+     "clicks": 6,
+     "impressions": 104
+    },
+    {
+     "date": "2026-08-20",
+     "clicks": 7,
+     "impressions": 141
+    },
+    {
+     "date": "2026-08-21",
+     "clicks": 8,
+     "impressions": 144
+    },
+    {
+     "date": "2026-08-22",
+     "clicks": 4,
+     "impressions": 137
+    },
+    {
+     "date": "2026-08-23",
+     "clicks": 7,
+     "impressions": 122
+    },
+    {
+     "date": "2026-08-24",
+     "clicks": 6,
+     "impressions": 122
+    },
+    {
+     "date": "2026-08-25",
+     "clicks": 8,
+     "impressions": 107
+    },
+    {
+     "date": "2026-08-26",
+     "clicks": 4,
+     "impressions": 99
+    },
+    {
+     "date": "2026-08-27",
+     "clicks": 6,
+     "impressions": 135
+    },
+    {
+     "date": "2026-08-28",
+     "clicks": 8,
+     "impressions": 121
+    },
+    {
+     "date": "2026-08-29",
+     "clicks": 8,
+     "impressions": 94
+    },
+    {
+     "date": "2026-08-30",
+     "clicks": 5,
+     "impressions": 144
+    },
+    {
+     "date": "2026-08-31",
+     "clicks": 9,
+     "impressions": 143
+    },
+    {
+     "date": "2026-09-01",
+     "clicks": 9,
+     "impressions": 139
+    },
+    {
+     "date": "2026-09-02",
+     "clicks": 10,
+     "impressions": 108
+    },
+    {
+     "date": "2026-09-03",
+     "clicks": 10,
+     "impressions": 103
+    },
+    {
+     "date": "2026-09-04",
+     "clicks": 4,
+     "impressions": 143
+    },
+    {
+     "date": "2026-09-05",
+     "clicks": 6,
+     "impressions": 148
+    },
+    {
+     "date": "2026-09-06",
+     "clicks": 8,
+     "impressions": 143
+    },
+    {
+     "date": "2026-09-07",
+     "clicks": 9,
+     "impressions": 171
+    },
+    {
+     "date": "2026-09-08",
+     "clicks": 10,
+     "impressions": 129
+    },
+    {
+     "date": "2026-09-09",
+     "clicks": 10,
+     "impressions": 123
+    },
+    {
+     "date": "2026-09-10",
+     "clicks": 8,
+     "impressions": 111
+    },
+    {
+     "date": "2026-09-11",
+     "clicks": 7,
+     "impressions": 169
+    },
+    {
+     "date": "2026-09-12",
+     "clicks": 12,
+     "impressions": 142
+    },
+    {
+     "date": "2026-09-13",
+     "clicks": 9,
+     "impressions": 110
+    },
+    {
+     "date": "2026-09-14",
+     "clicks": 5,
+     "impressions": 145
+    },
+    {
+     "date": "2026-09-15",
+     "clicks": 7,
+     "impressions": 126
+    },
+    {
+     "date": "2026-09-16",
+     "clicks": 9,
+     "impressions": 139
+    },
+    {
+     "date": "2026-09-17",
+     "clicks": 13,
+     "impressions": 130
+    },
+    {
+     "date": "2026-09-18",
+     "clicks": 6,
+     "impressions": 106
+    },
+    {
+     "date": "2026-09-19",
+     "clicks": 12,
+     "impressions": 108
+    },
+    {
+     "date": "2026-09-20",
+     "clicks": 10,
+     "impressions": 143
+    },
+    {
+     "date": "2026-09-21",
+     "clicks": 12,
+     "impressions": 159
+    },
+    {
+     "date": "2026-09-22",
+     "clicks": 8,
+     "impressions": 136
+    },
+    {
+     "date": "2026-09-23",
+     "clicks": 9,
+     "impressions": 132
+    },
+    {
+     "date": "2026-09-24",
+     "clicks": 12,
+     "impressions": 162
+    },
+    {
+     "date": "2026-09-25",
+     "clicks": 10,
+     "impressions": 117
+    },
+    {
+     "date": "2026-09-26",
+     "clicks": 6,
+     "impressions": 175
+    },
+    {
+     "date": "2026-09-27",
+     "clicks": 7,
+     "impressions": 190
+    },
+    {
+     "date": "2026-09-28",
+     "clicks": 12,
+     "impressions": 116
+    },
+    {
+     "date": "2026-09-29",
+     "clicks": 10,
+     "impressions": 132
+    },
+    {
+     "date": "2026-09-30",
+     "clicks": 12,
+     "impressions": 136
+    },
+    {
+     "date": "2026-10-01",
+     "clicks": 8,
+     "impressions": 126
+    },
+    {
+     "date": "2026-10-02",
+     "clicks": 8,
+     "impressions": 184
+    },
+    {
+     "date": "2026-10-03",
+     "clicks": 6,
+     "impressions": 185
+    },
+    {
+     "date": "2026-10-04",
+     "clicks": 10,
+     "impressions": 144
+    },
+    {
+     "date": "2026-10-05",
+     "clicks": 8,
+     "impressions": 169
+    },
+    {
+     "date": "2026-10-06",
+     "clicks": 14,
+     "impressions": 141
+    },
+    {
+     "date": "2026-10-07",
+     "clicks": 8,
+     "impressions": 174
+    },
+    {
+     "date": "2026-10-08",
+     "clicks": 5,
+     "impressions": 202
+    },
+    {
+     "date": "2026-10-09",
+     "clicks": 15,
+     "impressions": 173
+    },
+    {
+     "date": "2026-10-10",
+     "clicks": 14,
+     "impressions": 181
+    },
+    {
+     "date": "2026-10-11",
+     "clicks": 12,
+     "impressions": 120
+    },
+    {
+     "date": "2026-10-12",
+     "clicks": 9,
+     "impressions": 198
+    },
+    {
+     "date": "2026-10-13",
+     "clicks": 13,
+     "impressions": 210
+    },
+    {
+     "date": "2026-10-14",
+     "clicks": 8,
+     "impressions": 214
+    },
+    {
+     "date": "2026-10-15",
+     "clicks": 9,
+     "impressions": 154
+    },
+    {
+     "date": "2026-10-16",
+     "clicks": 11,
+     "impressions": 139
+    },
+    {
+     "date": "2026-10-17",
+     "clicks": 8,
+     "impressions": 137
+    },
+    {
+     "date": "2026-10-18",
+     "clicks": 12,
+     "impressions": 126
+    },
+    {
+     "date": "2026-10-19",
+     "clicks": 7,
+     "impressions": 225
+    },
+    {
+     "date": "2026-10-20",
+     "clicks": 16,
+     "impressions": 137
+    },
+    {
+     "date": "2026-10-21",
+     "clicks": 11,
+     "impressions": 152
+    },
+    {
+     "date": "2026-10-22",
+     "clicks": 15,
+     "impressions": 191
+    },
+    {
+     "date": "2026-10-23",
+     "clicks": 13,
+     "impressions": 237
+    },
+    {
+     "date": "2026-10-24",
+     "clicks": 11,
+     "impressions": 192
+    },
+    {
+     "date": "2026-10-25",
+     "clicks": 10,
+     "impressions": 238
+    },
+    {
+     "date": "2026-10-26",
+     "clicks": 16,
+     "impressions": 223
+    },
+    {
+     "date": "2026-10-27",
+     "clicks": 11,
+     "impressions": 182
+    },
+    {
+     "date": "2026-10-28",
+     "clicks": 10,
+     "impressions": 166
+    },
+    {
+     "date": "2026-10-29",
+     "clicks": 12,
+     "impressions": 239
+    },
+    {
+     "date": "2026-10-30",
+     "clicks": 10,
+     "impressions": 208
+    },
+    {
+     "date": "2026-10-31",
+     "clicks": 10,
+     "impressions": 168
+    },
+    {
+     "date": "2026-11-01",
+     "clicks": 9,
+     "impressions": 144
+    }
+   ],
+   "queries": [
+    {
+     "query": "ecura teleassistenza",
+     "clicks": 60,
+     "impressions": 400,
+     "position": 2.1
+    },
+    {
+     "query": "bracciale cadute anziani",
+     "clicks": 40,
+     "impressions": 3000,
+     "position": 9.3
+    },
+    {
+     "query": "teleassistenza anziani",
+     "clicks": 25,
+     "impressions": 2500,
+     "position": 11.2
+    }
+   ],
+   "pages": [
+    {
+     "page": "https://www.ecura.it/",
+     "clicks": 300,
+     "impressions": 5000,
+     "position": 8.1
+    }
+   ]
+  },
+  "crm": {
+   "rows": [
+    {
+     "temperatura": "caldo",
+     "status": "CONTRACT_SENT",
+     "canale": "ORGANICO",
+     "dettaglio": "ecura_landing",
+     "count": 2
+    },
+    {
+     "temperatura": "caldo",
+     "status": "CONTRACT_SENT",
+     "canale": "DIRETTO",
+     "dettaglio": "ecura_landing",
+     "count": 1
+    },
+    {
+     "temperatura": "tiepido",
+     "status": "CONTRACT_SENT",
+     "canale": "GOOGLE",
+     "dettaglio": "google_organico",
+     "count": 1
+    },
+    {
+     "temperatura": "freddo",
+     "status": "CONTRACT_SENT",
+     "canale": "DIRETTO",
+     "dettaglio": "",
+     "count": 2
+    },
+    {
+     "temperatura": "n/a",
+     "status": "CONTRACT_SENT",
+     "canale": "",
+     "dettaglio": "",
+     "count": 1
+    },
+    {
+     "temperatura": "caldo",
+     "status": "BROCHURE_SENT",
+     "canale": "ORGANICO",
+     "dettaglio": "ecura_landing",
+     "count": 6
+    },
+    {
+     "temperatura": "tiepido",
+     "status": "BROCHURE_SENT",
+     "canale": "DIRETTO",
+     "dettaglio": "ecura_landing",
+     "count": 5
+    },
+    {
+     "temperatura": "freddo",
+     "status": "BROCHURE_SENT",
+     "canale": "",
+     "dettaglio": "",
+     "count": 4
+    },
+    {
+     "temperatura": "caldo",
+     "status": "NEW",
+     "canale": "GOOGLE",
+     "dettaglio": "google_organico",
+     "count": 6
+    },
+    {
+     "temperatura": "caldo",
+     "status": "NEW",
+     "canale": "GOOGLE",
+     "dettaglio": "",
+     "count": 2
+    },
+    {
+     "temperatura": "caldo",
+     "status": "NEW",
+     "canale": "ORGANICO",
+     "dettaglio": "ecura_landing",
+     "count": 2
+    },
+    {
+     "temperatura": "tiepido",
+     "status": "NEW",
+     "canale": "DIRETTO",
+     "dettaglio": "ecura_landing",
+     "count": 3
+    },
+    {
+     "temperatura": "tiepido",
+     "status": "NEW",
+     "canale": "GOOGLE",
+     "dettaglio": "google_ads",
+     "count": 6
+    },
+    {
+     "temperatura": "freddo",
+     "status": "NEW",
+     "canale": "ALTRO",
+     "dettaglio": "",
+     "count": 20
+    },
+    {
+     "temperatura": "n/a",
+     "status": "NEW",
+     "canale": "",
+     "dettaglio": "",
+     "count": 6
+    }
+   ]
+  },
+  "geoActivation": {
+   "date": "2026-08-06",
+   "label": "pubblicazione llms.txt (commit 19c1b6c)"
+  },
+  "errors": []
+ }
+}

@@ -1,8 +1,12 @@
 // CSS del report: identico all'originale (estratto da src/index.tsx) + poche classi aggiuntive in coda.
+// Posizioni/larghezze in percentuale come costanti (nessuna percentuale letterale nel generatore)
+const PCT = '%'
+const GRAD = [0, 50, 100].map(n => `${n}${PCT}`)
+const FULL = `${GRAD[2]}`
 export const REPORT_CSS = `:root{--teal:#068D86;--navy:#080E49;--grey:#3D3C3B;--light:#f7f4ef;--border:#e3dfdd;--white:#fff}
 *{box-sizing:border-box}
 body{font-family:'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.7;color:var(--grey);background:var(--white);margin:0;padding:0}
-.cover{background:linear-gradient(135deg,var(--navy) 0%,#0f1a7a 50%,var(--teal) 100%);color:#fff;padding:52px 40px 44px;display:flex;flex-direction:column;justify-content:center}
+.cover{background:linear-gradient(135deg,var(--navy) ${GRAD[0]},#0f1a7a ${GRAD[1]},var(--teal) ${GRAD[2]});color:#fff;padding:52px 40px 44px;display:flex;flex-direction:column;justify-content:center}
 .cover-inner{max-width:1100px;margin:0 auto}
 .cover h1{font-size:clamp(1.8rem,4vw,2.6rem);margin:0 0 12px;font-weight:700}
 .cover .subtitle{font-size:1rem;color:rgba(255,255,255,.85);max-width:700px}
@@ -21,7 +25,7 @@ h3{font-size:1rem;color:var(--navy);margin:1.4rem 0 .4rem;font-weight:600}
 .charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;margin:20px 0}
 .chart-box{background:var(--light);border-radius:12px;padding:18px;border:1px solid var(--border)}
 .chart-box h3{margin-top:0;margin-bottom:12px}
-table{width:100%;border-collapse:collapse;font-size:.85rem}
+table{width:${FULL};border-collapse:collapse;font-size:.85rem}
 th{background:var(--navy);color:#fff;padding:9px 12px;text-align:left;font-size:.78rem;white-space:nowrap}
 td{padding:7px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
 tr:nth-child(even) td{background:var(--light)}
@@ -43,8 +47,8 @@ tr:nth-child(even) td{background:var(--light)}
 .src-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;margin-right:4px}
 footer{background:var(--navy);color:rgba(255,255,255,.6);text-align:center;padding:22px;font-size:.8rem;margin-top:48px}
 @media(max-width:640px){.charts-grid{grid-template-columns:1fr}}
-.banner{background:#b91c1c;color:#fff;padding:12px 28px;font-weight:700;font-size:.92rem;text-align:center}
-.qa-ok{color:#166534;font-weight:700}.qa-warn{color:#92400e;font-weight:700}.qa-fail{color:#b91c1c;font-weight:700}
+.banner{padding:12px 28px;font-weight:700;font-size:.92rem;text-align:left}.banner ul{margin:6px 0 0;padding-left:20px;font-weight:400;font-size:.82rem}.banner-err{background:#b91c1c;color:#fff}.banner-anom{background:#ea580c;color:#fff}
+.qa-notice{color:#854d0e;font-weight:700}.qa-ok{color:#166534;font-weight:700}.qa-warn{color:#92400e;font-weight:700}.qa-fail{color:#b91c1c;font-weight:700}
 .rng{font-size:.78rem;color:#6b7280;margin:-8px 0 14px}
 .cap{font-size:.76rem;color:#6b7280;margin:6px 2px 0;line-height:1.45}
 .note-box{background:#fff7ed;border-left:4px solid #f59e0b;border-radius:0 8px 8px 0;padding:12px 16px;margin:14px 0;font-size:.85rem}

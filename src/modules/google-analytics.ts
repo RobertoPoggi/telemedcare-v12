@@ -184,6 +184,8 @@ export interface GA4ReportResult {
   rowCount: number
   dimensionHeaders: string[]
   metricHeaders: string[]
+  /** Metadati della risposta GA4 (fuso, thresholding, dati in «other»): servono a spiegare scarti tra chiamate diverse. */
+  metadata?: { timeZone?: string; dataLossFromOtherRow?: boolean; subjectToThresholding?: boolean; samplingCount?: number }
 }
 
 export async function ga4RunReport(
@@ -220,7 +222,11 @@ export async function ga4RunReport(
     metrics: (row.metricValues || []).map((v: any) => v.value)
   }))
 
-  return { rows, rowCount: data.rowCount || rows.length, dimensionHeaders: dimHeaders, metricHeaders: metHeaders }
+  const md = data.metadata || {}
+  return {
+    rows, rowCount: data.rowCount || rows.length, dimensionHeaders: dimHeaders, metricHeaders: metHeaders,
+    metadata: { timeZone: md.timeZone, dataLossFromOtherRow: md.dataLossFromOtherRow, subjectToThresholding: md.subjectToThresholding?.valueOf?.() ?? md.subjectToThresholding, samplingCount: md.samplingMetadatas?.length },
+  }
 }
 
 // ── Search Console API ───────────────────────────────────────
