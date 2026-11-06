@@ -3731,7 +3731,21 @@ export const dashboard = `<!DOCTYPE html>
             if (spin) spin.style.display = 'inline-block';
             try {
                 const r = await fetch(url, { credentials: 'same-origin' });
-                if (!r.ok) throw new Error('HTTP ' + r.status);
+                if (!r.ok) {
+                    // Mostra il motivo restituito dal server (controllo di quadratura, credenziali, eccezione) invece del solo codice HTTP
+                    let reason = '';
+                    try {
+                        const raw = await r.text();
+                        try {
+                            const j = JSON.parse(raw);
+                            reason = j.error || '';
+                            if (Array.isArray(j.failures) && j.failures.length) reason += ': ' + j.failures.map(function (f) { return f.label + ' — ' + f.value; }).join(' | ');
+                        } catch (_) {
+                            reason = raw.replace(/<[^>]*>/g, ' ').replace(/\\s+/g, ' ').trim();
+                        }
+                    } catch (_) {}
+                    throw new Error('HTTP ' + r.status + (reason ? ' · ' + reason.slice(0, 400) : ''));
+                }
                 const html = await r.text();
                 const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
                 const blobUrl = URL.createObjectURL(blob);
