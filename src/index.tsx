@@ -61,6 +61,7 @@ import * as SignatureManager from './modules/signature-manager'
 import * as PaymentManager from './modules/payment-manager'
 import * as ClientConfigurationManager from './modules/client-configuration-manager'
 import { calculatePrice } from './modules/pricing-calculator'
+import { isContractSigned, stripLockedIntestatario } from './modules/edit-lock'
 
 type Bindings = {
   DB: D1Database // Database (automaticamente production o preview tramite .pages.yaml)
@@ -13942,6 +13943,7 @@ app.get('/api/leads/edit-token/:token', async (c) => {
     const tokenRow = { ...leadRow, lead_id: tok.lead_id }
 
     const leadId = tokenRow.lead_id
+    const intestatarioLocked = await isContractSigned(c.env.DB, leadId, tokenRow.status)
 
     // Recupera anche l'ultima riga di configurations per pre-popolare i campi medici/contatti
     const conf = await c.env.DB.prepare(`
@@ -13952,6 +13954,7 @@ app.get('/api/leads/edit-token/:token', async (c) => {
     // I campi anagrafici vengono da leads; i campi medici/contatti da configurations (alias corretti)
     const safe = {
       id: leadId,
+      intestatarioLocked,   // true = contratto firmato: i dati dell'intestatario sono solo in lettura
       // ── da leads ──────────────────────────────────────────────────────────
       nomeRichiedente:              tokenRow.nomeRichiedente,
       cognomeRichiedente:           tokenRow.cognomeRichiedente,
@@ -14151,6 +14154,12 @@ app.post('/api/leads/edit-form/:token', async (c) => {
 
     const now = new Date().toISOString()
 
+    // Contratto firmato → i dati dell'intestatario non si modificano più (anche se arrivassero nel body vengono scartati)
+    const leadStatusRow = await c.env.DB.prepare('SELECT status FROM leads WHERE id = ? LIMIT 1').bind(leadId).first() as any
+    const intestatarioLocked = await isContractSigned(c.env.DB, leadId, leadStatusRow?.status)
+    const ignoredLocked = stripLockedIntestatario(body, intestatarioLocked)
+    if (ignoredLocked.length) console.log(`🔒 [EDIT-FORM] Lead ${leadId}: contratto firmato, scartati campi intestatario: ${ignoredLocked.join(', ')}`)
+
     // ── 1. UPDATE leads ──────────────────────────────────────────────────────
     const leadsFields: string[] = []
     const leadsBinds: any[] = []
@@ -14274,6 +14283,9 @@ app.post('/api/leads/edit-form/:token', async (c) => {
     const totalUpdated = leadsCount + confCount
 
     if (totalUpdated === 0) {
+      if (ignoredLocked.length > 0) {
+        return c.json({ success: false, error: 'Contratto già firmato: i dati dell\'intestatario non sono più modificabili', intestatarioLocked: true, ignoredFields: ignoredLocked }, 403)
+      }
       return c.json({ success: false, error: 'Nessun campo valido da aggiornare' }, 400)
     }
 

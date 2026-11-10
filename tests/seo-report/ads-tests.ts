@@ -250,6 +250,27 @@ export async function runAdsTests(ok: Ok, section: Section) {
     const wem = readFileSync('src/modules/workflow-email-manager.ts', 'utf8')
     ok(!/name: '(gclid|gbraid|wbraid|click_ts|landing_page|utm_campaign|first_referrer)'/.test(wem), 'workflow-email-manager: nessuna colonna di attribuzione aggiunta a leads con ALTER TABLE (vivono in lead_attribution)')
   }
+  // ── Blocco intestatario a contratto firmato ──────────────────────────────────────────────────
+  {
+    const EL = await import('../../src/modules/edit-lock')
+    const { readFileSync } = await import('node:fs')
+    const mk = (row: any, boom = false) => ({ prepare: (_s: string) => ({ bind: () => ({ first: async () => { if (boom) throw new Error('no such table'); return row } }) }) })
+    ok(await EL.isContractSigned(mk(null), 'L1', 'CONTRACT_SIGNED') === true, 'edit-lock: lead CONTRACT_SIGNED → bloccato')
+    ok(await EL.isContractSigned(mk({ id: 'c1' }), 'L1', 'NEW') === true, 'edit-lock: contratto SIGNED/firmato in tabella contracts → bloccato')
+    ok(await EL.isContractSigned(mk(null), 'L1', 'CONTRACT_SENT') === false, 'edit-lock: contratto solo inviato → NON bloccato')
+    ok(await EL.isContractSigned(mk(null, true), 'L1', 'NEW') === false, 'edit-lock: errore DB sulla tabella contracts → non blocca (nessun contratto leggibile)')
+    const body: any = { intestatarioContratto: 'assistito', cfIntestatario: 'X', codiceFiscaleIntestatario: 'X', dataNascitaIntestatario: '1950-01-01', luogoNascitaIntestatario: 'Roma', indirizzoIntestatario: 'v', cittaIntestatario: 'c', capIntestatario: '1', provinciaIntestatario: 'MI', nomeAssistito: 'Anna', telefono: '333', peso: '60' }
+    const ign = EL.stripLockedIntestatario(body, true)
+    ok(ign.length === 9 && EL.INTESTATARIO_LOCKED_FIELDS.every(f => !(f in body)), `edit-lock: firmato → tutti i 9 campi intestatario scartati (${ign.length})`)
+    ok(body.nomeAssistito === 'Anna' && body.telefono === '333' && body.peso === '60', 'edit-lock: firmato → assistito, contatti e dati medici restano modificabili')
+    const body2: any = { cfIntestatario: 'X', nomeAssistito: 'Anna' }
+    ok(EL.stripLockedIntestatario(body2, false).length === 0 && body2.cfIntestatario === 'X', 'edit-lock: non firmato → nessun campo scartato')
+    const idx = readFileSync('src/index.tsx', 'utf8')
+    ok(/isContractSigned\(c\.env\.DB, leadId, leadStatusRow\?\.status\)[\s\S]{0,400}stripLockedIntestatario\(body, intestatarioLocked\)[\s\S]{0,900}LEADS_FIELDS\.has\(k\)/.test(idx), 'POST edit-form: il blocco intestatario è applicato PRIMA dell\'UPDATE su leads')
+    ok(/intestatarioLocked,\s+\/\/ true = contratto firmato/.test(idx), 'GET edit-token: espone intestatarioLocked alla pagina')
+    const html = readFileSync('public/modifica-dati.html', 'utf8')
+    ok(/applyIntestatarioLock\(!!lead\.intestatarioLocked\)/.test(html) && /el\.readOnly = locked/.test(html) && /intestatarioLocked && \(f === 'intestatarioContratto'/.test(html), 'modifica-dati.html: campi intestatario in sola lettura e non inviati se il contratto è firmato')
+  }
   // endpoint /performance: la campagna arriva dalla colonna anche se la landing non ha parametri
   {
     const { createMarketingApi } = await import('../../src/modules/marketing-api')

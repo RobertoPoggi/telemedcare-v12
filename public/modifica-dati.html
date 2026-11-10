@@ -257,6 +257,11 @@
         <div class="section-card">
             <div class="section-header">📄 Intestatario Contratto</div>
             <div class="field-group">
+                <p id="intestatarioLockedNote" class="text-sm" role="note"
+                   style="display:none;background:#fef3c7;border:1px solid #f59e0b;color:#78350f;border-radius:.5rem;padding:.6rem .8rem;margin-bottom:.75rem">
+                    🔒 Il contratto è già stato firmato: i dati dell'intestatario non sono più modificabili.
+                    Per qualsiasi correzione scrivi a <a href="mailto:info@ecura.it" style="color:#78350f;text-decoration:underline">info@ecura.it</a>.
+                </p>
                 <p class="text-sm text-gray-500 mb-3">Chi firma e intestà il contratto?</p>
                 <div class="flex gap-3 mb-4 flex-wrap">
                     <label class="radio-card">
@@ -718,6 +723,7 @@ function populateForm(lead) {
     setVal('cittaIntestatario',       lead.cittaIntestatario);
     setVal('capIntestatario',         lead.capIntestatario);
     setVal('provinciaIntestatario',   lead.provinciaIntestatario);
+    applyIntestatarioLock(!!lead.intestatarioLocked);
 
     // Assistito
     setVal('nomeAssistito',           lead.nomeAssistito);
@@ -826,6 +832,27 @@ function toggleIntestatario(val) {
     document.getElementById('richiedenteFields').style.display = val === 'richiedente' ? '' : 'none';
 }
 
+// Contratto firmato: i dati dell'intestatario restano visibili ma non sono modificabili (il server li scarta comunque)
+let intestatarioLocked = false;
+const INTESTATARIO_FIELD_IDS = ['cfIntestatario','dataNascitaIntestatario','luogoNascitaIntestatario',
+    'indirizzoIntestatario','cittaIntestatario','capIntestatario','provinciaIntestatario'];
+function applyIntestatarioLock(locked) {
+    intestatarioLocked = locked;
+    const note = document.getElementById('intestatarioLockedNote');
+    if (note) note.style.display = locked ? '' : 'none';
+    INTESTATARIO_FIELD_IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.readOnly = locked;
+        el.setAttribute('aria-readonly', locked ? 'true' : 'false');
+        el.style.backgroundColor = locked ? '#f3f4f6' : '';
+        el.style.cursor = locked ? 'not-allowed' : '';
+    });
+    document.querySelectorAll('input[name="intestatarioContratto"]').forEach(r => {
+        r.disabled = locked;
+    });
+}
+
 function toggleSpedizione(val) {
     document.getElementById('customSpedizione').classList.toggle('hidden', val !== 'custom');
 }
@@ -915,6 +942,7 @@ async function submitForm() {
             'sped_nome','sped_indirizzo','sped_citta','sped_cap','sped_provincia',
         ];
         simpleFields.forEach(f => {
+            if (intestatarioLocked && (f === 'intestatarioContratto' || INTESTATARIO_FIELD_IDS.includes(f))) return;
             const el = document.getElementById(f) || form.querySelector(`[name="${f}"]`);
             if (el && el.value !== '') body[f] = el.value.trim();
         });
@@ -926,7 +954,7 @@ async function submitForm() {
 
         // Intestatario: radio
         const intRadio = form.querySelector('input[name="intestatarioContratto"]:checked');
-        if (intRadio) body.intestatarioContratto = intRadio.value;
+        if (intRadio && !intestatarioLocked) body.intestatarioContratto = intRadio.value;
 
         // Spedizione: radio
         const spedRadio = form.querySelector('input[name="indirizzo_spedizione"]:checked');
