@@ -290,6 +290,26 @@ export async function runAdsTests(ok: Ok, section: Section) {
     const dash = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
     ok(/email_configurazione_tentata === true && result\.email_configurazione_inviata === false/.test(dash), 'dashboard: l\'avviso «errore invio email» compare solo se l\'invio è stato tentato ed è fallito')
   }
+  // ── Prezzo lead calcolato alla creazione da servizio + piano ────────────────────────────────
+  {
+    const LP = await import('../../src/modules/lead-pricing')
+    const { readFileSync } = await import('node:fs')
+    const t = (sv: any, pi: any) => { const r = LP.computeLeadPricing(sv, pi); return `${r.prezzoAnno}/${r.prezzoRinnovo}` }
+    ok(t('eCura PRO', 'BASE') === '480/240', 'prezzo lead: eCura PRO BASE = 480/240')
+    ok(t('eCura PRO', 'AVANZATO') === '840/600', 'prezzo lead: eCura PRO AVANZATO = 840/600')
+    ok(t('eCura FAMILY', 'BASE') === '390/200' && t('eCura FAMILY', 'AVANZATO') === '690/500', 'prezzo lead: eCura FAMILY BASE/AVANZATO')
+    ok(t('eCura PREMIUM', 'BASE') === '590/300' && t('eCura PREMIUM', 'AVANZATO') === '990/750', 'prezzo lead: eCura PREMIUM BASE/AVANZATO')
+    ok(t('eCura Family', 'BASE') === '390/200', 'prezzo lead: "eCura Family" (import gsheet) = FAMILY')
+    ok(t('eCura Family PRO', 'BASE') === '390/200', 'prezzo lead: "eCura Family PRO" non fa lanciare il calcolo (resta FAMILY, come fix-prices)')
+    ok(t('eCura', 'BASE') === '480/240' && t(undefined, undefined) === '480/240' && t(null, '') === '480/240', 'prezzo lead: servizio/piano mancanti → default PRO BASE, mai 0')
+    ok(t('eCura PRO', 'Piano Avanzato') === '840/600' && t('premium', 'avanzato') === '990/750', 'prezzo lead: maiuscole/minuscole e "Piano Avanzato" riconosciuti')
+    const idx = readFileSync('src/index.tsx', 'utf8')
+    ok(/computeLeadPricing\(data\.servizio, data\.piano\)[\s\S]{0,3000}dettaglio_fonte,\s+prezzo_anno, prezzo_rinnovo/.test(idx) && /leadPricing\.prezzoAnno,\s+leadPricing\.prezzoRinnovo\s+\)\.run\(\)/.test(idx), 'POST /api/leads (nuovo lead dashboard): INSERT scrive prezzo_anno e prezzo_rinnovo calcolati')
+    ok(/Number\(prezzo_anno\) > 0 \? Number\(prezzo_anno\) : _landingPricing\.prezzoAnno/.test(idx), 'POST /api/leads/public: se il form non manda i prezzi (o 0) li calcola il server')
+    ok(/computeLeadPricing\(servizio, piano\)\s+\/\/ Aggiungi prezzi|const pricing = computeLeadPricing\(servizio, piano\)/.test(idx) && !/servizio\.replace\('eCura ', ''\)\.toUpperCase\(\)/.test(idx), 'PUT /api/leads/:id: ricalcolo con normalizzazione robusta (nessun replace fragile)')
+    const gs = readFileSync('src/modules/gsheet-import.ts', 'utf8')
+    ok(/updated_at,\s+prezzo_anno, prezzo_rinnovo/.test(gs) && /computeLeadPricing\(servizio, piano\)\.prezzoAnno/.test(gs), 'import Google Sheet: i lead nuovi nascono con prezzo_anno/prezzo_rinnovo')
+  }
   // endpoint /performance: la campagna arriva dalla colonna anche se la landing non ha parametri
   {
     const { createMarketingApi } = await import('../../src/modules/marketing-api')

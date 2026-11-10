@@ -16049,19 +16049,16 @@ app.put('/api/leads/:id', async (c) => {
         const servizio = data.servizio || currentLead?.servizio || 'eCura PRO'
         const piano = data.piano || currentLead?.piano || 'BASE'
         
-        // Estrai il tipo di servizio (FAMILY/PRO/PREMIUM)
-        const servizioType = servizio.replace('eCura ', '').toUpperCase()
-        
         console.log(`💰 [UPDATE] Ricalcolo prezzi per ${servizio} ${piano}`)
         
-        const { calculatePrice } = await import('./modules/pricing-calculator')
-        const pricing = calculatePrice(servizioType, piano)
+        const { computeLeadPricing } = await import('./modules/lead-pricing')
+        const pricing = computeLeadPricing(servizio, piano)
         
         // Aggiungi prezzi all'update
         updateFields.push('prezzo_anno = ?', 'prezzo_rinnovo = ?')
-        binds.push(pricing.setupBase, pricing.rinnovoBase)
+        binds.push(pricing.prezzoAnno, pricing.prezzoRinnovo)
         
-        console.log(`✅ [UPDATE] Prezzi calcolati: €${pricing.setupBase}/anno, €${pricing.rinnovoBase}/rinnovo`)
+        console.log(`✅ [UPDATE] Prezzi calcolati: €${pricing.prezzoAnno}/anno, €${pricing.prezzoRinnovo}/rinnovo`)
       } catch (pricingError) {
         console.error(`⚠️ [UPDATE] Errore calcolo prezzi:`, pricingError)
         // Continua l'update anche se il calcolo prezzi fallisce
@@ -21279,6 +21276,10 @@ app.post('/api/leads', async (c) => {
     // Genera ID univoco
     const leadId = `LEAD-MANUAL-${Date.now()}`
     const timestamp = new Date().toISOString()
+
+    // 💰 Prezzi da servizio + piano, calcolati subito (prima restavano a 0 fino al primo salvataggio anagrafica)
+    const { computeLeadPricing } = await import('./modules/lead-pricing')
+    const leadPricing = computeLeadPricing(data.servizio, data.piano)
     
     // Inserisci nuovo lead (con tutti i campi completi + HubSpot)
     await c.env.DB.prepare(`
@@ -21294,8 +21295,9 @@ app.post('/api/leads', async (c) => {
         gdprConsent,
         intestatarioContratto,
         note, fonte, canale_acquisizione, status, timestamp, updated_at,
-        hs_object_source, hs_object_source_detail_1, dettaglio_fonte
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        hs_object_source, hs_object_source_detail_1, dettaglio_fonte,
+        prezzo_anno, prezzo_rinnovo
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       leadId,
       data.nomeRichiedente,
@@ -21331,7 +21333,9 @@ app.post('/api/leads', async (c) => {
       // Campi HubSpot: NULL per lead manuali, tranne dettaglio_fonte che viene dal frontend
       null,  // hs_object_source
       null,  // hs_object_source_detail_1
-      data.dettaglio_fonte || null  // dettaglio_fonte: 'FORM', 'ecura_landing', o null
+      data.dettaglio_fonte || null,  // dettaglio_fonte: 'FORM', 'ecura_landing', o null
+      leadPricing.prezzoAnno,
+      leadPricing.prezzoRinnovo
     ).run()
     
     console.log('✅ Lead creato:', leadId)
@@ -23545,6 +23549,8 @@ app.post('/api/leads/public', async (c) => {
       if (m) nextNum = parseInt(m[1]) + 1
     }
     const leadId = `LEAD-eCura-${nextNum.toString().padStart(5, '0')}`
+    const { computeLeadPricing: _computeLeadPricing } = await import('./modules/lead-pricing')
+    const _landingPricing = _computeLeadPricing(servizio, piano)
 
     await c.env.DB.prepare(`
       INSERT INTO leads (
@@ -23576,8 +23582,9 @@ app.post('/api/leads/public', async (c) => {
       canale_acquisizione || null,
       gdprConsent ? 1 : 0,
       consensoMarketing ? 1 : 0,
-      prezzo_anno || null,
-      prezzo_rinnovo || null,
+      // Il form puo' non inviare i prezzi (o inviarli a 0): li calcola il server da servizio + piano
+      (Number(prezzo_anno) > 0 ? Number(prezzo_anno) : _landingPricing.prezzoAnno),
+      (Number(prezzo_rinnovo) > 0 ? Number(prezzo_rinnovo) : _landingPricing.prezzoRinnovo),
       'No', 'No', 'No',
       new Date().toISOString(),
       new Date().toISOString()

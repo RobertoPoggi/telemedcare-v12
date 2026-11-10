@@ -14,6 +14,7 @@
  * ID generato: LEAD-GSHEET-00001, LEAD-GSHEET-00002, …
  */
 
+import { computeLeadPricing } from './lead-pricing'
 import type { D1Database } from '@cloudflare/workers-types'
 import { applyDiscountFromNotes } from './discount-from-notes'
 
@@ -710,8 +711,9 @@ export async function executeGSheetImport(
           canale_acquisizione,
           vuoleContratto, vuoleBrochure, vuoleManuale,
           gdprConsent, consensoMarketing, consensoTerze,
-          created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          created_at, updated_at,
+          prezzo_anno, prezzo_rinnovo
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         leadId,
         nome || 'N/A',
@@ -739,7 +741,9 @@ export async function executeGSheetImport(
         consensoMkt ? 1 : 0,
         consensoTerze ? 1 : 0,
         createdAt,
-        new Date().toISOString()
+        new Date().toISOString(),
+        computeLeadPricing(servizio, piano).prezzoAnno,
+        computeLeadPricing(servizio, piano).prezzoRinnovo
       ).run()
 
       result.imported++
