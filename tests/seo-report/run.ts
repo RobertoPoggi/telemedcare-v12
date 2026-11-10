@@ -13,7 +13,7 @@ import { clearGa4Cache, ga4Net, describeGoogleError, sanitizeGoogleText, GA4_CAC
 import { ReportUnavailableError } from '../../src/modules/seo-report-data'
 import { partialNote } from '../../src/modules/seo-report-render'
 import { createMarketingApi, QUOTA_MESSAGE, NO_DATA_MESSAGE } from '../../src/modules/marketing-api'
-import { ReportAssertionError, addDays, PctRegistry, checkPercentages, PARAMS, GEO_ACTIVATION, mapCrmChannel, CRM_UNSET, type ReportInput } from '../../src/modules/seo-report-engine'
+import { ReportAssertionError, addDays, PctRegistry, checkPercentages, PARAMS, midnightTolerance, GEO_ACTIVATION, mapCrmChannel, CRM_UNSET, type ReportInput } from '../../src/modules/seo-report-engine'
 import { makeFixture } from './fixture'
 import { runAdsTests } from './ads-tests'
 import { FIXTURES, fixtureJson, writeFixtures } from './gen-fixtures'
@@ -65,7 +65,9 @@ ok(macroSum === m.total, `somma macro-canali ${macroSum} = totale ${m.total}`)
 ok(smSum === m.total, `somma source/medium ${smSum} = totale ${m.total}`)
 ok(natSum === m.total, `somma canali GA4 nativi ${natSum} = totale ${m.total}`)
 ok(N === sane.expected.midnight && m.midnight === N, `serie giornaliera ${dailySum} = totale ${m.total} + sessioni a cavallo della mezzanotte ${N} (dichiarate)`)
-ok(N >= 0 && N / m.total <= PARAMS.tolerance, `N entro la tolleranza della sola mezzanotte (${N} ≤ ${(PARAMS.tolerance * m.total).toFixed(1)})`)
+ok(N >= 0 && N <= midnightTolerance(m.total), `N entro la tolleranza della sola mezzanotte (${N} ≤ ${midnightTolerance(m.total).toFixed(1)})`)
+ok(4 <= midnightTolerance(506) && 11 > midnightTolerance(506), `totale piccolo (30 gg, 506 sessioni): scarto +4 (0,79%) ammesso, +11 no (tolleranza ${midnightTolerance(506)})`)
+ok(midnightTolerance(100000) === 600, 'totale grande: resta la quota dello 0,6% (600 su 100.000), la soglia assoluta non allarga')
 ok(/Sessioni a cavallo della mezzanotte/.test(ht) && /atteso, non è un errore/.test(ht), 'riga «Sessioni a cavallo della mezzanotte … atteso, non è un errore» valorizzata')
 ok(new RegExp(`${N} = somma serie giornaliera`).test(ht), `la riga riporta N = ${N} con la differenza esplicita`)
 ok(sane.input.ga4.devices!.reduce((s, d) => s + d.sessions, 0) === m.total, 'totale device = totale sul caso sano')

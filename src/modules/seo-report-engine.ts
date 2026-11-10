@@ -25,7 +25,8 @@ export const GEO_ACTIVATION = { date: '2026-08-06', commit: '19c1b6c', label: 'p
 export const PARAMS = {
   ga4LagDays: 4,              // GA4: ultimo giorno incluso = oggi − 4 (attribuzione per canale non ancora consolidata prima)
   gscLagDays: 3,              // GSC: ultimo giorno incluso = oggi − 3 (dataState: final)
-  tolerance: 0.006,           // SOLO sessioni a cavallo della mezzanotte: somma datata vs totale senza dimensioni
+  tolerance: 0.006,           // SOLO sessioni a cavallo della mezzanotte: somma datata vs totale senza dimensioni (quota del totale)…
+  toleranceAbs: 10,           // …oppure questo numero di sessioni: vale la piu' permissiva delle due (su totali piccoli la sola quota ammette pochissime sessioni: troppo poco per un conteggio)
   deviceTolAbs: 2,            // totale device vs totale: scarto ammesso in sessioni (aggregazione indipendente delle query GA4)…
   deviceTolRel: 0.002,        // …oppure in quota del totale: vale la piu' permissiva delle due. Unico controllo con tolleranza
   toleranceGsc: 0.005,        // somma click giornalieri GSC vs totale GSC
@@ -137,6 +138,10 @@ export function addMonths(ym: string, n: number): string {
 }
 export const fmtDay = (s: string) => `${s.slice(8, 10)}/${s.slice(5, 7)}`
 export const fmtDayY = (s: string) => `${s.slice(8, 10)}/${s.slice(5, 7)}/${s.slice(0, 4)}`
+
+/** Scarto massimo ammesso (in sessioni) tra serie giornaliera e totale senza dimensioni: SOLO sessioni a cavallo della mezzanotte.
+ *  La piu' permissiva tra quota del totale e soglia assoluta: su totali piccoli la sola quota darebbe falsi errori. */
+export const midnightTolerance = (total: number): number => Math.max(PARAMS.toleranceAbs, total * PARAMS.tolerance)
 
 /** ga4End = ultimo giorno scaricato (oggi − lag); aggEnd = ultimo giorno AGGREGATO (ga4End meno i giorni in consolidamento). */
 export interface Windows { today: string; start: string; ga4End: string; aggEnd: string; gscEnd: string; commonEnd: string; ga4Cut: string; gscCut: string }
@@ -798,11 +803,13 @@ export function runChecks(m: Model, R: PctRegistry): Check[] {
   const N = m.midnight = m.dailySumAgg - T
   const nRel = T > 0 ? N / T : (N === 0 ? 0 : 1)
   const sameLen = m.aggCount === m.periodDaysGa4
-  const nOk = N >= 0 && nRel <= PARAMS.tolerance && sameLen
+  const midTol = midnightTolerance(T)
+  const midTolTxt = `${R.PM(PARAMS.tolerance * 100, 1)} del totale o ${PARAMS.toleranceAbs} sessioni, la più permissiva (qui ±${fmtDec(midTol, Number.isInteger(midTol) ? 0 : 1)} sessioni)`
+  const nOk = N >= 0 && N <= midTol && sameLen
   add('H2', 'Sessioni a cavallo della mezzanotte (date multiple)', nOk ? 'ok' : 'error',
     nOk
-      ? `${fmtInt(N)} = somma serie giornaliera ${fmtInt(m.dailySumAgg)} − totale senza dimensioni ${fmtInt(T)} (${R.P(N, T, 2)} del totale, tolleranza ${R.PM(PARAMS.tolerance * 100, 1)}) — atteso, non è un errore: ${m.aggCount} punti su ${m.periodDaysGa4} giorni (${win.start} → ${win.aggEnd})`
-      : `${sgn(N)} = somma serie giornaliera ${fmtInt(m.dailySumAgg)} − totale senza dimensioni ${fmtInt(T)} (${R.PS(N, T, 2)}): fuori dalla tolleranza di ${R.PM(PARAMS.tolerance * 100, 1)} che copre solo la mezzanotte, oppure la serie perde sessioni · ${m.aggCount} punti su ${m.periodDaysGa4} giorni`)
+      ? `${fmtInt(N)} = somma serie giornaliera ${fmtInt(m.dailySumAgg)} − totale senza dimensioni ${fmtInt(T)} (${R.P(N, T, 2)} del totale, tolleranza ${midTolTxt}) — atteso, non è un errore: ${m.aggCount} punti su ${m.periodDaysGa4} giorni (${win.start} → ${win.aggEnd})`
+      : `${sgn(N)} = somma serie giornaliera ${fmtInt(m.dailySumAgg)} − totale senza dimensioni ${fmtInt(T)} (${R.PS(N, T, 2)}): fuori dalla tolleranza (${midTolTxt}) che copre solo la mezzanotte, oppure la serie perde sessioni · ${m.aggCount} punti su ${m.periodDaysGa4} giorni`)
 
   // Device: stessa dateRanges, nessuna dimensione data → coincidenza esatta
   const dev = g4.devices
