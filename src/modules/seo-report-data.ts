@@ -4,7 +4,7 @@
 // stesso intervallo; la query datata serve solo per serie giornaliera e consolidamento. Finestre tagliate sui giorni consolidati.
 // ============================================================
 import { ga4RunReport, searchConsoleQuery, GoogleApiError, sanitizeGoogleText, type GoogleAnalyticsConfig, type GoogleErrorKind } from './google-analytics'
-import { computeWindows, detectConsolidation, addDays, addMonths, monthOf, PARAMS, type ReportInput, type BaseRow, type SmBaseRow, type SmDetail, type GaMeta, type QueryStats, type QueryFailure } from './seo-report-engine'
+import { computeWindows, gscProbeEnd, detectConsolidation, addDays, addMonths, monthOf, PARAMS, type ReportInput, type BaseRow, type SmBaseRow, type SmDetail, type GaMeta, type QueryStats, type QueryFailure } from './seo-report-engine'
 
 const ymd = (d: string) => d.replace(/-/g, '')
 const fromYmd = (d: string) => `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`
@@ -146,20 +146,42 @@ export async function collectReportInput(
     dimensions: [{ name: 'yearMonth' }, { name: 'sessionSource' }, { name: 'sessionMedium' }], metrics: [{ name: 'sessions' }],
   })).map(r => ({ month: `${r.dimensions[0].slice(0, 4)}-${r.dimensions[0].slice(4, 6)}`, source: r.dimensions[1], medium: r.dimensions[2], sessions: parseInt(r.metrics[0] || '0', 10) })))
 
-  // ── Search Console: dataState final, fino a oggi−3 ──
+  // ── Search Console: dati freschi (dataState all) tagliati al primo giorno incompleto indicato da Google ──
+  // 1) serie giornaliera fino a ieri con dataState all: la risposta contiene metadata.first_incomplete_date (fuso America/Los_Angeles),
+  //    il primo giorno che puo' ancora cambiare. L'ultimo giorno incluso e' il giorno PRIMA, quindi il dato e' corretto, non provvisorio.
+  // 2) se Google non indica quella data (o la query fallisce) si torna ai dati definitivi (dataState final) con il ritardo fisso gscLagDays.
   let gsc: ReportInput['gsc'] = null
-  if (config.searchConsoleSiteUrl && win.gscEnd >= win.start) {
-    const q = (b: any) => searchConsoleQuery(config, { startDate: win.start, endDate: win.gscEnd, searchType: 'web', dataState: 'final', ...b })
-    const totals = await safe('GSC totali', async () => (await q({ dimensions: [] })).rows[0] || null, 'GSC')
-    const daily = await safe('GSC serie giornaliera', async () => (await q({ dimensions: ['date'], rowLimit: 25000 })).rows, 'GSC')
-    const queries = await safe('GSC query', async () => (await q({ dimensions: ['query'], rowLimit: Math.max(PARAMS.topQueries, PARAMS.hubQueries) })).rows, 'GSC')
-    const pages = await safe('GSC pagine', async () => (await q({ dimensions: ['page'], rowLimit: PARAMS.topPages })).rows, 'GSC')
-    if (totals && daily) {
-      gsc = {
-        totals: { clicks: totals.clicks, impressions: totals.impressions, position: totals.position },
-        daily: daily.map(r => ({ date: r.keys[0], clicks: r.clicks, impressions: r.impressions })),
-        queries: (queries || []).map(r => ({ query: r.keys[0] || '', clicks: r.clicks, impressions: r.impressions, position: r.position })),
-        pages: (pages || []).map(r => ({ page: r.keys[0] || '', clicks: r.clicks, impressions: r.impressions, position: r.position })),
+  let winG = win
+  if (config.searchConsoleSiteUrl) {
+    const probeEnd = gscProbeEnd(p.now, p.endDate)
+    let fresh: { rows: any[]; firstIncomplete: string } | null = null
+    if (probeEnd >= win.start) {
+      stats.total++
+      try {
+        const r = await searchConsoleQuery(config, { startDate: win.start, endDate: probeEnd, searchType: 'web', dataState: 'all', dimensions: ['date'], rowLimit: 25000 })
+        const fid = r.metadata?.first_incomplete_date
+        if (typeof fid === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fid)) fresh = { rows: r.rows, firstIncomplete: fid }
+      } catch (e: any) { fail('GSC serie giornaliera (dati freschi)', 'GSC', e) }
+    }
+    winG = computeWindows(p.now, p.startDate, p.endDate, cons.tailDays, fresh ? fresh.firstIncomplete : null)
+    const dataState: 'all' | 'final' = fresh ? 'all' : 'final'
+    if (winG.gscEnd >= winG.start) {
+      const q = (b: any) => searchConsoleQuery(config, { startDate: winG.start, endDate: winG.gscEnd, searchType: 'web', dataState, ...b })
+      const totals = await safe('GSC totali', async () => (await q({ dimensions: [] })).rows[0] || null, 'GSC')
+      // con i dati freschi la serie e' quella gia' scaricata, ridotta ai giorni completi (stessa finestra dei totali); con i definitivi si interroga
+      const daily = fresh
+        ? fresh.rows.filter(r => (r.keys[0] || '') <= winG.gscEnd)
+        : await safe('GSC serie giornaliera', async () => (await q({ dimensions: ['date'], rowLimit: 25000 })).rows, 'GSC')
+      const queries = await safe('GSC query', async () => (await q({ dimensions: ['query'], rowLimit: Math.max(PARAMS.topQueries, PARAMS.hubQueries) })).rows, 'GSC')
+      const pages = await safe('GSC pagine', async () => (await q({ dimensions: ['page'], rowLimit: PARAMS.topPages })).rows, 'GSC')
+      if (totals && daily) {
+        gsc = {
+          totals: { clicks: totals.clicks, impressions: totals.impressions, position: totals.position },
+          daily: daily.map(r => ({ date: r.keys[0], clicks: r.clicks, impressions: r.impressions })),
+          queries: (queries || []).map(r => ({ query: r.keys[0] || '', clicks: r.clicks, impressions: r.impressions, position: r.position })),
+          pages: (pages || []).map(r => ({ page: r.keys[0] || '', clicks: r.clicks, impressions: r.impressions, position: r.position })),
+          dataState, firstIncompleteDate: fresh ? fresh.firstIncomplete : null,
+        }
       }
     }
   }

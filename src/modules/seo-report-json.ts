@@ -65,7 +65,7 @@ export function buildReportJson(res: GenerateResult): ReportJson {
       period: { startDate: m.win.start, endDate: m.win.gscEnd, days: m.periodDaysGsc },
       queries: i.gsc.queries.map(q => ({ query: q.query, clicks: q.clicks, impressions: q.impressions, position: round1(q.position) })),
     }
-    notes.gsc = `periodo ${m.win.start} → ${m.win.gscEnd} (${m.periodDaysGsc} giorni, dati definitivi)`
+    notes.gsc = `periodo ${m.win.start} → ${m.win.gscEnd} (${m.periodDaysGsc} giorni, ${i.gsc.dataState === 'all' ? `dati freschi fino all'ultimo giorno completo indicato da Search Console, primo giorno incompleto ${i.gsc.firstIncompleteDate ?? 'n.d.'}` : 'dati definitivi'})`
     notes.gscQueries = 'Search Console omette le query anonimizzate: la somma dei click per query può essere inferiore al totale'
   } else {
     notes.gsc = 'dato non disponibile: ' + (i.errors.filter(e => /^GSC/.test(e)).join(' · ') || 'Search Console non collegata o periodo senza dati')

@@ -126,7 +126,7 @@ function renderHtml(m: Model, checks: Check[], R: PctRegistry): string {
   const errorsBlock = i.errors.length
     ? `<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px 16px;margin-bottom:24px;font-size:.85rem">⚠️ <strong>Avvisi:</strong> ${esc(errLine)}</div>` : ''
   const tailTxt = m.cons.tailDays ? `, più ${m.cons.tailDays} giorni in consolidamento (organico incompleto)` : ''
-  const lagNote = `Giorni non consolidati esclusi: GA4 fino al ${fmtDayY(w.aggEnd)} (lag ${PARAMS.ga4LagDays} giorni${tailTxt}), GSC fino al ${fmtDayY(w.gscEnd)} (lag ${PARAMS.gscLagDays} giorni).`
+  const lagNote = `Giorni non consolidati esclusi: GA4 fino al ${fmtDayY(w.aggEnd)} (lag ${PARAMS.ga4LagDays} giorni${tailTxt}), GSC fino al ${fmtDayY(w.gscEnd)} (${i.gsc?.dataState === 'all' ? 'ultimo giorno completo indicato da Search Console' : `lag ${PARAMS.gscLagDays} giorni`}).`
 
   if (!m.ok) {
     return `<!doctype html><html lang="it"><head><meta charset="utf-8"><title>Report Analytics Live — eCura</title><style>${REPORT_CSS}</style></head><body>${PLACE_BANNER}
@@ -237,7 +237,7 @@ ${consNote}${sanityNote}
     const pRows = i.gsc!.pages.slice(0, PARAMS.topPages).map(p => `<tr><td style="font-size:.82rem">${esc(p.page)}</td><td style="text-align:center">${fmtInt(p.clicks)}</td><td style="text-align:center">${fmtInt(p.impressions)}</td><td style="text-align:center">${fmtDec(p.position, 1)}</td></tr>`).join('')
     gscBlock = `
 <h3>🔎 Google Search Console <span class="tag tag-gsc">GSC</span></h3>
-${rng(`Search Console · ${i.siteUrl} · tipo web · dataState final`, w.start, w.gscEnd, m.periodDaysGsc, 'date nel fuso orario di Search Console')}
+${rng(`Search Console · ${i.siteUrl} · tipo web · ${i.gsc?.dataState === 'all' ? 'dataState all, fino al primo giorno incompleto indicato da Google' : 'dataState final'}`, w.start, w.gscEnd, m.periodDaysGsc, 'date nel fuso orario di Search Console')}
 <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
   ${kpi('#1d4ed8', fmtInt(g.clicks), 'Click organici (click)', `${fmtInt(g.clicks)} click su ${m.periodDaysGsc} giorni = ${fmtDec(g.clicksPerDay, 1)} click/giorno`, 'color:#1d4ed8')}
   ${kpi('#0891b2', fmtInt(g.impressions), 'Impressioni SERP (impressioni)', 'volte in cui il sito è apparso nei risultati', 'color:#0891b2')}
@@ -423,7 +423,7 @@ ${srcBlock}
   const srcRows = `
     <tr><td>GA4 — property ${esc(i.ga4PropertyId)} (${esc(i.measurementId)}): totale, canali, source/medium</td><td>${w.start}</td><td>${w.aggEnd}</td><td style="text-align:center">${m.periodDaysGa4}</td><td>richiesto fino al ${esc(i.requestedEnd)}; lag ${PARAMS.ga4LagDays} giorni${m.cons.tailDays ? ` e ${m.cons.tailDays} giorni in consolidamento` : ''}; stessa dateRanges per tutte le query non datate</td></tr>
     <tr><td>GA4 — serie giornaliera (scaricata)</td><td>${w.start}</td><td>${w.ga4End}</td><td style="text-align:center">${m.downloadedDays}</td><td>comprende i giorni in consolidamento, mostrati tratteggiati e mai sommati</td></tr>
-    <tr><td>Search Console — ${esc(i.siteUrl)} (web, dataState final)</td><td>${m.gsc ? w.start : 'n.d.'}</td><td>${m.gsc ? w.gscEnd : 'n.d.'}</td><td style="text-align:center">${m.gsc ? m.periodDaysGsc : 'n.d.'}</td><td>lag ${PARAMS.gscLagDays} giorni</td></tr>
+    <tr><td>Search Console — ${esc(i.siteUrl)} (web, ${i.gsc?.dataState === 'all' ? 'dataState all' : 'dataState final'})</td><td>${m.gsc ? w.start : 'n.d.'}</td><td>${m.gsc ? w.gscEnd : 'n.d.'}</td><td style="text-align:center">${m.gsc ? m.periodDaysGsc : 'n.d.'}</td><td>${i.gsc?.dataState === 'all' ? `dati freschi: ultimo giorno completo secondo Search Console (primo giorno incompleto ${i.gsc?.firstIncompleteDate ?? 'n.d.'}, fuso America/Los_Angeles), al più ieri` : `lag ${PARAMS.gscLagDays} giorni (dati definitivi)`}</td></tr>
     <tr><td>CRM lead (D1)</td><td>${m.crm ? w.start : 'n.d.'}</td><td>${m.crm ? w.aggEnd : 'n.d.'}</td><td style="text-align:center">${m.crm ? m.periodDaysGa4 : 'n.d.'}</td><td>stesso intervallo di GA4 (created_at, UTC)</td></tr>
     <tr><td>GA4 — serie mensile AI/GEO (intervallo proprio)</td><td>${geoRange ? geoRange.start : 'n.d.'}</td><td>${geoRange ? geoRange.end : 'n.d.'}</td><td style="text-align:center">${m.geo ? m.geo.monthsQueried + ' mesi' : 'n.d.'}</td><td>${PARAMS.geoMonths} mesi interi fino all’ultimo giorno aggregato; ultimo mese parziale</td></tr>`
   const qualityBlock = `

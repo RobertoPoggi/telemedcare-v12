@@ -286,6 +286,8 @@ export interface SearchConsoleRow {
 export interface SearchConsoleResult {
   rows: SearchConsoleRow[]
   responseAggregationType?: string
+  /** Solo con dataState 'all' raggruppato per data: first_incomplete_date (YYYY-MM-DD, fuso America/Los_Angeles) = primo giorno che può ancora cambiare. */
+  metadata?: { first_incomplete_date?: string; first_incomplete_hour?: string }
 }
 
 export async function searchConsoleQuery(
@@ -326,7 +328,7 @@ export async function searchConsoleQuery(
     position: r.position || 0
   }))
 
-  return { rows, responseAggregationType: data.responseAggregationType }
+  return { rows, responseAggregationType: data.responseAggregationType, metadata: data.metadata && typeof data.metadata === 'object' ? data.metadata : undefined }
 }
 
 // ── High-level: raccoglie tutti i dati per il report ────────

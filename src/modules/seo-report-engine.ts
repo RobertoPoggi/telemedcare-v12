@@ -9,7 +9,7 @@
 //    date, quindi la somma datata supera il totale. Lo scarto N e' dichiarato (riga di controllo), non
 //    trattato come errore, purche' entro la tolleranza.
 //  - Finestre dichiarate: GA4 fino a oggi meno ga4LagDays (valore unico per KPI, canali e trend),
-//    GSC fino a oggi meno gscLagDays (dataState final). Gli ultimi giorni in consolidamento
+//    GSC fino al giorno prima del primo giorno incompleto indicato da Search Console (dataState all, al più ieri); in mancanza, oggi meno gscLagDays (dataState final). Gli ultimi giorni in consolidamento
 //    (rilevati a runtime) sono esclusi dagli aggregati e mostrati tratteggiati.
 //  - Nessun numero scritto a mano: ogni cifra nasce da dati; ogni percentuale passa dal registro
 //    `PctRegistry` e viene verificata. Nessun divisore letterale: i periodi arrivano da PARAMS.
@@ -24,7 +24,8 @@ export const GEO_ACTIVATION = { date: '2026-08-06', commit: '19c1b6c', label: 'p
 // ── Parametri di metodo (soglie dichiarate nel report, non misure) ──────────
 export const PARAMS = {
   ga4LagDays: 4,              // GA4: ultimo giorno incluso = oggi − 4 (attribuzione per canale non ancora consolidata prima)
-  gscLagDays: 3,              // GSC: ultimo giorno incluso = oggi − 3 (dataState: final)
+  gscLagDays: 3,              // GSC, ripiego: se Search Console non indica il primo giorno incompleto, ultimo giorno incluso = oggi − 3 (dati definitivi)
+  gscFreshLagDays: 1,         // GSC, dataState all: ultimo giorno richiesto = oggi − 1 (ieri); si ferma comunque al giorno PRIMA di first_incomplete_date
   tolerance: 0.006,           // SOLO sessioni a cavallo della mezzanotte: somma datata vs totale senza dimensioni (quota del totale)…
   toleranceAbs: 10,           // …oppure questo numero di sessioni: vale la piu' permissiva delle due (su totali piccoli la sola quota ammette pochissime sessioni: troppo poco per un conteggio)
   deviceTolAbs: 2,            // totale device vs totale: scarto ammesso in sessioni (aggregazione indipendente delle query GA4)…
@@ -96,6 +97,9 @@ export interface ReportInput {
     daily: { date: string; clicks: number; impressions: number }[]
     queries: { query: string; clicks: number; impressions: number; position: number }[]
     pages: { page: string; clicks: number; impressions: number; position: number }[]
+    /** 'all' = dati freschi tagliati al primo giorno incompleto indicato da Search Console; 'final' (o assente) = dati definitivi con ritardo fisso. */
+    dataState?: 'all' | 'final'
+    firstIncompleteDate?: string | null
   }
   crm: null | { rows: { temperatura: string; status: string; canale: string; dettaglio: string; count: number }[] }
   crmError?: string
@@ -145,10 +149,17 @@ export const midnightTolerance = (total: number): number => Math.max(PARAMS.tole
 
 /** ga4End = ultimo giorno scaricato (oggi − lag); aggEnd = ultimo giorno AGGREGATO (ga4End meno i giorni in consolidamento). */
 export interface Windows { today: string; start: string; ga4End: string; aggEnd: string; gscEnd: string; commonEnd: string; ga4Cut: string; gscCut: string }
-export function computeWindows(now: Date, reqStart: string, reqEnd: string, tailDays = 0): Windows {
+/** Ultimo giorno da chiedere a Search Console con dataState all (ieri, entro il periodo richiesto): poi si taglia al primo giorno incompleto. */
+export function gscProbeEnd(now: Date, reqEnd: string): string {
+  return minDate(reqEnd, addDays(romeToday(now), -PARAMS.gscFreshLagDays))
+}
+/** gscFirstIncomplete = first_incomplete_date restituita da Search Console (dataState all). Se assente, vale il ripiego con ritardo fisso (dati definitivi). */
+export function computeWindows(now: Date, reqStart: string, reqEnd: string, tailDays = 0, gscFirstIncomplete: string | null = null): Windows {
   const today = romeToday(now)
   const ga4Cut = addDays(today, -PARAMS.ga4LagDays)
-  const gscCut = addDays(today, -PARAMS.gscLagDays)
+  const gscCut = gscFirstIncomplete
+    ? minDate(addDays(gscFirstIncomplete, -1), addDays(today, -PARAMS.gscFreshLagDays))
+    : addDays(today, -PARAMS.gscLagDays)
   const ga4End = minDate(reqEnd, ga4Cut)
   const gscEnd = minDate(reqEnd, gscCut)
   const aggEnd = tailDays > 0 ? addDays(ga4End, -tailDays) : ga4End
@@ -521,9 +532,10 @@ export function analyseRatio(weeks: WeekRow[], hasGsc: boolean): RatioAnalysis {
 
 export function buildModel(input: ReportInput): Model {
   const base = input.ga4.baseRows
-  const win0 = computeWindows(input.now, input.requestedStart, input.requestedEnd)
+  const gscFid = input.gsc?.dataState === 'all' ? (input.gsc.firstIncompleteDate ?? null) : null
+  const win0 = computeWindows(input.now, input.requestedStart, input.requestedEnd, 0, gscFid)
   const cons = detectConsolidation(base, win0.start, win0.ga4End)
-  const win = computeWindows(input.now, input.requestedStart, input.requestedEnd, cons.tailDays)
+  const win = computeWindows(input.now, input.requestedStart, input.requestedEnd, cons.tailDays, gscFid)
   const downloadedDays = Math.max(0, diffDaysInclusive(win.start, win.ga4End))
   // giorni esclusi dal periodo richiesto (fino a oggi), con la causa: lag GA4 + coda in consolidamento
   const reqCeil = input.requestedEnd > win.today ? win.today : input.requestedEnd

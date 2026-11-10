@@ -994,7 +994,7 @@ export const dashboard = `<!DOCTYPE html>
               </h3>
               <span class="text-xs text-gray-500" id="reportPeriodoLabel"></span>
             </div>
-            <p class="text-xs text-gray-500 mb-4">Entrambi i report chiedono i dati fino a <strong>ieri</strong>. GA4 e CRM si fermano all'ultimo giorno consolidato (lag ${REPORT_PARAMS.ga4LagDays} giorni), Search Console al suo ultimo giorno definitivo (lag ${REPORT_PARAMS.gscLagDays} giorni): le date effettive sono nell'etichetta qui sopra e nella riga «Periodo» del report.</p>
+            <p class="text-xs text-gray-500 mb-4">Entrambi i report chiedono i dati fino a <strong>ieri</strong>. GA4 e CRM si fermano all'ultimo giorno consolidato (lag ${REPORT_PARAMS.ga4LagDays} giorni), Search Console al suo ultimo giorno completo (dati freschi: al più ieri; se Google non lo indica, ripiego sui dati definitivi con lag ${REPORT_PARAMS.gscLagDays} giorni): le date effettive sono nell'etichetta qui sopra e nella riga «Periodo» del report.</p>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <!-- Pulsante A: genera report dal 9/8 ad oggi (periodo fisso campagna) -->
               <button onclick="generaReportPeriodo()"
@@ -3691,7 +3691,7 @@ export const dashboard = `<!DOCTYPE html>
         const LIVE_REPORT_URL = '/api/analytics/live-seo-report'; // percorso relativo: stesso dominio della pagina (evita CORS su preview/alias)
 
         // Date del report: «ieri» e fine effettiva dei dati (stessi lag del motore: valori iniettati da PARAMS, mai scritti a mano)
-        const REPORT_LAG = { ga4: ${REPORT_PARAMS.ga4LagDays}, gsc: ${REPORT_PARAMS.gscLagDays} };
+        const REPORT_LAG = { ga4: ${REPORT_PARAMS.ga4LagDays}, gsc: ${REPORT_PARAMS.gscFreshLagDays} };
         function _romeDay(offsetDays) {
           const d = new Date(Date.now() + offsetDays * 86400000);
           return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
@@ -3699,7 +3699,7 @@ export const dashboard = `<!DOCTYPE html>
         function _itDay(iso) { return iso.slice(8,10) + '/' + iso.slice(5,7) + '/' + iso.slice(0,4); }
         (function() {
           const el = document.getElementById('reportPeriodoLabel');
-          if (el) el.textContent = 'Periodo richiesto: 09/08/2026 \u2192 ' + _itDay(_romeDay(-1)) + ' (ieri) \u00b7 dati effettivi: GA4 fino al ' + _itDay(_romeDay(-REPORT_LAG.ga4)) + ', Search Console fino al ' + _itDay(_romeDay(-REPORT_LAG.gsc));
+          if (el) el.textContent = 'Periodo richiesto: 09/08/2026 \u2192 ' + _itDay(_romeDay(-1)) + ' (ieri) \u00b7 dati effettivi: GA4 fino al ' + _itDay(_romeDay(-REPORT_LAG.ga4)) + ', Search Console fino al ' + _itDay(_romeDay(-REPORT_LAG.gsc)) + ' al massimo (ultimo giorno completo indicato da Google)';
         })();
 
         // Genera report dal 9/8/2026 a ieri

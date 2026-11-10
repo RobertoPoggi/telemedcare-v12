@@ -363,7 +363,7 @@ mustFail('query senza data su intervallo diverso dalla serie', i => { i.ga4.quer
 
 // ── 6) dateRanges delle query (mock fetch) ───────────────────────────────────
 section('6. dateRanges delle query GA4 (A1/A2) con fetch simulato')
-async function runCollect(name: string, failWith?: (dims: string[]) => number | null, keepCache = false) {
+async function runCollect(name: string, failWith?: (dims: string[]) => number | null, keepCache = false, gscMode: 'fresh' | 'nometa' = 'fresh') {
   const f = loaded.get(name)!.input
   const reqs: { dims: string[]; body: any }[] = []
   const gscReqs: any[] = []
@@ -397,7 +397,9 @@ async function runCollect(name: string, failWith?: (dims: string[]) => number | 
     const dims: string[] = body.dimensions || []
     const daily = f.gsc!.daily.filter(r => r.date >= body.startDate && r.date <= body.endDate)
     const c = daily.reduce((s, r) => s + r.clicks, 0), im = daily.reduce((s, r) => s + r.impressions, 0)
-    return J({ rows: dims.length === 0 ? [{ keys: [], clicks: c, impressions: im, ctr: im ? c / im : 0, position: 12 }] : dims[0] === 'date' ? daily.map(r => ({ keys: [r.date], clicks: r.clicks, impressions: r.impressions, ctr: 0, position: 12 })) : [] })
+    // come Search Console: con dataState all e dimensione data la risposta indica il primo giorno ancora incompleto (fuso America/Los_Angeles)
+    const meta = gscMode === 'fresh' && String(body.dataState).toLowerCase() === 'all' && dims[0] === 'date' ? { metadata: { first_incomplete_date: '2026-11-03' } } : {}
+    return J({ ...meta, rows: dims.length === 0 ? [{ keys: [], clicks: c, impressions: im, ctr: im ? c / im : 0, position: 12 }] : dims[0] === 'date' ? daily.map(r => ({ keys: [r.date], clicks: r.clicks, impressions: r.impressions, ctr: 0, position: 12 })) : [] })
   }
   const db = { prepare: () => ({ bind: (...a: any[]) => { dbBinds.push(a); return { all: async () => ({ results: f.crm!.rows.map(r => ({ temperatura: r.temperatura, status: r.status, canale: r.canale, dettaglio: r.dettaglio, cnt: r.count })) }) } } }) }
   try {
@@ -416,11 +418,32 @@ async function runCollect(name: string, failWith?: (dims: string[]) => number | 
   ok(nodate.some(r => r.dims.length === 0) && nodate.some(r => r.dims[0] === 'deviceCategory'), 'controllo (senza dimensioni) e device interrogati con gli stessi dateRanges e filtri')
   ok(monthly.length === 1 && monthly[0].body.dateRanges[0].startDate === '2025-11-01' && monthly[0].body.dateRanges[0].endDate === '2026-10-31', `serie mensile: intervallo proprio ${drOf(monthly[0])} (dimensione yearMonth)`)
   ok(monthly[0].body.dateRanges[0].startDate !== nodate[0].body.dateRanges[0].startDate, 'la serie mensile NON eredita lo startDate del report')
-  ok(gscReqs.every(b => b.dataState === 'final' && b.endDate === '2026-11-01'), 'GSC: dataState final, fino a oggi−3')
+  // dati freschi: prima la serie giornaliera fino a ieri (dataState all), poi tutte le query fino al giorno PRIMA del primo giorno incompleto
+  ok(gscReqs.length >= 4 && gscReqs[0].dataState === 'all' && gscReqs[0].dimensions[0] === 'date' && gscReqs[0].endDate === '2026-11-03', `GSC: sonda dataState all sulla serie giornaliera fino a ieri (${gscReqs[0]?.endDate})`)
+  ok(gscReqs.slice(1).every(b => b.dataState === 'all' && b.endDate === '2026-11-02'), `GSC: totali, query e pagine con dataState all fino al giorno prima di first_incomplete_date (${[...new Set(gscReqs.slice(1).map(b => b.endDate))].join(',')})`)
+  ok(!gscReqs.slice(1).some(b => b.dimensions?.[0] === 'date'), 'GSC: la serie giornaliera già scaricata non viene richiesta una seconda volta')
+  ok(input.gsc!.dataState === 'all' && input.gsc!.firstIncompleteDate === '2026-11-03' && input.gsc!.daily.every(r => r.date <= '2026-11-02'), 'GSC: input con dataState all, first_incomplete_date registrata e nessun giorno incompleto nella serie')
+  {
+    const gm = generateReport(input).model
+    ok(gm.win.gscEnd === '2026-11-02' && gm.win.gscCut === '2026-11-02', `GSC: ultimo giorno incluso ${gm.win.gscEnd} (un giorno in più rispetto al ripiego con lag ${PARAMS.gscLagDays})`)
+    ok(gm.win.aggEnd === '2026-10-31', 'GA4: finestra invariata (lag 4), nessun dato non consolidato in più')
+    const gr = generateReport(input)
+    ok(gr.errors.length === 0 && gr.anomalies.length === 0 && gr.checks.every((c: any) => c.id !== 'H3' || c.level === 'ok'), 'report con dati freschi: nessun errore, nessuna anomalia, H3 (nessun giorno non consolidato) ok')
+    ok(/dataState all/.test(gr.html) && /primo giorno incompleto/.test(gr.html), 'report: etichette dichiarano dataState all e primo giorno incompleto')
+  }
   ok(dbBinds.length === 1 && dbBinds[0][0] === '2026-08-09' && dbBinds[0][1] === '2026-10-31', 'CRM sullo stesso intervallo di GA4')
   const gen = generateReport(input)
   ok(gen.errors.length === 0 && gen.anomalies.length === 0 && gen.model.geo!.monthsQueried === 12, 'report generato dai dati simulati: nessun errore/anomalia, 12 mesi interrogati')
   ok(gen.model.total === input.ga4.control!.sessions, `totale ${gen.model.total} = query senza dimensioni (con la mezzanotte a zero nel mock)`)
+}
+{
+  // ripiego: Search Console non indica first_incomplete_date → dati definitivi (dataState final) fino a oggi − gscLagDays
+  const { input, gscReqs } = await runCollect('report-sane', undefined, false, 'nometa')
+  ok(gscReqs[0].dataState === 'all' && gscReqs.slice(1).every(b => b.dataState === 'final' && b.endDate === '2026-11-01'), 'GSC senza first_incomplete_date: ripiego su dataState final fino a oggi−3')
+  ok(gscReqs.slice(1).some(b => b.dimensions?.[0] === 'date'), 'GSC ripiego: la serie giornaliera viene richiesta con i dati definitivi')
+  ok(input.gsc!.dataState === 'final' && input.gsc!.firstIncompleteDate === null, 'GSC ripiego: input marcato final, nessuna first_incomplete_date')
+  const gr = generateReport(input)
+  ok(gr.model.win.gscEnd === '2026-11-01' && gr.errors.length === 0 && /dataState final/.test(gr.html), 'GSC ripiego: report coerente (fino a oggi−3, etichetta dataState final)')
 }
 {
   const { input, reqs } = await runCollect('report-consolidating')
