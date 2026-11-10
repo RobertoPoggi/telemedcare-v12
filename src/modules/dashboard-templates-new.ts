@@ -3,6 +3,7 @@
 
 // Import auto-import script for HubSpot incremental sync
 import { autoImportScript } from './auto-import-script'
+import { PARAMS as REPORT_PARAMS } from './seo-report-engine'
 
 export const home = `<!DOCTYPE html>
 <html lang="it">
@@ -993,7 +994,7 @@ export const dashboard = `<!DOCTYPE html>
               </h3>
               <span class="text-xs text-gray-500" id="reportPeriodoLabel"></span>
             </div>
-            <p class="text-xs text-gray-500 mb-4">Entrambi i report coprono il periodo <strong>09/08/2026 → oggi</strong> con dati GA4 + CRM live.</p>
+            <p class="text-xs text-gray-500 mb-4">Entrambi i report chiedono i dati fino a <strong>ieri</strong>. GA4 e CRM si fermano all'ultimo giorno consolidato (lag ${REPORT_PARAMS.ga4LagDays} giorni), Search Console al suo ultimo giorno definitivo (lag ${REPORT_PARAMS.gscLagDays} giorni): le date effettive sono nell'etichetta qui sopra e nella riga «Periodo» del report.</p>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <!-- Pulsante A: genera report dal 9/8 ad oggi (periodo fisso campagna) -->
               <button onclick="generaReportPeriodo()"
@@ -1001,7 +1002,7 @@ export const dashboard = `<!DOCTYPE html>
                  class="flex items-center gap-4 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-4 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md">
                 <span class="text-3xl" id="reportPeriodoIcon">📊</span>
                 <div class="text-left">
-                  <div class="font-bold text-base">Report SEO 9/8 → Oggi</div>
+                  <div class="font-bold text-base">Report SEO 9/8 → Ieri</div>
                   <div class="text-xs text-indigo-200 mt-0.5">Genera live con GA4 + CRM · periodo campagna</div>
                 </div>
               </button>
@@ -3689,22 +3690,24 @@ export const dashboard = `<!DOCTYPE html>
         // ── REPORT SEO ──────────────────────────────────────────────────────
         const LIVE_REPORT_URL = '/api/analytics/live-seo-report'; // percorso relativo: stesso dominio della pagina (evita CORS su preview/alias)
 
-        // Mostra il periodo nell'etichetta
+        // Date del report: «ieri» e fine effettiva dei dati (stessi lag del motore: valori iniettati da PARAMS, mai scritti a mano)
+        const REPORT_LAG = { ga4: ${REPORT_PARAMS.ga4LagDays}, gsc: ${REPORT_PARAMS.gscLagDays} };
+        function _romeDay(offsetDays) {
+          const d = new Date(Date.now() + offsetDays * 86400000);
+          return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+        }
+        function _itDay(iso) { return iso.slice(8,10) + '/' + iso.slice(5,7) + '/' + iso.slice(0,4); }
         (function() {
-          const today = new Date();
-          const dd = String(today.getDate()).padStart(2,'0');
-          const mm = String(today.getMonth()+1).padStart(2,'0');
-          const yyyy = today.getFullYear();
           const el = document.getElementById('reportPeriodoLabel');
-          if (el) el.textContent = 'Periodo: 09/08/2026 \u2192 ' + dd + '/' + mm + '/' + yyyy;
+          if (el) el.textContent = 'Periodo richiesto: 09/08/2026 \u2192 ' + _itDay(_romeDay(-1)) + ' (ieri) \u00b7 dati effettivi: GA4 fino al ' + _itDay(_romeDay(-REPORT_LAG.ga4)) + ', Search Console fino al ' + _itDay(_romeDay(-REPORT_LAG.gsc));
         })();
 
-        // Genera report dal 9/8/2026 ad oggi
+        // Genera report dal 9/8/2026 a ieri
         async function generaReportPeriodo() {
-            const today = new Date().toISOString().slice(0,10);
-            const url = LIVE_REPORT_URL + '?startDate=2026-08-09&endDate=' + today;
-            await _fetchEApriReport('btnReportPeriodo', 'reportPeriodoIcon', '📊', url,
-                'Report 09/08/2026 → ' + today.split('-').reverse().join('/') + ' aperto in nuova scheda!');
+            const yesterday = _romeDay(-1);
+            const url = LIVE_REPORT_URL + '?startDate=2026-08-09&endDate=' + yesterday;
+            await _fetchEApriReport('btnReportPeriodo', 'reportPeriodoIcon', '\ud83d\udcca', url,
+                'Report 09/08/2026 \u2192 ' + _itDay(yesterday) + ' aperto in nuova scheda!');
         }
         window.generaReportPeriodo = generaReportPeriodo;
 

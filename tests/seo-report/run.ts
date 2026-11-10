@@ -13,7 +13,7 @@ import { clearGa4Cache, ga4Net, describeGoogleError, sanitizeGoogleText, GA4_CAC
 import { ReportUnavailableError } from '../../src/modules/seo-report-data'
 import { partialNote } from '../../src/modules/seo-report-render'
 import { createMarketingApi, QUOTA_MESSAGE, NO_DATA_MESSAGE } from '../../src/modules/marketing-api'
-import { ReportAssertionError, addDays, PctRegistry, checkPercentages, PARAMS, midnightTolerance, GEO_ACTIVATION, mapCrmChannel, CRM_UNSET, type ReportInput } from '../../src/modules/seo-report-engine'
+import { ReportAssertionError, addDays, dateRange, PctRegistry, checkPercentages, PARAMS, midnightTolerance, GEO_ACTIVATION, mapCrmChannel, CRM_UNSET, type ReportInput } from '../../src/modules/seo-report-engine'
 import { makeFixture } from './fixture'
 import { runAdsTests } from './ads-tests'
 import { FIXTURES, fixtureJson, writeFixtures } from './gen-fixtures'
@@ -244,12 +244,17 @@ section('P4/P6. Periodo comune nel grafico e caption generato dalle date')
 {
   const dd = generateReport(loaded.get('report-sane')!.input), dm = dd.model
   const common = dm.dates.filter(d => d <= dm.win.commonEnd).length
-  ok(/commonCount":\d+/.test(dd.html) && new RegExp(`"commonCount":${common}`).test(dd.html), `grafico a due pannelli: entrambe le serie ritagliate a ${common} giorni (periodo comune, fino al ${dm.win.commonEnd})`)
-  ok(/const cut = a => a\.slice\(0, D\.commonCount\)/.test(dd.html) && (dd.html.match(/cut\(D\./g) || []).length === 6, 'sei serie (GA4 + MA, GSC + MA, due asse delle etichette) passano per lo stesso ritaglio')
+  ok(new RegExp('"commonCount":' + common).test(dd.html), `GA4 ritagliato a ${common} giorni (periodo comune, fino al ${dm.win.commonEnd})`)
+  const axisEnd = dm.win.gscEnd > dm.win.commonEnd ? dm.win.gscEnd : dm.win.commonEnd
+  const axisN = dateRange(dm.win.start, axisEnd).length
+  ok(new RegExp('"axisCount":' + axisN).test(dd.html) && axisN >= common, `asse comune dei due pannelli: ${axisN} giorni, fino all'ultimo giorno GSC (${axisEnd}); GA4 si ferma a ${common}`)
+  const gscAxisJson = JSON.parse(dd.html.match(/"gscAxis":(\[[^\]]*\])/)![1]) as (number | null)[]
+  ok(gscAxisJson.length === axisN && gscAxisJson[gscAxisJson.length - 1] != null, "l'ultimo giorno GSC (anche oltre il periodo comune) è nella serie del grafico")
+  ok(dd.html.includes('const cut = a => a.slice(0, D.commonCount)') && dd.html.includes('padTo(cut(D.gaOrg))') && dd.html.includes('data: D.gscAxis,'), "GA4 passa per il ritaglio comune e il completamento con vuoti; GSC usa l'asse esteso")
   const cap = `GA4: ${dm.win.aggEnd.slice(8, 10)}/${dm.win.aggEnd.slice(5, 7)}/${dm.win.aggEnd.slice(0, 4)} · GSC: ${dm.win.gscEnd.slice(8, 10)}/${dm.win.gscEnd.slice(5, 7)}/${dm.win.gscEnd.slice(0, 4)} · periodo comune: ${dm.win.commonEnd.slice(8, 10)}/${dm.win.commonEnd.slice(5, 7)}/${dm.win.commonEnd.slice(0, 4)}`
   ok(text(dd.html).includes(cap), `caption generato dalle variabili: «${cap}»`)
   ok(!/un giorno prima di GA4/.test(dd.html) && !/lag diverso/.test(dd.html), 'la frase residua «un giorno prima di GA4: lag diverso» non esiste più')
-  ok(/giorni di Search Console oltre tale data restano visibili solo nei KPI di Search Console e nella tabella settimanale/.test(text(dd.html)), 'caption: i giorni GSC in più restano solo nei KPI GSC e nella tabella settimanale')
+  ok(text(dd.html).includes("il pannello Search Console prosegue fino all'ultimo giorno definitivo"), "caption: il pannello GSC prosegue fino all'ultimo giorno definitivo")
   // ogni data nel testo del report proviene da una variabile calcolata (stesso principio delle percentuali)
   const allowed = new Set<string>()
   const addIso = (d: string) => { if (!d) return; allowed.add(d); allowed.add(`${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`); allowed.add(`${d.slice(8, 10)}/${d.slice(5, 7)}`) }

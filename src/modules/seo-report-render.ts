@@ -5,7 +5,7 @@
 // ============================================================
 import {
   buildModel, runChecks, checkPercentages, blockingErrors, anomalies, ReportAssertionError, PctRegistry, PARAMS,
-  esc, fmtInt, fmtDec, fmtDay, fmtDayY, formatDuration, CHART_CHANNELS, TEMP_ORDER,
+  esc, fmtInt, fmtDec, fmtDay, fmtDayY, dateRange, movingAvg, formatDuration, CHART_CHANNELS, TEMP_ORDER,
   crmDenominator, gaChanSessions, GA_CHAN_LABEL, CRM_UNSET, CRM_AI_NOT_EMITTED, trendVerdict,
   type ReportInput, type Model, type Check, type Level, type SmRow, type WeekRow,
 } from './seo-report-engine'
@@ -488,6 +488,14 @@ ${i.ga4.countries.map(c => `<tr><td>${esc(c.country)}</td><td style="text-align:
 </div>`
 
   // ── dati per i grafici ──
+  // Asse temporale dei due pannelli «Organico»: dall'inizio fino all'ultimo giorno definitivo di Search Console.
+  // GA4 si ferma all'ultimo giorno consolidato (periodo comune): oltre quella data il suo pannello resta vuoto, GSC prosegue.
+  const axisEnd = m.gsc && w.gscEnd > w.commonEnd ? w.gscEnd : w.commonEnd
+  const axisDates = dateRange(w.start, axisEnd)
+  const gscByDate = new Map<string, number>()
+  if (i.gsc) for (const r of i.gsc.daily) if (r.date >= w.start && r.date <= w.gscEnd) gscByDate.set(r.date, (gscByDate.get(r.date) || 0) + r.clicks)
+  const gscAxis = axisDates.map(d => (m.gsc && d <= w.gscEnd ? (gscByDate.get(d) ?? 0) : null))
+  const gscAxisMa = movingAvg(gscAxis, PARAMS.maShort)
   const dev = i.ga4.devices || []
   const devLabels = dev.map(d => `${d.device} (${fmtInt(d.sessions)} sessioni · ${R.P(d.sessions, total, 1)})`)
   const orgDays = m.dates
@@ -499,8 +507,9 @@ ${i.ga4.countries.map(c => `<tr><td>${esc(c.country)}</td><td style="text-align:
     weekLabels, weekPartial,
     weekSeries: CHART_CHANNELS.map(c => ({ name: c, data: fullWeeks.map(x => x.byChannel[c]), color: CH_COLOR[c] })),
     commonCount: m.dates.filter(d => d <= m.win.commonEnd).length,
+    axisLabels: axisDates.map(fmtDay), axisCount: axisDates.length,
     gaOrg: m.gaOrgDaily, gaOrgMa: m.gaOrgMa7.map((v, k) => (v == null || k >= m.aggCount ? null : Math.round(v * 100) / 100)),
-    gsc: m.gscDaily, gscMa: m.gscMa7.map(v => (v == null ? null : Math.round(v * 100) / 100)),
+    gscAxis, gscAxisMa: gscAxisMa.map(v => (v == null ? null : Math.round(v * 100) / 100)),
     gscEndLabel: fmtDay(w.gscEnd), ga4EndLabel: fmtDay(w.aggEnd),
     devLabels, devData: dev.map(d => d.sessions),
     donutLabels, donutData: macroDefs.map(d => d[2]), natLabels, natData: m.nativeChannels.map(x => x[1]),
@@ -574,7 +583,7 @@ ${kpiHtml}
     <h3>Organico: sessioni GA4 vs click Search Console</h3>
     <div class="panel"><canvas id="orgGaChart" height="62"></canvas></div>
     <div class="panel"><canvas id="orgGscChart" height="62"></canvas></div>
-    <div class="cap">Due pannelli separati con lo stesso asse temporale (nessun doppio asse): sopra le sessioni GA4 di Google organic, sotto i click di Search Console. Linea sottile: dato giornaliero; linea spessa: media mobile a ${PARAMS.maShort} giorni. Entrambe le serie sono ritagliate al periodo comune; i giorni di Search Console oltre tale data restano visibili solo nei KPI di Search Console e nella tabella settimanale. ${esc(dateCaption(m))}</div>
+    <div class="cap">Due pannelli separati con lo stesso asse temporale (nessun doppio asse): sopra le sessioni GA4 di Google organic, sotto i click di Search Console. Linea sottile: dato giornaliero; linea spessa: media mobile a ${PARAMS.maShort} giorni. Il pannello GA4 si ferma all'ultimo giorno consolidato (periodo comune); il pannello Search Console prosegue fino all'ultimo giorno definitivo, quindi può avere qualche giorno in più. ${esc(dateCaption(m))}</div>
   </div>
   <div class="chart-box">
     <h3>Sessioni per settimana (lun–dom)</h3>
@@ -685,17 +694,19 @@ if (document.getElementById('deviceChart')) new Chart(document.getElementById('d
 // 3. Organico: due pannelli, stessa scala temporale
 const orgOpts = (title, last) => ({ responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 }, boxWidth: 12 } } },
   scales: { x: { title: { display: last, text: 'giorno (gg/mm)', font: { size: 10 } }, ticks: { maxTicksLimit: 16, display: true } }, y: ax(title) } });
-// entrambe le serie sono ritagliate al PERIODO COMUNE (D.commonCount giorni): stesso inizio, stessa fine
+// stesso asse temporale per i due pannelli (D.axisCount giorni, fino all'ultimo giorno definitivo di Search Console):
+// GA4 è ritagliato al PERIODO COMUNE (D.commonCount giorni, solo giorni consolidati) e completato con vuoti; GSC prosegue fino a fine asse
 const cut = a => a.slice(0, D.commonCount);
+const padTo = a => a.concat(Array(Math.max(0, D.axisCount - a.length)).fill(null));
 new Chart(document.getElementById('orgGaChart'), { type: 'line',
-  data: { labels: cut(D.labels), datasets: [
-    { label: 'Sessioni GA4 Google organic — giornaliero (sessioni/giorno)', data: cut(D.gaOrg), borderColor: 'rgba(66,133,244,.45)', borderWidth: 1, pointRadius: 1.5, tension: 0 },
-    { label: 'Media mobile ${PARAMS.maShort} giorni (sessioni/giorno), indicatore di breve', data: cut(D.gaOrgMa), borderColor: '#1d4ed8', borderWidth: 2.5, pointRadius: 0, tension: .25 } ] },
+  data: { labels: D.axisLabels, datasets: [
+    { label: 'Sessioni GA4 Google organic — giornaliero (sessioni/giorno)', data: padTo(cut(D.gaOrg)), borderColor: 'rgba(66,133,244,.45)', borderWidth: 1, pointRadius: 1.5, tension: 0 },
+    { label: 'Media mobile ${PARAMS.maShort} giorni (sessioni/giorno), indicatore di breve', data: padTo(cut(D.gaOrgMa)), borderColor: '#1d4ed8', borderWidth: 2.5, pointRadius: 0, tension: .25 } ] },
   options: orgOpts('sessioni GA4 al giorno', false) });
 new Chart(document.getElementById('orgGscChart'), { type: 'line',
-  data: { labels: cut(D.labels), datasets: [
-    { label: 'Click Search Console — giornaliero (click/giorno)', data: cut(D.gsc), borderColor: 'rgba(217,119,6,.5)', borderWidth: 1, pointRadius: 1.5, tension: 0, spanGaps: false },
-    { label: 'Media mobile ${PARAMS.maShort} giorni (click/giorno), indicatore di breve', data: cut(D.gscMa), borderColor: '#b45309', borderWidth: 2.5, pointRadius: 0, tension: .25, spanGaps: false } ] },
+  data: { labels: D.axisLabels, datasets: [
+    { label: 'Click Search Console — giornaliero (click/giorno)', data: D.gscAxis, borderColor: 'rgba(217,119,6,.5)', borderWidth: 1, pointRadius: 1.5, tension: 0, spanGaps: false },
+    { label: 'Media mobile ${PARAMS.maShort} giorni (click/giorno), indicatore di breve', data: D.gscAxisMa, borderColor: '#b45309', borderWidth: 2.5, pointRadius: 0, tension: .25, spanGaps: false } ] },
   options: orgOpts('click GSC al giorno', true) });
 
 // 4. Settimanale per canale
