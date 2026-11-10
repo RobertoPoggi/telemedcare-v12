@@ -3,13 +3,15 @@ name: D1 leads - colonne attribuzione (one-shot)
 # Workflow one-shot, manuale. Rimuovere dopo l'uso.
 #  - confirm = LEGGI : legge SOLO PRAGMA table_info(leads) (numero colonne, presenza di utm_campaign / first_referrer)
 #  - confirm = MIGRA : aggiunge SOLO le colonne mancanti (ALTER TABLE ... ADD COLUMN, nullable, nessun dato toccato)
+#  - confirm = DIAGNOSI : SOLO conteggi e messaggi di errore (nessuna riga di dati): lead con gclid, limite 100 colonne nei JOIN `l.*`,
+#                         esistenza della tabella lead_attribution
 # Il log di questo repository e' pubblico: vengono stampati solo conteggi e nomi di colonna, mai righe di dati.
 
 on:
   workflow_dispatch:
     inputs:
       confirm:
-        description: 'LEGGI (solo lettura) oppure MIGRA (aggiunge le colonne mancanti)'
+        description: 'LEGGI | DIAGNOSI (solo lettura) | MIGRA (aggiunge le colonne mancanti)'
         required: true
         default: 'LEGGI'
 
@@ -17,7 +19,7 @@ jobs:
   d1-leads:
     name: PRAGMA leads / migrazione colonne attribuzione
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.confirm == 'LEGGI' || github.event.inputs.confirm == 'MIGRA' }}
+    if: ${{ github.event.inputs.confirm == 'LEGGI' || github.event.inputs.confirm == 'MIGRA' || github.event.inputs.confirm == 'DIAGNOSI' }}
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -48,6 +50,30 @@ jobs:
           open('/tmp/missing.txt', 'w').write(' '.join(c for c in ('utm_campaign', 'first_referrer') if c not in names))
           EOF
 
+      - name: Diagnosi (solo con confirm = DIAGNOSI, sola lettura)
+        if: ${{ github.event.inputs.confirm == 'DIAGNOSI' }}
+        run: |
+          q() { wrangler d1 execute telemedcare-leads --remote --json --command "$1" 2>&1 | python3 -c "
+          import sys,json,re
+          t=sys.stdin.read()
+          try:
+              d=json.loads(t[t.index('['):])
+              print('OK', json.dumps(d[0]['results'])[:300])
+          except Exception:
+              m=re.search(r'(too many columns[^\\n\"]*|no such [a-z]+: [A-Za-z_.]+|[A-Z_]+_ERROR[^\\n\"]{0,160}|D1_[A-Z_]+[^\\n\"]{0,160})', t)
+              print('ERRORE:', (m.group(1) if m else t[-300:]).strip()[:300])
+          "; }
+          echo "[1] lead totali / con gclid valorizzato (solo conteggi)"
+          q "SELECT COUNT(*) AS totale, SUM(CASE WHEN gclid IS NOT NULL AND gclid!='' THEN 1 ELSE 0 END) AS con_gclid FROM leads;"
+          echo "[2] JOIN con l.* + 4 colonne (come lead-completion.ts reminder firma/proforma)"
+          q "SELECT l.*, MIN(c.id) AS contract_id, MIN(c.codice_contratto) AS codice_contratto, MIN(c.pdf_url) AS pdf_url, MIN(c.status) AS contract_status FROM leads l JOIN contracts c ON c.leadId = l.id WHERE 1=0 GROUP BY l.id;"
+          echo "[3] JOIN con l.* + 1 colonna (come stripe-webhook-handler.ts)"
+          q "SELECT l.*, c.codice_contratto FROM leads l INNER JOIN contracts c ON c.lead_id = l.id WHERE 1=0;"
+          echo "[4] SELECT * FROM leads (100 colonne, nessun JOIN)"
+          q "SELECT * FROM leads WHERE 1=0;"
+          echo "[5] tabella lead_attribution"
+          q "SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name='lead_attribution';"
+
       - name: Aggiunge le colonne mancanti (solo con confirm = MIGRA)
         if: ${{ github.event.inputs.confirm == 'MIGRA' }}
         run: |
@@ -55,7 +81,7 @@ jobs:
           if [ -z "$MISSING" ]; then echo "Nessuna migrazione necessaria: colonne gia' presenti"; exit 0; fi
           for COL in $MISSING; do
             echo "ALTER TABLE leads ADD COLUMN $COL TEXT DEFAULT NULL"
-            wrangler d1 execute telemedcare-leads --remote --command "ALTER TABLE leads ADD COLUMN $COL TEXT DEFAULT NULL;"
+            wrangler d1 execute telemedcare-leads --remote --command "ALTER TABLE leads ADD COLUMN $COL TEXT DEFAULT NULL;" 2>&1 | grep -iE "error|success|too many|limit" | head -3 || true
           done
           wrangler d1 execute telemedcare-leads --remote --json \
             --command "SELECT name FROM pragma_table_info('leads') ORDER BY cid;" > /tmp/after.json
