@@ -310,6 +310,25 @@ export async function runAdsTests(ok: Ok, section: Section) {
     const gs = readFileSync('src/modules/gsheet-import.ts', 'utf8')
     ok(/updated_at,\s+prezzo_anno, prezzo_rinnovo/.test(gs) && /computeLeadPricing\(servizio, piano\)\.prezzoAnno/.test(gs), 'import Google Sheet: i lead nuovi nascono con prezzo_anno/prezzo_rinnovo')
   }
+  // ── fix-prices: solo ADMIN o API_KEY ─────────────────────────────────────────────────────────
+  {
+    const AG = await import('../../src/modules/admin-guard')
+    const { readFileSync } = await import('node:fs')
+    const ck = (role: string, expMs: number) => 'session=' + encodeURIComponent(JSON.stringify({ userId: 'u', username: 'x', role, loginAt: new Date().toISOString(), expiresAt: new Date(Date.now() + expMs).toISOString() }))
+    const r = (cookie: any, auth: any, key: any) => AG.checkAdminOrApiKey(cookie, auth, key)
+    ok(r(undefined, undefined, 'K').ok === false && (r(undefined, undefined, 'K') as any).status === 401, 'fix-prices: anonimo → 401')
+    ok(r(ck('ADMIN', 3600e3), undefined, 'K').ok === true, 'fix-prices: sessione ADMIN valida → ok')
+    const op: any = r(ck('OPERATOR', 3600e3), undefined, 'K')
+    ok(op.ok === false && op.status === 403, 'fix-prices: sessione OPERATOR → 403')
+    const exp: any = r(ck('ADMIN', -1000), undefined, 'K')
+    ok(exp.ok === false && exp.status === 401, 'fix-prices: sessione ADMIN scaduta → 401')
+    ok(r(undefined, 'Bearer K', 'K').ok === true, 'fix-prices: Bearer API_KEY corretta → ok')
+    ok((r(undefined, 'Bearer sbagliata', 'K') as any).status === 401, 'fix-prices: Bearer errato → 401')
+    ok((r(undefined, 'Bearer undefined', undefined) as any).status === 401 && (r(undefined, 'Bearer ', '') as any).status === 401, 'fix-prices: API_KEY non configurata → la via chiave è chiusa (mai Bearer undefined)')
+    ok((r('session=%7Bnon-json', undefined, 'K') as any).status === 401, 'fix-prices: cookie malformato → 401, nessuna eccezione')
+    const idx = readFileSync('src/index.tsx', 'utf8')
+    ok(/app\.post\('\/api\/leads\/fix-prices', async \(c\) => \{\s+try \{[\s\S]{0,500}checkAdminOrApiKey\(c\.req\.header\('Cookie'\), c\.req\.header\('Authorization'\), c\.env\?\.API_KEY\)[\s\S]{0,300}if \(!c\.env\?\.DB\)/.test(idx), 'fix-prices: il controllo è la PRIMA cosa nel gestore (prima di toccare il DB)')
+  }
   // endpoint /performance: la campagna arriva dalla colonna anche se la landing non ha parametri
   {
     const { createMarketingApi } = await import('../../src/modules/marketing-api')

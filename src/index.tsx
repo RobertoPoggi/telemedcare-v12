@@ -63,6 +63,7 @@ import * as ClientConfigurationManager from './modules/client-configuration-mana
 import { calculatePrice } from './modules/pricing-calculator'
 import { isContractSigned, stripLockedIntestatario } from './modules/edit-lock'
 import { shouldSendConfigEmail } from './modules/rate-config-email'
+import { checkAdminOrApiKey } from './modules/admin-guard'
 
 type Bindings = {
   DB: D1Database // Database (automaticamente production o preview tramite .pages.yaml)
@@ -21818,6 +21819,13 @@ app.post('/api/leads/cleanup-wrong-imports', async (c) => {
 // POST /api/leads/fix-prices - Corregge i prezzi di tutti i lead in base a servizio+piano
 app.post('/api/leads/fix-prices', async (c) => {
   try {
+    // 🔒 Difesa in profondita': riscrive prezzo_anno/prezzo_rinnovo di TUTTI i lead.
+    // Solo ADMIN (sessione) o API_KEY, indipendentemente dal middleware globale /api/*.
+    const guard = checkAdminOrApiKey(c.req.header('Cookie'), c.req.header('Authorization'), c.env?.API_KEY)
+    if (!guard.ok) {
+      console.warn(`⚠️ [SECURITY] fix-prices negato (${guard.status})`)
+      return c.json({ success: false, error: guard.error }, guard.status)
+    }
     if (!c.env?.DB) {
       return c.json({ success: false, error: 'Database non configurato' }, 500)
     }
