@@ -1,0 +1,70 @@
+name: D1 leads - colonne attribuzione (one-shot)
+
+# Workflow one-shot, manuale. Rimuovere dopo l'uso.
+#  - confirm = LEGGI : legge SOLO PRAGMA table_info(leads) (numero colonne, presenza di utm_campaign / first_referrer)
+#  - confirm = MIGRA : aggiunge SOLO le colonne mancanti (ALTER TABLE ... ADD COLUMN, nullable, nessun dato toccato)
+# Il log di questo repository e' pubblico: vengono stampati solo conteggi e nomi di colonna, mai righe di dati.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'LEGGI (solo lettura) oppure MIGRA (aggiunge le colonne mancanti)'
+        required: true
+        default: 'LEGGI'
+
+jobs:
+  d1-leads:
+    name: PRAGMA leads / migrazione colonne attribuzione
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.confirm == 'LEGGI' || github.event.inputs.confirm == 'MIGRA' }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install wrangler
+        run: npm install -g wrangler@4
+
+      - name: Stato colonne di leads (sola lettura)
+        run: |
+          wrangler d1 execute telemedcare-leads --remote --json \
+            --command "SELECT name FROM pragma_table_info('leads') ORDER BY cid;" > /tmp/before.json
+          python3 - <<'EOF'
+          import json
+          d = json.load(open('/tmp/before.json'))
+          rows = d[0]['results'] if isinstance(d, list) else d['results']
+          names = [r['name'] for r in rows]
+          print(f"leads: {len(names)} colonne (limite D1 per risultato: 100)")
+          for c in ('utm_campaign', 'first_referrer', 'gclid', 'gbraid', 'wbraid', 'click_ts', 'landing_page', 'prezzo_anno', 'prezzo_scontato'):
+              print(f"  {c}: {'presente' if c in names else 'MANCANTE'}")
+          print("elenco:", ', '.join(names))
+          if len(names) >= 90:
+              print("ATTENZIONE: vicino al limite di 100 colonne: evitare SELECT l.* con JOIN")
+          open('/tmp/missing.txt', 'w').write(' '.join(c for c in ('utm_campaign', 'first_referrer') if c not in names))
+          EOF
+
+      - name: Aggiunge le colonne mancanti (solo con confirm = MIGRA)
+        if: ${{ github.event.inputs.confirm == 'MIGRA' }}
+        run: |
+          MISSING=$(cat /tmp/missing.txt)
+          if [ -z "$MISSING" ]; then echo "Nessuna migrazione necessaria: colonne gia' presenti"; exit 0; fi
+          for COL in $MISSING; do
+            echo "ALTER TABLE leads ADD COLUMN $COL TEXT DEFAULT NULL"
+            wrangler d1 execute telemedcare-leads --remote --command "ALTER TABLE leads ADD COLUMN $COL TEXT DEFAULT NULL;"
+          done
+          wrangler d1 execute telemedcare-leads --remote --json \
+            --command "SELECT name FROM pragma_table_info('leads') ORDER BY cid;" > /tmp/after.json
+          python3 - <<'EOF'
+          import json
+          d = json.load(open('/tmp/after.json'))
+          rows = d[0]['results'] if isinstance(d, list) else d['results']
+          names = [r['name'] for r in rows]
+          print(f"dopo la migrazione: {len(names)} colonne")
+          for c in ('utm_campaign', 'first_referrer'):
+              print(f"  {c}: {'presente' if c in names else 'MANCANTE'}")
+          EOF
