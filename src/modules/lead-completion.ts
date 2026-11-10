@@ -176,6 +176,18 @@ export function isLeadComplete(leadData: any): boolean {
 /**
  * Ottiene configurazione sistema
  */
+/** D1 accetta al massimo 100 colonne per risultato e `leads` ne ha già 100: un JOIN con `l.*` va in errore («too many columns»).
+ *  Le query di promemoria restituiscono quindi solo `l.id` + le colonne dei contratti/proforma; la riga completa del lead
+ *  si legge da sola (SELECT * FROM leads WHERE id = ?, 100 colonne ammesse) e si unisce al resto. */
+export async function hydrateLeadRows(db: D1Database, rows: any[]): Promise<any[]> {
+  const out: any[] = []
+  for (const r of rows || []) {
+    const lead = await db.prepare('SELECT * FROM leads WHERE id = ? LIMIT 1').bind(r.id).first() as any
+    if (lead) out.push({ ...lead, ...r, id: lead.id })
+  }
+  return out
+}
+
 export async function getSystemConfig(db: D1Database): Promise<SystemConfig> {
   const configs = await db.prepare('SELECT key, value FROM system_config').all()
   
@@ -946,7 +958,7 @@ export async function processReminders(
   
   try {
     const contractLeads = await db.prepare(`
-      SELECT l.*,
+      SELECT l.id,
              MIN(c.id) as contract_id, MIN(c.codice_contratto) as codice_contratto,
              MIN(c.pdf_url) as pdf_url, MIN(c.status) as contract_status
       FROM leads l
@@ -987,7 +999,7 @@ export async function processReminders(
       firmaMinTime.toISOString()
     ).all()
     
-    const firmaLeads = (contractLeads.results || []) as any[]
+    const firmaLeads = await hydrateLeadRows(db, (contractLeads.results || []) as any[])
     console.log(`✍️ [REMINDER-FIRMA] Trovati ${firmaLeads.length} lead con contratto da firmare`)
     
     for (const lead of firmaLeads) {
@@ -1041,7 +1053,7 @@ export async function processReminders(
   
   try {
     const proformaLeads = await db.prepare(`
-      SELECT l.*,
+      SELECT l.id,
              MIN(p.id) as proforma_id, MIN(p.numero_proforma) as numero_proforma,
              MIN(p.prezzo_totale) as prezzo_totale,
              MIN(p.payment_url) as payment_url, MIN(p.cliente_email) as cliente_email,
@@ -1083,7 +1095,7 @@ export async function processReminders(
       proformaMinTime.toISOString()
     ).all()
     
-    const pLeads = (proformaLeads.results || []) as any[]
+    const pLeads = await hydrateLeadRows(db, (proformaLeads.results || []) as any[])
     console.log(`💳 [REMINDER-PROFORMA] Trovati ${pLeads.length} lead con proforma da pagare`)
     
     for (const lead of pLeads) {

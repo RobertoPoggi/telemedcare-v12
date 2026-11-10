@@ -84,13 +84,14 @@ export async function loadConversionExport(db: any, o: { kind?: string; giorni?:
   const name = (o.name || 'Lead qualificato eCura').slice(0, 100)
   const minTs = Date.now() - giorni * 864e5
   const c = await hasCols(db, ['prezzo_anno', 'prezzo_scontato'])
+  // Click ID dalla tabella laterale lead_attribution; colonne di `leads` elencate una a una (mai `l.*`: leads è a 100 colonne)
   const { results } = await db.prepare(`
-    SELECT id, gclid, gbraid, wbraid, click_ts, created_at, updated_at,
-           ${c.prezzo_scontato ? 'prezzo_scontato' : 'NULL AS prezzo_scontato'}, ${c.prezzo_anno ? 'prezzo_anno' : 'NULL AS prezzo_anno'},
-           CASE WHEN ${qualifiedSql()} THEN 1 ELSE 0 END AS q
-      FROM leads
-     WHERE (${kind} IS NOT NULL AND ${kind} != '') AND click_ts IS NOT NULL AND click_ts >= ?
-     ORDER BY updated_at DESC
+    SELECT l.id AS id, a.gclid AS gclid, a.gbraid AS gbraid, a.wbraid AS wbraid, a.click_ts AS click_ts, l.created_at AS created_at, l.updated_at AS updated_at,
+           ${c.prezzo_scontato ? 'l.prezzo_scontato' : 'NULL'} AS prezzo_scontato, ${c.prezzo_anno ? 'l.prezzo_anno' : 'NULL'} AS prezzo_anno,
+           CASE WHEN ${qualifiedSql('l')} THEN 1 ELSE 0 END AS q
+      FROM leads l JOIN lead_attribution a ON a.lead_id = l.id
+     WHERE (a.${kind} IS NOT NULL AND a.${kind} != '') AND a.click_ts IS NOT NULL AND a.click_ts >= ?
+     ORDER BY l.updated_at DESC
      LIMIT 5000
   `).bind(minTs).all()
   const all = buildConversionRows((results || []) as ConvLead[], kind)

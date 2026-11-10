@@ -217,23 +217,38 @@ export async function runAdsTests(ok: Ok, section: Section) {
     ok(D.referrerDomain('https://chatgpt.com/c/abc?x=1#y') === 'chatgpt.com' && D.referrerDomain('https://www.Perplexity.ai/search') === 'perplexity.ai' && D.referrerDomain('gemini.google.com') === 'gemini.google.com', 'F/B: referrerDomain → solo dominio, minuscolo, senza www/path/query')
     ok(D.referrerDomain('') === null && D.referrerDomain('javascript:alert(1)') === null && D.referrerDomain('mario.rossi@mail.it') === null && D.referrerDomain('https://user:pw@evil.com/p') === 'evil.com', 'B: referrerDomain scarta ciò che non è un hostname e toglie userinfo (nessun dato personale)')
 
-    // migrazione additiva e idempotente (db finto con schema vivo)
-    const { ensureLeadAttributionColumns, resetLeadAttributionColumnsCache } = await import('../../src/modules/workflow-email-manager')
-    resetLeadAttributionColumnsCache() // la cache di isolate può essere stata accesa da test precedenti con db finti
-    const cols = new Set(['id', 'gclid']); const alters: string[] = []
-    const mkDb = (dupErr = false): any => ({ prepare: (sql: string) => ({
-      all: async () => ({ results: [...cols].map(name => ({ name })) }),
-      run: async () => { const m = /ADD COLUMN (\w+)/.exec(sql); if (!m) return {}; alters.push(m[1]); if (dupErr || cols.has(m[1])) throw new Error('duplicate column name: ' + m[1]); cols.add(m[1]); return {} },
-    }) })
-    await ensureLeadAttributionColumns(mkDb())
-    ok(cols.has('utm_campaign') && cols.has('first_referrer') && alters.length === 2, 'A/B: migrazione aggiunge utm_campaign e first_referrer')
-    const before = alters.length
-    resetLeadAttributionColumnsCache() // simula un nuovo isolate: lo schema ora ha già le colonne
-    await ensureLeadAttributionColumns(mkDb())
-    ok(alters.length === before, 'A/B: seconda esecuzione idempotente (nessun ALTER ripetuto)')
-    cols.delete('first_referrer'); resetLeadAttributionColumnsCache()
-    const lg = await ensureLeadAttributionColumns({ prepare: (sql: string) => ({ all: async () => ({ results: [] }), run: async () => { if (/ADD COLUMN/.test(sql)) throw new Error('duplicate column name: x'); return {} } }) } as any)
-    ok(!lg.some(l => l.startsWith('⚠️')), 'A/B: «duplicate column» (esecuzioni concorrenti) è ignorato, non è un errore')
+    // attribuzione in tabella laterale (leads ha 100 colonne: nessun ALTER su leads)
+    const { ensureLeadAttributionTable, saveLeadAttribution, resetLeadAttributionCache } = await import('../../src/modules/lead-attribution')
+    resetLeadAttributionCache()
+    const sqls: string[] = []; const store = new Map<string, any>()
+    const mkDb = (): any => ({ prepare: (sql: string) => { let a: any[] = []; const q: any = { bind: (...x: any[]) => { a = x; return q }, run: async () => {
+      sqls.push(sql)
+      if (/INSERT INTO lead_attribution/.test(sql)) {
+        const cols = ['gclid', 'gbraid', 'wbraid', 'click_ts', 'landing_page', 'utm_campaign', 'first_referrer']
+        const cur = store.get(a[0]) || {}
+        cols.forEach((c, i) => { if (cur[c] == null || cur[c] === '') cur[c] = a[i + 1] })   // ON CONFLICT: il primo valore vince
+        store.set(a[0], cur)
+      }
+      return {} } }; return q } })
+    const lg1 = await ensureLeadAttributionTable(mkDb())
+    ok(sqls.some(x => /CREATE TABLE IF NOT EXISTS lead_attribution/.test(x)) && !sqls.some(x => /ALTER TABLE leads/i.test(x)) && !lg1.some(l => l.startsWith('⚠️')), 'A/B: tabella laterale lead_attribution creata; NESSUN ALTER TABLE leads (100 colonne = massimo D1)')
+    const n0 = sqls.length
+    await ensureLeadAttributionTable(mkDb())
+    ok(sqls.length === n0, 'A/B: seconda chiamata idempotente (cache di isolate, nessuna query ripetuta)')
+    const dbS = mkDb()
+    await saveLeadAttribution(dbS, 'L-1', { gclid: 'gclidAAAA', click_ts: 1700000000000, landing_page: 'https://www.ecura.it/', utm_campaign: 'camp_a' })
+    await saveLeadAttribution(dbS, 'L-1', { gclid: 'gclidBBBB', utm_campaign: 'camp_b', first_referrer: 'chatgpt.com' })
+    const rec = store.get('L-1')
+    ok(rec.gclid === 'gclidAAAA' && rec.utm_campaign === 'camp_a' && rec.first_referrer === 'chatgpt.com', `A/B: il primo click vince e i campi vuoti si completano (${rec.gclid}, ${rec.utm_campaign}, ${rec.first_referrer})`)
+    const n1 = sqls.length
+    await saveLeadAttribution(dbS, 'L-2', {})
+    ok(sqls.length === n1, 'A/B: senza dati di attribuzione non si scrive nulla')
+    const { readFileSync } = await import('node:fs')
+    const noStar = ['src/modules/lead-completion.ts', 'src/modules/stripe-webhook-handler.ts', 'src/modules/marketing-api.ts', 'src/modules/ads-conversions.ts', 'src/modules/lead-attribution.ts']
+      .filter(f => /SELECT\s+(l|le)\.\*/.test(readFileSync(f, 'utf8')))
+    ok(noStar.length === 0, `nessun «SELECT l.*» con JOIN sulla tabella leads (D1: max 100 colonne per risultato)${noStar.length ? ' → ' + noStar.join(', ') : ''}`)
+    const wem = readFileSync('src/modules/workflow-email-manager.ts', 'utf8')
+    ok(!/name: '(gclid|gbraid|wbraid|click_ts|landing_page|utm_campaign|first_referrer)'/.test(wem), 'workflow-email-manager: nessuna colonna di attribuzione aggiunta a leads con ALTER TABLE (vivono in lead_attribution)')
   }
   // endpoint /performance: la campagna arriva dalla colonna anche se la landing non ha parametri
   {
@@ -246,9 +261,8 @@ export async function runAdsTests(ok: Ok, section: Section) {
     ]
     const db: any = { prepare: (sql: string) => { const q: any = { bind: () => q,
       all: async () => {
-        if (/pragma_table_info/.test(sql)) return { results: ['id', 'gclid', 'gbraid', 'wbraid', 'landing_page', 'utm_campaign', 'first_referrer', 'created_at'].map(name => ({ name })) }
         if (/COUNT\(\*\)/.test(sql)) return { results: [{ n: 10, q: 2 }] }
-        if (/FROM leads/.test(sql)) { ok(/utm_campaign, CASE/.test(sql) && !/json_extract/.test(sql), 'A: la query legge la colonna utm_campaign (nessun json_extract su landing_page)'); return { results: leadRows } }
+        if (/FROM leads l JOIN lead_attribution a/.test(sql) && /a\.utm_campaign/.test(sql)) { ok(!/json_extract/.test(sql) && !/l\.\*/.test(sql), 'A: la query legge utm_campaign dalla tabella lead_attribution (nessun json_extract, nessun l.*)'); return { results: leadRows } }
         return { results: [] }
       }, first: async () => null, run: async () => ({ meta: {} }) }; return q } }
     const cookie = 'session=' + encodeURIComponent(JSON.stringify({ expiresAt: new Date(Date.now() + 3600e3).toISOString(), user: { name: 't', email: 't@e.it' } }))
@@ -343,7 +357,7 @@ export async function runAdsTests(ok: Ok, section: Section) {
   const qOnly = await CV.loadConversionExport(exDb(40), { kind: 'gclid', giorni: 90 })
   const csvLines = (x: string) => x.split('\n')
   const body = csvLines(qOnly.csv).slice(2)
-  ok(lastSql.includes(qualifiedSql()), 'la query usa qualifiedSql() (stessa definizione di report e Hub, nessuna seconda copia)')
+  ok(lastSql.includes(qualifiedSql('l')), 'la query usa qualifiedSql() (stessa definizione di report e Hub, nessuna seconda copia)')
   ok(!/IN \('CONTRACT_SIGNED','SIGNED'|PAYMENT_RECEIVED|ATTIVO/.test(CV.buildConversionCsv.toString() + CV.loadConversionExport.toString()), 'nessuna lista di stati scritta a mano nel modulo conversioni')
   ok(body.length === 3 && body.every(l => /^G-(AAA|CCC|DDD),/.test(l)), `predefinito: solo qualificati (${body.length} righe: ${body.map(l => l.split(',')[0]).join(', ')})`)
   ok(!body.some(l => /G-BBB|G-EEE/.test(l)), 'nessun lead non qualificato nel CSV predefinito')

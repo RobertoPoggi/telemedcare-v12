@@ -109,12 +109,15 @@ export class StripeWebhookHandler {
       console.log(`✅ [STRIPE-WEBHOOK] Proforma ${proformaNumber} aggiornata: paid`)
       
       // 3. Recupera dati lead associati al contratto
-      const lead = await db.prepare(`
-        SELECT l.*, c.codice_contratto
+      // Niente `l.*` nel JOIN: `leads` ha 100 colonne e D1 ne ammette al massimo 100 per risultato («too many columns»).
+      const leadRef = await db.prepare(`
+        SELECT l.id, c.codice_contratto
         FROM leads l
         INNER JOIN contracts c ON c.lead_id = l.id
         WHERE c.codice_contratto = ?
-      `).bind(contractCode).first()
+      `).bind(contractCode).first() as any
+      const leadRow = leadRef ? await db.prepare('SELECT * FROM leads WHERE id = ? LIMIT 1').bind(leadRef.id).first() as any : null
+      const lead = leadRow ? { ...leadRow, codice_contratto: leadRef.codice_contratto } : null
       
       if (!lead) {
         throw new Error(`Lead non trovato per contratto ${contractCode}`)

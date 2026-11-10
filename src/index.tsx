@@ -23383,9 +23383,9 @@ app.get('/api/hubspot/auto-import/diagnose', async (c) => {
 app.get('/api/admin/ads-offline-conversions', async (c) => {
   try {
     if (!c.env?.DB) return c.json({ success: false, error: 'DB non configurato' }, 500)
-    const { ensureAdsClickColumns } = await import('./modules/workflow-email-manager')
-    const _colsLog = await ensureAdsClickColumns(c.env.DB)
-    if (_colsLog.some(l => l.startsWith('⚠️'))) return c.json({ success: false, error: 'Migrazione colonne click ID non riuscita', log: _colsLog }, 500)
+    const { ensureLeadAttributionTable } = await import('./modules/lead-attribution')
+    const _colsLog = await ensureLeadAttributionTable(c.env.DB)
+    if (_colsLog.some(l => l.startsWith('⚠️'))) return c.json({ success: false, error: 'Tabella lead_attribution non disponibile', log: _colsLog }, 500)
     const { loadConversionExport } = await import('./modules/ads-conversions')
     const tutti = c.req.query('tutti') === '1'
     const ex = await loadConversionExport(c.env.DB, { kind: c.req.query('tipo') || 'gclid', giorni: parseInt(c.req.query('giorni') || '90', 10), tutti, name: c.req.query('nome') || undefined })
@@ -23445,30 +23445,25 @@ app.post('/api/leads/public', async (c) => {
     const _adsTs = (Number.isFinite(_adsTsNum) && _adsTsNum > 0) ? Math.floor(_adsTsNum) : null
     const _adsLanding = typeof landing_page === 'string' ? landing_page.slice(0, 500) : null
     const _adsHas = !!(_adsGclid || _adsGbraid || _adsWbraid)
-    const _saveAdsClick = async (leadIdForAds: string, onlyIfEmpty: boolean) => {
+    // Click ID e attribuzione vanno nella tabella laterale lead_attribution (leads è a 100 colonne, il massimo di D1: niente ALTER).
+    // Primo click vince. Se il salvataggio fallisce il lead resta comunque salvato.
+    const _saveAdsClick = async (leadIdForAds: string, _onlyIfEmpty: boolean) => {
       if (!_adsHas) return
       try {
-        const { ensureAdsClickColumns } = await import('./modules/workflow-email-manager')
-        await ensureAdsClickColumns(c.env.DB)
-        const f = (col: string) => onlyIfEmpty ? `${col} = CASE WHEN ${col} IS NULL OR ${col} = '' THEN ? ELSE ${col} END` : `${col} = ?`
-        await c.env.DB.prepare(
-          `UPDATE leads SET ${f('gclid')}, ${f('gbraid')}, ${f('wbraid')}, ${f('click_ts')}, ${f('landing_page')} WHERE id = ?`
-        ).bind(_adsGclid, _adsGbraid, _adsWbraid, _adsTs, _adsLanding, leadIdForAds).run()
+        const { saveLeadAttribution } = await import('./modules/lead-attribution')
+        await saveLeadAttribution(c.env.DB, leadIdForAds, { gclid: _adsGclid, gbraid: _adsGbraid, wbraid: _adsWbraid, click_ts: _adsTs, landing_page: _adsLanding })
       } catch (adsErr: any) {
         console.error('⚠️ [LANDING] salvataggio click ID fallito (lead comunque salvato):', adsErr?.message)
       }
     }
 
     // Attribuzione: campagna (utm_campaign) e dominio del primo accesso (first_referrer, solo hostname).
-    // UPDATE dopo l'INSERT, come per i click ID: se la colonna non è migrabile il lead resta comunque salvato.
     const _utmCampaign = cleanUtmCampaign(utm_campaign), _firstRef = referrerDomain(first_referrer)
-    const _saveAttribution = async (leadIdForAttr: string, onlyIfEmpty: boolean) => {
+    const _saveAttribution = async (leadIdForAttr: string, _onlyIfEmpty: boolean) => {
       if (!_utmCampaign && !_firstRef) return
       try {
-        const { ensureLeadAttributionColumns } = await import('./modules/workflow-email-manager')
-        await ensureLeadAttributionColumns(c.env.DB)
-        const f = (col: string) => onlyIfEmpty ? `${col} = CASE WHEN ${col} IS NULL OR ${col} = '' THEN ? ELSE ${col} END` : `${col} = COALESCE(?, ${col})`
-        await c.env.DB.prepare(`UPDATE leads SET ${f('utm_campaign')}, ${f('first_referrer')} WHERE id = ?`).bind(_utmCampaign, _firstRef, leadIdForAttr).run()
+        const { saveLeadAttribution } = await import('./modules/lead-attribution')
+        await saveLeadAttribution(c.env.DB, leadIdForAttr, { utm_campaign: _utmCampaign, first_referrer: _firstRef })
       } catch (attrErr: any) {
         console.error('⚠️ [LANDING] salvataggio attribuzione fallito (lead comunque salvato):', attrErr?.message)
       }

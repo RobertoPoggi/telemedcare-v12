@@ -10,6 +10,7 @@ import { searchConsoleQuery } from './google-analytics'
 import { isSessionValid } from './auth-service'
 import * as D from './ads-decision'
 import * as CV from './ads-conversions'
+import { ensureLeadAttributionTable, HAS_CLICK_ID_SQL } from './lead-attribution'
 import { qualifiedSql, mapCrmChannel, QUALIFIED_LEAD } from './seo-report-engine'
 
 type Ctx = any
@@ -199,22 +200,21 @@ async function activeKeywords(db: any): Promise<D.ActiveKeyword[]> {
   return out
 }
 
-async function leadsHasColumn(db: any, col: string): Promise<boolean> {
-  try { const r = await db.prepare(`SELECT name FROM pragma_table_info('leads')`).all(); return ((r.results || []) as any[]).some(x => x.name === col) } catch (_) { return false }
-}
 async function loadImported(db: any): Promise<any | null> {
   try { const r: any = await db.prepare(`SELECT value, updated_at FROM settings WHERE key='ads_last_report'`).first(); return r ? { ...JSON.parse(r.value), savedAt: r.updated_at } : null } catch (_) { return null }
 }
 /** Lead attribuiti ad ADS (click ID o landing con utm_medium=cpc) con flag «qualificato» calcolato dalla definizione unica, + totale lead del periodo. */
 async function loadPerfRows(db: any, days: number) {
-  try { const m = await import('./workflow-email-manager'); await m.ensureAdsClickColumns(db); await m.ensureLeadAttributionColumns(db) } catch (_) { /* colonne già presenti */ }
+  // Attribuzione nella tabella laterale lead_attribution (leads è a 100 colonne: nessun ALTER, nessun `l.*`)
+  let ready = false
+  try { ready = !(await ensureLeadAttributionTable(db)).some(l => l.startsWith('⚠️')) } catch (_) { ready = false }
   const since = new Date(Date.now() - days * 864e5).toISOString().slice(0, 19).replace('T', ' ')
-  const hasUtm = await leadsHasColumn(db, 'utm_campaign')
   const q = async (sql: string, ...b: any[]) => { try { return (await db.prepare(sql).bind(...b).all()).results || [] } catch (_) { return null } }
-  const rows = await q(`SELECT gclid, gbraid, wbraid, landing_page, ${hasUtm ? 'utm_campaign' : "NULL AS utm_campaign"}, CASE WHEN ${qualifiedSql()} THEN 1 ELSE 0 END AS q
-    FROM leads WHERE created_at >= ? AND ((gclid IS NOT NULL AND gclid!='') OR (gbraid IS NOT NULL AND gbraid!='') OR (wbraid IS NOT NULL AND wbraid!='') OR landing_page LIKE '%utm_medium=cpc%')`, since)
+  const rows = await q(`SELECT a.gclid, a.gbraid, a.wbraid, a.landing_page, a.utm_campaign, CASE WHEN ${qualifiedSql('l')} THEN 1 ELSE 0 END AS q
+    FROM leads l JOIN lead_attribution a ON a.lead_id = l.id
+    WHERE l.created_at >= ? AND (${HAS_CLICK_ID_SQL} OR a.landing_page LIKE '%utm_medium=cpc%')`, since)
   const all = await q(`SELECT COUNT(*) AS n, COALESCE(SUM(CASE WHEN ${qualifiedSql()} THEN 1 ELSE 0 END),0) AS q FROM leads WHERE created_at >= ?`, since)
-  return { rows: rows as any[] | null, all: all ? { total: Number((all[0] as any)?.n || 0), qualified: Number((all[0] as any)?.q || 0) } : null, hasUtmColumn: hasUtm, since }
+  return { rows: rows as any[] | null, all: all ? { total: Number((all[0] as any)?.n || 0), qualified: Number((all[0] as any)?.q || 0) } : null, hasUtmColumn: ready, since }
 }
 async function spendOfMonth(db: any): Promise<number | null> {
   try { const r: any = await db.prepare(`SELECT value FROM settings WHERE key='ads_spend_log'`).first(); const v = r ? JSON.parse(r.value)[new Date().toISOString().slice(0, 7)] : null; return Number(v) > 0 ? Number(v) : null } catch (_) { return null }
@@ -435,14 +435,14 @@ export function createMarketingApi() {
   // ── Risultati dal CRM (lead da Google) ─────────────────────────────
   api.get('/performance', async (c) => {
     await ensureTables(c.env.DB)
-    try { const { ensureAdsClickColumns } = await import('./workflow-email-manager'); await ensureAdsClickColumns(c.env.DB) } catch (_) { /* colonne già presenti */ }
+    try { await ensureLeadAttributionTable(c.env.DB) } catch (_) { /* tabella già presente */ }
     const days = Math.min(120, Math.max(7, Number(c.req.query('giorni')) || 30))
     const since = new Date(Date.now() - days * 864e5).toISOString().slice(0, 19).replace('T', ' ')
     const q = async (sql: string, ...bind: any[]) => { try { return (await c.env.DB.prepare(sql).bind(...bind).all()).results || [] } catch (_) { return [] } }
     const [tot, withClick, byStatus, byCampaign] = await Promise.all([
       q(`SELECT COUNT(*) n FROM leads WHERE created_at >= ?`, since),
-      q(`SELECT COUNT(*) n FROM leads WHERE created_at >= ? AND ((gclid IS NOT NULL AND gclid!='') OR (gbraid IS NOT NULL AND gbraid!='') OR (wbraid IS NOT NULL AND wbraid!=''))`, since),
-      q(`SELECT status, COUNT(*) n FROM leads WHERE created_at >= ? AND ((gclid IS NOT NULL AND gclid!='') OR (gbraid IS NOT NULL AND gbraid!='') OR (wbraid IS NOT NULL AND wbraid!='')) GROUP BY status ORDER BY n DESC`, since),
+      q(`SELECT COUNT(*) n FROM leads l JOIN lead_attribution a ON a.lead_id = l.id WHERE l.created_at >= ? AND ${HAS_CLICK_ID_SQL}`, since),
+      q(`SELECT l.status AS status, COUNT(*) n FROM leads l JOIN lead_attribution a ON a.lead_id = l.id WHERE l.created_at >= ? AND ${HAS_CLICK_ID_SQL} GROUP BY l.status ORDER BY n DESC`, since),
       q(`SELECT COALESCE(NULLIF(canale_acquisizione,''),'(vuoto)') canale, COUNT(*) n FROM leads WHERE created_at >= ? GROUP BY 1 ORDER BY n DESC`, since),
     ])
     const spendRow: any = await c.env.DB.prepare(`SELECT value FROM settings WHERE key='ads_spend_log'`).first().catch(() => null)
@@ -472,7 +472,7 @@ export function createMarketingApi() {
   // ── Conversioni offline: conteggi (= righe del CSV), CSV e data dell'ultimo upload (inserita a mano) ──
   api.get('/conversions/summary', async (c) => {
     await ensureTables(c.env.DB)
-    try { const m = await import('./workflow-email-manager'); await m.ensureAdsClickColumns(c.env.DB) } catch (_) { /* colonne già presenti */ }
+    try { await ensureLeadAttributionTable(c.env.DB) } catch (_) { /* tabella già presente */ }
     const tipo = String(c.req.query('tipo') || 'gclid'); const giorni = Number(c.req.query('giorni')) || 90
     const ex = await CV.loadConversionExport(c.env.DB, { kind: tipo, giorni, tutti: false })
     const last = await CV.loadLastUpload(c.env.DB)
@@ -481,7 +481,7 @@ export function createMarketingApi() {
   })
   api.get('/conversions/csv', async (c) => {
     await ensureTables(c.env.DB)
-    try { const m = await import('./workflow-email-manager'); await m.ensureAdsClickColumns(c.env.DB) } catch (_) { /* colonne già presenti */ }
+    try { await ensureLeadAttributionTable(c.env.DB) } catch (_) { /* tabella già presente */ }
     const ex = await CV.loadConversionExport(c.env.DB, { kind: String(c.req.query('tipo') || 'gclid'), giorni: Number(c.req.query('giorni')) || 90, tutti: c.req.query('tutti') === '1', name: c.req.query('nome') || undefined })
     return new Response(ex.csv, { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="' + ex.fileName + '"', 'X-Rows': String(ex.rows.length), 'Cache-Control': 'no-store' } })
   })

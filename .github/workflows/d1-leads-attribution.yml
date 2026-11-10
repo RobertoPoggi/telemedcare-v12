@@ -2,7 +2,7 @@ name: D1 leads - colonne attribuzione (one-shot)
 
 # Workflow one-shot, manuale. Rimuovere dopo l'uso.
 #  - confirm = LEGGI : legge SOLO PRAGMA table_info(leads) (numero colonne, presenza di utm_campaign / first_referrer)
-#  - confirm = MIGRA : aggiunge SOLO le colonne mancanti (ALTER TABLE ... ADD COLUMN, nullable, nessun dato toccato)
+#  - confirm = CREA_TABELLA : crea SOLO la tabella laterale lead_attribution (CREATE TABLE IF NOT EXISTS; leads non viene modificata: ha gia' 100 colonne)
 #  - confirm = DIAGNOSI : SOLO conteggi e messaggi di errore (nessuna riga di dati): lead con gclid, limite 100 colonne nei JOIN `l.*`,
 #                         esistenza della tabella lead_attribution
 # Il log di questo repository e' pubblico: vengono stampati solo conteggi e nomi di colonna, mai righe di dati.
@@ -11,15 +11,15 @@ on:
   workflow_dispatch:
     inputs:
       confirm:
-        description: 'LEGGI | DIAGNOSI (solo lettura) | MIGRA (aggiunge le colonne mancanti)'
+        description: 'LEGGI | DIAGNOSI (solo lettura) | CREA_TABELLA (crea lead_attribution)'
         required: true
         default: 'LEGGI'
 
 jobs:
   d1-leads:
-    name: PRAGMA leads / migrazione colonne attribuzione
+    name: PRAGMA leads / tabella lead_attribution
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.confirm == 'LEGGI' || github.event.inputs.confirm == 'MIGRA' || github.event.inputs.confirm == 'DIAGNOSI' }}
+    if: ${{ github.event.inputs.confirm == 'LEGGI' || github.event.inputs.confirm == 'CREA_TABELLA' || github.event.inputs.confirm == 'DIAGNOSI' }}
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -47,7 +47,6 @@ jobs:
           print("elenco:", ', '.join(names))
           if len(names) >= 90:
               print("ATTENZIONE: vicino al limite di 100 colonne: evitare SELECT l.* con JOIN")
-          open('/tmp/missing.txt', 'w').write(' '.join(c for c in ('utm_campaign', 'first_referrer') if c not in names))
           EOF
 
       - name: Diagnosi (solo con confirm = DIAGNOSI, sola lettura)
@@ -74,23 +73,12 @@ jobs:
           echo "[5] tabella lead_attribution"
           q "SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name='lead_attribution';"
 
-      - name: Aggiunge le colonne mancanti (solo con confirm = MIGRA)
-        if: ${{ github.event.inputs.confirm == 'MIGRA' }}
+      - name: Crea la tabella lead_attribution (solo con confirm = CREA_TABELLA)
+        if: ${{ github.event.inputs.confirm == 'CREA_TABELLA' }}
         run: |
-          MISSING=$(cat /tmp/missing.txt)
-          if [ -z "$MISSING" ]; then echo "Nessuna migrazione necessaria: colonne gia' presenti"; exit 0; fi
-          for COL in $MISSING; do
-            echo "ALTER TABLE leads ADD COLUMN $COL TEXT DEFAULT NULL"
-            wrangler d1 execute telemedcare-leads --remote --command "ALTER TABLE leads ADD COLUMN $COL TEXT DEFAULT NULL;" 2>&1 | grep -iE "error|success|too many|limit" | head -3 || true
-          done
+          # Additivo e idempotente: NON modifica la tabella leads (gia' al limite D1 di 100 colonne)
+          wrangler d1 execute telemedcare-leads --remote --command "CREATE TABLE IF NOT EXISTS lead_attribution (lead_id TEXT PRIMARY KEY, gclid TEXT DEFAULT NULL, gbraid TEXT DEFAULT NULL, wbraid TEXT DEFAULT NULL, click_ts INTEGER DEFAULT NULL, landing_page TEXT DEFAULT NULL, utm_campaign TEXT DEFAULT NULL, first_referrer TEXT DEFAULT NULL, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now')));" 2>&1 | grep -iE "error|success|executed" | head -3 || true
+          wrangler d1 execute telemedcare-leads --remote --command "CREATE INDEX IF NOT EXISTS idx_lead_attr_gclid ON lead_attribution(gclid);" 2>&1 | grep -iE "error|success|executed" | head -3 || true
+          wrangler d1 execute telemedcare-leads --remote --command "CREATE INDEX IF NOT EXISTS idx_lead_attr_click_ts ON lead_attribution(click_ts);" 2>&1 | grep -iE "error|success|executed" | head -3 || true
           wrangler d1 execute telemedcare-leads --remote --json \
-            --command "SELECT name FROM pragma_table_info('leads') ORDER BY cid;" > /tmp/after.json
-          python3 - <<'EOF'
-          import json
-          d = json.load(open('/tmp/after.json'))
-          rows = d[0]['results'] if isinstance(d, list) else d['results']
-          names = [r['name'] for r in rows]
-          print(f"dopo la migrazione: {len(names)} colonne")
-          for c in ('utm_campaign', 'first_referrer'):
-              print(f"  {c}: {'presente' if c in names else 'MANCANTE'}")
-          EOF
+            --command "SELECT COUNT(*) AS tabelle FROM sqlite_master WHERE type='table' AND name='lead_attribution';" 2>&1 | grep -E "tabelle" | head -2

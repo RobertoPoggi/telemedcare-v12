@@ -283,83 +283,8 @@ export async function ensureScontoRinnoviColumns(db: any): Promise<string[]> {
   return log
 }
 
-/**
- * Colonne di attribuzione Google Ads (gclid/gbraid/wbraid) sui lead.
- * Idempotente; in memoria per isolate evita ALTER ripetuti.
- */
-let _adsColumnsReady = false
-let _attributionColumnsReady = false
-/** Colonne di attribuzione sui lead: `utm_campaign` (campagna) e `first_referrer` (dominio del primo accesso, first-touch).
- *  Migrazione ADDITIVA e idempotente: legge lo schema reale, aggiunge solo ciò che manca, non tocca le colonne esistenti.
- *  Eseguita due volte non produce errori (se la colonna c'è già, o se un'altra richiesta l'ha appena creata, «duplicate column» è ignorato). */
-/** Solo per i test: azzera la cache «colonne già pronte» di questo isolate. */
-export function resetLeadAttributionColumnsCache() { _attributionColumnsReady = false }
-
-export async function ensureLeadAttributionColumns(db: any): Promise<string[]> {
-  const log: string[] = []
-  if (_attributionColumnsReady) return log
-  const cols = [
-    { name: 'utm_campaign', def: 'TEXT DEFAULT NULL' },
-    { name: 'first_referrer', def: 'TEXT DEFAULT NULL' },
-  ]
-  let have = new Set<string>()
-  try { const r = await db.prepare(`SELECT name FROM pragma_table_info('leads')`).all(); have = new Set(((r?.results || []) as any[]).map(x => String(x.name))) } catch (e: any) { log.push(`⚠️ Lettura schema leads fallita: ${e?.message}`) }
-  for (const col of cols) {
-    if (have.has(col.name)) { log.push(`ℹ️ leads.${col.name} già esiste`); continue }
-    try { await db.prepare(`ALTER TABLE leads ADD COLUMN ${col.name} ${col.def}`).run(); log.push(`✅ leads.${col.name} aggiunto`) }
-    catch (e: any) {
-      if (e?.message && /duplicate column/i.test(e.message)) log.push(`ℹ️ leads.${col.name} già esiste`)
-      else log.push(`⚠️ Errore leads.${col.name}: ${e?.message}`)
-    }
-  }
-  _attributionColumnsReady = !log.some(l => l.startsWith('⚠️'))
-  return log
-}
-
-export async function ensureAdsClickColumns(db: any): Promise<string[]> {
-  const log: string[] = []
-  if (_adsColumnsReady) return log
-  const cols = [
-    { name: 'gclid', def: 'TEXT DEFAULT NULL' },
-    { name: 'gbraid', def: 'TEXT DEFAULT NULL' },
-    { name: 'wbraid', def: 'TEXT DEFAULT NULL' },
-    { name: 'click_ts', def: 'INTEGER DEFAULT NULL' },
-    { name: 'landing_page', def: 'TEXT DEFAULT NULL' },
-  ]
-  // Si legge lo schema reale invece di fidarsi del testo dell'errore di ALTER TABLE
-  const present = async (): Promise<Set<string>> => {
-    const r = await db.prepare(`SELECT name FROM pragma_table_info('leads')`).all()
-    return new Set(((r?.results || []) as any[]).map(x => String(x.name)))
-  }
-  let have: Set<string>
-  try { have = await present() } catch (e: any) { log.push(`⚠️ Lettura schema leads fallita: ${e?.message}`); have = new Set() }
-  for (const col of cols) {
-    if (have.has(col.name)) { log.push(`ℹ️ leads.${col.name} già esiste`); continue }
-    try {
-      await db.prepare(`ALTER TABLE leads ADD COLUMN ${col.name} ${col.def}`).run()
-      log.push(`✅ leads.${col.name} aggiunto`)
-    } catch (e: any) {
-      if (e?.message && /duplicate column/i.test(e.message)) log.push(`ℹ️ leads.${col.name} già esiste`)
-      else { log.push(`⚠️ Errore leads.${col.name}: ${e?.message}`); console.error(`[ADS] ALTER leads.${col.name} fallito:`, e?.message) }
-    }
-  }
-  // Pronto solo se tutte le colonne esistono davvero
-  try {
-    have = await present()
-    if (cols.every(c => have.has(c.name))) {
-      for (const idx of [
-        'CREATE INDEX IF NOT EXISTS idx_leads_gclid ON leads(gclid)',
-        'CREATE INDEX IF NOT EXISTS idx_leads_click_ts ON leads(click_ts)',
-      ]) {
-        try { await db.prepare(idx).run() } catch (e: any) { log.push(`⚠️ Errore indice: ${e?.message}`) }
-      }
-      _adsColumnsReady = true
-    } else {
-      log.push('⚠️ Colonne mancanti dopo la migrazione: ' + cols.filter(c => !have.has(c.name)).map(c => c.name).join(', '))
-    }
-  } catch (e: any) { log.push(`⚠️ Verifica schema fallita: ${e?.message}`) }
-  return log
-}
+// Attribuzione lead (gclid/gbraid/wbraid/click_ts/landing_page/utm_campaign/first_referrer): vedi lead-attribution.ts.
+// `leads` ha 100 colonne (massimo D1): le colonne NON si aggiungono a `leads`, vivono nella tabella laterale lead_attribution.
 
 /**
  * Per il contratto del PRIMO anno: se il lead ha l'eccezione "sconto sui rinnovi" attiva,
