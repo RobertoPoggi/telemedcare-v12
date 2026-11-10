@@ -23370,12 +23370,15 @@ app.get('/api/hubspot/auto-import/diagnose', async (c) => {
 // GET /api/admin/ads-offline-conversions — CSV conversioni offline per Google Ads
 // Auth: middleware /api/admin/* (Authorization: Bearer <ADMIN_SECRET_TOKEN> oppure X-Cron-Secret).
 //       Nessun token in query string (finirebbe nei log).
+// Logica in src/modules/ads-conversions.ts; «qualificato» = qualifiedSql() (definizione unica QUALIFIED_LEAD).
 // Parametri opzionali:
-//   stati  = elenco stati separati da virgola (default: lead che hanno firmato/pagato)
-//   giorni = finestra in giorni sulla data del click (default 90, max 90)
-//   valore = valore conversione in EUR (default 29.90, come il tag sul sito)
-//   nome   = nome azione di conversione (deve coincidere con quella creata in Google Ads)
-//   formato= csv (default) | json (anteprima)
+//   soloQualificati = 1 (default): solo lead qualificati (temperatura caldo/tiepido OPPURE status CONTRACT_SENT/SIGNED/CONVERTED)
+//   tutti           = 1: export completo, include lead NON qualificati (sconsigliato)
+//   giorni          = finestra in giorni sulla data del click (default 90, max 90)
+//   tipo            = gclid (default) | gbraid | wbraid (Google vuole un file per tipo)
+//   nome            = nome azione di conversione (deve coincidere con quella creata in Google Ads)
+//   formato         = csv (default) | json (anteprima + conteggi)
+// Un solo record per click ID (data più vecchia). Valore = prezzo del piano se noto, altrimenti vuoto.
 // ─────────────────────────────────────────────────────────────────────
 app.get('/api/admin/ads-offline-conversions', async (c) => {
   try {
@@ -23383,63 +23386,19 @@ app.get('/api/admin/ads-offline-conversions', async (c) => {
     const { ensureAdsClickColumns } = await import('./modules/workflow-email-manager')
     const _colsLog = await ensureAdsClickColumns(c.env.DB)
     if (_colsLog.some(l => l.startsWith('⚠️'))) return c.json({ success: false, error: 'Migrazione colonne click ID non riuscita', log: _colsLog }, 500)
-
-    const DEFAULT_STATI = ['CONTRACT_SIGNED', 'SIGNED', 'PAYMENT_RECEIVED', 'ACTIVE', 'ATTIVO', 'CONVERTED']
-    const statiQ = (c.req.query('stati') || '').split(',').map(x => x.trim().toUpperCase()).filter(x => /^[A-Z_]{2,40}$/.test(x))
-    const stati = statiQ.length ? statiQ : DEFAULT_STATI
-    const giorni = Math.min(90, Math.max(1, parseInt(c.req.query('giorni') || '90', 10) || 90))
-    const valoreNum = Number(c.req.query('valore') || '29.90')
-    const valore = (Number.isFinite(valoreNum) && valoreNum >= 0 ? valoreNum : 29.90).toFixed(2)
-    const nome = (c.req.query('nome') || 'Lead qualificato eCura').slice(0, 100)
-    const minTs = Date.now() - giorni * 864e5
-
-    const placeholders = stati.map(() => '?').join(',')
-    const { results } = await c.env.DB.prepare(`
-      SELECT id, gclid, gbraid, wbraid, click_ts, created_at, updated_at, status
-        FROM leads
-       WHERE ((gclid IS NOT NULL AND gclid != '') OR (gbraid IS NOT NULL AND gbraid != '') OR (wbraid IS NOT NULL AND wbraid != ''))
-         AND click_ts IS NOT NULL AND click_ts >= ?
-         AND status IN (${placeholders})
-       ORDER BY updated_at DESC
-       LIMIT 5000
-    `).bind(minTs, ...stati).all()
-
-    // Google richiede un file per tipo di identificativo (gclid / gbraid / wbraid)
-    const kinds: Array<{ key: 'gclid' | 'gbraid' | 'wbraid'; header: string }> = [
-      { key: 'gclid', header: 'Google Click ID' },
-      { key: 'gbraid', header: 'Gbraid' },
-      { key: 'wbraid', header: 'Wbraid' },
-    ]
-    const kindQ = (c.req.query('tipo') || 'gclid') as 'gclid' | 'gbraid' | 'wbraid'
-    const kind = kinds.find(k => k.key === kindQ) || kinds[0]
-
-    const fmt = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ') + '+00:00'
-    const esc = (v: any) => { const t = String(v ?? ''); return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t }
-
-    const rows: string[][] = []
-    for (const l of (results || []) as any[]) {
-      const id = l[kind.key]
-      if (!id) continue
-      // L'ora di conversione deve essere SUCCESSIVA al click: si usa l'ultimo aggiornamento del lead
-      const clickMs = Number(l.click_ts)
-      let convMs = Date.parse(l.updated_at || l.created_at || '')
-      if (!Number.isFinite(convMs) || convMs <= clickMs) convMs = clickMs + 60000
-      if (convMs > Date.now()) convMs = Date.now() - 60000
-      rows.push([id, nome, fmt(new Date(convMs)), valore, 'EUR'])
-    }
-
+    const { loadConversionExport } = await import('./modules/ads-conversions')
+    const tutti = c.req.query('tutti') === '1'
+    const ex = await loadConversionExport(c.env.DB, { kind: c.req.query('tipo') || 'gclid', giorni: parseInt(c.req.query('giorni') || '90', 10), tutti, name: c.req.query('nome') || undefined })
     if (c.req.query('formato') === 'json') {
-      return c.json({ success: true, tipo: kind.key, stati, giorni, count: rows.length, anteprima: rows.slice(0, 20) })
+      return c.json({ success: true, tipo: ex.kind, modo: tutti ? 'tutti' : 'qualificati', giorni: ex.giorni, count: ex.rows.length, qualificati: ex.qualified, conClickId: ex.withClickId, leadPeriodo: ex.leadsPeriod, conValore: ex.valued,
+        avviso: tutti ? 'Include anche lead NON qualificati: falsa il ritorno misurato da Google Ads.' : null,
+        anteprima: ex.csv.split('\n').slice(2, 22) })
     }
-
-    // Prima riga "Parameters:TimeZone=" come da template ufficiale; l'offset +00:00 è comunque esplicito
-    const csv = ['Parameters:TimeZone=+0000', [kind.header, 'Conversion Name', 'Conversion Time', 'Conversion Value', 'Conversion Currency'].join(',')]
-      .concat(rows.map(r => r.map(esc).join(',')))
-      .join('\n')
-    return new Response(csv, {
+    return new Response(ex.csv, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="ecura-offline-conversions-${kind.key}.csv"`,
+        'Content-Disposition': `attachment; filename="${ex.fileName}"`,
+        'X-Rows': String(ex.rows.length),
         'Cache-Control': 'no-store',
       }
     })

@@ -4,10 +4,13 @@ import { generateReport } from '../../src/modules/seo-report-render'
 import { buildReportJson } from '../../src/modules/seo-report-json'
 import { QUALIFIED_LEAD, isQualifiedLead, qualifiedSql } from '../../src/modules/seo-report-engine'
 import * as D from '../../src/modules/ads-decision'
+import { renderGoogleAdsStudio } from '../../src/modules/google-ads-studio'
+import * as CV from '../../src/modules/ads-conversions'
 import { makeFixture } from './fixture'
 
 type Ok = (c: boolean, msg: string) => void
 type Section = (t: string) => void
+const fmtDate = (ms: number) => new Date(ms).toISOString().slice(0, 10)
 const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ')
 
 // DB finto: tiene ads_plans e ads_history in memoria, riconosce solo le query usate dal ciclo di vita
@@ -309,4 +312,66 @@ export async function runAdsTests(ok: Ok, section: Section) {
   ok(!nul.available && /dato non disponibile/.test(String((nul as any).reason)), 'lead CRM non disponibili → «dato non disponibile», non una proiezione costruita su zeri')
   const noPrev = D.projectMultiplier({ ...projBase })
   ok(noPrev.assumptions.some(a => /stabilità .* non verificabile/.test(a)), 'senza i due mesi precedenti la stabilità è dichiarata non verificabile')
+
+  // ── H) Parte C — conversioni offline: solo qualificati, dedup per click ID, valore vuoto se ignoto ─────────
+  section('H. Parte C — export conversioni offline (solo lead qualificati)')
+  const T0 = Date.parse('2026-10-01T10:00:00Z')
+  const mk = (id: string, gclid: string | null, temp: string, status: string, upd: string, extra: any = {}) => ({
+    id, gclid, gbraid: null, wbraid: null, click_ts: T0, created_at: '2026-10-01 10:05:00', updated_at: upd,
+    prezzo_scontato: null, prezzo_anno: null, ...extra, q: isQualifiedLead(temp, status) ? 1 : 0,
+  })
+  const leadsDb = [
+    mk('L1', 'G-AAA', 'caldo', 'NEW', '2026-10-05 09:00:00', { prezzo_anno: 480 }),
+    mk('L2', 'G-BBB', 'freddo', 'NEW', '2026-10-06 09:00:00'),                       // NON qualificato
+    mk('L3', 'G-CCC', '', 'CONTRACT_SIGNED', '2026-10-07 09:00:00', { prezzo_scontato: 399, prezzo_anno: 480 }),
+    mk('L4', 'G-AAA', 'tiepido', 'NEW', '2026-10-02 09:00:00', { prezzo_anno: 480 }), // stesso gclid di L1, data più vecchia
+    mk('L5', 'G-DDD', 'tiepido', 'NEW', '2026-10-08 09:00:00'),                       // qualificato, prezzo ignoto
+    mk('L6', 'G-EEE', '', 'LEAD', '2026-10-09 09:00:00'),                             // NON qualificato
+  ]
+  let lastSql = ''
+  const exDb = (leadCount: number) => ({
+    prepare(sql: string) {
+      if (/pragma_table_info/.test(sql)) return { all: async () => ({ results: [{ name: 'prezzo_anno' }, { name: 'prezzo_scontato' }] }) }
+      const q: any = {
+        bind() { return q },
+        all: async () => { lastSql = sql; return { results: leadsDb } },
+        first: async () => ({ n: leadCount }),
+      }
+      return q
+    },
+  })
+  const qOnly = await CV.loadConversionExport(exDb(40), { kind: 'gclid', giorni: 90 })
+  const csvLines = (x: string) => x.split('\n')
+  const body = csvLines(qOnly.csv).slice(2)
+  ok(lastSql.includes(qualifiedSql()), 'la query usa qualifiedSql() (stessa definizione di report e Hub, nessuna seconda copia)')
+  ok(!/IN \('CONTRACT_SIGNED','SIGNED'|PAYMENT_RECEIVED|ATTIVO/.test(CV.buildConversionCsv.toString() + CV.loadConversionExport.toString()), 'nessuna lista di stati scritta a mano nel modulo conversioni')
+  ok(body.length === 3 && body.every(l => /^G-(AAA|CCC|DDD),/.test(l)), `predefinito: solo qualificati (${body.length} righe: ${body.map(l => l.split(',')[0]).join(', ')})`)
+  ok(!body.some(l => /G-BBB|G-EEE/.test(l)), 'nessun lead non qualificato nel CSV predefinito')
+  ok(new Set(body.map(l => l.split(',')[0])).size === body.length, 'nessun gclid duplicato')
+  const aaa = qOnly.rows.find(r => r.clickId === 'G-AAA')!
+  ok(aaa.leadId === 'L4' && fmtDate(aaa.convMs) === '2026-10-02', 'gclid duplicato: vince la data più vecchia (L4, 02/10)')
+  const bySrc = Object.fromEntries(body.map(l => l.split(',')).map(a => [a[0], a]))
+  ok(bySrc['G-AAA'][3] === '480.00' && bySrc['G-CCC'][3] === '399.00', 'valore = prezzo del piano (scontato se presente, altrimenti annuo)')
+  ok(bySrc['G-DDD'][3] === '' && bySrc['G-DDD'][4] === '', 'prezzo ignoto → valore e valuta VUOTI (nessun 29,90 inventato)')
+  ok(!/29[.,]90/.test(qOnly.csv), 'nessun valore fisso predefinito nel CSV')
+  ok(csvLines(qOnly.csv)[0] === 'Parameters:TimeZone=+0000' && csvLines(qOnly.csv)[1] === 'Google Click ID,Conversion Name,Conversion Time,Conversion Value,Conversion Currency', 'intestazione nel formato Google Ads')
+  ok(qOnly.fileName === 'ecura-offline-conversions-gclid_qualificati_3.csv', `Content-Disposition con il conteggio: ${qOnly.fileName}`)
+  ok(qOnly.qualified === 3 && qOnly.withClickId === 5 && qOnly.leadsPeriod === 40, `conteggio UI «${qOnly.qualified} qualificati con click ID su ${qOnly.withClickId}» (lead del periodo ${qOnly.leadsPeriod})`)
+  ok(qOnly.qualified === body.length, 'il conteggio mostrato in UI coincide con le righe del CSV')
+  ok(body.every(l => { const t = l.split(',')[2]; return Date.parse(t.replace(' ', 'T').replace('+00:00', 'Z')) > T0 }), 'ora di conversione sempre successiva al click')
+  const allEx = await CV.loadConversionExport(exDb(40), { kind: 'gclid', giorni: 90, tutti: true })
+  const allBody = csvLines(allEx.csv).slice(2)
+  ok(allBody.length === 5 && /G-BBB/.test(allEx.csv) && /G-EEE/.test(allEx.csv), `?tutti=1: export completo (${allBody.length} righe, include non qualificati)`)
+  ok(allEx.fileName === 'ecura-offline-conversions-gclid_tutti_5.csv', `nome file «tutti» con conteggio: ${allEx.fileName}`)
+  ok(allEx.qualified === 3 && allEx.withClickId === 5, 'in modalità «tutti» il conteggio dei qualificati resta 3 su 5')
+  ok(CV.parseUploadDate('2026-10-12', new Date('2026-10-14T00:00:00Z')) === '2026-10-12' && CV.parseUploadDate('2026-13-45') === null && CV.parseUploadDate('12/10/2026') === null && CV.parseUploadDate('2099-01-01') === null, 'data ultimo upload: solo AAAA-MM-GG valida e non nel futuro')
+  // settings: la data è salvata come inserita, non calcolata
+  const store = new Map<string, string>()
+  const setDb = { prepare(sql: string) { let a: any[] = []; const q: any = { bind(...x: any[]) { a = x; return q }, run: async () => { if (/INSERT INTO settings/.test(sql)) store.set(a[0], a[1]); return {} }, first: async () => (store.has(a[0]) ? { value: store.get(a[0]), updated_at: '2026-10-14 10:00:00' } : null) }; return q } }
+  ok((await CV.loadLastUpload(setDb)) === null, 'nessuna data salvata → riga «nessuna data registrata», non una data inventata')
+  await CV.saveLastUpload(setDb, '2026-10-12')
+  const lu = await CV.loadLastUpload(setDb)
+  ok(!!lu && lu.date === '2026-10-12' && store.has(CV.LAST_UPLOAD_KEY), 'ultimo upload salvato in settings e riletto')
+  const studioSrc = renderGoogleAdsStudio()
+  ok(/lead qualificati con click ID su/.test(studioSrc) && /ultimo upload di conversioni/i.test(studioSrc) && /NON qualificati/.test(studioSrc), 'UI Hub: conteggio «N qualificati su M», riga «ultimo upload di conversioni» e avviso per «tutti»')
 }

@@ -9,6 +9,7 @@ import * as E from './ads-engine'
 import { searchConsoleQuery } from './google-analytics'
 import { isSessionValid } from './auth-service'
 import * as D from './ads-decision'
+import * as CV from './ads-conversions'
 import { qualifiedSql, mapCrmChannel, QUALIFIED_LEAD } from './seo-report-engine'
 
 type Ctx = any
@@ -468,6 +469,31 @@ export function createMarketingApi() {
     } catch (e: any) { ext = { qualifiedLeads: null, qcpl: null, qualificationRate: null, definition: QUALIFIED_LEAD.definition, error: 'dato non disponibile: ' + String(e?.message || e).slice(0, 160) } }
     return c.json({ success: true, days, leads: Number((tot[0] as any)?.n || 0), leadsGoogle, byStatus, byChannel: byCampaign, spend, month, spendMonth, cpl: leadsGoogle && spendMonth ? +(spendMonth / leadsGoogle).toFixed(2) : null, target: { leadsMonth: [30, 40], cpl: [12, 15] }, ...ext })
   })
+  // ── Conversioni offline: conteggi (= righe del CSV), CSV e data dell'ultimo upload (inserita a mano) ──
+  api.get('/conversions/summary', async (c) => {
+    await ensureTables(c.env.DB)
+    try { const m = await import('./workflow-email-manager'); await m.ensureAdsClickColumns(c.env.DB) } catch (_) { /* colonne già presenti */ }
+    const tipo = String(c.req.query('tipo') || 'gclid'); const giorni = Number(c.req.query('giorni')) || 90
+    const ex = await CV.loadConversionExport(c.env.DB, { kind: tipo, giorni, tutti: false })
+    const last = await CV.loadLastUpload(c.env.DB)
+    return c.json({ success: true, tipo: ex.kind, giorni: ex.giorni, qualificati: ex.qualified, conClickId: ex.withClickId, leadPeriodo: ex.leadsPeriod, conValore: ex.valued,
+      definition: QUALIFIED_LEAD.definition, lastUpload: last, manual: 'Il file lo carichi tu in Google Ads: nessun invio automatico.' })
+  })
+  api.get('/conversions/csv', async (c) => {
+    await ensureTables(c.env.DB)
+    try { const m = await import('./workflow-email-manager'); await m.ensureAdsClickColumns(c.env.DB) } catch (_) { /* colonne già presenti */ }
+    const ex = await CV.loadConversionExport(c.env.DB, { kind: String(c.req.query('tipo') || 'gclid'), giorni: Number(c.req.query('giorni')) || 90, tutti: c.req.query('tutti') === '1', name: c.req.query('nome') || undefined })
+    return new Response(ex.csv, { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="' + ex.fileName + '"', 'X-Rows': String(ex.rows.length), 'Cache-Control': 'no-store' } })
+  })
+  api.post('/conversions/last-upload', async (c) => {
+    await ensureTables(c.env.DB)
+    const b: any = await c.req.json().catch(() => ({}))
+    const date = CV.parseUploadDate(b.date)
+    if (!date) return c.json({ success: false, error: 'Data non valida (AAAA-MM-GG, non nel futuro)' }, 400)
+    await CV.saveLastUpload(c.env.DB, date)
+    return c.json({ success: true, lastUpload: { date } })
+  })
+
   api.post('/spend', async (c) => {
     await ensureTables(c.env.DB)
     const b: any = await c.req.json().catch(() => ({}))

@@ -109,6 +109,22 @@ const BODY = String.raw`
     </div>
     <p class="muted mt-2">Il costo per contatto si calcola solo con una spesa inserita. Fino ad allora non viene mostrato nessun valore stimato.</p>
   </div>
+  <div class="card" id="convCard">
+    <h3 class="font-bold mb-2">Conversioni offline per Google Ads</h3>
+    <p id="convCount" class="mb-2">Caricamento…</p>
+    <div class="flex gap-3 items-end flex-wrap">
+      <div><label class="l">Tipo di click ID</label><select id="convTipo" onchange="loadConv()"><option value="gclid">gclid</option><option value="gbraid">gbraid</option><option value="wbraid">wbraid</option></select></div>
+      <button class="btn btn-p" onclick="downloadConv(false)">Scarica CSV lead qualificati</button>
+      <label class="text-sm"><input type="checkbox" id="convAll" onchange="convWarn()"> includi anche i non qualificati</label>
+    </div>
+    <div id="convWarn" class="lint warn mt-2" style="display:none">Attenzione: questo file include anche lead NON qualificati. Google Ads li conterebbe come conversioni e falserebbe il ritorno misurato (e le offerte automatiche). Usalo solo per verifiche.</div>
+    <p class="muted mt-2">Il file lo carichi tu in Google Ads (Obiettivi → Conversioni → Caricamenti). Nessun invio automatico. Il valore resta vuoto quando il prezzo del piano non è noto.</p>
+    <div class="flex gap-3 items-end flex-wrap mt-2">
+      <div><label class="l">Ultimo upload di conversioni (data inserita a mano)</label><input type="date" id="convLast" style="width:170px"></div>
+      <button class="btn btn-s" onclick="saveConvLast()">Salva data</button>
+      <span id="convLastTxt" class="muted"></span>
+    </div>
+  </div>
 </div>
 
 <div data-tab="lancio" style="display:none">
@@ -136,7 +152,7 @@ const BODY = String.raw`
       <li>Account Google Ads <b>AW-18350012797</b> · contenitore GTM <b>GTM-THW7H9NB</b>.</li>
       <li>L'evento <code>generate_lead</code> parte dal sito; la conversione Google Ads si crea in GTM con il trigger su quell'evento. <b>Non aggiungere uno snippet gtag diretto</b>: conteggerebbe due volte.</li>
       <li>L'etichetta di conversione non serve per ora: quando creerai l'azione di conversione in Google Ads la inserirai nel tag GTM.</li>
-      <li>Il sito salva gclid/gbraid/wbraid con il consenso marketing e il CRM li memorizza nel lead: serviranno per caricare le conversioni offline (<code>/api/admin/ads-offline-conversions</code>).</li>
+      <li>Il sito salva gclid/gbraid/wbraid con il consenso marketing e il CRM li memorizza nel lead: serviranno per caricare le conversioni offline dei soli lead qualificati (scheda Risultati, oppure <code>/api/admin/ads-offline-conversions</code>).</li>
     </ul>
   </div>
   <div class="card">
@@ -312,6 +328,23 @@ async function loadPerf(){
    '<h3 class="font-bold mt-3 mb-1">Per canale</h3>'+r.byChannel.map(function(c){return '<span class="chip info">'+esc(c.canale)+': '+c.n+'</span>'}).join('')+
    '<h3 class="font-bold mt-3 mb-1">Stato dei lead con click ID Google</h3>'+(r.byStatus.length?r.byStatus.map(function(c){return '<span class="chip mut">'+esc(c.status)+': '+c.n+'</span>'}).join(''):'<span class="muted">Nessuno nel periodo.</span>');
 }
+async function loadConv(){
+  var t=$('convTipo').value;var r=await api('/conversions/summary?tipo='+t);
+  if(!r.success){$('convCount').textContent='Dato non disponibile';return}
+  $('convCount').innerHTML='<b>'+r.qualificati+'</b> lead qualificati con click ID su <b>'+r.conClickId+'</b> totali nel periodo (ultimi '+r.giorni+' giorni, tipo '+esc(r.tipo)+'). Il CSV contiene esattamente '+r.qualificati+' righe. <span class="muted">Qualificato = '+esc(r.definition)+'.</span>';
+  if(r.lastUpload){$('convLast').value=r.lastUpload.date;$('convLastTxt').textContent='Ultimo upload registrato: '+r.lastUpload.date.split('-').reverse().join('/')}else{$('convLastTxt').textContent='Ultimo upload: nessuna data registrata'}
+}
+function convWarn(){$('convWarn').style.display=$('convAll').checked?'block':'none'}
+async function downloadConv(){
+  var all=$('convAll').checked;
+  if(all&&!confirm('Il file includerà anche lead NON qualificati. Continuare?'))return;
+  var res=await fetch('/api/marketing/conversions/csv?tipo='+$('convTipo').value+(all?'&tutti=1':''),{credentials:'same-origin'});
+  if(!res.ok){toast('Errore export');return}
+  var cd=res.headers.get('content-disposition')||'';var m=cd.match(/filename="([^"]+)"/);
+  var blob=await res.blob();var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=m?m[1]:'conversioni.csv';document.body.appendChild(a);a.click();a.remove();
+  toast('CSV scaricato ('+(res.headers.get('x-rows')||'?')+' righe)');
+}
+async function saveConvLast(){var r=await api('/conversions/last-upload',{method:'POST',body:{date:$('convLast').value}});toast(r.success?'Data salvata':r.error);if(r.success)loadConv()}
 async function saveSpend(){var r=await api('/spend',{method:'POST',body:{month:$('spMonth').value.trim(),amount:Number($('spAmount').value)}});toast(r.success?'Spesa salvata':r.error);if(r.success)loadPerf()}
 function renderChk(){var st={};try{st=JSON.parse(localStorage.getItem('adsChk')||'{}')}catch(e){}
   $('chk').innerHTML=CHECK.map(function(t,i){return '<label class="block py-1 text-sm"><input type="checkbox" '+(st[i]?'checked':'')+' onchange="chkSet('+i+',this.checked)"> '+esc(t)+'</label>'}).join('')}
@@ -447,7 +480,7 @@ async function loadToday(){
   }catch(e){box.textContent='Errore'}
 }
 
-window.onTab=function(id){if(id==='pagine'&&!$('pgList').dataset.ok){$('pgList').dataset.ok=1;loadSitemap()}if(id==='risultati'){loadPerf();loadToday()}if(id==='lancio')renderChk()};
+window.onTab=function(id){if(id==='pagine'&&!$('pgList').dataset.ok){$('pgList').dataset.ok=1;loadSitemap()}if(id==='risultati'){loadPerf();loadToday();loadConv()}if(id==='lancio')renderChk()};
 (async function init(){
   loadHealth();
   try{var r=await api('/preset');S.regionsAll=r.plan.regions;S.preset=r.plan}catch(e){}
