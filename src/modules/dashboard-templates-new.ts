@@ -5757,7 +5757,7 @@ export const leads_dashboard = `<!DOCTYPE html>
                     var msg = '✅ ' + (result.message || 'Rata segnata come PAGATA con successo!');
                     if (result.email_configurazione_inviata === true) {
                         msg += "\\n\\n📧 Email con form di configurazione inviata al cliente!";
-                    } else if (result.email_configurazione_inviata === false) {
+                    } else if (result.email_configurazione_tentata === true && result.email_configurazione_inviata === false) {
                         msg += "\\n\\n⚠️ Attenzione: errore nell'invio email configurazione. Usa il pulsante ⚙️ per rinviarla manualmente.";
                     }
                     alert(msg);

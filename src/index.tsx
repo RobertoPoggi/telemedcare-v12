@@ -62,6 +62,7 @@ import * as PaymentManager from './modules/payment-manager'
 import * as ClientConfigurationManager from './modules/client-configuration-manager'
 import { calculatePrice } from './modules/pricing-calculator'
 import { isContractSigned, stripLockedIntestatario } from './modules/edit-lock'
+import { shouldSendConfigEmail } from './modules/rate-config-email'
 
 type Bindings = {
   DB: D1Database // Database (automaticamente production o preview tramite .pages.yaml)
@@ -28420,6 +28421,13 @@ app.patch('/api/leads/:id/rate/:rataId', requireAuth, async (c) => {
     const db = c.env.DB
     const now = new Date().toISOString()
 
+    // Stato PRIMA dell'aggiornamento: serve a capire se questa e' davvero la
+    // transizione "prima rata -> PAGATA" (l'unico caso in cui va inviata la mail
+    // di configurazione) e non un'altra rata o un salvataggio ripetuto.
+    const rataPrima = await db.prepare(
+      `SELECT numero_rata, status FROM rate_pagamento WHERE id = ? AND lead_id = ?`
+    ).bind(rataId, leadId).first() as any
+
     await db.prepare(`
       UPDATE rate_pagamento SET
         status           = ?,
@@ -28456,51 +28464,50 @@ app.patch('/api/leads/:id/rate/:rataId', requireAuth, async (c) => {
     // Il lead con rateizzazione attiva riceve il dispositivo dopo il pagamento della prima rata.
     // Il PATCH rate è il modo normale con cui l'operatore segna il bonifico ricevuto.
     let emailConfigResult: any = null
-    if (body.status === 'PAGATA') {
-      // Verifica se la rata appena pagata è la numero 1 (prima rata del piano)
-      const rataAggiornata = (rate.results || []).find((r: any) => r.numero_rata === 1)
-      const primaRataAppenaPageta = rataAggiornata?.status === 'PAGATA'
+    let emailConfigTentata = false
+    // Invio SOLO se la rata appena salvata e' la numero 1 e prima NON era PAGATA.
+    // Rate successive (2, 3, 4...) non devono mai riattivare la mail di configurazione.
+    const primaRataAppenaPagata = body.status === 'PAGATA'
+      && Number(rataPrima?.numero_rata) === 1
+      && rataPrima?.status !== 'PAGATA'
 
-      // Conta quante rate erano già pagate prima (se 1 è la prima ad essere pagata)
-      const ratePagate = (rate.results || []).filter((r: any) => r.status === 'PAGATA').length
-      const eraGiaPagata = ratePagate > 1 // se più di 1 pagata, la 1 era già pagata prima
+    if (primaRataAppenaPagata) {
+      // Controlla che il lead non abbia gia' ricevuto il form (evita duplicati)
+      const lead = await db.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
+      const statoAttuale = lead?.status || ''
 
-      if (primaRataAppenaPageta && !eraGiaPagata) {
-        // Controlla che il lead non abbia già ricevuto il form (evita duplicati)
-        const lead = await db.prepare('SELECT * FROM leads WHERE id = ?').bind(leadId).first() as any
-        const statoAttuale = lead?.status || ''
-        const configGiaInviata = statoAttuale === 'CONFIGURATION_SENT' || statoAttuale === 'CONFIGURED'
-
-        if (!configGiaInviata && lead) {
-          console.log(`📧 [PATCH-RATA-1] Prima rata PAGATA per ${leadId} — invio email configurazione`)
-          try {
-            const { inviaEmailFormConfigurazione } = await import('./modules/workflow-email-manager')
-            const codiceCliente = lead.codiceCliente || `CLI-${Date.now()}`
-            emailConfigResult = await inviaEmailFormConfigurazione(
-              { ...lead, codiceCliente },
-              c.env,
-              db
-            )
-            if (emailConfigResult.success) {
-              await db.prepare('UPDATE leads SET status = ?, updated_at = ? WHERE id = ?')
-                .bind('CONFIGURATION_SENT', now, leadId).run()
-              console.log(`✅ [PATCH-RATA-1] Email configurazione inviata a ${lead.email}`)
-            } else {
-              console.warn(`⚠️ [PATCH-RATA-1] Email configurazione non inviata: ${emailConfigResult.errors?.join(', ')}`)
-            }
-          } catch (emailErr: any) {
-            console.error(`❌ [PATCH-RATA-1] Eccezione invio email configurazione:`, emailErr)
+      if (lead && shouldSendConfigEmail(rataPrima, body.status, statoAttuale)) {
+        emailConfigTentata = true
+        console.log(`📧 [PATCH-RATA-1] Prima rata PAGATA per ${leadId} — invio email configurazione`)
+        try {
+          const { inviaEmailFormConfigurazione } = await import('./modules/workflow-email-manager')
+          const codiceCliente = lead.codiceCliente || `CLI-${Date.now()}`
+          emailConfigResult = await inviaEmailFormConfigurazione(
+            { ...lead, codiceCliente },
+            c.env,
+            db
+          )
+          if (emailConfigResult.success) {
+            await db.prepare('UPDATE leads SET status = ?, updated_at = ? WHERE id = ?')
+              .bind('CONFIGURATION_SENT', now, leadId).run()
+            console.log(`✅ [PATCH-RATA-1] Email configurazione inviata a ${lead.email}`)
+          } else {
+            console.warn(`⚠️ [PATCH-RATA-1] Email configurazione non inviata: ${emailConfigResult.errors?.join(', ')}`)
           }
-        } else {
-          console.log(`ℹ️ [PATCH-RATA-1] Email configurazione già inviata (status: ${statoAttuale}) — skip`)
+        } catch (emailErr: any) {
+          console.error(`❌ [PATCH-RATA-1] Eccezione invio email configurazione:`, emailErr)
         }
+      } else {
+        console.log(`ℹ️ [PATCH-RATA-1] Email configurazione già inviata (status: ${statoAttuale}) — skip`)
       }
     }
 
     return c.json({
       success: true,
       saldato: tuttiPagati,
-      email_configurazione_inviata: emailConfigResult?.success || false,
+      // true = inviata, false = tentata ma fallita, null = non dovuta (nessun invio tentato)
+      email_configurazione_tentata: emailConfigTentata,
+      email_configurazione_inviata: emailConfigTentata ? (emailConfigResult?.success === true) : null,
       message: `Rata ${rataId} aggiornata a ${body.status}${tuttiPagati ? ' — piano SALDATO ✅' : ''}${emailConfigResult?.success ? ' — Email configurazione inviata ✅' : ''}`
     })
   } catch (err: any) {

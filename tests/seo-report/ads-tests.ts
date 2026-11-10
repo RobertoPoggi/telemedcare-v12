@@ -271,6 +271,25 @@ export async function runAdsTests(ok: Ok, section: Section) {
     const html = readFileSync('public/modifica-dati.html', 'utf8')
     ok(/applyIntestatarioLock\(!!lead\.intestatarioLocked\)/.test(html) && /el\.readOnly = locked/.test(html) && /intestatarioLocked && \(f === 'intestatarioContratto'/.test(html), 'modifica-dati.html: campi intestatario in sola lettura e non inviati se il contratto è firmato')
   }
+  // ── Rate: la mail di configurazione parte SOLO alla prima rata ──────────────────────────────
+  {
+    const RC = await import('../../src/modules/rate-config-email')
+    const { readFileSync } = await import('node:fs')
+    ok(RC.shouldSendConfigEmail({ numero_rata: 1, status: 'ATTESA' }, 'PAGATA', 'CONTRACT_SIGNED') === true, 'rate: rata 1 ATTESA→PAGATA, config mai inviata → invia')
+    ok(RC.shouldSendConfigEmail({ numero_rata: 3, status: 'ATTESA' }, 'PAGATA', 'CONFIGURATION_SENT') === false, 'rate: rata 3 PAGATA → NON invia (caso Filippone)')
+    ok(RC.shouldSendConfigEmail({ numero_rata: 3, status: 'ATTESA' }, 'PAGATA', 'CONTRACT_SIGNED') === false, 'rate: rata 2/3/4 non invia mai, qualunque sia lo stato del lead')
+    ok(RC.shouldSendConfigEmail({ numero_rata: 2, status: 'ATTESA' }, 'PAGATA', 'NEW') === false, 'rate: rata 2 non invia')
+    ok(RC.shouldSendConfigEmail({ numero_rata: 1, status: 'PAGATA' }, 'PAGATA', 'CONTRACT_SIGNED') === false, 'rate: rata 1 già PAGATA e risalvata → NON reinvia')
+    ok(RC.shouldSendConfigEmail({ numero_rata: 1, status: 'ATTESA' }, 'PAGATA', 'CONFIGURATION_SENT') === false, 'rate: config già inviata → NON reinvia')
+    ok(RC.shouldSendConfigEmail({ numero_rata: 1, status: 'ATTESA' }, 'PAGATA', 'CONFIGURED') === false, 'rate: lead già configurato → NON reinvia')
+    ok(RC.shouldSendConfigEmail({ numero_rata: 1, status: 'ATTESA' }, 'ATTESA', 'NEW') === false, 'rate: stato diverso da PAGATA → NON invia')
+    ok(RC.shouldSendConfigEmail(null, 'PAGATA', 'NEW') === false, 'rate: rata inesistente → NON invia')
+    const idx = readFileSync('src/index.tsx', 'utf8')
+    ok(/email_configurazione_inviata: emailConfigTentata \? \(emailConfigResult\?\.success === true\) : null/.test(idx), 'PATCH rata: email_configurazione_inviata è null (non false) se nessun invio era dovuto')
+    ok(/SELECT numero_rata, status FROM rate_pagamento WHERE id = \? AND lead_id = \?[\s\S]{0,200}UPDATE rate_pagamento SET/.test(idx), 'PATCH rata: lo stato precedente è letto PRIMA dell\'UPDATE')
+    const dash = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
+    ok(/email_configurazione_tentata === true && result\.email_configurazione_inviata === false/.test(dash), 'dashboard: l\'avviso «errore invio email» compare solo se l\'invio è stato tentato ed è fallito')
+  }
   // endpoint /performance: la campagna arriva dalla colonna anche se la landing non ha parametri
   {
     const { createMarketingApi } = await import('../../src/modules/marketing-api')
