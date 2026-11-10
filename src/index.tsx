@@ -13926,17 +13926,21 @@ app.get('/api/leads/edit-token/:token', async (c) => {
       `).run()
     } catch (_) { /* già esiste */ }
 
-    const tokenRow = await c.env.DB.prepare(`
-      SELECT t.*, l.*
-      FROM lead_edit_tokens t
-      JOIN leads l ON t.lead_id = l.id
-      WHERE t.token = ?
-        AND t.expires_at > datetime('now')
-        AND t.used_at IS NULL
+    // Due query separate, NON un JOIN con `t.*, l.*`: D1 accetta al massimo 100 colonne per risultato e `leads` ne ha ormai
+    // oltre 90 (+6 del token) → la query andava in errore per QUALSIASI token e la pagina mostrava «link scaduto».
+    const tok = await c.env.DB.prepare(`
+      SELECT lead_id FROM lead_edit_tokens
+      WHERE token = ?
+        AND expires_at > datetime('now')
+        AND used_at IS NULL
       LIMIT 1
     `).bind(token).first() as any
 
-    if (!tokenRow) return c.json({ success: false, error: 'Token non valido o scaduto' }, 404)
+    if (!tok) return c.json({ success: false, error: 'Token non valido o scaduto' }, 404)
+
+    const leadRow = await c.env.DB.prepare('SELECT * FROM leads WHERE id = ? LIMIT 1').bind(tok.lead_id).first() as any
+    if (!leadRow) return c.json({ success: false, error: 'Token non valido o scaduto' }, 404)
+    const tokenRow = { ...leadRow, lead_id: tok.lead_id }
 
     const leadId = tokenRow.lead_id
 
