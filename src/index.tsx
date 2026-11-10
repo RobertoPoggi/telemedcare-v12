@@ -1836,7 +1836,7 @@ app.use('/api/*', async (c, next) => {
     return next()
   }
 
-  // 🔓 Form modifica dati lead via token monouso (link inviato per email al lead)
+  // 🔓 Form modifica dati lead via token a scadenza (link inviato per email al lead)
   if (path.match(/^\/api\/leads\/edit-token\/[^\/]+$/) && method === 'GET') {
     return next()
   }
@@ -13932,7 +13932,6 @@ app.get('/api/leads/edit-token/:token', async (c) => {
       SELECT lead_id FROM lead_edit_tokens
       WHERE token = ?
         AND expires_at > datetime('now')
-        AND used_at IS NULL
       LIMIT 1
     `).bind(token).first() as any
 
@@ -14057,7 +14056,6 @@ app.post('/api/leads/edit-form/:token', async (c) => {
       SELECT * FROM lead_edit_tokens
       WHERE token = ?
         AND expires_at > datetime('now')
-        AND used_at IS NULL
       LIMIT 1
     `).bind(token).first() as any
 
@@ -14095,7 +14093,9 @@ app.post('/api/leads/edit-form/:token', async (c) => {
     //   whitelist1/2/3_nome/cognome/telefono/email
     // ═══════════════════════════════════════════════════════════════════════
 
-    // Campi che vanno su leads (esistono nella tabella leads)
+    // Campi che vanno su leads (esistono nella tabella leads).
+    // WHITELIST CHIUSA: servizio, piano, prezzi, sconti, status e temperatura NON sono qui e quindi il lead non può modificarli
+    // (il form non li mostra e, anche se arrivassero nel body, vengono ignorati). Solo l'operatore li cambia dal CRM.
     const LEADS_FIELDS = new Set([
       'nomeRichiedente','cognomeRichiedente','email','telefono',
       'intestatarioContratto',
@@ -14277,7 +14277,8 @@ app.post('/api/leads/edit-form/:token', async (c) => {
       return c.json({ success: false, error: 'Nessun campo valido da aggiornare' }, 400)
     }
 
-    // Marca token come usato (monouso)
+    // Il token NON viene consumato: il lead può rientrare e correggere i dati finché il link non scade (7 giorni).
+    // `used_at` resta solo come traccia dell'ULTIMO salvataggio (non è più una condizione di validità).
     await c.env.DB.prepare(
       `UPDATE lead_edit_tokens SET used_at = ? WHERE token = ?`
     ).bind(now, token).run()
@@ -37384,7 +37385,7 @@ app.post('/api/leads/:id/send-configuration', async (c) => {
 // ============================================================================
 // POST /api/leads/:id/send-edit-form
 // Invia al lead una email con link al form di modifica dati (modifica-dati.html).
-// Il link contiene un token monouso valido 7 giorni.
+// Il link contiene un token valido 7 giorni, riutilizzabile (il lead può rientrare e aggiornare più volte).
 // ============================================================================
 app.post('/api/leads/:id/send-edit-form', requireAuth, async (c) => {
   const leadId = c.req.param('id')
