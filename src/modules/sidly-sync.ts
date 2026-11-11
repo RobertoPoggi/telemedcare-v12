@@ -356,11 +356,12 @@ export class SidlyClient {
   }
 
   private async login(): Promise<string> {
-    const field = (this.env.SIDLY_LOGIN_FIELD || 'login').trim() || 'login'
+    const field = (this.env.SIDLY_LOGIN_FIELD || 'email').trim() || 'email'
     const r = await this.raw('POST', '/user/login', { [field]: this.env.SIDLY_USER, password: this.env.SIDLY_PASSWORD })
     if (r.status < 200 || r.status >= 300) throw new Error(`login SiDLY fallito (HTTP ${r.status})`)
     const j = r.json || {}
-    let token = j.token ?? j.access_token ?? j.accessToken ?? j.data?.token ?? j.data?.access_token
+    // Il portale SiDLY salva data.authentication_token (verificato sul bundle pubblico); le altre varianti restano per tolleranza
+    let token = j.data?.authentication_token ?? j.authentication_token ?? j.token ?? j.access_token ?? j.accessToken ?? j.data?.token ?? j.data?.access_token
     if (!token && r.headers) {
       try { token = typeof r.headers.get === 'function' ? r.headers.get('X-Access-Token') : undefined } catch { /* ignore */ }
     }

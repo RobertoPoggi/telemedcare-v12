@@ -14,7 +14,7 @@ Body: `{ assistito_id, dry_run?, associa_user_id?, conferma_crea? }`
 | `SIDLY_BASE_URL` | sì | solo https. Prova prima su `https://api.sidly-platform-dev.com/api`, poi prod `https://api.sidly-platform.com/api` |
 | `SIDLY_FRAME_URL` | per il Canale 2 | URL di consegna frame registrato con `set-url-for-band`. Il ricevitore `sidly/ingest` NON esiste ancora |
 | `SIDLY_BAND_DEFAULTS` | no | JSON con default di banda (timezone, lang_band, ...) |
-| `SIDLY_LOGIN_FIELD` | no | nome del campo utente nel body di login (default `login`) |
+| `SIDLY_LOGIN_FIELD` | no | nome del campo utente nel body di login (default `email`, come il portale SiDLY; `SIDLY_USER` deve essere l'e-mail dell'utenza) |
 
 ## Comportamento
 - Assente in piattaforma → creazione (assistito + braccialetto).

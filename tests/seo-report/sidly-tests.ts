@@ -25,7 +25,7 @@ function makePlatform(opts: { patients?: Record<string, any>; tokenExpiresOnce?:
     const body = init?.body ? JSON.parse(init.body) : undefined
     const token = init?.headers?.['X-Access-Token']
     const reply = (status: number, json?: any) => ({ status, text: async () => (json === undefined ? '' : JSON.stringify(json)), headers: { get: () => null } })
-    if (path === '/user/login') { logins++; tokenValid = 'tok-' + logins; return reply(200, { token: tokenValid }) }
+    if (path === '/user/login') { logins++; tokenValid = 'tok-' + logins; return reply(200, { data: { authentication_token: tokenValid } }) }
     calls.push({ method, path, body, token })
     if (expireOnce) { expireOnce = false; tokenValid = ''; return reply(401, {}) } // il token emesso è scaduto lato piattaforma
     if (!tokenValid || token !== tokenValid) return reply(401, {})
@@ -295,10 +295,10 @@ export async function runSidlyTests(ok: Ok, section: Section) {
     const r = await S.syncAssistito({ crm: crmOf(), env: ENV, fetchImpl: P.fetchImpl, confermaCrea: true })
     const blob = JSON.stringify(r)
     ok(!blob.includes('p-segreta-xyz') && !blob.includes('tok-') && !blob.includes('u-test'), 'la risposta non contiene password, token né utente SiDLY')
-    const login = await (async () => { let b: any; const f: S.Fetch = async (u, i) => { if (u.endsWith('/user/login')) b = JSON.parse(i.body); return { status: 200, text: async () => '{"token":"t"}' } }; S.resetSidlyTokenCache(); await new S.SidlyClient(ENV, f).request('GET', '/x'); return b })()
-    ok(login && login.login === 'u-test' && login.password === 'p-segreta-xyz', 'login: credenziali prese dai segreti (campo "login" di default)')
+    const login = await (async () => { let b: any; const f: S.Fetch = async (u, i) => { if (u.endsWith('/user/login')) b = JSON.parse(i.body); return { status: 200, text: async () => '{"data":{"authentication_token":"t"}}' } }; S.resetSidlyTokenCache(); await new S.SidlyClient(ENV, f).request('GET', '/x'); return b })()
+    ok(login && login.email === 'u-test' && login.password === 'p-segreta-xyz' && !('login' in login), 'login: credenziali prese dai segreti (campo "email" di default, come il portale SiDLY)')
     const login2 = await (async () => { let b: any; const f: S.Fetch = async (u, i) => { if (u.endsWith('/user/login')) b = JSON.parse(i.body); return { status: 200, text: async () => '{"token":"t"}' } }; S.resetSidlyTokenCache(); await new S.SidlyClient({ ...ENV, SIDLY_LOGIN_FIELD: 'username' }, f).request('GET', '/x'); return b })()
-    ok(login2 && login2.username === 'u-test' && !('login' in login2), 'login: nome del campo utente configurabile (SIDLY_LOGIN_FIELD)')
+    ok(login2 && login2.username === 'u-test' && !('email' in login2), 'login: nome del campo utente configurabile (SIDLY_LOGIN_FIELD)')
   }
 
   // ── orchestrazione con DB: stato, configurazione, salvataggio esito ────────

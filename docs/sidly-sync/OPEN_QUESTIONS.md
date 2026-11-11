@@ -2,7 +2,7 @@
 
 Il prompt non documenta questi punti e non sono state fatte prove sulla piattaforma reale. Tutte le assunzioni sono isolate in `src/modules/sidly-sync.ts`. Da verificare sull'ambiente dev prima della produzione.
 
-1. **Login**: nome del campo utente nel body di `POST /user/login` (assunto `login`, configurabile con `SIDLY_LOGIN_FIELD`) e chiave del token nella risposta (assunto `token`).
+1. **Login** — VERIFICATO sul bundle pubblico del portale web SiDLY (non su una chiamata reale riuscita): `POST /user/login` con body `{email, password}`; il token sta in `data.authentication_token` ed è inviato nell'header `X-Access-Token`. Il primo tentativo con il campo `login` ha dato HTTP 400. `SIDLY_USER` deve quindi essere l'e-mail dell'utenza manager. `SIDLY_LOGIN_FIELD` resta disponibile (default `email`).
 2. **Prefisso telefonico**: formato `+39` o `39`? Gestione di `phonePrefix` / `numberPrefix`.
 3. **`repeatNumber`**: assunto 1. Semantica reale?
 4. **Altezza**: assunta in cm; peso in kg.
@@ -13,3 +13,10 @@ Il prompt non documenta questi punti e non sono state fatte prove sulla piattafo
 9. **PATCH parziale**: conferma che campi omessi non vengano azzerati.
 10. **HRV, FR, stress**: non presenti nei frame documentati. Bloccano il report medie dalla Dashboard (andrebbero mostrati come "non disponibile").
 11. **Canale 2**: URL del ricevitore frame (`SIDLY_FRAME_URL`), AES-256-CBC opzionale. L'endpoint `sidly/ingest` è da costruire.
+
+## Verificato sul bundle del portale (sidly-platform.com), non sull'API reale
+- Creazione: `POST /manager/patient` con `{user:{firstName,lastName,email,date,sex,weight,height,phonePrefix,phone,address,description,avatar,type}, band:{imei,phones[],fall,timezone,sos_notif,fall_notif,zone_notif,firmware_version,lang_band,whitelistNumbers,...,zone?}, lang}`. Coerente con il prompt.
+- Il portale tratta `weight` e `height` come OBBLIGATORI (2-3 cifre) alla creazione: se il CRM non li ha, la creazione potrebbe essere rifiutata.
+- Il portale impone `firstName` 2-18 caratteri e `lastName` 2-20, `phone` 4-13 cifre, `address` max 370, `description` max 1500, `imei` 15 cifre.
+- Il portale usa `PATCH /manager/patient/{id}`, `GET /patient/{id}`, `GET /patient/myShortInfo?page=&count=` (risposta in `data[]`; la ricerca per nome del prompt potrebbe non essere supportata come filtro).
+- Formato di `date` non confermato (stringa o oggetto): il prompt indica `{year,month,day}`.
