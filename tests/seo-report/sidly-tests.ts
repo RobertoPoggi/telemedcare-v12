@@ -12,7 +12,7 @@ const IMEI = '868298061208378'
 interface Call { method: string; path: string; body: any; token?: string }
 
 /** Piattaforma SiDLY finta e con stato: GET/POST/PATCH paziente, myShortInfo, set-url-for-band, login. */
-function makePlatform(opts: { patients?: Record<string, any>; tokenExpiresOnce?: boolean; alwaysFail?: number; searchResults?: any[]; searchStatus?: number } = {}) {
+function makePlatform(opts: { patients?: Record<string, any>; tokenExpiresOnce?: boolean; alwaysFail?: number; searchResults?: any[]; searchStatus?: number; noFullRecord?: boolean } = {}) {
   const patients: Record<string, any> = opts.patients || {}
   const calls: Call[] = []
   let logins = 0
@@ -33,6 +33,12 @@ function makePlatform(opts: { patients?: Record<string, any>; tokenExpiresOnce?:
     if (path.startsWith('/patient/myShortInfo')) return reply(opts.searchStatus || 200, { items: opts.searchResults || [] })
     let m = path.match(/^\/patient\/(\d+)$/)
     if (method === 'GET' && m) { const p = patients[m[1]]; return p ? reply(200, p) : reply(404, {}) }
+    m = path.match(/^\/manager\/patient-edit-initial-data\/(\d+)$/)
+    if (method === 'GET' && m) {
+      if (opts.noFullRecord) return reply(404, {})
+      const p = patients[m[1]] || Object.values(patients).find((x: any) => String(x.user_id) === m![1])
+      return p ? reply(200, { user: { ...p.user, first_name: p.user.firstName ?? p.user.first_name, last_name: p.user.lastName ?? p.user.last_name }, band: p.band, type: 'ONE' }) : reply(404, {})
+    }
     if (method === 'POST' && path === '/manager/patient') {
       const id = nextId++
       patients[body.band.imei] = { user_id: id, user: { ...body.user }, band: { ...body.band } }
@@ -377,6 +383,29 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       const Pw = makePlatform({ patients: { [IMEI]: { user_id: 14879, user: { first_name: 'Anna', last_name: 'Rossi' }, band: {} } } })
       const rw = await S.syncAssistito({ crm, env: ENV, fetchImpl: Pw.fetchImpl })
       ok(!rw.diagnostica, 'esecuzione reale: nessuna diagnostica nella risposta')
+    }
+    // GET /patient/{imei} è una scheda BREVE (senza indirizzo/data/prefisso): si legge la scheda completa prima di decidere
+    {
+      const crm = crmOf()
+      const brevePlat = { user_id: 14879, id: 14879, imei: IMEI, first_name: 'Anna', last_name: 'Rossi', weight: 62, height: 160, sim_number: '3897770000' }
+      const piena = { user_id: 14879, user: { first_name: 'Anna', last_name: 'Rossi', birth_date: '1944-03-09', address: 'Via Roma 1, 20100 Milano (MI)', phonePrefix: '+39', phone: '3331112233', weight: 62, height: 160 }, band: { phones: [], simNumber: '3897770000' } }
+      const Pf = makePlatform({ patients: { [IMEI]: { ...piena, ...brevePlat } } })
+      const rf = await S.syncAssistito({ crm, env: ENV, fetchImpl: Pf.fetchImpl, dryRun: true })
+      ok(Pf.calls.some(c => c.method === 'GET' && c.path === `/manager/patient-edit-initial-data/${IMEI}`), 'scheda completa: dopo GET /patient si legge /manager/patient-edit-initial-data/{imei}')
+      ok(!rf.campi_inviati.some(c => ['user.address', 'user.date', 'user.phonePrefix'].includes(c.campo)), 'scheda completa: indirizzo, data e prefisso già presenti su SiDLY → NON vengono inviati')
+      ok(!!rf.diagnostica && (rf.diagnostica as any).forma_scheda_completa !== 'non leggibile', 'anteprima: diagnostica anche sulla forma della scheda completa')
+
+      // scheda completa non leggibile → mai scrivere campi che non posso confrontare
+      const Pn = makePlatform({ noFullRecord: true, patients: { [IMEI]: { ...piena, ...brevePlat } } })
+      const rn = await S.syncAssistito({ crm, env: ENV, fetchImpl: Pn.fetchImpl })
+      ok(!rn.campi_inviati.some(c => ['user.address', 'user.date', 'user.phonePrefix'].includes(c.campo)), 'scheda completa non leggibile: indirizzo, data e prefisso NON vengono inviati')
+      ok(rn.warning.some(w => /Scheda completa SiDLY non leggibile/.test(w)), 'scheda completa non leggibile: avviso esplicito all\'operatore')
+      ok(!Pn.calls.some(c => c.method === 'PATCH' && c.body?.user && ('address' in c.body.user || 'date' in c.body.user || 'phonePrefix' in c.body.user)), 'scheda completa non leggibile: nessuna PATCH con quei campi')
+
+      // scheda completa vuota su SiDLY → i campi mancanti si compilano
+      const Pv = makePlatform({ patients: { [IMEI]: { user_id: 14879, id: 14879, imei: IMEI, user: { first_name: 'Anna', last_name: 'Rossi' }, band: {}, first_name: 'Anna', last_name: 'Rossi' } } })
+      const rv = await S.syncAssistito({ crm, env: ENV, fetchImpl: Pv.fetchImpl, dryRun: true })
+      ok(rv.campi_inviati.some(c => c.campo === 'user.address') && rv.campi_inviati.some(c => c.campo === 'user.date'), 'scheda completa con campi vuoti: indirizzo e data vengono proposti')
     }
     const sec = readFileSync('src/modules/sidly-sync.ts', 'utf8')
     ok(!/console\.(log|warn|error)/.test(sec), 'sidly-sync.ts: nessun console.* (niente fuga di token o dati)')

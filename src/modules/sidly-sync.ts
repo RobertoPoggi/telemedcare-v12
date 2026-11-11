@@ -50,7 +50,7 @@ export interface SyncResult {
   motivo_conferma?: string
   errore?: string
   /** Solo in anteprima: struttura (nomi dei campi e tipi, MAI valori) della risposta di GET /patient. */
-  diagnostica?: { forma_risposta_patient: unknown }
+  diagnostica?: { forma_risposta_patient: unknown; forma_scheda_completa?: unknown }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -268,7 +268,7 @@ const USER_EQ: Record<string, (a: any, b: any) => boolean> = {
 }
 const phoneKey = (p: SosPhone) => digits(p.numberPrefix) + digits(p.number)
 
-export function diffPatient(crm: CrmPatient, plat: PlatformPatient): Diff {
+export function diffPatient(crm: CrmPatient, plat: PlatformPatient, nonVisibili: string[] = []): Diff {
   const userPatch: Record<string, any> = {}
   const bandPatch: Record<string, any> = {}
   const warnings: string[] = []
@@ -277,12 +277,16 @@ export function diffPatient(crm: CrmPatient, plat: PlatformPatient): Diff {
   for (const k of Object.keys(USER_EQ)) {
     const c = (crm.user as any)[k]
     if (isEmpty(c)) continue // mai azzerare: campo vuoto nel CRM = omesso
+    if (nonVisibili.includes(k)) continue // scheda completa non letta: non so se e' vuoto, quindi non lo tocco
     const p = (plat.user as any)[k]
     if (isEmpty(p) || !USER_EQ[k](c, p)) {
       userPatch[k] = c
       campi.push({ campo: 'user.' + k, valore: c })
     }
   }
+
+  const nv = nonVisibili.filter(k => !isEmpty((crm.user as any)[k]))
+  if (nv.length) warnings.push(`Scheda completa SiDLY non leggibile: non inviati per prudenza i campi ${nv.join(', ')} (non so se sono già compilati)`)
 
   // Configurazione operativa: la piattaforma e' master.
   const cPhones = crm.band.phones || []
@@ -495,10 +499,30 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
         if (!out.sidly_user_id) out.warning.push('SiDLY non ha restituito lo user_id: non salvato nel CRM')
       }
     } else if (res.status === 200) {
-      if (dry) out.diagnostica = { forma_risposta_patient: shapeOf(res.json) }
-      const plat = normalizePlatformPatient(res.json)
+      const brief = normalizePlatformPatient(res.json)
+      // GET /patient/{id} e' una scheda BREVE (niente indirizzo, data di nascita, prefisso): la scheda completa
+      // e' /manager/patient-edit-initial-data/{imei}, la stessa che legge il portale SiDLY.
+      const imeiPlat = String((res.json && (res.json.imei ?? res.json.data?.imei)) || (assoc ? '' : crm.imei) || '')
+      let plat = brief
+      let nonVisibili: string[] = []
+      let fullJson: any = null
+      if (imeiPlat) {
+        const f = await client.request('GET', `/manager/patient-edit-initial-data/${enc(imeiPlat)}`)
+        out.azioni.push({ azione: 'GET /manager/patient-edit-initial-data/{imei} (scheda completa)', risultato: String(f.status) })
+        if (ok2xx(f.status) && f.json && typeof f.json === 'object') {
+          fullJson = f.json
+          const full = normalizePlatformPatient(f.json)
+          plat = {
+            userId: full.userId || brief.userId,
+            user: { ...brief.user, ...Object.fromEntries(Object.entries(full.user).filter(([, v]) => v !== undefined && v !== null)) },
+            band: { phones: full.band.phones && full.band.phones.length ? full.band.phones : brief.band.phones, simNumber: full.band.simNumber ?? brief.band.simNumber },
+          }
+        }
+      }
+      if (!fullJson) nonVisibili = ['address', 'date', 'phonePrefix']
+      if (dry) out.diagnostica = { forma_risposta_patient: shapeOf(res.json), forma_scheda_completa: fullJson ? shapeOf(fullJson) : 'non leggibile' }
       out.sidly_user_id = plat.userId || (assoc || null)
-      const d = diffPatient(crm, plat)
+      const d = diffPatient(crm, plat, nonVisibili)
       out.warning.push(...d.warnings)
       const hasUser = Object.keys(d.userPatch).length > 0
       const hasBand = Object.keys(d.bandPatch).length > 0
