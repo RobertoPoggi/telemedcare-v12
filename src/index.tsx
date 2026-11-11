@@ -21967,6 +21967,10 @@ app.post('/api/sidly/sync-assistito', async (c) => {
   if (!Number.isInteger(assistitoId) || assistitoId <= 0) {
     return c.json({ esito: 'errore', errore: 'assistito_id mancante o non valido' }, 400)
   }
+  // Nessuna scrittura senza anteprima vista e confermata: serve conferma_scrittura:true (il pulsante "Conferma" della Dashboard).
+  if (body?.dry_run !== true && body?.conferma_scrittura !== true) {
+    return c.json({ esito: 'errore', errore: 'Scrittura non confermata: richiedi prima l\'anteprima (dry_run) e conferma dopo averla controllata' }, 400)
+  }
   const associa = body?.associa_user_id !== undefined && body?.associa_user_id !== null ? String(body.associa_user_id).replace(/\D/g, '') : ''
 
   const { runSidlySync } = await import('./modules/sidly-sync')

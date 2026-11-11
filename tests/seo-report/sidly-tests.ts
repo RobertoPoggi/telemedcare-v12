@@ -444,7 +444,10 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       const sommario = JSON.stringify({ esito: rD.esito, azioni: rD.azioni.map(a => ({ azione: a.azione, risultato: a.risultato })), warning: rD.warning })
       ok(!sommario.includes('Via Vecchia'), 'sidly_sync: il riepilogo salvato nel DB non contiene valori anagrafici')
     }
-    ok(/su SiDLY ora:/.test(dash) && /c\.precedente !== undefined/.test(dash), 'dashboard: il pannello mostra "su SiDLY ora" accanto ai campi inviati')
+    ok(/Prima \(su SiDLY ora\)/.test(dash) && /<th[^>]*>Dopo<\/th>/.test(dash) && /c\.precedente === undefined/.test(dash), 'dashboard: il pannello mostra la tabella Prima / Dopo')
+    ok(/payload\.dry_run = true/.test(dash) && /conferma_scrittura = true/.test(dash) && /window\.sidlyConfirm/.test(dash) && /Conferma e scrivi su SiDLY/.test(dash), 'dashboard: il click apre SEMPRE l\'anteprima; si scrive solo dopo "Conferma e scrivi"')
+    ok(!/sidlyPrev_/.test(dash), 'dashboard: un solo pulsante (nuvola) che parte dall\'anteprima')
+    ok(/body\?\.dry_run !== true && body\?\.conferma_scrittura !== true/.test(idx), 'endpoint: senza dry_run e senza conferma_scrittura la scrittura viene rifiutata (400)')
     const sec = readFileSync('src/modules/sidly-sync.ts', 'utf8')
     ok(!/console\.(log|warn|error)/.test(sec), 'sidly-sync.ts: nessun console.* (niente fuga di token o dati)')
     ok(!/CREATE TABLE IF NOT EXISTS sidly_sync[\s\S]*ALTER TABLE/.test(sec) && !/ALTER TABLE/.test(sec), 'nessun ALTER TABLE: lo stato sta nella tabella laterale sidly_sync')

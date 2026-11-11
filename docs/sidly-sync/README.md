@@ -38,8 +38,8 @@ Indirizzo scritto nel formato del portale ("Via, Citta', Provincia, CAP") e conf
 In anteprima la sezione `diagnostica` mostra solo la STRUTTURA delle risposte (chiavi e tipi), mai i valori. Dati sanitari: le differenze mostrate nel pannello contengono testo reale, non sono salvate nel DB (`sidly_sync` salva solo esito/azioni/avvisi).
 Per un assistito appena creato i dettagli si sincronizzano subito dopo il POST (in anteprima non c'e' nulla da leggere).
 
-## Dashboard
-Lente = anteprima (nessuna scrittura), nuvola = carica. Dall'anteprima il pulsante "Carica davvero" esegue la scrittura.
+## Dashboard: prima si vede, poi si scrive
+La nuvola apre SEMPRE un'anteprima (`dry_run`, nessuna scrittura) con la tabella **Prima (su SiDLY ora) / Dopo** per ogni campo. La scrittura parte solo dal pulsante "Conferma e scrivi su SiDLY", che invia `conferma_scrittura: true`. L'endpoint rifiuta (400) ogni richiesta che non sia `dry_run` ne' confermata. Anche "Associa questo" e "Crea un nuovo assistito" mostrano prima l'anteprima. Per un assistito nuovo la colonna "Prima" e' vuota.
 
 ## Stato nel CRM: tabella laterale `sidly_sync`
 Deviazione dal prompt: niente `ALTER TABLE assistiti` (D1 ha limite 100 colonne; usiamo una side table come `lead_attribution`).

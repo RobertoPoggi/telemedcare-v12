@@ -432,7 +432,7 @@ export function diffPatient(crm: CrmPatient, plat: PlatformPatient, nonVisibili:
   if (crm.band.simNumber) {
     if (isEmpty(plat.band.simNumber)) {
       bandPatch.simNumber = crm.band.simNumber
-      campi.push({ campo: 'band.simNumber', valore: crm.band.simNumber })
+      campi.push({ campo: 'band.simNumber', valore: crm.band.simNumber, precedente: '' })
     } else if (!eqDigits(crm.band.simNumber, plat.band.simNumber)) {
       warnings.push('Numero SIM diverso tra CRM e piattaforma: campo gestito dalla piattaforma, verifica sul portale SiDLY (non modificato)')
     }
@@ -649,6 +649,19 @@ export function planScheda(crm: CrmPatient, platJson: any): Differenza[] {
   return out
 }
 
+/** Anteprima per un assistito che non esiste ancora su SiDLY: tutto cio' che si scriverebbe dopo la creazione, con "Prima" vuoto. */
+export function anteprimaDettagliNuovo(crm: CrmPatient): CampoInviato[] {
+  const out: CampoInviato[] = []
+  crm.referenti.forEach((r, i) => {
+    if (r.name) out.push({ campo: `referente${i + 1}.nome`, valore: r.name, precedente: '' })
+    if (r.phone) out.push({ campo: `referente${i + 1}.telefono`, valore: r.phone, precedente: '' })
+    if (r.others) out.push({ campo: `referente${i + 1}.altro`, valore: r.others, precedente: '' })
+  })
+  for (const f of Object.keys(crm.medical.flags)) out.push({ campo: 'patologie.' + f, valore: 1, precedente: 0 })
+  for (const [ck, sk] of DISEASE_TEXT) { const v = toStr(crm.medical[ck]); if (v) out.push({ campo: 'patologie.' + sk, valore: v, precedente: '' }) }
+  return out
+}
+
 async function syncDettagli(client: SidlyClient, crm: CrmPatient, imei: string, dry: boolean, out: SyncResult): Promise<string | null> {
   const diag: Record<string, unknown> = {}
   const differenze: Differenza[] = []
@@ -765,6 +778,8 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
       ]
       if (dry) {
         out.azioni.push({ azione: 'POST /manager/patient', risultato: 'non eseguito (anteprima)', campi })
+        // Anteprima completa anche per i dettagli che verrebbero scritti subito dopo la creazione (su SiDLY ora: niente).
+        out.campi_inviati.push(...anteprimaDettagliNuovo(crm))
       } else {
         const p = await client.request('POST', '/manager/patient', body)
         out.azioni.push({ azione: 'POST /manager/patient', risultato: String(p.status), campi })
@@ -825,7 +840,7 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
 
     // "Dettagli utente" (referenti, patologie/farmaci, scheda): l'assistito deve esistere su SiDLY.
     if (previsto === 'creato' && dry) {
-      out.warning.push('Referenti, patologie e farmaci verranno sincronizzati dopo la creazione (anteprima non disponibile per un assistito nuovo)')
+      out.warning.push('Assistito nuovo: referenti e patologie vengono scritti subito dopo la creazione; nell\'anteprima sono elencati con "Prima" vuoto')
     } else {
       const errD = await syncDettagli(client, crm, assoc || crm.imei, dry, out)
       if (errD) return fail(errD)
