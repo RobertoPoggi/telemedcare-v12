@@ -49,6 +49,8 @@ export interface SyncResult {
   candidati?: Candidato[]
   motivo_conferma?: string
   errore?: string
+  /** Solo in anteprima: struttura (nomi dei campi e tipi, MAI valori) della risposta di GET /patient. */
+  diagnostica?: { forma_risposta_patient: unknown }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -223,13 +225,14 @@ export function normalizePlatformPatient(resp: any): PlatformPatient {
   const u = root.user || root.patient || root
   const b = root.band || root.device || {}
   const pick = (...vals: any[]) => vals.find(v => v !== undefined && v !== null)
-  let date = u.date
+  // Il portale SiDLY usa nomi diversi a seconda della schermata: birth_date (scheda), date (modifica).
+  let date = pick(u.date, u.birth_date, u.birthDate, root.birth_date)
   if (typeof date === 'string') date = parseBirthDate(date)
   else if (date && typeof date === 'object') {
     date = { year: Number(date.year), month: Number(date.month), day: Number(date.day) }
     if (!date.year || !date.month || !date.day) date = null
   } else date = null
-  const rawPhones = pick(b.phones, root.phones)
+  const rawPhones = pick(b.phones, root.phones, u.phones)
   const phones: SosPhone[] = Array.isArray(rawPhones)
     ? rawPhones.filter((p: any) => p && (p.number || p.numberPrefix)).map((p: any) => ({ numberPrefix: String(p.numberPrefix ?? ''), number: String(p.number ?? ''), repeatNumber: Number(p.repeatNumber ?? 0) }))
     : []
@@ -246,7 +249,7 @@ export function normalizePlatformPatient(resp: any): PlatformPatient {
       phone: pick(u.phone),
       address: pick(u.address),
     },
-    band: { phones, simNumber: pick(b.simNumber, b.sim_number) },
+    band: { phones, simNumber: pick(b.simNumber, b.sim_number, u.sim_number, u.simNumber, root.sim_number, root.simNumber) },
   }
 }
 
@@ -411,6 +414,19 @@ function pickArray(j: any): any[] {
   return []
 }
 
+/** Descrive la STRUTTURA di un JSON (chiavi e tipi) senza alcun valore: sicura da mostrare in anteprima. */
+export function shapeOf(v: any, depth = 0): unknown {
+  if (v === null) return 'null'
+  if (Array.isArray(v)) return depth >= 3 ? `array[${v.length}]` : { array: v.length, elemento: v.length ? shapeOf(v[0], depth + 1) : null }
+  if (typeof v === 'object') {
+    if (depth >= 3) return 'object'
+    const o: Record<string, unknown> = {}
+    for (const k of Object.keys(v).slice(0, 60)) o[k] = shapeOf(v[k], depth + 1)
+    return o
+  }
+  return typeof v
+}
+
 export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
   const { crm, env } = opts
   const dry = !!opts.dryRun
@@ -479,6 +495,7 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
         if (!out.sidly_user_id) out.warning.push('SiDLY non ha restituito lo user_id: non salvato nel CRM')
       }
     } else if (res.status === 200) {
+      if (dry) out.diagnostica = { forma_risposta_patient: shapeOf(res.json) }
       const plat = normalizePlatformPatient(res.json)
       out.sidly_user_id = plat.userId || (assoc || null)
       const d = diffPatient(crm, plat)
