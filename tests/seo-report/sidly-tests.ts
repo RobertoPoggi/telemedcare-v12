@@ -407,6 +407,20 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       const rv = await S.syncAssistito({ crm, env: ENV, fetchImpl: Pv.fetchImpl, dryRun: true })
       ok(rv.campi_inviati.some(c => c.campo === 'user.address') && rv.campi_inviati.some(c => c.campo === 'user.date'), 'scheda completa con campi vuoti: indirizzo e data vengono proposti')
     }
+    // Anteprima: per ogni campo anagrafico si mostra anche il valore attuale su SiDLY (vuoto o diverso)
+    {
+      const crm = crmOf()
+      const base = (addr: any) => ({ user_id: 14879, id: 14879, imei: IMEI, first_name: 'Anna', last_name: 'Rossi', user: { first_name: 'Anna', last_name: 'Rossi', birth_date: '1944-03-09', phonePrefix: '+39', phone: '3331112233', weight: 62, height: 160, address: addr }, band: { simNumber: '3897770000' } })
+      const rE = await S.syncAssistito({ crm, env: ENV, dryRun: true, fetchImpl: makePlatform({ patients: { [IMEI]: base('') } }).fetchImpl })
+      const cE = rE.campi_inviati.find(c => c.campo === 'user.address')
+      ok(!!cE && cE.precedente === '', 'anteprima: indirizzo vuoto su SiDLY → precedente "" (nessuna sovrascrittura di valori esistenti)')
+      const rD = await S.syncAssistito({ crm, env: ENV, dryRun: true, fetchImpl: makePlatform({ patients: { [IMEI]: base('Via Vecchia 9, Genova') } }).fetchImpl })
+      const cD = rD.campi_inviati.find(c => c.campo === 'user.address')
+      ok(!!cD && cD.precedente === 'Via Vecchia 9, Genova', 'anteprima: indirizzo diverso su SiDLY → mostrato il valore attuale che verrebbe sovrascritto')
+      const sommario = JSON.stringify({ esito: rD.esito, azioni: rD.azioni.map(a => ({ azione: a.azione, risultato: a.risultato })), warning: rD.warning })
+      ok(!sommario.includes('Via Vecchia'), 'sidly_sync: il riepilogo salvato nel DB non contiene valori anagrafici')
+    }
+    ok(/su SiDLY ora:/.test(dash) && /c\.precedente !== undefined/.test(dash), 'dashboard: il pannello mostra "su SiDLY ora" accanto ai campi inviati')
     const sec = readFileSync('src/modules/sidly-sync.ts', 'utf8')
     ok(!/console\.(log|warn|error)/.test(sec), 'sidly-sync.ts: nessun console.* (niente fuga di token o dati)')
     ok(!/CREATE TABLE IF NOT EXISTS sidly_sync[\s\S]*ALTER TABLE/.test(sec) && !/ALTER TABLE/.test(sec), 'nessun ALTER TABLE: lo stato sta nella tabella laterale sidly_sync')

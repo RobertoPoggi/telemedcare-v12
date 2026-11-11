@@ -3373,7 +3373,12 @@ export const dashboard = `<!DOCTYPE html>
             }));
             h += sidlyList('Campi inviati', (r.campi_inviati || []).map(function (c) {
                 var v = (c.valore !== null && typeof c.valore === 'object') ? JSON.stringify(c.valore) : String(c.valore);
-                return '<code>' + escapeHtml(c.campo) + '</code>: ' + escapeHtml(v);
+                var prima = '';
+                if (c.precedente !== undefined) {
+                    var pv = (c.precedente !== null && typeof c.precedente === 'object') ? JSON.stringify(c.precedente) : String(c.precedente);
+                    prima = ' <span style="color:#666">(su SiDLY ora: ' + (pv === '' ? '<i>vuoto</i>' : escapeHtml(pv)) + ')</span>';
+                }
+                return '<code>' + escapeHtml(c.campo) + '</code>: ' + escapeHtml(v) + prima;
             }));
             if (r.url_for_band) {
                 h += '<div style="margin-top:12px"><b>URL di consegna frame:</b> ' + (r.url_for_band.registrato ? 'registrato' : 'non registrato' + (r.url_for_band.motivo ? ' (' + escapeHtml(r.url_for_band.motivo) + ')' : '')) + '</div>';

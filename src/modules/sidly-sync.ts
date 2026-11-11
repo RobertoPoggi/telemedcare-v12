@@ -35,7 +35,7 @@ export type Fetch = (url: string, init?: any) => Promise<{ status: number; ok?: 
 export type Esito = 'creato' | 'aggiornato' | 'invariato' | 'errore' | 'anteprima' | 'conferma_richiesta'
 
 export interface Azione { azione: string; risultato: string; campi?: string[] }
-export interface CampoInviato { campo: string; valore: any }
+export interface CampoInviato { campo: string; valore: any; /** Valore attualmente su SiDLY (solo campi user.*; '' se vuoto): serve all'operatore per capire cosa verrebbe sovrascritto. */ precedente?: any }
 export interface Candidato { user_id: string; first_name: string; last_name: string }
 
 export interface SyncResult {
@@ -281,7 +281,7 @@ export function diffPatient(crm: CrmPatient, plat: PlatformPatient, nonVisibili:
     const p = (plat.user as any)[k]
     if (isEmpty(p) || !USER_EQ[k](c, p)) {
       userPatch[k] = c
-      campi.push({ campo: 'user.' + k, valore: c })
+      campi.push({ campo: 'user.' + k, valore: c, precedente: isEmpty(p) ? '' : p })
     }
   }
 
