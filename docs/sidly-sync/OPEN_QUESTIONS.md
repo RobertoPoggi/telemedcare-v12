@@ -21,6 +21,11 @@ Il prompt non documenta questi punti e non sono state fatte prove sulla piattafo
 17. **`patientCard`**: usata dal portale solo per profili `is_indiv`; trattata in sola lettura. Scrittura (`PATCH /patientCard/create/{imei}`) non implementata.
 18. **Dati sanitari**: copiare patologie e farmaci verso SiDLY richiede una base giuridica (art. 9 GDPR) e che SiDLY sia nominata responsabile del trattamento. Da confermare lato titolare.
 
+19. **Scritture nel CRM da SiDLY ("vale SiDLY")**: nuova capacita' su D1 di produzione (UPDATE su `configurations`, `leads`, `assistiti`, `ddts`, solo colonne in elenco chiuso, tutto o niente col batch D1). Confermare con il titolare quali campi si vogliono davvero rendere sovrascrivibili dal CRM; il primo uso reale va fatto su un solo campo e controllato.
+20. **Patologie**: gli interruttori si accendono ma non si spengono (e non si tolgono dal CRM): un "No" puo' significare "non compilato". Se serve il caso opposto va deciso a parte.
+21. **Indirizzo SiDLY→CRM**: solo nel formato "Via, Citta', Provincia, CAP"; altri formati non si scompongono. Valutare un campo indirizzo unico nel CRM.
+22. **Scheda assistito su SiDLY**: scrittura non attiva finche' non si conferma l'endpoint (`PATCH /patientCard/create/{imei}`).
+
 ## Verificato sul bundle del portale (sidly-platform.com), non sull'API reale
 - Creazione: `POST /manager/patient` con `{user:{firstName,lastName,email,date,sex,weight,height,phonePrefix,phone,address,description,avatar,type}, band:{imei,phones[],fall,timezone,sos_notif,fall_notif,zone_notif,firmware_version,lang_band,whitelistNumbers,...,zone?}, lang}`. Coerente con il prompt.
 - Il portale tratta `weight` e `height` come OBBLIGATORI (2-3 cifre) alla creazione: se il CRM non li ha, la creazione potrebbe essere rifiutata.

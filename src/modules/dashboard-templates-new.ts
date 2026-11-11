@@ -3362,11 +3362,10 @@ export const dashboard = `<!DOCTYPE html>
                 rows.map(function (r) { return '<li style="margin-bottom:2px">' + r + '</li>'; }).join('') + '</ul></div>';
         }
 
-        // Tabella orizzontale: colonna SiDLY (come e ora) | colonna CRM (valore nel CRM) | esito riga per riga.
+        // Tabella orizzontale: SiDLY | CRM | scelta per riga. Default di ogni riga: nessuna modifica.
         var SIDLY_STATI = {
             uguale: { c: '#15803d', bg: '', t: '&#10003; uguale' },
-            cambia: { c: '#b45309', bg: '#fffbeb', t: '&#9998; verrà aggiornato col valore del CRM' },
-            diverso: { c: '#1d4ed8', bg: '#eff6ff', t: '&#9888; diverso: non lo tocco' },
+            diverso: { c: '#1d4ed8', bg: '#eff6ff', t: '&#9888; diverso' },
             solo_sidly: { c: '#6b7280', bg: '', t: 'solo su SiDLY' },
             solo_crm: { c: '#7c3aed', bg: '#f5f3ff', t: 'solo nel CRM' },
             non_sincronizzato: { c: '#6b7280', bg: '', t: 'non sincronizzato' },
@@ -3377,13 +3376,19 @@ export const dashboard = `<!DOCTYPE html>
             if (v === undefined || v === null || v === '') return '<i style="color:#9ca3af">vuoto</i>';
             return escapeHtml(String(v));
         }
+        function sidlySelect(x) {
+            var o = '<option value="">nessuna modifica</option>';
+            if (x.verso.indexOf('crm') >= 0) o += '<option value="crm">vale il CRM &rarr; scrivi su SiDLY</option>';
+            if (x.verso.indexOf('sidly') >= 0) o += '<option value="sidly">vale SiDLY &rarr; scrivi nel CRM</option>';
+            return '<select onchange="window.sidlyAggiorna()" data-chiave="' + escapeHtml(x.chiave) + '" data-sidly="' + escapeHtml(x.sidly) + '" data-crm="' + escapeHtml(x.crm) + '" style="width:100%;font-size:12px;padding:3px;border:1px solid #9ca3af;border-radius:4px;background:#fff">' + o + '</select>';
+        }
         function sidlyConfronto(righe) {
             if (!righe || !righe.length) return '';
             var th = 'padding:6px 8px;text-align:left;position:sticky;top:0;background:#f3f4f6;border-bottom:2px solid #d1d5db;';
             var h = '<div style="margin-top:12px;border:1px solid #d1d5db;border-radius:8px;overflow:auto;max-height:55vh">' +
                 '<table style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed">' +
-                '<colgroup><col style="width:21%"><col style="width:32%"><col style="width:32%"><col style="width:15%"></colgroup>' +
-                '<thead><tr><th style="' + th + '">Campo</th><th style="' + th + '">SiDLY</th><th style="' + th + '">CRM</th><th style="' + th + '">Esito</th></tr></thead><tbody>';
+                '<colgroup><col style="width:20%"><col style="width:27%"><col style="width:27%"><col style="width:26%"></colgroup>' +
+                '<thead><tr><th style="' + th + '">Campo</th><th style="' + th + '">SiDLY</th><th style="' + th + '">CRM</th><th style="' + th + '">Cosa fare</th></tr></thead><tbody>';
             var gruppo = null;
             righe.forEach(function (x) {
                 if (x.gruppo !== gruppo) {
@@ -3392,16 +3397,44 @@ export const dashboard = `<!DOCTYPE html>
                 }
                 var st = SIDLY_STATI[x.stato] || SIDLY_STATI.non_verificato;
                 var td = 'padding:5px 8px;border-top:1px solid #f1f5f9;vertical-align:top;white-space:pre-line;word-break:break-word;';
+                var ultima = '<span style="color:' + st.c + ';font-weight:600;font-size:12px">' + st.t + '</span>';
+                if (x.verso && x.verso.length) ultima = '<div style="color:' + st.c + ';font-weight:600;font-size:12px;margin-bottom:3px">' + st.t + '</div>' + sidlySelect(x);
+                else if (x.nota) ultima += '<div style="color:#6b7280;font-size:11px;margin-top:2px;font-weight:400">non modificabile da qui: ' + escapeHtml(x.nota) + '</div>';
                 h += '<tr style="' + (st.bg ? 'background:' + st.bg : '') + '">' +
                     '<td style="' + td + 'font-weight:600">' + escapeHtml(x.campo) + '</td>' +
                     '<td style="' + td + '">' + sidlyCell(x.sidly, x.assenteSidly, 'campo non presente su SiDLY') + '</td>' +
                     '<td style="' + td + '">' + sidlyCell(x.crm, x.assenteCrm, 'campo non presente nel CRM') + '</td>' +
-                    '<td style="' + td + 'color:' + st.c + ';font-weight:600;font-size:12px">' + st.t + '</td></tr>';
+                    '<td style="' + td + '">' + ultima + '</td></tr>';
             });
             return h + '</tbody></table></div>';
         }
         function sidlyConta(righe, stato) {
             return (righe || []).filter(function (x) { return x.stato === stato; }).length;
+        }
+        // Scelte fatte nella tabella (solo righe con una direzione scelta)
+        function sidlyScelte() {
+            var out = [];
+            document.querySelectorAll('#sidlyPanel select[data-chiave]').forEach(function (el) {
+                if (el.value) out.push({ chiave: el.getAttribute('data-chiave'), verso: el.value, sidly: el.getAttribute('data-sidly') || '', crm: el.getAttribute('data-crm') || '' });
+            });
+            return out;
+        }
+        window.sidlyAggiorna = function () {
+            var n = sidlyScelte().length;
+            var b = document.getElementById('sidlyVerifica');
+            if (b) { b.disabled = n === 0; b.style.opacity = n === 0 ? '.5' : '1'; b.textContent = n === 0 ? 'Scegli almeno una riga' : 'Mostra le ' + n + ' modifiche scelte'; }
+        };
+
+        function sidlyModifiche(titolo, voci) {
+            if (!voci.length) return '';
+            var h = '<div style="margin-top:12px"><div style="font-weight:700;margin-bottom:4px">' + titolo + '</div>' +
+                '<table style="width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed"><colgroup><col style="width:24%"><col style="width:38%"><col style="width:38%"></colgroup>' +
+                '<thead><tr><th style="text-align:left;padding:4px 8px;background:#f3f4f6">Campo</th><th style="text-align:left;padding:4px 8px;background:#f3f4f6">Prima</th><th style="text-align:left;padding:4px 8px;background:#f3f4f6">Dopo</th></tr></thead><tbody>';
+            voci.forEach(function (v) {
+                var td = 'padding:4px 8px;border-top:1px solid #f1f5f9;vertical-align:top;white-space:pre-line;word-break:break-word;';
+                h += '<tr><td style="' + td + 'font-weight:600">' + escapeHtml(v.campo) + '</td><td style="' + td + '">' + sidlyCell(v.prima, false, '') + '</td><td style="' + td + 'color:#b45309;font-weight:600">' + sidlyCell(v.dopo, false, '') + '</td></tr>';
+            });
+            return h + '</tbody></table></div>';
         }
 
         function renderSidlyResult(r) {
@@ -3409,23 +3442,29 @@ export const dashboard = `<!DOCTYPE html>
             var anteprima = r.esito === 'anteprima';
             var chi = r.assistito ? ' per ' + escapeHtml(r.assistito) : '';
             var titoli = {
-                creato: 'Assistito creato su SiDLY', aggiornato: 'Assistito aggiornato su SiDLY', invariato: 'Nessuna modifica: SiDLY era già allineato',
-                errore: 'Sincronizzazione non riuscita'
+                creato: 'Assistito creato su SiDLY', aggiornato: 'Modifiche scritte', invariato: 'Nessuna modifica scritta',
+                errore: 'Operazione non riuscita'
             };
-            var titolo = anteprima ? 'SiDLY a confronto con il CRM' + chi : escapeHtml(titoli[r.esito] || String(r.esito));
+            var scelte = r.scelte_in_anteprima;
+            var titolo = anteprima ? (scelte ? 'Controlla le modifiche scelte' + chi : 'SiDLY a confronto con il CRM' + chi) : escapeHtml(titoli[r.esito] || String(r.esito));
             var h = '<h3 style="font-weight:700;font-size:17px;margin:0 0 4px;color:' + (colors[r.esito] || '#111') + '">' + titolo + '</h3>';
             if (anteprima) h += '<div style="color:#92400e;font-size:13px;margin-bottom:2px">Anteprima: non è stato scritto nulla.</div>';
             if (r.errore) h += '<p style="color:#b91c1c;margin:0 0 6px">' + escapeHtml(r.errore) + '</p>';
 
             var righe = r.confronto || [];
-            if (righe.length) {
-                var nc = sidlyConta(righe, 'cambia'), nd = sidlyConta(righe, 'diverso'), ns = sidlyConta(righe, 'solo_sidly'), nm = sidlyConta(righe, 'solo_crm');
+            var daSidly = (r.campi_inviati || []).map(function (c) { return { campo: c.etichetta || c.campo, prima: c.mostra_prima, dopo: c.mostra_dopo }; });
+            var nelCrm = r.crm_scritture || [];
+            if (anteprima && !scelte && righe.length) {
+                var scegli = righe.filter(function (x) { return x.verso && x.verso.length; }).length;
                 h += '<p style="margin:6px 0 0;font-size:14px">' +
                     (r.previsto === 'creato' ? 'L’assistito non esiste ancora su SiDLY: verrebbe creato. ' : '') +
-                    '<b style="color:#b45309">' + nc + '</b> da aggiornare &middot; <b style="color:#1d4ed8">' + nd + '</b> diversi (non toccati) &middot; ' +
-                    '<b style="color:#6b7280">' + ns + '</b> solo su SiDLY &middot; <b style="color:#7c3aed">' + nm + '</b> solo nel CRM</p>';
+                    '<b style="color:#1d4ed8">' + sidlyConta(righe, 'diverso') + '</b> diversi &middot; <b style="color:#7c3aed">' + sidlyConta(righe, 'solo_crm') + '</b> solo nel CRM (campo vuoto su SiDLY) &middot; ' +
+                    '<b style="color:#6b7280">' + sidlyConta(righe, 'solo_sidly') + '</b> solo su SiDLY &middot; <b>' + scegli + '</b> righe su cui puoi scegliere</p>' +
+                    '<p style="margin:4px 0 0;font-size:13px;color:#374151">In ogni riga scegli quale valore è quello giusto. Di default non cambia niente.</p>';
                 h += sidlyConfronto(righe);
             }
+            if (daSidly.length) h += sidlyModifiche(anteprima ? 'Verrà scritto su SiDLY' : 'Scritto su SiDLY', daSidly);
+            if (nelCrm.length) h += sidlyModifiche(anteprima ? 'Verrà scritto nel CRM' : 'Scritto nel CRM', nelCrm);
 
             // Avvisi utili all’operatore; le note tecniche (URL frame, ecc.) stanno nei dettagli.
             var tecnici = [], utili = [];
@@ -3445,21 +3484,32 @@ export const dashboard = `<!DOCTYPE html>
             return h;
         }
 
-        // Flusso: 1) anteprima Prima/Dopo (nessuna scrittura) 2) solo dopo il click su "Conferma e scrivi" si scrive davvero.
+        // Flusso: 1) tabella SiDLY | CRM (nessuna scrittura) 2) scegli la direzione per riga e guarda "prima/dopo" (ancora nessuna scrittura)
+        //         3) solo dopo "Conferma e scrivi" si scrive, e solo le righe scelte.
         window.sidlyConfirm = function () {
             var p = window.__sidlyPending;
             if (p) syncSidly(p.id, Object.assign({}, p.opts, { scrivi: true }));
+        };
+        window.sidlyVerifica = function () {
+            var p = window.__sidlyBase;
+            var sc = sidlyScelte();
+            if (p && sc.length) syncSidly(p.id, Object.assign({}, p.opts, { scelte: sc }));
+        };
+        window.sidlyIndietro = function () {
+            var p = window.__sidlyBase;
+            if (p) syncSidly(p.id, p.opts);
         };
         async function syncSidly(id, opts) {
             opts = opts || {};
             var btn = document.getElementById('sidlyBtn_' + id);
             var oldHtml = btn ? btn.innerHTML : '';
             if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
-            sidlyPanel('<p style="margin:0"><i class="fas fa-spinner fa-spin"></i> ' + (opts.scrivi ? 'Scrittura su SiDLY in corso' : 'Calcolo delle differenze (nulla viene scritto)') + '&hellip;</p>');
+            sidlyPanel('<p style="margin:0"><i class="fas fa-spinner fa-spin"></i> ' + (opts.scrivi ? 'Scrittura in corso' : 'Lettura e confronto (nulla viene scritto)') + '&hellip;</p>');
             try {
                 var payload = { assistito_id: id };
                 if (opts.associa) payload.associa_user_id = opts.associa;
                 if (opts.confermaCrea) payload.conferma_crea = true;
+                if (opts.scelte && opts.scelte.length) payload.scelte = opts.scelte;
                 if (opts.scrivi) payload.conferma_scrittura = true; else payload.dry_run = true;
                 var res = await fetch('/api/sidly/sync-assistito', {
                     method: 'POST',
@@ -3474,17 +3524,29 @@ export const dashboard = `<!DOCTYPE html>
                     cands.forEach(function (c) {
                         h += '<div style="border:1px solid #ddd;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">' +
                             '<span>' + escapeHtml(c.first_name + ' ' + c.last_name) + ' &middot; ID SiDLY ' + escapeHtml(String(c.user_id)) + '</span>' +
-                            '<button onclick="window.syncSidly(' + id + ', {associa: \\'' + String(c.user_id).replace(/[^0-9]/g, '') + '\\'})" class="px-3 py-1 bg-teal-600 text-white rounded text-xs">Associa questo (mostra anteprima)</button></div>';
+                            '<button onclick="window.syncSidly(' + id + ', {associa: \\'' + String(c.user_id).replace(/[^0-9]/g, '') + '\\'})" class="px-3 py-1 bg-teal-600 text-white rounded text-xs">Associa questo (mostra il confronto)</button></div>';
                     });
                     h += '<div style="margin-top:8px"><button onclick="window.syncSidly(' + id + ', {confermaCrea: true})" class="px-3 py-2 bg-blue-600 text-white rounded text-sm">Crea un nuovo assistito (mostra anteprima)</button></div>';
                     sidlyPanel(h);
                 } else {
+                    var anteprima = r.esito === 'anteprima';
+                    var base = { associa: opts.associa, confermaCrea: opts.confermaCrea };
+                    r.scelte_in_anteprima = !!(opts.scelte && opts.scelte.length);
                     var out = renderSidlyResult(r);
-                    if (r.esito === 'anteprima' && r.previsto !== 'invariato') {
-                        window.__sidlyPending = { id: id, opts: { associa: opts.associa, confermaCrea: opts.confermaCrea } };
-                        out += '<div style="margin-top:14px;padding-top:10px;border-top:1px solid #eee"><button onclick="window.sidlyConfirm()" class="px-3 py-2 bg-teal-600 text-white rounded text-sm">Conferma e scrivi su SiDLY</button> <span style="color:#666;font-size:12px">scrive sulla piattaforma reale: controlla prima le righe arancioni della tabella</span></div>';
-                    } else {
-                        window.__sidlyPending = null;
+                    var daScrivere = anteprima && ((r.campi_inviati || []).length || (r.crm_scritture || []).length);
+                    window.__sidlyPending = null;
+                    if (anteprima && !r.scelte_in_anteprima) {
+                        window.__sidlyBase = { id: id, opts: base };
+                        var scegliBtn = (r.confronto || []).some(function (x) { return x.verso && x.verso.length; });
+                        if (r.previsto === 'creato') {
+                            window.__sidlyPending = { id: id, opts: base };
+                            out += '<div style="margin-top:14px;padding-top:10px;border-top:1px solid #eee"><button onclick="window.sidlyConfirm()" class="px-3 py-2 bg-teal-600 text-white rounded text-sm">Conferma e crea su SiDLY</button></div>';
+                        } else if (scegliBtn) {
+                            out += '<div style="margin-top:14px;padding-top:10px;border-top:1px solid #eee"><button id="sidlyVerifica" disabled onclick="window.sidlyVerifica()" class="px-3 py-2 bg-teal-600 text-white rounded text-sm" style="opacity:.5">Scegli almeno una riga</button> <span style="color:#666;font-size:12px">prima di scrivere ti mostro «prima / dopo» per ogni riga scelta</span></div>';
+                        }
+                    } else if (daScrivere) {
+                        window.__sidlyPending = { id: id, opts: Object.assign({}, base, { scelte: opts.scelte }) };
+                        out += '<div style="margin-top:14px;padding-top:10px;border-top:1px solid #eee"><button onclick="window.sidlyConfirm()" class="px-3 py-2 bg-teal-600 text-white rounded text-sm">Conferma e scrivi</button> <button onclick="window.sidlyIndietro()" class="px-3 py-2 bg-gray-200 rounded text-sm">Indietro: cambia le scelte</button> <span style="color:#666;font-size:12px">scrive davvero, solo le righe elencate sopra</span></div>';
                     }
                     sidlyPanel(out);
                 }

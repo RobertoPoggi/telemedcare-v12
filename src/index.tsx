@@ -21954,7 +21954,7 @@ app.post('/api/leads/fix-prices', async (c) => {
 })
 
 // POST /api/sidly/sync-assistito - "Carica su SiDLY": upsert gentile dell'assistito sulla piattaforma SiDLY Health
-// Body: { assistito_id, dry_run?, associa_user_id?, conferma_crea? }
+// Body: { assistito_id, dry_run?, conferma_scrittura?, scelte?: [{chiave, verso:'crm'|'sidly', sidly, crm}], associa_user_id?, conferma_crea? }
 // Il middleware globale /api/* NON copre questo percorso: il controllo accessi e' qui (sessione dashboard o chiave).
 app.post('/api/sidly/sync-assistito', async (c) => {
   const guard = checkSessionOrKey(c.req.header('Cookie'), c.req.header('Authorization'), [c.env?.API_KEY, c.env?.ADMIN_SECRET_TOKEN])
@@ -21973,12 +21973,16 @@ app.post('/api/sidly/sync-assistito', async (c) => {
   }
   const associa = body?.associa_user_id !== undefined && body?.associa_user_id !== null ? String(body.associa_user_id).replace(/\D/g, '') : ''
 
-  const { runSidlySync } = await import('./modules/sidly-sync')
+  const { runSidlySync, parseScelte } = await import('./modules/sidly-sync')
+  // Scelte per riga (direzione CRM -> SiDLY o SiDLY -> CRM): senza scelte non si modifica nessun dato esistente.
+  const scelte = parseScelte(body?.scelte)
+  if (!Array.isArray(scelte)) return c.json({ esito: 'errore', errore: scelte.errore }, 400)
   const { httpStatus, result } = await runSidlySync({
     db: c.env.DB, env: c.env as any, assistitoId,
     dryRun: body?.dry_run === true,
     associaUserId: associa || undefined,
     confermaCrea: body?.conferma_crea === true,
+    scelte,
   })
   // Log strutturato senza dati personali ne' segreti: solo id assistito, esito e azioni (metodo + HTTP).
   console.log('[SIDLY-SYNC]', JSON.stringify({

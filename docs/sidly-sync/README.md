@@ -17,34 +17,44 @@ Body: `{ assistito_id, dry_run?, associa_user_id?, conferma_crea? }`
 | `SIDLY_LOGIN_FIELD` | no | nome del campo utente nel body di login (default `email`, come il portale SiDLY; `SIDLY_USER` deve essere l'e-mail dell'utenza) |
 
 ## Comportamento
-- Assente in piattaforma → creazione (assistito + braccialetto).
-- Presente → PATCH dei soli campi vuoti in piattaforma o cambiati nel CRM. Mai campi vuoti dal CRM.
-- Configurazione operativa del dispositivo (minHr/maxHr, zona, measure, SIM): mai sovrascritta, solo avviso. Eccezione richiesta esplicitamente: i **numeri SOS** (`band.phones`) devono coincidere con i tre referenti di "Dettagli utente"; il CRM e' master, il `repeatNumber` dei numeri gia' presenti si conserva, e i numeri che spariscono sono elencati negli avvisi.
-- Omonimo trovato con `myShortInfo` → serve conferma (associa un candidato o crea nuovo).
-- `dry_run` → anteprima, nessuna scrittura né su SiDLY né su D1.
+Nessuna scrittura automatica. Il pulsante mostra il confronto SiDLY | CRM; scrive solo le righe su cui l'operatore sceglie una direzione.
+- Assente in piattaforma → creazione (assistito + braccialetto, poi referenti e patologie dal CRM), solo dopo "Conferma e crea su SiDLY".
+- Presente → confronto riga per riga. Per ogni riga l'operatore sceglie (menu "Cosa fare"):
+  - **nessuna modifica** (vuoto, predefinito);
+  - **vale il CRM → scrivi su SiDLY** (PATCH solo delle chiavi scelte);
+  - **vale SiDLY → scrivi nel CRM** (UPDATE D1 su colonne fisse).
+- La scelta e' offerta solo se il campo esiste in **entrambi** gli ambienti, i valori differiscono (o uno e' vuoto) e il valore di partenza non e' vuoto: non si svuota mai l'altro lato.
+- Confronto per significato: e-mail dei referenti per indirizzo ("email x@y.it" = "email: x@y.it"), telefoni con/senza prefisso, indirizzi in formati diversi, maiuscole nei nomi, testi che ne contengono altri.
+- Configurazione operativa del dispositivo (soglie, zone, misure): solo lettura. Numeri SOS (`band.phones`) e numeri ammessi: solo "vale il CRM" (nel CRM i SOS sono i tre referenti).
+- Omonimo trovato con `myShortInfo` → serve conferma (associa un candidato o crea nuovo); poi si vede comunque il confronto.
+- `dry_run` → anteprima, nessuna scrittura né su SiDLY né su D1; con `scelte` mostra "prima/dopo" delle sole righe scelte.
 - Token SiDLY in cache; su 401/403 nuovo login e un solo retry. Gli errori non riportano mai body, password o token.
 
+## API: `POST /api/sidly/sync-assistito`
+Body: `{assistito_id, dry_run?, conferma_scrittura?, scelte?, associa_user_id?, conferma_crea?}`. Senza `dry_run:true` ne' `conferma_scrittura:true` → 400. `scelte`: `[{chiave, verso:'crm'|'sidly', sidly, crm}]` dove `sidly`/`crm` sono i valori mostrati all'operatore. Il server rilegge SiDLY e rifiuta (esito `errore`, nessuna scrittura): chiave sconosciuta, scelta duplicata, direzione non consentita, riga gia' uguale, valore cambiato dopo l'anteprima, scrittura nel CRM non disponibile. Le colonne del CRM scrivibili sono un elenco chiuso (`COLONNE_OK`): nessun nome di colonna arriva dal browser.
+
 ## "Dettagli utente" (referenti, numeri ammessi, patologie e farmaci, scheda assistito)
-| CRM (`configurations`) | SiDLY | Regola |
+| CRM | SiDLY | Direzioni possibili |
 |---|---|---|
-| `contatto{1,2,3}_{nome,cognome,telefono,email}` | `GET /getContacts/{imei}` + `PATCH /editContacts/{imei}` (`contactNName/Phone/Affinity/Address/Others`, `contactNID`) | Posizione n = referente n. CRM master su nome e telefono. Parentela e indirizzo di SiDLY restano (il CRM non li ha); l'e-mail va in "altro" solo se vuoto. Il portale invia sempre l'intero modulo: si rimandano anche i valori gia' presenti. |
-| gli stessi tre numeri | `band.phones` (SOS) | Devono coincidere con i referenti (alias = nome). |
-| `whitelist{1,2,3}_*` ("Numeri ammessi") | `band.whitelistNumbers` / `band.whiteListAlias` (stringhe con virgola, max 3) | CRM master; inviati solo se l'elenco differisce. |
-| `patologie_croniche`, `patologie`, `allergie`, `farmaci_data`/`farmaci_assunti`, `note_mediche` | `GET /getDiseases/{imei}` + `PATCH /editDiseases/{imei}` (`diseaseID`) | Gli interruttori si accendono, mai si spengono. I testi (allergie, altre patologie, farmaci, note) si scrivono solo se vuoti su SiDLY; se diversi finiscono in "Differenze" senza sovrascrivere. I campi di autonomia (udito, vista, ...) che il CRM non possiede si rimandano invariati. |
-| `medico_curante_*`, `centro_medico_riferimento` | `GET /patientCard/{imei}` | **Sola lettura**: si riportano solo le differenze. |
+| `contatto{1,2,3}_{nome,cognome,telefono,email}` | `GET /getContacts` + `PATCH /editContacts` | nome, telefono, e-mail: CRM→SiDLY e SiDLY→CRM (e-mail SiDLY→CRM solo se in "altro" c'e' un indirizzo; CRM→SiDLY lo aggiunge alle note senza perderle). Parentela e indirizzo del referente: solo su SiDLY. Il portale invia l'intero modulo: si rimandano anche i valori gia' presenti (ID, parentela, indirizzo, note). |
+| gli stessi tre numeri | `band.phones` (SOS) | solo CRM→SiDLY |
+| `whitelist{1,2,3}_*` | `band.whitelistNumbers` / `whiteListAlias` | solo CRM→SiDLY |
+| `patologie_croniche` | interruttori di `GET/PATCH /getDiseases`/`editDiseases` | solo ACCENDERE, in entrambe le direzioni ("No" puo' voler dire "non compilato") |
+| `allergie`, `note_mediche` | `allergy`, `more_info` | entrambe le direzioni |
+| farmaci (`farmaci_data`), altre patologie | `medicines`, `other_diseases` | solo CRM→SiDLY (nel CRM hanno una struttura propria) |
+| `medico_curante_*` | `GET /patientCard` | nessuna (scrittura su SiDLY non attiva; nel CRM nome e telefono sono nello stesso campo) |
+| `centro_medico_riferimento` | `patientCard.hospital_info` | solo SiDLY→CRM |
 
-Mappatura patologie: ipertensione→`nadcisnienie`, diabete→`cukrzyca`, demenza→`alzheimer`, parkinson→`parkinson`, epilessia→`padaczka`, bpco→`astma`, cardiopatia→`po_zawale` (**assunzione**). Le altre (ictus, oncologica, insufficienza renale, osteoporosi, depressione) vanno nel testo "altre patologie".
-Indirizzo scritto nel formato del portale ("Via, Citta', Provincia, CAP") e confrontato in modo tollerante (maiuscole, punteggiatura, ordine).
-In anteprima la sezione `diagnostica` mostra solo la STRUTTURA delle risposte (chiavi e tipi), mai i valori. Dati sanitari: le differenze mostrate nel pannello contengono testo reale, non sono salvate nel DB (`sidly_sync` salva solo esito/azioni/avvisi).
-Per un assistito appena creato i dettagli si sincronizzano subito dopo il POST (in anteprima non c'e' nulla da leggere).
+Anagrafica: nome/cognome/data di nascita/telefono/peso/altezza in entrambe le direzioni; indirizzo SiDLY→CRM solo se nel formato "Via, Citta', Provincia, CAP" (nel CRM sono 4 caselle); e-mail assistito solo SiDLY→CRM; SIM in entrambe (CRM: `ddts.sim_number`).
+Mappatura patologie: ipertensione→`nadcisnienie`, diabete→`cukrzyca`, demenza→`alzheimer`, parkinson→`parkinson`, epilessia→`padaczka`, bpco→`astma`, cardiopatia→`po_zawale` (**assunzione**).
+In anteprima la sezione `diagnostica` mostra solo la STRUTTURA delle risposte, mai i valori. Dati sanitari: i valori mostrati nel pannello non sono salvati nel DB (`sidly_sync` salva solo esito/azioni/avvisi).
 
-## Dashboard: prima si vede, poi si scrive
-La nuvola apre SEMPRE un'anteprima (`dry_run`, nessuna scrittura) con una tabella orizzontale **Campo | SiDLY | CRM | Esito** (righe `confronto` della risposta, raggruppate in Anagrafica, Referenti, Braccialetto, Patologie e farmaci, Scheda assistito). Esiti: uguale, cambia (SiDLY verra' aggiornato col valore CRM), diverso (non toccato), solo su SiDLY (`assenteCrm`), solo nel CRM (`assenteSidly`), non verificabile (endpoint SiDLY illeggibile).
+## Dashboard: prima si vede, poi si sceglie, poi si scrive
+1. La nuvola apre SEMPRE un'anteprima (`dry_run`) con la tabella **Campo | SiDLY | CRM | Cosa fare**, raggruppata in Anagrafica, Referenti, Braccialetto, Patologie e farmaci, Scheda assistito. Stati: uguale, diverso, solo su SiDLY, solo nel CRM, non verificabile. Il menu compare solo sulle righe in cui si puo' scegliere; sulle altre una nota spiega perche' non e' modificabile.
+2. "Mostra le N modifiche scelte" (attivo solo con almeno una scelta): seconda anteprima con "Prima / Dopo", separata in "Verra' scritto su SiDLY" e "Verra' scritto nel CRM". Ancora nessuna scrittura.
+3. "Conferma e scrivi" invia `conferma_scrittura:true` con le stesse `scelte`. "Indietro: cambia le scelte" torna alla tabella.
 
-Campi **solo su SiDLY** (il CRM non li ha): sesso, descrizione, parentela e indirizzo dei contatti, soglie FC, rilevamento cadute, intervallo misurazioni, zona di sicurezza, notifiche, firmware, interruttori patologie senza equivalente CRM, autonomia, dove stanno documenti/farmaci, vaccinazione, covid, scheda assistito (edificio, citofono, ospedale, dieta).
-Campi **solo nel CRM** (SiDLY non li ha): codice fiscale assistito, luogo di nascita, richiedente (nome, cognome, e-mail, telefono), servizio/piano; patologie senza interruttore SiDLY (ictus, oncologica, insuff. renale, osteoporosi, depressione) vanno nel testo "altre patologie".
-
-La scrittura parte solo dal pulsante "Conferma e scrivi su SiDLY", che invia `conferma_scrittura: true`. L'endpoint rifiuta (400) ogni richiesta che non sia `dry_run` ne' confermata. Anche "Associa questo" e "Crea un nuovo assistito" mostrano prima l'anteprima. Per un assistito nuovo la colonna "Prima" e' vuota.
+Campi **solo su SiDLY** (sola lettura): sesso, descrizione, parentela e indirizzo dei contatti, soglie FC, cadute, intervallo misurazioni, zona, notifiche, firmware, patologie senza equivalente CRM, autonomia, vaccinazione, covid, dati scheda assistito. Campi **solo nel CRM**: codice fiscale, luogo di nascita, richiedente, servizio/piano.
 
 ## Stato nel CRM: tabella laterale `sidly_sync`
 Deviazione dal prompt: niente `ALTER TABLE assistiti` (D1 ha limite 100 colonne; usiamo una side table come `lead_attribution`).
