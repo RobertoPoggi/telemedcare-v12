@@ -44,6 +44,8 @@ export interface SyncResult {
   assistito?: string
   /** Una riga per sezione: cambia / gia' allineato / solo segnalato / non verificabile. */
   riepilogo?: Riepilogo[]
+  /** Confronto riga per riga SiDLY / CRM per la tabella dell'anteprima (non viene salvato nel DB). */
+  confronto?: RigaConfronto[]
   previsto?: 'creato' | 'aggiornato' | 'invariato'
   sidly_user_id: string | null
   azioni: Azione[]
@@ -128,12 +130,14 @@ function isEmpty(v: unknown): boolean {
 // Dati CRM -> paziente SiDLY
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface CrmSources { assistito: any; lead: any | null; config: any | null; simNumber: string | null }
+export interface CrmSources { assistito: any; lead: any | null; config: any | null; simNumber: string | null; /** Altri campi della richiesta (CF, luogo di nascita, richiedente, piano): solo per il confronto a video. */ extra?: any | null }
 export interface SosPhone { numberPrefix: string; number: string; repeatNumber: number; alias?: string }
 export interface Referente { name: string; phone: string; family_kind?: string; others?: string }
 export interface WhitelistEntry { number: string; alias: string }
 export interface MedicalCrm { flags: Record<string, 1>; other_diseases?: string; allergy?: string; medicines?: string; more_info?: string }
 export interface Differenza { campo: string; crm: unknown; sidly: unknown; etichetta?: string }
+export type StatoRiga = 'uguale' | 'cambia' | 'diverso' | 'solo_sidly' | 'solo_crm' | 'non_sincronizzato' | 'non_verificato'
+export interface RigaConfronto { gruppo: string; campo: string; sidly: string; crm: string; stato: StatoRiga; /** Il CRM non ha proprio questo campo. */ assenteCrm?: boolean; /** SiDLY non ha proprio questo campo. */ assenteSidly?: boolean }
 export interface Riepilogo { sezione: string; stato: 'cambia' | 'allineato' | 'solo_segnalato' | 'non_verificato' }
 export interface CrmPatient {
   imei: string
@@ -144,6 +148,9 @@ export interface CrmPatient {
   band: { imei: string; phones?: SosPhone[]; simNumber?: string; timezone: string; lang_band: string; [k: string]: any }
   /** Scheda assistito (patientCard): solo i campi che il CRM possiede (medico curante, centro di riferimento). */
   scheda: { name_of_doctor?: string; hospital_info?: string }
+  emailAssistito: string
+  /** Dati presenti nel CRM che SiDLY non ha (solo visualizzazione). */
+  altriCrm: Array<{ etichetta: string; valore: string }>
   warnings: string[]
 }
 
@@ -314,7 +321,16 @@ export function buildCrmPatient(src: CrmSources, env: SidlyEnv): CrmPatient | { 
   const doc = [toStr(cfg.medico_curante_nome), toStr(cfg.medico_curante_telefono)].filter(Boolean).join(' - ')
   if (doc) scheda.name_of_doctor = doc
   if (toStr(cfg.centro_medico_riferimento)) scheda.hospital_info = toStr(cfg.centro_medico_riferimento)
-  return { imei, user, band, warnings, referenti, whitelist, medical: buildMedical(cfg), scheda }
+  const ex = src.extra || {}
+  const altriCrm: Array<{ etichetta: string; valore: string }> = []
+  const add = (etichetta: string, v: unknown) => { const t = toStr(v); if (t) altriCrm.push({ etichetta, valore: t }) }
+  add('Codice fiscale assistito', ex.cfAssistito)
+  add('Luogo di nascita', ex.luogoNascitaAssistito)
+  add('Richiedente', [ex.nomeRichiedente, ex.cognomeRichiedente].filter(Boolean).join(' '))
+  add('E-mail del richiedente', ex.email)
+  add('Telefono del richiedente', ex.telefono)
+  add('Servizio / piano', [ex.servizio, ex.piano].filter(Boolean).join(' · '))
+  return { imei, user, band, warnings, referenti, whitelist, medical: buildMedical(cfg), scheda, emailAssistito: toStr(cfg.email), altriCrm }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -667,59 +683,69 @@ export function anteprimaDettagliNuovo(crm: CrmPatient): CampoInviato[] {
   return out
 }
 
-async function syncDettagli(client: SidlyClient, crm: CrmPatient, imei: string, dry: boolean, out: SyncResult): Promise<string | null> {
+interface Raw { nuovo?: boolean; plat?: PlatformPatient; brief?: any; full?: any; contacts?: any; diseases?: any; card?: any }
+
+async function syncDettagli(client: SidlyClient, crm: CrmPatient, imei: string, dry: boolean, out: SyncResult, raw: Raw): Promise<string | null> {
   const diag: Record<string, unknown> = {}
   const differenze: Differenza[] = []
-  // Contatti (referenti)
-  if (crm.referenti.length) {
+  // Contatti (referenti): si legge sempre (per il confronto); si scrive solo se il CRM ha referenti
+  {
     const g = await client.request('GET', `/getContacts/${enc(imei)}`)
     out.azioni.push({ azione: 'GET /getContacts/{imei}', risultato: String(g.status) })
     if (dry) diag.forma_contatti = ok2xx(g.status) ? shapeOf(g.json) : 'non leggibile'
     if (ok2xx(g.status)) {
-      const pl = planContacts(crm, g.json)
-      out.campi_inviati.push(...pl.campi)
-      if (pl.form) {
-        const campi = pl.campi.map(c => c.campo)
-        if (dry) out.azioni.push({ azione: 'PATCH /editContacts/{imei}', risultato: 'non eseguito (anteprima)', campi })
-        else {
-          const p = await client.request('PATCH', `/editContacts/${enc(imei)}`, pl.form)
-          out.azioni.push({ azione: 'PATCH /editContacts/{imei}', risultato: String(p.status), campi })
-          if (!ok2xx(p.status)) return `Aggiornamento dei referenti su SiDLY non riuscito (HTTP ${p.status})`
+      raw.contacts = g.json
+      if (crm.referenti.length) {
+        const pl = planContacts(crm, g.json)
+        out.campi_inviati.push(...pl.campi)
+        if (pl.form) {
+          const campi = pl.campi.map(c => c.campo)
+          if (dry) out.azioni.push({ azione: 'PATCH /editContacts/{imei}', risultato: 'non eseguito (anteprima)', campi })
+          else {
+            const p = await client.request('PATCH', `/editContacts/${enc(imei)}`, pl.form)
+            out.azioni.push({ azione: 'PATCH /editContacts/{imei}', risultato: String(p.status), campi })
+            if (!ok2xx(p.status)) return `Aggiornamento dei referenti su SiDLY non riuscito (HTTP ${p.status})`
+          }
         }
       }
-    } else out.warning.push(`Referenti non sincronizzati: lettura dei contatti SiDLY non riuscita (HTTP ${g.status})`)
+    } else if (crm.referenti.length) out.warning.push(`Referenti non sincronizzati: lettura dei contatti SiDLY non riuscita (HTTP ${g.status})`)
   }
   // Patologie e farmaci
-  if (hasMedical(crm.medical)) {
+  {
     const g = await client.request('GET', `/getDiseases/${enc(imei)}`)
     out.azioni.push({ azione: 'GET /getDiseases/{imei}', risultato: String(g.status) })
     if (dry) diag.forma_patologie = ok2xx(g.status) ? shapeOf(g.json) : 'non leggibile'
     if (ok2xx(g.status)) {
-      const pl = planDiseases(crm, g.json)
-      differenze.push(...pl.differenze)
-      out.campi_inviati.push(...pl.campi)
-      if (pl.form) {
-        const campi = pl.campi.map(c => c.campo)
-        if (dry) out.azioni.push({ azione: 'PATCH /editDiseases/{imei}', risultato: 'non eseguito (anteprima)', campi })
-        else {
-          const p = await client.request('PATCH', `/editDiseases/${enc(imei)}`, pl.form)
-          out.azioni.push({ azione: 'PATCH /editDiseases/{imei}', risultato: String(p.status), campi })
-          if (!ok2xx(p.status)) return `Aggiornamento di patologie e farmaci su SiDLY non riuscito (HTTP ${p.status})`
+      raw.diseases = g.json
+      if (hasMedical(crm.medical)) {
+        const pl = planDiseases(crm, g.json)
+        differenze.push(...pl.differenze)
+        out.campi_inviati.push(...pl.campi)
+        if (pl.form) {
+          const campi = pl.campi.map(c => c.campo)
+          if (dry) out.azioni.push({ azione: 'PATCH /editDiseases/{imei}', risultato: 'non eseguito (anteprima)', campi })
+          else {
+            const p = await client.request('PATCH', `/editDiseases/${enc(imei)}`, pl.form)
+            out.azioni.push({ azione: 'PATCH /editDiseases/{imei}', risultato: String(p.status), campi })
+            if (!ok2xx(p.status)) return `Aggiornamento di patologie e farmaci su SiDLY non riuscito (HTTP ${p.status})`
+          }
         }
       }
-    } else out.warning.push(`Patologie e farmaci non sincronizzati: lettura SiDLY non riuscita (HTTP ${g.status})`)
+    } else if (hasMedical(crm.medical)) out.warning.push(`Patologie e farmaci non sincronizzati: lettura SiDLY non riuscita (HTTP ${g.status})`)
   }
   // Scheda assistito: sola lettura
-  if (Object.keys(crm.scheda).length) {
+  {
     const g = await client.request('GET', `/patientCard/${enc(imei)}`)
     out.azioni.push({ azione: 'GET /patientCard/{imei} (sola lettura)', risultato: String(g.status) })
     if (dry) diag.forma_scheda_assistito = ok2xx(g.status) ? shapeOf(g.json) : 'non leggibile'
-    if (ok2xx(g.status)) differenze.push(...planScheda(crm, g.json))
-    else out.warning.push(`Scheda assistito non letta (HTTP ${g.status}): il portale la usa solo per alcuni profili`)
+    if (ok2xx(g.status)) {
+      raw.card = g.json
+      if (Object.keys(crm.scheda).length) differenze.push(...planScheda(crm, g.json))
+    } else if (Object.keys(crm.scheda).length) out.warning.push(`Scheda assistito non letta (HTTP ${g.status}): il portale la usa solo per alcuni profili`)
   }
   if (differenze.length) {
     out.differenze = [...(out.differenze || []), ...differenze]
-    out.warning.push(`${differenze.length} campo/i di "Dettagli utente" su SiDLY diversi dal CRM (o vuoti nella scheda assistito): non sovrascritti, vedi "Differenze"`)
+    out.warning.push(`${differenze.length} campo/i di "Dettagli utente" su SiDLY diversi dal CRM (o vuoti nella scheda assistito): non sovrascritti, vedi la tabella`)
   }
   if (dry && Object.keys(diag).length) out.diagnostica = { ...(out.diagnostica || {}), ...diag }
   return null
@@ -762,7 +788,127 @@ function mostra(v: unknown, campo: string): string {
 }
 const conAlias = (n: string, a: string) => (a && a !== n ? `${a} ${n}` : n)
 
-function decora(out: SyncResult, crm: CrmPatient): void {
+// ── Confronto riga per riga SiDLY / CRM (tabella dell'anteprima) ────────────────────────────────────
+const DISEASE_SOLO_SIDLY: Array<[string, string]> = [
+  ['walking_person', 'Autonomia nel camminare'], ['hearing', 'Udito'], ['seeing', 'Vista'], ['thinking', 'Capacità di pensiero'],
+  ['place_for_documents', 'Dove si trovano i documenti'], ['place_for_medicines', 'Dove si trovano i farmaci'],
+  ['vaccine', 'Vaccinazione'], ['vaccine_date', 'Data vaccinazione'], ['covid', 'Covid'],
+]
+const CARD_SOLO_SIDLY: Array<[string, string]> = [
+  ['description_building', 'Descrizione dell\'edificio'], ['intercom_code', 'Codice citofono'], ['register_hospital_info', 'Ospedale di registrazione'], ['diet', 'Dieta'],
+]
+const BAND_SOLO_SIDLY: Array<[string, string]> = [
+  ['min_hr', 'Soglia frequenza cardiaca minima'], ['max_hr', 'Soglia frequenza cardiaca massima'], ['fall', 'Rilevamento cadute'], ['measure', 'Intervallo misurazioni'],
+  ['is_alarm_zone', 'Zona di sicurezza attiva'], ['sos_notif', 'Notifiche SOS'], ['fall_notif', 'Notifiche caduta'], ['firmware_version', 'Versione firmware'],
+]
+const PATOLOGIE_MAPPATE = new Set(Object.values(PATOLOGIA_FLAG))
+
+export function buildConfronto(crm: CrmPatient, raw: Raw, out: SyncResult): RigaConfronto[] {
+  const rows: RigaConfronto[] = []
+  const nuovo = !!raw.nuovo
+  const sent = new Set(out.campi_inviati.map(c => c.campo))
+  const plat: PlatformPatient = raw.plat || { userId: null, user: {}, band: {} }
+  const full = rootOf(raw.full), brief = rootOf(raw.brief)
+  const fu = full.user || {}, fb = full.band || {}
+  const letto = nuovo || !!raw.full
+  const g = (gruppo: string, campo: string, sidly: unknown, crmv: unknown, stato: StatoRiga, extra: { assenteCrm?: boolean; assenteSidly?: boolean } = {}) =>
+    rows.push({ gruppo, campo, sidly: toStr(sidly), crm: toStr(crmv), stato, ...extra })
+  /** Campo che esiste solo su SiDLY (il CRM non lo ha). */
+  const gs = (gruppo: string, campo: string, sidly: unknown) => g(gruppo, campo, sidly, '', 'solo_sidly', { assenteCrm: true })
+  /** Stato in base a cio' che la sincronizzazione fa davvero (chiave inviata) e al confronto dei valori. */
+  const st = (key: string | null, s: string, c: string, eq: (a: any, b: any) => boolean = eqStr): StatoRiga => {
+    if (key && sent.has(key)) return 'cambia'
+    if (!s && !c) return 'uguale'
+    if (!c) return 'solo_sidly'
+    if (!s) return 'solo_crm'
+    return eq(s, c) ? 'uguale' : 'diverso'
+  }
+
+  // Anagrafica
+  const A = 'Anagrafica'
+  const tel = (p?: string, n?: string) => `${toStr(p)}${toStr(n)}`
+  g(A, 'Nome', plat.user.firstName, crm.user.firstName, st('user.firstName', toStr(plat.user.firstName), crm.user.firstName))
+  g(A, 'Cognome', plat.user.lastName, crm.user.lastName, st('user.lastName', toStr(plat.user.lastName), crm.user.lastName))
+  const dS = plat.user.date ? mostra(plat.user.date, 'user.date') : '', dC = crm.user.date ? mostra(crm.user.date, 'user.date') : ''
+  g(A, 'Data di nascita', dS, dC, letto ? st('user.date', dS, dC) : 'non_verificato')
+  g(A, 'Indirizzo', plat.user.address, crm.user.address, letto ? st('user.address', toStr(plat.user.address), toStr(crm.user.address), eqAddress) : 'non_verificato')
+  g(A, 'Telefono dell\'assistito', tel(plat.user.phonePrefix, plat.user.phone), tel(crm.user.phonePrefix, crm.user.phone), st('user.phone', tel(plat.user.phonePrefix, plat.user.phone), tel(crm.user.phonePrefix, crm.user.phone), eqPhoneLoose))
+  g(A, 'Peso (kg)', plat.user.weight, crm.user.weight, st('user.weight', toStr(plat.user.weight), toStr(crm.user.weight), eqNum))
+  g(A, 'Altezza (cm)', plat.user.height, crm.user.height, st('user.height', toStr(plat.user.height), toStr(crm.user.height), eqNum))
+  g(A, 'E-mail dell\'assistito', fu.email, crm.emailAssistito, st(null, toStr(fu.email), crm.emailAssistito))
+  gs(A, 'Sesso', fu.sex)
+  gs(A, 'Descrizione / note libere', fu.description)
+  for (const x of crm.altriCrm) g(A, x.etichetta, '', x.valore, 'solo_crm', { assenteSidly: true })
+
+  // Referenti
+  const R = 'Referenti ("Dettagli utente")'
+  if (!nuovo && raw.contacts === undefined) g(R, 'Referenti', '', crm.referenti.map(r => r.name).join(', '), 'non_verificato')
+  else {
+    const list = nuovo ? [] : pickArray(raw.contacts)
+    for (let i = 0; i < 3; i++) {
+      const n = i + 1, ref = crm.referenti[i], pc = list[i]
+      if (!ref && !pc) continue
+      const sn = toStr(pc?.name), sp = toStr(pc?.phone_num ?? pc?.phone), so = toStr(pc?.others)
+      g(R, `Referente ${n} · nome`, sn, ref?.name, st(`referente${n}.nome`, sn, toStr(ref?.name)))
+      g(R, `Referente ${n} · telefono`, sp, ref?.phone, st(`referente${n}.telefono`, sp, toStr(ref?.phone), eqPhoneLoose))
+      gs(R, `Referente ${n} · parentela`, pc?.family_kind)
+      gs(R, `Referente ${n} · indirizzo`, pc?.address)
+      g(R, `Referente ${n} · e-mail / note`, so, ref?.others, st(`referente${n}.altro`, so, toStr(ref?.others)))
+    }
+  }
+
+  // Numeri SOS e numeri ammessi
+  const B = 'Braccialetto'
+  const sosS = (plat.band.phones || []).map(p => conAlias(p.numberPrefix + p.number, p.alias || '')).join('\n')
+  const sosC = (crm.band.phones || []).map(p => conAlias(p.numberPrefix + p.number, p.alias || '')).join('\n')
+  const kset = (arr: SosPhone[]) => arr.map(phoneKey).sort().join()
+  if (sosS || sosC) g(B, 'Numeri SOS (devono essere i 3 referenti)', sosS, sosC, sent.has('band.phones') ? 'cambia' : (!sosC ? 'solo_sidly' : (kset(plat.band.phones || []) === kset(crm.band.phones || []) ? 'uguale' : 'diverso')))
+  const wlS = (plat.band.whitelist || []).join('\n')
+  const wlC = crm.whitelist.map(w => conAlias(w.number, w.alias)).join('\n')
+  if (wlS || wlC) g(B, 'Numeri ammessi (whitelist)', wlS, wlC, sent.has('band.whitelistNumbers') ? 'cambia' : (!wlC ? 'solo_sidly' : 'uguale'))
+  g(B, 'Numero SIM', plat.band.simNumber, crm.band.simNumber, st('band.simNumber', toStr(plat.band.simNumber), toStr(crm.band.simNumber), eqDigits))
+  g(B, 'IMEI', brief.imei ?? (nuovo ? '' : crm.imei), crm.imei, 'uguale')
+  if (letto && !nuovo) {
+    for (const [k, lab] of BAND_SOLO_SIDLY) if (fb[k] !== undefined) gs(B, lab, fb[k])
+    if (brief.batteryLevel !== undefined) gs(B, 'Livello batteria', brief.batteryLevel)
+    if (brief.last_contact !== undefined) gs(B, 'Ultimo contatto', brief.last_contact)
+  }
+
+  // Patologie e farmaci
+  const P = 'Patologie e farmaci'
+  if (!nuovo && raw.diseases === undefined) g(P, 'Patologie e farmaci', '', '', 'non_verificato')
+  else {
+    const d = nuovo ? {} : rootOf(raw.diseases)
+    for (const f of SIDLY_DISEASE_FLAGS) {
+      const on = truthy((d as any)[f])
+      const mapped = PATOLOGIE_MAPPATE.has(f)
+      const c = mapped ? (crm.medical.flags[f] ? 'Sì' : 'No') : ''
+      if (!mapped) { gs(P, FLAG_LABEL[f] || f, on ? 'Sì' : 'No'); continue }
+      g(P, FLAG_LABEL[f] || f, on ? 'Sì' : 'No', c, sent.has('patologie.' + f) ? 'cambia' : (on && c === 'No' ? 'solo_sidly' : (c === 'Sì' && on) || (c === 'No' && !on) ? 'uguale' : 'diverso'))
+    }
+    for (const [ck, sk, lab] of [['allergy', 'allergy', 'Allergie'], ['other_diseases', 'other_diseases', 'Altre patologie'], ['medicines', 'medicines', 'Farmaci'], ['more_info', 'more_info', 'Note mediche']] as Array<[keyof MedicalCrm, string, string]>) {
+      const sv = toStr((d as any)[sk]), cv = toStr(crm.medical[ck])
+      g(P, lab, sv, cv, sent.has('patologie.' + sk) ? 'cambia' : (!sv && !cv ? 'uguale' : !cv ? 'solo_sidly' : !sv ? 'solo_crm' : containsAll(sv, cv) ? 'uguale' : 'diverso'))
+    }
+    for (const [k, lab] of DISEASE_SOLO_SIDLY) gs(P, lab, (d as any)[k])
+  }
+
+  // Scheda assistito
+  const S2 = 'Scheda assistito'
+  if (!nuovo && raw.card === undefined) g(S2, 'Scheda assistito', '', [crm.scheda.name_of_doctor, crm.scheda.hospital_info].filter(Boolean).join(' · '), 'non_verificato')
+  else {
+    const cardRoot = rootOf(raw.card)
+    const card: any = nuovo ? {} : (cardRoot.patientCard && typeof cardRoot.patientCard === 'object' ? cardRoot.patientCard : cardRoot)
+    for (const [k, lab] of [['name_of_doctor', 'Medico curante'], ['hospital_info', 'Centro medico di riferimento']] as Array<[keyof CrmPatient['scheda'], string]>) {
+      const sv = toStr(card[k]), cv = toStr(crm.scheda[k])
+      g(S2, lab, sv, cv, !sv && !cv ? 'uguale' : !cv ? 'solo_sidly' : !sv ? 'solo_crm' : containsAll(sv, cv) ? 'uguale' : 'diverso')
+    }
+    for (const [k, lab] of CARD_SOLO_SIDLY) gs(S2, lab, card[k])
+  }
+  return rows
+}
+
+function decora(out: SyncResult, crm: CrmPatient, raw: Raw): void {
   out.assistito = `${crm.user.firstName} ${crm.user.lastName}`.trim()
   out.campi_inviati = out.campi_inviati.map(c => {
     const d: CampoInviato = { ...c, etichetta: etichettaCampo(c.campo) }
@@ -789,6 +935,7 @@ function decora(out: SyncResult, crm: CrmPatient): void {
   if (hasMedical(crm.medical)) r.push({ sezione: 'Patologie, farmaci, allergie, note mediche', stato: !letto('GET /getDiseases') ? 'non_verificato' : has(/^patologie\./) ? 'cambia' : hasDiff(/^patologie\./) ? 'solo_segnalato' : 'allineato' })
   if (Object.keys(crm.scheda).length) r.push({ sezione: 'Scheda assistito (medico curante, centro di riferimento)', stato: !letto('GET /patientCard') ? 'non_verificato' : hasDiff(/^scheda\./) ? 'solo_segnalato' : 'allineato' })
   out.riepilogo = r
+  out.confronto = buildConfronto(crm, raw, out)
 }
 
 export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
@@ -799,6 +946,7 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
     esito: 'errore', sidly_user_id: null, azioni: [], warning: [...crm.warnings], campi_inviati: [], url_for_band: { registrato: false },
   }
   const fail = (msg: string): SyncResult => { out.esito = 'errore'; out.errore = msg; return out }
+  const raw: Raw = {}
 
   try {
     let identifier = crm.imei
@@ -839,6 +987,7 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
 
       // CREAZIONE
       previsto = 'creato'
+      raw.nuovo = true
       const band = { ...crm.band, ...parseBandDefaults(env.SIDLY_BAND_DEFAULTS) }
       if (!env.SIDLY_BAND_DEFAULTS) out.warning.push('Parametri operativi (soglie FC, notifiche, misurazioni) non impostati: configurali sul portale SiDLY oppure in SIDLY_BAND_DEFAULTS')
       const body = { user: crm.user, band }
@@ -881,6 +1030,7 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
           }
         }
       }
+      raw.brief = res.json; raw.full = fullJson; raw.plat = plat
       if (!fullJson) nonVisibili = ['address', 'date', 'phonePrefix']
       if (dry) out.diagnostica = { forma_risposta_patient: shapeOf(res.json), forma_scheda_completa: fullJson ? shapeOf(fullJson) : 'non leggibile' }
       out.sidly_user_id = plat.userId || (assoc || null)
@@ -913,7 +1063,7 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
     if (previsto === 'creato' && dry) {
       out.warning.push('Assistito nuovo: referenti e patologie vengono scritti subito dopo la creazione; nell\'anteprima sono elencati con "Prima" vuoto')
     } else {
-      const errD = await syncDettagli(client, crm, assoc || crm.imei, dry, out)
+      const errD = await syncDettagli(client, crm, assoc || crm.imei, dry, out, raw)
       if (errD) return fail(errD)
       if (previsto === 'invariato' && out.campi_inviati.length) previsto = 'aggiornato'
     }
@@ -937,7 +1087,7 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
     }
 
     if (dry) { out.esito = 'anteprima'; out.previsto = previsto } else { out.esito = previsto }
-    decora(out, crm)
+    decora(out, crm, raw)
     return out
   } catch (e: any) {
     return fail(e?.message ? String(e.message).slice(0, 200) : 'Errore di comunicazione con SiDLY')
@@ -972,9 +1122,11 @@ export async function loadCrmSources(db: any, assistitoId: number): Promise<CrmS
   const lead = leadId
     ? await safeFirst(db, `SELECT nomeAssistito, cognomeAssistito, dataNascitaAssistito, indirizzoAssistito, cittaAssistito, capAssistito, provinciaAssistito FROM leads WHERE id = ?`, leadId)
     : null
+  // Query separata: se una colonna non esiste in un ambiente, il confronto perde solo queste righe, non la sincronizzazione.
+  const extra = leadId ? await safeFirst(db, 'SELECT cfAssistito, luogoNascitaAssistito, nomeRichiedente, cognomeRichiedente, email, telefono, piano, servizio FROM leads WHERE id = ?', leadId) : null
   const config = leadId ? await safeFirst(db, 'SELECT * FROM configurations WHERE leadId = ? ORDER BY id DESC LIMIT 1', leadId) : null
   const ddt = assistito.imei ? await safeFirst(db, 'SELECT sim_number FROM ddts WHERE serial_number = ? AND sim_number IS NOT NULL AND sim_number != \'\' ORDER BY created_at DESC LIMIT 1', assistito.imei) : null
-  return { assistito, lead, config, simNumber: ddt?.sim_number || null }
+  return { assistito, lead, config, simNumber: ddt?.sim_number || null, extra }
 }
 
 export interface RunOptions {

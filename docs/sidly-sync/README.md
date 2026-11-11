@@ -39,7 +39,12 @@ In anteprima la sezione `diagnostica` mostra solo la STRUTTURA delle risposte (c
 Per un assistito appena creato i dettagli si sincronizzano subito dopo il POST (in anteprima non c'e' nulla da leggere).
 
 ## Dashboard: prima si vede, poi si scrive
-La nuvola apre SEMPRE un'anteprima (`dry_run`, nessuna scrittura) con la tabella **Prima (su SiDLY ora) / Dopo** per ogni campo. La scrittura parte solo dal pulsante "Conferma e scrivi su SiDLY", che invia `conferma_scrittura: true`. L'endpoint rifiuta (400) ogni richiesta che non sia `dry_run` ne' confermata. Anche "Associa questo" e "Crea un nuovo assistito" mostrano prima l'anteprima. Per un assistito nuovo la colonna "Prima" e' vuota.
+La nuvola apre SEMPRE un'anteprima (`dry_run`, nessuna scrittura) con una tabella orizzontale **Campo | SiDLY | CRM | Esito** (righe `confronto` della risposta, raggruppate in Anagrafica, Referenti, Braccialetto, Patologie e farmaci, Scheda assistito). Esiti: uguale, cambia (SiDLY verra' aggiornato col valore CRM), diverso (non toccato), solo su SiDLY (`assenteCrm`), solo nel CRM (`assenteSidly`), non verificabile (endpoint SiDLY illeggibile).
+
+Campi **solo su SiDLY** (il CRM non li ha): sesso, descrizione, parentela e indirizzo dei contatti, soglie FC, rilevamento cadute, intervallo misurazioni, zona di sicurezza, notifiche, firmware, interruttori patologie senza equivalente CRM, autonomia, dove stanno documenti/farmaci, vaccinazione, covid, scheda assistito (edificio, citofono, ospedale, dieta).
+Campi **solo nel CRM** (SiDLY non li ha): codice fiscale assistito, luogo di nascita, richiedente (nome, cognome, e-mail, telefono), servizio/piano; patologie senza interruttore SiDLY (ictus, oncologica, insuff. renale, osteoporosi, depressione) vanno nel testo "altre patologie".
+
+La scrittura parte solo dal pulsante "Conferma e scrivi su SiDLY", che invia `conferma_scrittura: true`. L'endpoint rifiuta (400) ogni richiesta che non sia `dry_run` ne' confermata. Anche "Associa questo" e "Crea un nuovo assistito" mostrano prima l'anteprima. Per un assistito nuovo la colonna "Prima" e' vuota.
 
 ## Stato nel CRM: tabella laterale `sidly_sync`
 Deviazione dal prompt: niente `ALTER TABLE assistiti` (D1 ha limite 100 colonne; usiamo una side table come `lead_attribution`).

@@ -376,7 +376,7 @@ export async function runSidlyTests(ok: Ok, section: Section) {
     ok(/'\[SIDLY-SYNC\]', JSON\.stringify\(\{\s+assistito_id: assistitoId, esito: result\.esito/.test(idx) && !/console\.log\([^)]*SIDLY_PASSWORD/.test(idx), 'endpoint: log strutturato con id assistito ed esito, senza segreti né dati personali')
     const dash = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
     ok(/assistito\.imei && status === 'ATTIVO'\)\s+\? '<button id="sidlyBtn_'/.test(dash), 'dashboard: il pulsante compare solo con IMEI assegnato e stato ATTIVO')
-    ok(/fetch\('\/api\/sidly\/sync-assistito'/.test(dash) && /conferma_richiesta/.test(dash) && /escapeHtml\(a\.azione\)/.test(dash) && /escapeHtml\(c\.etichetta \|\| c\.campo\)/.test(dash) && /escapeHtml\(d\.etichetta \|\| d\.campo\)/.test(dash) && /sidlyShow\(a\)/.test(dash), 'dashboard: chiama l\'endpoint, gestisce la conferma omonimi ed esegue l\'escape dei valori mostrati')
+    ok(/fetch\('\/api\/sidly\/sync-assistito'/.test(dash) && /conferma_richiesta/.test(dash) && /escapeHtml\(a\.azione\)/.test(dash) && /escapeHtml\(x\.campo\)/.test(dash) && /escapeHtml\(String\(v\)\)/.test(dash) && /escapeHtml\(gruppo\)/.test(dash), 'dashboard: chiama l\'endpoint, gestisce la conferma omonimi ed esegue l\'escape dei valori mostrati')
     // Regressione: un apice mal scritto nel template rompeva TUTTO lo script della Dashboard
     const tpl = await import('../../src/modules/dashboard-templates-new')
     let scriptRotti = 0, scriptTotali = 0
@@ -444,9 +444,10 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       const sommario = JSON.stringify({ esito: rD.esito, azioni: rD.azioni.map(a => ({ azione: a.azione, risultato: a.risultato })), warning: rD.warning })
       ok(!sommario.includes('Via Vecchia'), 'sidly_sync: il riepilogo salvato nel DB non contiene valori anagrafici')
     }
-    ok(/ORA SU SIDLY/.test(dash) && /DOPO LA SCRITTURA/.test(dash) && /c\.precedente === undefined/.test(dash) && /function sidlyCard/.test(dash), 'dashboard: una scheda per modifica con \"ORA SU SIDLY\" e \"DOPO LA SCRITTURA\"')
-    ok(/function sidlyRiepilogo/.test(dash) && /Già uguale al CRM/.test(dash) && /Verrà modificato/.test(dash) && /<details/.test(dash) && /Dettagli tecnici/.test(dash), 'dashboard: riepilogo per sezione e note tecniche nascoste nei \"Dettagli tecnici\"')
-    ok(/white-space:pre-line/.test(dash) && /max-width:760px/.test(dash), 'dashboard: valori su più righe (numeri a capo) e pannello largo abbastanza da non tagliarli')
+    ok(/function sidlyConfronto/.test(dash) && /<th style="' \+ th \+ '">SiDLY<\/th><th style="' \+ th \+ '">CRM<\/th>/.test(dash), 'dashboard: tabella orizzontale con le colonne SiDLY e CRM')
+    ok(/campo non presente nel CRM/.test(dash) && /campo non presente su SiDLY/.test(dash) && /solo su SiDLY/.test(dash) && /solo nel CRM/.test(dash), 'dashboard: i campi che esistono da una sola parte sono marcati come tali')
+    ok(/verrà aggiornato col valore del CRM/.test(dash) && /diverso: non lo tocco/.test(dash) && /<details/.test(dash) && /Dettagli tecnici/.test(dash), 'dashboard: esito per riga e note tecniche nascoste nei \"Dettagli tecnici\"')
+    ok(/white-space:pre-line/.test(dash) && /max-width:1040px/.test(dash) && /position:sticky/.test(dash), 'dashboard: valori su più righe, pannello largo e intestazione fissa')
     ok(/r\.previsto !== 'invariato'/.test(dash), 'dashboard: il pulsante \"Conferma\" compare solo se c\'è qualcosa da scrivere')
     ok(/payload\.dry_run = true/.test(dash) && /conferma_scrittura = true/.test(dash) && /window\.sidlyConfirm/.test(dash) && /Conferma e scrivi su SiDLY/.test(dash), 'dashboard: il click apre SEMPRE l\'anteprima; si scrive solo dopo "Conferma e scrivi"')
     ok(!/sidlyPrev_/.test(dash), 'dashboard: un solo pulsante (nuvola) che parte dall\'anteprima')
@@ -576,6 +577,56 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       const rm = await S.syncAssistito({ crm, env: ENV, fetchImpl: makePlatform({ patients: { [IMEI]: platformFrom(crm) }, detailStatus: 500 }).fetchImpl, dryRun: true })
       ok((rm.riepilogo || []).find(x => /^Referenti/.test(x.sezione))?.stato === 'non_verificato', 'riepilogo: lettura fallita → \"non verificabile\" (mai \"già uguale\")')
       ok(S.etichettaCampo('patologie.nadcisnienie') === 'Patologia: ipertensione' && S.etichettaCampo('referente2.telefono') === 'Referente 2 · telefono', 'etichette: patologie e referenti in italiano')
+    }
+
+    // confronto riga per riga SiDLY / CRM (tabella dell'anteprima)
+    {
+      const plat = platformFrom(crm, { phones: [{ numberPrefix: '+39', number: '3470001111', repeatNumber: 1 }], whitelistNumbers: '', min_hr: 50, fall: 1 }, { sex: 'F', description: 'nota SiDLY', email: 'a@b.it' })
+      const P = makePlatform({ patients: { [IMEI]: plat }, contacts: [{ id: 1, name: 'Mario Bianchi', phone_num: '3470001111', family_kind: 'figlio', address: 'Via X', others: 'email: m@x.it' }], diseases: { id: 1, nadcisnienie: 1, arytmia: 1, allergy: 'Polline', walking_person: 'bene', hearing: 'ok' }, card: { name_of_doctor: 'Dott. Gallo - 0101112222', intercom_code: '1234' } })
+      const r = await S.syncAssistito({ crm: crmOf({ config: { ...CFG, email: 'assistita@x.it' } }), env: ENV, fetchImpl: P.fetchImpl, dryRun: true })
+      const rows = r.confronto || []
+      const row = (campo: string) => rows.find(x => x.campo === campo)
+      ok(rows.length > 20, 'confronto: tabella completa (anagrafica, referenti, braccialetto, patologie, scheda)')
+      ok(row('Nome')?.sidly === 'Anna' && row('Nome')?.crm === 'Anna' && row('Nome')?.stato === 'uguale', 'confronto: nome uguale su SiDLY e nel CRM')
+      ok(row('Indirizzo')?.stato === 'uguale', 'confronto: indirizzo uguale')
+      ok(row('Sesso')?.assenteCrm === true && row('Sesso')?.sidly === 'F' && row('Sesso')?.stato === 'solo_sidly', 'campo solo su SiDLY: sesso')
+      ok(row('Descrizione / note libere')?.assenteCrm === true, 'campo solo su SiDLY: descrizione')
+      ok(row('Referente 1 · parentela')?.assenteCrm === true && row('Referente 1 · parentela')?.sidly === 'figlio' && row('Referente 1 · indirizzo')?.assenteCrm === true, 'campi solo su SiDLY: parentela e indirizzo del referente')
+      ok(row('Soglia frequenza cardiaca minima')?.assenteCrm === true && row('Soglia frequenza cardiaca minima')?.sidly === '50', 'campi solo su SiDLY: soglie del braccialetto')
+      ok(row('Aritmia') === undefined && rows.find(x => /^aritmia/i.test(x.campo))?.assenteCrm === true && rows.find(x => /^aritmia/i.test(x.campo))?.sidly === 'Sì', 'patologia solo su SiDLY: aritmia, senza equivalente nel CRM')
+      ok(row('Autonomia nel camminare')?.assenteCrm === true && row('Udito')?.assenteCrm === true, 'campi solo su SiDLY: autonomia e udito')
+      ok(row('Codice citofono')?.assenteCrm === true && row('Codice citofono')?.sidly === '1234', 'campi solo su SiDLY: scheda assistito (codice citofono)')
+      ok(row('Codice fiscale assistito') === undefined, 'senza dati extra nel CRM non compaiono righe vuote del codice fiscale')
+      ok(row('Referente 2 · nome')?.stato === 'cambia' && row('Referente 2 · nome')?.sidly === '' && row('Referente 2 · nome')?.crm === 'Luisa Verdi', 'confronto: referente 2 assente su SiDLY → da aggiornare')
+      ok(row('Numeri ammessi (whitelist)')?.stato === 'cambia' && row('Numeri ammessi (whitelist)')?.sidly === '', 'confronto: numeri ammessi vuoti su SiDLY → da aggiornare')
+      ok(row('Allergie')?.stato === 'diverso' && row('Allergie')?.sidly === 'Polline' && row('Allergie')?.crm === 'Penicillina', 'confronto: allergie diverse → \"diverso\", non toccate')
+      ok(row('E-mail dell\'assistito')?.sidly === 'a@b.it' && row('E-mail dell\'assistito')?.crm === 'assistita@x.it', 'confronto: e-mail dell\'assistito mostrata da entrambe le parti')
+      ok(row('Medico curante')?.stato === 'uguale' && row('Centro medico di riferimento')?.stato === 'solo_crm', 'confronto: scheda assistito (medico uguale, centro solo nel CRM)')
+      ok(!rows.some(x => x.stato === 'solo_sidly' && !x.assenteCrm && !x.crm && x.sidly === '' && false), 'confronto: coerenza interna')
+      ok(!P.calls.some(c => c.method !== 'GET' && c.path !== '/user/login'), 'confronto in anteprima: nessuna scrittura')
+      // dati extra del CRM: compaiono come \"solo nel CRM\"
+      const withExtra = S.buildCrmPatient({ ...SRC({ config: CFG }), extra: { cfAssistito: 'RSSNNA44C49F205X', luogoNascitaAssistito: 'Milano', nomeRichiedente: 'Marco', cognomeRichiedente: 'Rossi', email: 'marco@x.it', telefono: '3391112222', piano: 'AVANZATO', servizio: 'eCura PRO' } }, ENV) as S.CrmPatient
+      const Pe = makePlatform({ patients: { [IMEI]: platformFrom(withExtra) }, contacts: [], diseases: { id: 1 }, card: {} })
+      const re = await S.syncAssistito({ crm: withExtra, env: ENV, fetchImpl: Pe.fetchImpl, dryRun: true })
+      const cf = (re.confronto || []).find(x => x.campo === 'Codice fiscale assistito')
+      ok(cf?.assenteSidly === true && cf?.crm === 'RSSNNA44C49F205X' && cf?.stato === 'solo_crm', 'campo solo nel CRM: codice fiscale (SiDLY non lo ha)')
+      ok((re.confronto || []).some(x => x.campo === 'Richiedente' && x.crm === 'Marco Rossi' && x.assenteSidly) && (re.confronto || []).some(x => x.campo === 'Servizio / piano' && x.crm === 'eCura PRO · AVANZATO'), 'campi solo nel CRM: richiedente, servizio e piano')
+    }
+    {
+      // lettura fallita: mai \"uguale\" per quello che non si e' potuto leggere
+      const P = makePlatform({ patients: { [IMEI]: platformFrom(crm) }, detailStatus: 500, noFullRecord: true })
+      const r = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl, dryRun: true })
+      const rows = r.confronto || []
+      ok(rows.some(x => x.campo === 'Referenti' && x.stato === 'non_verificato') && rows.some(x => x.campo === 'Patologie e farmaci' && x.stato === 'non_verificato') && rows.some(x => x.campo === 'Scheda assistito' && x.stato === 'non_verificato'), 'confronto: contatti, patologie e scheda non letti → \"non verificabile\"')
+      ok(rows.find(x => x.campo === 'Indirizzo')?.stato === 'non_verificato' && rows.find(x => x.campo === 'Data di nascita')?.stato === 'non_verificato', 'confronto: indirizzo e data non leggibili → \"non verificabile\"')
+    }
+    {
+      // assistito nuovo: tutto \"solo nel CRM / da creare\", nessuna lettura
+      const P = makePlatform({})
+      const r = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl, confermaCrea: true, dryRun: true })
+      ok((r.confronto || []).length > 10 && (r.confronto || []).find(x => x.campo === 'Nome')?.stato === 'cambia' && !P.calls.some(c => c.path.startsWith('/getContacts')), 'confronto: assistito nuovo → righe da creare, nessuna lettura dettagli')
+      const blob = JSON.stringify(r.confronto)
+      ok(!blob.includes('p-segreta-xyz') && !blob.includes('tok-'), 'confronto: nessun token o password')
     }
 
     // errori: lettura o scrittura dei dettagli non riuscita
