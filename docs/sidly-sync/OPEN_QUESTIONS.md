@@ -13,6 +13,13 @@ Il prompt non documenta questi punti e non sono state fatte prove sulla piattafo
 9. **PATCH parziale**: conferma che campi omessi non vengano azzerati.
 10. **HRV, FR, stress**: non presenti nei frame documentati. Bloccano il report medie dalla Dashboard (andrebbero mostrati come "non disponibile").
 11. **Canale 2**: URL del ricevitore frame (`SIDLY_FRAME_URL`), AES-256-CBC opzionale. L'endpoint `sidly/ingest` è da costruire.
+12. **`/getContacts`, `/getDiseases`, `/patientCard`**: forme di risposta ricavate dal bundle del portale, MAI viste su chiamate reali. L'anteprima mostra la struttura reale (`diagnostica.forma_*`): da confrontare prima di scrivere.
+13. **PATCH di `editContacts` / `editDiseases`**: il portale invia sempre l'intero modulo, quindi il CRM fa lo stesso (rimanda i valori gia' su SiDLY). Non e' provato come l'API tratti `contactNID`/`diseaseID` ne' campi omessi.
+14. **Cardiopatia → `po_zawale`** (post-infarto): assunzione dedotta dall'ordine della schermata. Confermare.
+15. **Parentela dei referenti**: il CRM non la memorizza; resta quella di SiDLY. Se serve, aggiungere il campo al modulo CRM.
+16. **Numeri SOS = referenti**: se su SiDLY ci sono SOS diversi vengono sostituiti (avviso con i vecchi numeri). `repeatNumber` esistente conservato.
+17. **`patientCard`**: usata dal portale solo per profili `is_indiv`; trattata in sola lettura. Scrittura (`PATCH /patientCard/create/{imei}`) non implementata.
+18. **Dati sanitari**: copiare patologie e farmaci verso SiDLY richiede una base giuridica (art. 9 GDPR) e che SiDLY sia nominata responsabile del trattamento. Da confermare lato titolare.
 
 ## Verificato sul bundle del portale (sidly-platform.com), non sull'API reale
 - Creazione: `POST /manager/patient` con `{user:{firstName,lastName,email,date,sex,weight,height,phonePrefix,phone,address,description,avatar,type}, band:{imei,phones[],fall,timezone,sos_notif,fall_notif,zone_notif,firmware_version,lang_band,whitelistNumbers,...,zone?}, lang}`. Coerente con il prompt.

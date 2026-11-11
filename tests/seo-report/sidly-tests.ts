@@ -12,13 +12,14 @@ const IMEI = '868298061208378'
 interface Call { method: string; path: string; body: any; token?: string }
 
 /** Piattaforma SiDLY finta e con stato: GET/POST/PATCH paziente, myShortInfo, set-url-for-band, login. */
-function makePlatform(opts: { patients?: Record<string, any>; tokenExpiresOnce?: boolean; alwaysFail?: number; searchResults?: any[]; searchStatus?: number; noFullRecord?: boolean } = {}) {
+function makePlatform(opts: { patients?: Record<string, any>; tokenExpiresOnce?: boolean; alwaysFail?: number; searchResults?: any[]; searchStatus?: number; noFullRecord?: boolean; contacts?: any[]; diseases?: any; card?: any; detailStatus?: number; patchDetailStatus?: number } = {}) {
   const patients: Record<string, any> = opts.patients || {}
   const calls: Call[] = []
   let logins = 0
   let tokenValid = ''
   let expireOnce = !!opts.tokenExpiresOnce
   let nextId = 14879
+  const state = { contacts: opts.contacts, diseases: opts.diseases, card: opts.card }
   const fetchImpl: S.Fetch = async (url, init) => {
     const path = url.replace(ENV.SIDLY_BASE_URL!, '')
     const method = init?.method || 'GET'
@@ -52,9 +53,29 @@ function makePlatform(opts: { patients?: Record<string, any>; tokenExpiresOnce?:
       return reply(200, {})
     }
     if (method === 'POST' && path === '/manager/set-url-for-band') return reply(200, {})
+    m = path.match(/^\/(getContacts|getDiseases|patientCard|editContacts|editDiseases)\/(\d+)$/)
+    if (m) {
+      if (method === 'GET' && opts.detailStatus) return reply(opts.detailStatus, {})
+      if (method === 'PATCH' && opts.patchDetailStatus) return reply(opts.patchDetailStatus, {})
+      if (m[1] === 'getContacts') return state.contacts ? reply(200, { data: state.contacts }) : reply(404, {})
+      if (m[1] === 'getDiseases') return state.diseases ? reply(200, { data: state.diseases }) : reply(404, {})
+      if (m[1] === 'patientCard') return state.card ? reply(200, { patientCard: state.card }) : reply(404, {})
+      if (m[1] === 'editContacts') {
+        const list: any[] = []
+        for (const n of [1, 2, 3]) if (body[`contact${n}Name`] !== undefined || body[`contact${n}Phone`] !== undefined) list.push({ id: body[`contact${n}ID`] ?? 900 + n, name: body[`contact${n}Name`], phone_num: body[`contact${n}Phone`], family_kind: body[`contact${n}Affinity`], address: body[`contact${n}Address`], others: body[`contact${n}Others`] })
+        state.contacts = list
+        return reply(200, {})
+      }
+      if (m[1] === 'editDiseases') {
+        const d: any = { ...(state.diseases || {}) }
+        for (const [k, v] of Object.entries(body)) { if (k === 'diseaseID') d.id = v; else d[k] = v }
+        state.diseases = d
+        return reply(200, {})
+      }
+    }
     return reply(404, {})
   }
-  return { fetchImpl, calls, patients, get logins() { return logins } }
+  return { fetchImpl, calls, patients, state, get logins() { return logins } }
 }
 
 const SRC = (over: any = {}): S.CrmSources => ({
@@ -109,7 +130,7 @@ export async function runSidlyTests(ok: Ok, section: Section) {
   // ── costruzione dal CRM ────────────────────────────────────────────────────
   const c0 = crmOf()
   ok(c0.user.firstName === 'Anna' && c0.user.lastName === 'Rossi' && c0.user.phone === '3331112233' && c0.user.phonePrefix === '+39', 'CRM → paziente: nome, cognome, telefono con prefisso')
-  ok(c0.user.address === 'Via Roma 1, 20100 Milano (MI)' && c0.user.weight === 62 && c0.user.height === 160, 'CRM → paziente: indirizzo composto, peso, altezza')
+  ok(c0.user.address === 'Via Roma 1, Milano, MI, 20100' && c0.user.weight === 62 && c0.user.height === 160, 'CRM → paziente: indirizzo nel formato del portale (Via, Città, Provincia, CAP), peso, altezza')
   ok(c0.band.phones?.length === 1 && c0.band.phones[0].number === '3470001111' && c0.band.simNumber === '3897770000' && c0.band.timezone === 'Europe/Rome' && c0.band.lang_band === 'IT', 'CRM → band: numero SOS (il vuoto è omesso), SIM, timezone e lingua')
   const cm = crmOf({ assistito: { altezza: 1.6 } })
   ok(cm.user.height === 160, 'altezza in metri (1,6) → 160 cm')
@@ -163,7 +184,7 @@ export async function runSidlyTests(ok: Ok, section: Section) {
     const P = makePlatform({ patients: { [IMEI]: plat } })
     const r = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl })
     const patch = P.calls.find(c => c.method === 'PATCH')
-    ok(r.esito === 'aggiornato' && JSON.stringify(patch?.body) === '{"user":{"address":"Via Roma 1, 20100 Milano (MI)"}}', 'caso 4: address vuoto in piattaforma → PATCH con solo user.address')
+    ok(r.esito === 'aggiornato' && JSON.stringify(patch?.body) === '{"user":{"address":"Via Roma 1, Milano, MI, 20100"}}', 'caso 4: address vuoto in piattaforma → PATCH con solo user.address')
   }
 
   // ── caso 5: vuoto nel CRM, valorizzato in piattaforma → mai azzerato ───────
@@ -173,18 +194,21 @@ export async function runSidlyTests(ok: Ok, section: Section) {
     const P = makePlatform({ patients: { [IMEI]: platformFrom(full) } })
     const r = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl })
     ok(r.esito === 'invariato' && !P.calls.some(c => c.method === 'PATCH'), 'caso 5: vuoto nel CRM + valorizzato in piattaforma → nessuna PATCH')
-    ok(P.patients[IMEI].user.address === 'Via Roma 1, 20100 Milano (MI)' && P.patients[IMEI].user.weight === 62, 'caso 5: i dati in piattaforma restano intatti')
+    ok(P.patients[IMEI].user.address === 'Via Roma 1, Milano, MI, 20100' && P.patients[IMEI].user.weight === 62, 'caso 5: i dati in piattaforma restano intatti')
     const d = S.diffPatient(crm, S.normalizePlatformPatient(platformFrom(full)))
     ok(!('address' in d.userPatch) && !('weight' in d.userPatch), 'caso 5: address e weight assenti dal diff')
   }
 
-  // ── CRM master solo per l'anagrafica; configurazione operativa = piattaforma ─
+  // ── SOS = referenti ("Dettagli utente"): il CRM e' master, ma le soglie/zone/misure restano della piattaforma ─
   {
     const crm = crmOf({ config: { contatto_emergenza_1_telefono: '3490001234' } })
     const P = makePlatform({ patients: { [IMEI]: platformFrom(crm, { phones: [{ numberPrefix: '+39', number: '3470001111', repeatNumber: 1 }] }) } })
     const r = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl })
-    ok(r.esito === 'invariato' && !P.calls.some(c => c.method === 'PATCH'), 'SOS diversi in piattaforma: NON sovrascritti (nessuna PATCH)')
-    ok(r.warning.some(w => /SOS.*piattaforma/i.test(w)), 'SOS diversi: warning "campo gestito dalla piattaforma"')
+    const patch = P.calls.find(c => c.method === 'PATCH' && c.path.startsWith('/manager/patient/'))
+    ok(r.esito === 'aggiornato' && Object.keys(patch?.body || {}).join() === 'band' && Object.keys(patch?.body.band).join() === 'phones', 'SOS diversi in piattaforma → allineati al CRM (solo band.phones nella PATCH)')
+    const txt = JSON.stringify(patch?.body)
+    ok(!txt.includes('minHr') && !txt.includes('maxHr') && !txt.includes('zone') && !txt.includes('measure'), 'SOS allineati: soglie FC, zone e misure NON compaiono nel body')
+    ok(r.warning.some(w => /SOS.*sostituiti/i.test(w)) && r.campi_inviati.some(c => c.campo === 'band.phones' && Array.isArray(c.precedente)), 'SOS sostituiti: warning e valore precedente mostrati all\'operatore')
   }
   {
     const crm = crmOf()
@@ -388,7 +412,7 @@ export async function runSidlyTests(ok: Ok, section: Section) {
     {
       const crm = crmOf()
       const brevePlat = { user_id: 14879, id: 14879, imei: IMEI, first_name: 'Anna', last_name: 'Rossi', weight: 62, height: 160, sim_number: '3897770000' }
-      const piena = { user_id: 14879, user: { first_name: 'Anna', last_name: 'Rossi', birth_date: '1944-03-09', address: 'Via Roma 1, 20100 Milano (MI)', phonePrefix: '+39', phone: '3331112233', weight: 62, height: 160 }, band: { phones: [], simNumber: '3897770000' } }
+      const piena = { user_id: 14879, user: { first_name: 'Anna', last_name: 'Rossi', birth_date: '1944-03-09', address: 'Via Roma 1, Milano, MI, 20100', phonePrefix: '+39', phone: '3331112233', weight: 62, height: 160 }, band: { phones: [], simNumber: '3897770000' } }
       const Pf = makePlatform({ patients: { [IMEI]: { ...piena, ...brevePlat } } })
       const rf = await S.syncAssistito({ crm, env: ENV, fetchImpl: Pf.fetchImpl, dryRun: true })
       ok(Pf.calls.some(c => c.method === 'GET' && c.path === `/manager/patient-edit-initial-data/${IMEI}`), 'scheda completa: dopo GET /patient si legge /manager/patient-edit-initial-data/{imei}')
@@ -424,5 +448,129 @@ export async function runSidlyTests(ok: Ok, section: Section) {
     const sec = readFileSync('src/modules/sidly-sync.ts', 'utf8')
     ok(!/console\.(log|warn|error)/.test(sec), 'sidly-sync.ts: nessun console.* (niente fuga di token o dati)')
     ok(!/CREATE TABLE IF NOT EXISTS sidly_sync[\s\S]*ALTER TABLE/.test(sec) && !/ALTER TABLE/.test(sec), 'nessun ALTER TABLE: lo stato sta nella tabella laterale sidly_sync')
+  }
+
+  // ── «Dettagli utente»: referenti, SOS, numeri ammessi, patologie/farmaci, scheda ─────────────────────
+  {
+    const CFG = {
+      contatto1_nome: 'Mario', contatto1_cognome: 'Bianchi', contatto1_telefono: '3470001111', contatto1_email: 'm@x.it',
+      contatto2_nome: 'Luisa', contatto2_cognome: 'Verdi', contatto2_telefono: '+39 348 0002222',
+      contatto3_nome: 'Paolo', contatto3_cognome: 'Neri', contatto3_telefono: '3490003333',
+      whitelist1_nome: 'Farmacia', whitelist1_cognome: 'Centrale', whitelist1_telefono: '0102345678',
+      whitelist2_nome: 'Vicina', whitelist2_telefono: '3331234567',
+      patologie_croniche: JSON.stringify(['ipertensione', 'diabete', 'ictus']), patologie: 'Glaucoma', allergie: 'Penicillina',
+      farmaci_data: JSON.stringify([{ nome: 'Cardioaspirina', dosaggio: '100mg', orario: 'mattina' }]), note_mediche: 'Cammina col bastone',
+      medico_curante_nome: 'Dott. Gallo', medico_curante_telefono: '0101112222', centro_medico_riferimento: 'Ospedale Galliera',
+    }
+    const crm = crmOf({ config: CFG })
+
+    // costruzione
+    ok(crm.referenti.length === 3 && crm.referenti[0].name === 'Mario Bianchi' && crm.referenti[0].phone === '+393470001111', 'referenti: tre contatti del CRM con nome e telefono completo')
+    ok(crm.band.phones?.length === 3 && crm.band.phones.every((p, i) => p.numberPrefix + p.number === crm.referenti[i].phone), 'SOS = i tre referenti, nello stesso ordine')
+    ok(crm.band.phones?.[0].alias === 'Mario Bianchi', 'SOS: alias = nome del referente')
+    ok(crm.band.whitelistNumbers === '+390102345678,+393331234567' && crm.band.whiteListAlias === 'Farmacia Centrale,Vicina', 'numeri ammessi → whitelistNumbers / whiteListAlias (stringhe separate da virgola)')
+    ok(crm.medical.flags.nadcisnienie === 1 && crm.medical.flags.cukrzyca === 1 && !('po_zawale' in crm.medical.flags), 'patologie CRM → interruttori SiDLY (ipertensione, diabete)')
+    ok(/Ictus/.test(crm.medical.other_diseases || '') && /Glaucoma/.test(crm.medical.other_diseases || ''), 'patologie senza interruttore → testo "altre patologie"')
+    ok(/Cardioaspirina 100mg mattina/.test(crm.medical.medicines || '') && crm.medical.allergy === 'Penicillina' && crm.medical.more_info === 'Cammina col bastone', 'farmaci, allergie e note → campi testuali')
+    ok(crm.scheda.name_of_doctor === 'Dott. Gallo - 0101112222' && crm.scheda.hospital_info === 'Ospedale Galliera', 'medico curante e centro di riferimento → scheda assistito')
+    const crmVuoto = crmOf({ config: { contatto1_nome: '', contatto1_telefono: '', whitelist1_telefono: '', patologie_croniche: '', allergie: '' } })
+    ok(crmVuoto.referenti.length === 0 && crmVuoto.whitelist.length === 0 && !('whitelistNumbers' in crmVuoto.band) && Object.keys(crmVuoto.medical.flags).length === 0, 'campi vuoti nel CRM → nessun referente, whitelist o patologia')
+
+    // indirizzo tollerante
+    ok(S.eqAddress('Via Mastrangelo 4E/4, Genova, GE, 16166', 'Via Mastrangelo 4E/4, 16166 Genova (GE)'), 'indirizzo: stesso indirizzo in formati diversi → uguale')
+    ok(!S.eqAddress('Via Roma 1, Milano', 'Via Roma 2, Milano'), 'indirizzo: civico diverso → diverso')
+    ok(S.eqPhoneLoose('+393470001111', '3470001111') && !S.eqPhoneLoose('3470001111', '3470001112'), 'telefono: uguale con/senza prefisso, diverso se cambia una cifra')
+    {
+      const P = makePlatform({ patients: { [IMEI]: platformFrom(crmOf(), {}, { address: 'Via Roma 1, 20100 Milano (MI)' }) } })
+      const r = await S.syncAssistito({ crm: crmOf(), env: ENV, fetchImpl: P.fetchImpl, dryRun: true })
+      ok(!r.campi_inviati.some(c => c.campo === 'user.address'), 'indirizzo già presente in altro formato → non viene riscritto')
+    }
+
+    // piattaforma con contatti/malattie vuoti: tutto si compila
+    {
+      const plat = platformFrom(crm, { phones: [], whitelistNumbers: '', whiteListAlias: '' })
+      const P = makePlatform({ patients: { [IMEI]: plat }, contacts: [], diseases: { id: 55, walking_person: 'sì', hearing: 'ok' }, card: {} })
+      const r = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl })
+      const pc = P.calls.find(c => c.method === 'PATCH' && c.path === `/editContacts/${IMEI}`)
+      const pd = P.calls.find(c => c.method === 'PATCH' && c.path === `/editDiseases/${IMEI}`)
+      ok(r.esito === 'aggiornato' && !!pc && !!pd, 'piattaforma vuota: PATCH su editContacts e editDiseases')
+      ok(pc?.body.contact1Name === 'Mario Bianchi' && pc?.body.contact3Phone === '+393490003333' && pc?.body.contact2Name === 'Luisa Verdi', 'editContacts: i tre referenti nelle posizioni 1-3')
+      ok(pc?.body.contact1Others === 'email: m@x.it', 'editContacts: email del referente nel campo "altro"')
+      ok(pd?.body.nadcisnienie === 1 && pd?.body.cukrzyca === 1 && pd?.body.diseaseID === 55 && pd?.body.medicines.includes('Cardioaspirina') && pd?.body.allergy === 'Penicillina', 'editDiseases: interruttori, farmaci, allergie e diseaseID')
+      ok(pd?.body.walkingPerson === 'sì' && pd?.body.hearing === 'ok', 'editDiseases: i campi di autonomia già su SiDLY vengono rimandati invariati (il CRM non li possiede)')
+      const pb = P.calls.find(c => c.method === 'PATCH' && c.path.startsWith('/manager/patient/'))
+      ok(pb?.body.band.whitelistNumbers === crm.band.whitelistNumbers && pb?.body.band.phones.length === 3, 'band: numeri ammessi e tre SOS nella stessa PATCH')
+      ok(!JSON.stringify(P.calls.filter(c => c.method === 'PATCH').map(c => c.body)).includes('minHr'), 'nessuna PATCH tocca soglie FC')
+      // secondo giro: tutto allineato → invariato (idempotenza)
+      const P2calls = P.calls.length
+      const r2 = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl })
+      ok(r2.esito === 'invariato' && !P.calls.slice(P2calls).some(c => c.method === 'PATCH'), 'secondo click: invariato, nessuna PATCH (idempotenza)')
+    }
+
+    {
+      const P = makePlatform({ patients: { [IMEI]: platformFrom(crm) } , contacts: [], diseases: { id: 1 } })
+      const r = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl, dryRun: true })
+      ok(!r.campi_inviati.some(c => c.campo === 'band.whitelistNumbers' || c.campo === 'band.phones'), 'numeri ammessi e SOS già allineati su SiDLY → non inviati')
+    }
+
+    // referenti: non azzera, mantiene parentela/indirizzo di SiDLY, segnala valori diversi sostituiti
+    {
+      const contacts = [
+        { id: 1, name: 'Mario Bianchi', phone_num: '3470001111', family_kind: 'figlio', address: 'Via X', others: 'note SiDLY' },
+        { id: 2, name: 'Vecchia Persona', phone_num: '3200000000', family_kind: 'vicina', address: '', others: '' },
+      ]
+      const pl = S.planContacts(crm, { data: contacts })
+      ok(!!pl.form && pl.form.contact1Affinity === 'figlio' && pl.form.contact1Address === 'Via X' && pl.form.contact1Others === 'note SiDLY', 'referenti: parentela, indirizzo e note già su SiDLY non vengono azzerati né sovrascritti')
+      ok(pl.form?.contact2Name === 'Luisa Verdi' && pl.form?.contact2Affinity === 'vicina' && pl.form?.contact2ID === 2, 'referente 2: nome/telefono dal CRM, parentela di SiDLY mantenuta, ID conservato')
+      ok(pl.campi.some(c => c.campo === 'referente2.telefono' && c.precedente === '3200000000'), 'referente sostituito: mostrato il valore precedente')
+      ok(!pl.campi.some(c => c.campo.startsWith('referente1.')), 'referente 1 già uguale (anche senza prefisso): nessun campo inviato')
+      const noChange = S.planContacts(crmOf({ config: { contatto1_nome: 'Mario', contatto1_cognome: 'Bianchi', contatto1_telefono: '3470001111' } }), { data: [contacts[0]] })
+      ok(noChange.form === null, 'referenti già allineati → nessuna PATCH')
+      ok(!Object.values(pl.form || {}).some(v => v === undefined || v === null), 'editContacts: nessun valore undefined/null nel body')
+    }
+
+    // patologie: gli interruttori si accendono ma non si spengono; testi diversi → solo segnalati
+    {
+      const pl = S.planDiseases(crm, { data: { id: 9, parkinson: 1, cukrzyca: 0, nadcisnienie: 1, allergy: 'Polline', medicines: '', other_diseases: 'Glaucoma, Ictus' } })
+      ok(pl.form?.parkinson === 1 && pl.form?.cukrzyca === 1 && pl.form?.nadcisnienie === 1, 'patologie: parkinson (solo su SiDLY) mantenuto, diabete acceso')
+      ok(pl.form?.allergy === 'Polline' && !pl.campi.some(c => c.campo === 'patologie.allergy'), 'allergie diverse su SiDLY: non sovrascritte')
+      ok(pl.differenze.some(d => d.campo === 'patologie.allergy' && d.crm === 'Penicillina' && d.sidly === 'Polline'), 'allergie diverse: riportate in "differenze"')
+      ok(!pl.differenze.some(d => d.campo === 'patologie.other_diseases'), 'altre patologie già contenute su SiDLY: nessuna differenza')
+      ok(!!pl.form?.medicines && pl.campi.some(c => c.campo === 'patologie.medicines' && c.precedente === ''), 'farmaci vuoti su SiDLY: compilati dal CRM')
+      const none = S.planDiseases(crmOf({ config: { patologie_croniche: '[]' } }), { data: { id: 1 } })
+      ok(none.form === null, 'nessuna patologia nel CRM → nessuna PATCH')
+    }
+
+    // scheda: sola lettura + differenze, e le differenze non finiscono nel riepilogo salvato
+    {
+      const plat = platformFrom(crm)
+      const P = makePlatform({ patients: { [IMEI]: plat }, contacts: [], diseases: { id: 1 }, card: { name_of_doctor: 'Dott. Rossi', hospital_info: '' } })
+      const r = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl, dryRun: true })
+      ok(r.differenze?.some(d => d.campo === 'scheda.name_of_doctor' && d.sidly === 'Dott. Rossi') && r.differenze?.some(d => d.campo === 'scheda.hospital_info'), 'scheda assistito: differenze con medico e centro riportate')
+      ok(P.calls.some(c => c.path === `/patientCard/${IMEI}` && c.method === 'GET') && !P.calls.some(c => c.path.startsWith('/patientCard') && c.method !== 'GET'), 'scheda assistito: solo lettura (nessuna scrittura)')
+      ok(!P.calls.some(c => c.method !== 'GET' && c.path !== '/user/login'), 'anteprima: nessuna scrittura su nessun endpoint')
+      const diag = JSON.stringify(r.diagnostica || {})
+      ok(!diag.includes('Dott. Rossi') && !diag.includes('Mario') && /forma_contatti/.test(diag) && /forma_patologie/.test(diag), 'diagnostica dettagli: solo struttura, nessun dato personale')
+    }
+
+    // errori: lettura o scrittura dei dettagli non riuscita
+    {
+      const P = makePlatform({ patients: { [IMEI]: platformFrom(crm) }, detailStatus: 500 })
+      const r = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl, dryRun: true })
+      ok(r.esito === 'anteprima' && r.warning.some(w => /Referenti non sincronizzati/.test(w)) && r.warning.some(w => /Patologie e farmaci non sincronizzati/.test(w)), 'lettura dettagli fallita (HTTP 500): avvisi, nessun invio alla cieca')
+      const P2 = makePlatform({ patients: { [IMEI]: platformFrom(crm) }, contacts: [], diseases: { id: 1 }, patchDetailStatus: 500 })
+      const r2 = await S.syncAssistito({ crm, env: ENV, fetchImpl: P2.fetchImpl })
+      ok(r2.esito === 'errore' && /referenti/i.test(r2.errore || ''), 'scrittura referenti fallita → esito errore con messaggio chiaro')
+    }
+
+    // creazione: i dettagli vengono sincronizzati dopo il POST
+    {
+      const P = makePlatform({ contacts: [], diseases: { id: 3 } })
+      const r = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl, confermaCrea: true })
+      ok(r.esito === 'creato' && P.calls.some(c => c.path === `/editContacts/${IMEI}`) && P.calls.some(c => c.path === `/editDiseases/${IMEI}`), 'creazione: dopo il POST si sincronizzano referenti e patologie')
+      const P2 = makePlatform({})
+      const r2 = await S.syncAssistito({ crm, env: ENV, fetchImpl: P2.fetchImpl, confermaCrea: true, dryRun: true })
+      ok(r2.esito === 'anteprima' && r2.previsto === 'creato' && !P2.calls.some(c => c.path.startsWith('/getContacts')), 'anteprima di creazione: nessuna lettura dettagli su assistito inesistente')
+    }
   }
 }

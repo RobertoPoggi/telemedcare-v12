@@ -3327,7 +3327,8 @@ export const dashboard = `<!DOCTYPE html>
                                 '<i class="fas fa-edit"></i>' +
                             '</button>' +
                             ((assistito.imei && status === 'ATTIVO')
-                                ? '<button id="sidlyBtn_' + assistitoId + '" onclick="window.syncSidly(' + assistitoId + ')" class="text-teal-600 hover:text-teal-800 hover:bg-teal-50 p-1 rounded transition text-sm" title="Carica su SiDLY"><i class="fas fa-cloud-upload-alt"></i></button>'
+                                ? '<button id="sidlyBtn_' + assistitoId + '" onclick="window.syncSidly(' + assistitoId + ')" class="text-teal-600 hover:text-teal-800 hover:bg-teal-50 p-1 rounded transition text-sm" title="Carica su SiDLY"><i class="fas fa-cloud-upload-alt"></i></button>' +
+                                  '<button id="sidlyPrev_' + assistitoId + '" onclick="window.syncSidly(' + assistitoId + ', {dry: true})" class="text-gray-500 hover:text-gray-800 hover:bg-gray-100 p-1 rounded transition text-sm" title="Anteprima SiDLY (non scrive nulla)"><i class="fas fa-search"></i></button>'
                                 : '') +
                             '<button onclick="window.deleteAssistito(' + assistitoId + ')" class="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition text-sm" title="Elimina">' +
                                 '<i class="fas fa-trash"></i>' +
@@ -3383,13 +3384,18 @@ export const dashboard = `<!DOCTYPE html>
             if (r.url_for_band) {
                 h += '<div style="margin-top:12px"><b>URL di consegna frame:</b> ' + (r.url_for_band.registrato ? 'registrato' : 'non registrato' + (r.url_for_band.motivo ? ' (' + escapeHtml(r.url_for_band.motivo) + ')' : '')) + '</div>';
             }
+            h += sidlyList('Differenze (non sovrascritte: decidi tu)', (r.differenze || []).map(function (d) {
+                var a = (d.crm !== null && typeof d.crm === 'object') ? JSON.stringify(d.crm) : String(d.crm);
+                var b = (d.sidly !== null && typeof d.sidly === 'object') ? JSON.stringify(d.sidly) : String(d.sidly);
+                return '<code>' + escapeHtml(d.campo) + '</code>: CRM &laquo;' + escapeHtml(a) + '&raquo; &middot; SiDLY ' + (b === '' ? '<i>vuoto</i>' : '&laquo;' + escapeHtml(b) + '&raquo;');
+            }));
             h += sidlyList('Avvisi', (r.warning || []).map(function (w) { return escapeHtml(w); }));
             return h;
         }
 
         async function syncSidly(id, opts) {
             opts = opts || {};
-            var btn = document.getElementById('sidlyBtn_' + id);
+            var btn = document.getElementById((opts.dry ? 'sidlyPrev_' : 'sidlyBtn_') + id);
             var oldHtml = btn ? btn.innerHTML : '';
             if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
             sidlyPanel('<p style="margin:0"><i class="fas fa-spinner fa-spin"></i> Sincronizzazione in corso&hellip;</p>');
@@ -3397,6 +3403,7 @@ export const dashboard = `<!DOCTYPE html>
                 var payload = { assistito_id: id };
                 if (opts.associa) payload.associa_user_id = opts.associa;
                 if (opts.confermaCrea) payload.conferma_crea = true;
+                if (opts.dry) payload.dry_run = true;
                 var res = await fetch('/api/sidly/sync-assistito', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -3415,7 +3422,11 @@ export const dashboard = `<!DOCTYPE html>
                     h += '<div style="margin-top:8px"><button onclick="window.syncSidly(' + id + ', {confermaCrea: true})" class="px-3 py-2 bg-blue-600 text-white rounded text-sm">Crea un nuovo assistito</button></div>';
                     sidlyPanel(h);
                 } else {
-                    sidlyPanel(renderSidlyResult(r));
+                    var out = renderSidlyResult(r);
+                    if (opts.dry && r.esito === 'anteprima') {
+                        out += '<div style="margin-top:14px;padding-top:10px;border-top:1px solid #eee"><button onclick="window.syncSidly(' + id + ', {' + (opts.associa ? 'associa: \\'' + String(opts.associa).replace(/[^0-9]/g, '') + '\\'' : '') + '})" class="px-3 py-2 bg-teal-600 text-white rounded text-sm">Carica davvero su SiDLY</button> <span style="color:#666;font-size:12px">scrive sulla piattaforma reale</span></div>';
+                    }
+                    sidlyPanel(out);
                 }
             } catch (e) {
                 sidlyPanel('<h3 style="font-weight:700;color:#b91c1c;margin:0 0 6px">Errore di comunicazione</h3><p style="margin:0">' + escapeHtml(e.message) + '</p>');
