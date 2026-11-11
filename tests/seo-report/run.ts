@@ -16,6 +16,7 @@ import { createMarketingApi, QUOTA_MESSAGE, NO_DATA_MESSAGE } from '../../src/mo
 import { ReportAssertionError, addDays, dateRange, PctRegistry, checkPercentages, PARAMS, midnightTolerance, GEO_ACTIVATION, mapCrmChannel, CRM_UNSET, type ReportInput } from '../../src/modules/seo-report-engine'
 import { makeFixture } from './fixture'
 import { runAdsTests } from './ads-tests'
+import { runSidlyTests } from './sidly-tests'
 import { FIXTURES, fixtureJson, writeFixtures } from './gen-fixtures'
 
 if (process.argv.includes('--write-fixtures')) { writeFixtures(); process.exit(0) }
@@ -577,6 +578,7 @@ section('F. Errori GA4 — il report non dichiara il falso quando le query falli
 }
 
 await runAdsTests(ok, section)
+await runSidlyTests(ok, section)
 
 // ── 7) Lint sul sorgente del generatore ──────────────────────────────────────
 section('7. Sorgente del generatore: niente percentuali né divisori letterali')

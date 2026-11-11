@@ -28,3 +28,24 @@ export function checkAdminOrApiKey(
   }
   return { ok: false, status: 401, error: 'Unauthorized' }
 }
+
+/**
+ * Accesso come la Dashboard operativa: qualunque sessione di login valida (ADMIN o OPERATOR),
+ * oppure Authorization: Bearer <uno dei segreti non vuoti passati in `keys`>.
+ * Segreti assenti/vuoti non aprono mai l'accesso.
+ */
+export function checkSessionOrKey(
+  cookie: string | undefined | null,
+  authHeader: string | undefined | null,
+  keys: Array<string | undefined | null>
+): GuardResult {
+  if (authHeader && keys.some(k => !!k && authHeader === `Bearer ${k}`)) return { ok: true, via: 'api-key' }
+  const m = cookie ? cookie.match(/(?:^|;\s*)session=([^;]+)/) : null
+  if (m) {
+    try {
+      const session: AuthSession = JSON.parse(decodeURIComponent(m[1]))
+      if (session && isSessionValid(session)) return { ok: true, via: 'admin-session' }
+    } catch { /* cookie non valido: anonimo */ }
+  }
+  return { ok: false, status: 401, error: 'Unauthorized' }
+}

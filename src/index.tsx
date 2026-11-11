@@ -63,7 +63,7 @@ import * as ClientConfigurationManager from './modules/client-configuration-mana
 import { calculatePrice } from './modules/pricing-calculator'
 import { isContractSigned, stripLockedIntestatario } from './modules/edit-lock'
 import { shouldSendConfigEmail } from './modules/rate-config-email'
-import { checkAdminOrApiKey } from './modules/admin-guard'
+import { checkAdminOrApiKey, checkSessionOrKey } from './modules/admin-guard'
 
 type Bindings = {
   DB: D1Database // Database (automaticamente production o preview tramite .pages.yaml)
@@ -95,6 +95,13 @@ type Bindings = {
   ENCRYPTION_KEY?: string
   ADMIN_SECRET_TOKEN?: string // 🔒 Token admin per endpoint /api/admin/*
   API_KEY?: string // 🔒 Token per endpoint API sensibili (CRUD lead, contratti)
+  // SiDLY Health (secret Cloudflare, mai nel codice)
+  SIDLY_USER?: string
+  SIDLY_PASSWORD?: string
+  SIDLY_BASE_URL?: string
+  SIDLY_FRAME_URL?: string
+  SIDLY_BAND_DEFAULTS?: string
+  SIDLY_LOGIN_FIELD?: string
   // Google OAuth (Sheets — scope spreadsheets)
   GOOGLE_REFRESH_TOKEN?: string
   GOOGLE_OAUTH_CLIENT_ID?: string
@@ -21944,6 +21951,37 @@ app.post('/api/leads/fix-prices', async (c) => {
       details: error instanceof Error ? error.message : String(error)
     }, 500)
   }
+})
+
+// POST /api/sidly/sync-assistito - "Carica su SiDLY": upsert gentile dell'assistito sulla piattaforma SiDLY Health
+// Body: { assistito_id, dry_run?, associa_user_id?, conferma_crea? }
+// Il middleware globale /api/* NON copre questo percorso: il controllo accessi e' qui (sessione dashboard o chiave).
+app.post('/api/sidly/sync-assistito', async (c) => {
+  const guard = checkSessionOrKey(c.req.header('Cookie'), c.req.header('Authorization'), [c.env?.API_KEY, c.env?.ADMIN_SECRET_TOKEN])
+  if (!guard.ok) return c.json({ esito: 'errore', errore: guard.error }, guard.status)
+  if (!c.env?.DB) return c.json({ esito: 'errore', errore: 'Database non configurato' }, 500)
+
+  let body: any = null
+  try { body = await c.req.json() } catch { body = null }
+  const assistitoId = Number(body?.assistito_id)
+  if (!Number.isInteger(assistitoId) || assistitoId <= 0) {
+    return c.json({ esito: 'errore', errore: 'assistito_id mancante o non valido' }, 400)
+  }
+  const associa = body?.associa_user_id !== undefined && body?.associa_user_id !== null ? String(body.associa_user_id).replace(/\D/g, '') : ''
+
+  const { runSidlySync } = await import('./modules/sidly-sync')
+  const { httpStatus, result } = await runSidlySync({
+    db: c.env.DB, env: c.env as any, assistitoId,
+    dryRun: body?.dry_run === true,
+    associaUserId: associa || undefined,
+    confermaCrea: body?.conferma_crea === true,
+  })
+  // Log strutturato senza dati personali ne' segreti: solo id assistito, esito e azioni (metodo + HTTP).
+  console.log('[SIDLY-SYNC]', JSON.stringify({
+    assistito_id: assistitoId, esito: result.esito, dry_run: body?.dry_run === true,
+    azioni: ((result as any).azioni || []).map((a: any) => `${a.azione} -> ${a.risultato}`),
+  }))
+  return c.json(result, httpStatus as any)
 })
 
 // ========================================

@@ -3326,6 +3326,9 @@ export const dashboard = `<!DOCTYPE html>
                             '<button onclick="window.editAssistito(' + assistitoId + ')" class="text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 p-1 rounded transition text-sm" title="Modifica">' +
                                 '<i class="fas fa-edit"></i>' +
                             '</button>' +
+                            ((assistito.imei && status === 'ATTIVO')
+                                ? '<button id="sidlyBtn_' + assistitoId + '" onclick="window.syncSidly(' + assistitoId + ')" class="text-teal-600 hover:text-teal-800 hover:bg-teal-50 p-1 rounded transition text-sm" title="Carica su SiDLY"><i class="fas fa-cloud-upload-alt"></i></button>'
+                                : '') +
                             '<button onclick="window.deleteAssistito(' + assistitoId + ')" class="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition text-sm" title="Elimina">' +
                                 '<i class="fas fa-trash"></i>' +
                             '</button>' +
@@ -3334,6 +3337,88 @@ export const dashboard = `<!DOCTYPE html>
                 '</tr>';
             }).join('');
         }
+
+        // ========== "Carica su SiDLY": sincronizzazione gentile del singolo assistito ==========
+        function sidlyPanel(html) {
+            var el = document.getElementById('sidlyPanel');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'sidlyPanel';
+                el.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+                document.body.appendChild(el);
+            }
+            el.innerHTML = '<div style="background:#fff;border-radius:12px;max-width:580px;width:100%;max-height:85vh;overflow:auto;padding:20px;font-size:14px">' + html +
+                '<div style="text-align:right;margin-top:16px"><button onclick="window.closeSidlyPanel()" class="px-4 py-2 bg-gray-200 rounded text-sm">Chiudi</button></div></div>';
+            el.style.display = 'flex';
+        }
+        window.closeSidlyPanel = function () {
+            var el = document.getElementById('sidlyPanel');
+            if (el) el.style.display = 'none';
+        };
+
+        function sidlyList(title, rows) {
+            if (!rows || !rows.length) return '';
+            return '<div style="margin-top:12px"><div style="font-weight:600;margin-bottom:4px">' + title + '</div><ul style="margin:0;padding-left:18px">' +
+                rows.map(function (r) { return '<li style="margin-bottom:2px">' + r + '</li>'; }).join('') + '</ul></div>';
+        }
+
+        function renderSidlyResult(r) {
+            var colors = { creato: '#15803d', aggiornato: '#15803d', invariato: '#1d4ed8', errore: '#b91c1c', anteprima: '#92400e' };
+            var labels = { creato: 'Assistito creato su SiDLY', aggiornato: 'Assistito aggiornato su SiDLY', invariato: 'Nessuna modifica: SiDLY e gia allineato', errore: 'Sincronizzazione non riuscita', anteprima: 'Anteprima (nulla e stato scritto)' };
+            var h = '<h3 style="font-weight:700;font-size:16px;margin:0 0 6px;color:' + (colors[r.esito] || '#111') + '">' + escapeHtml(labels[r.esito] || String(r.esito)) + '</h3>';
+            if (r.errore) h += '<p style="color:#b91c1c;margin:0 0 6px">' + escapeHtml(r.errore) + '</p>';
+            if (r.sidly_user_id) h += '<div style="color:#555">ID SiDLY: ' + escapeHtml(String(r.sidly_user_id)) + '</div>';
+            h += sidlyList('Azioni eseguite', (r.azioni || []).map(function (a) {
+                return escapeHtml(a.azione) + ' &rarr; <b>' + escapeHtml(String(a.risultato)) + '</b>' + (a.campi && a.campi.length ? ' <span style="color:#666">(' + escapeHtml(a.campi.join(', ')) + ')</span>' : '');
+            }));
+            h += sidlyList('Campi inviati', (r.campi_inviati || []).map(function (c) {
+                var v = (c.valore !== null && typeof c.valore === 'object') ? JSON.stringify(c.valore) : String(c.valore);
+                return '<code>' + escapeHtml(c.campo) + '</code>: ' + escapeHtml(v);
+            }));
+            if (r.url_for_band) {
+                h += '<div style="margin-top:12px"><b>URL di consegna frame:</b> ' + (r.url_for_band.registrato ? 'registrato' : 'non registrato' + (r.url_for_band.motivo ? ' (' + escapeHtml(r.url_for_band.motivo) + ')' : '')) + '</div>';
+            }
+            h += sidlyList('Avvisi', (r.warning || []).map(function (w) { return escapeHtml(w); }));
+            return h;
+        }
+
+        async function syncSidly(id, opts) {
+            opts = opts || {};
+            var btn = document.getElementById('sidlyBtn_' + id);
+            var oldHtml = btn ? btn.innerHTML : '';
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+            sidlyPanel('<p style="margin:0"><i class="fas fa-spinner fa-spin"></i> Sincronizzazione in corso&hellip;</p>');
+            try {
+                var payload = { assistito_id: id };
+                if (opts.associa) payload.associa_user_id = opts.associa;
+                if (opts.confermaCrea) payload.conferma_crea = true;
+                var res = await fetch('/api/sidly/sync-assistito', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(payload)
+                });
+                var r = await res.json();
+                if (r.esito === 'conferma_richiesta') {
+                    var cands = r.candidati || [];
+                    var h = '<h3 style="font-weight:700;font-size:16px;margin:0 0 6px;color:#92400e">Serve la tua conferma</h3><p style="margin:0 0 8px">' + escapeHtml(r.motivo_conferma || '') + '</p>';
+                    cands.forEach(function (c) {
+                        h += '<div style="border:1px solid #ddd;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">' +
+                            '<span>' + escapeHtml(c.first_name + ' ' + c.last_name) + ' &middot; ID SiDLY ' + escapeHtml(String(c.user_id)) + '</span>' +
+                            '<button onclick="window.syncSidly(' + id + ', {associa: \'' + String(c.user_id).replace(/[^0-9]/g, '') + '\'})" class="px-3 py-1 bg-teal-600 text-white rounded text-xs">Associa questo</button></div>';
+                    });
+                    h += '<div style="margin-top:8px"><button onclick="window.syncSidly(' + id + ', {confermaCrea: true})" class="px-3 py-2 bg-blue-600 text-white rounded text-sm">Crea un nuovo assistito</button></div>';
+                    sidlyPanel(h);
+                } else {
+                    sidlyPanel(renderSidlyResult(r));
+                }
+            } catch (e) {
+                sidlyPanel('<h3 style="font-weight:700;color:#b91c1c;margin:0 0 6px">Errore di comunicazione</h3><p style="margin:0">' + escapeHtml(e.message) + '</p>');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = oldHtml; }
+            }
+        }
+        window.syncSidly = syncSidly;
 
         // Variabile globale per tenere tutti gli assistiti
         let allAssistiti = [];
