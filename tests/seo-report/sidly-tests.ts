@@ -376,7 +376,7 @@ export async function runSidlyTests(ok: Ok, section: Section) {
     ok(/'\[SIDLY-SYNC\]', JSON\.stringify\(\{\s+assistito_id: assistitoId, esito: result\.esito/.test(idx) && !/console\.log\([^)]*SIDLY_PASSWORD/.test(idx), 'endpoint: log strutturato con id assistito ed esito, senza segreti né dati personali')
     const dash = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
     ok(/assistito\.imei && status === 'ATTIVO'\)\s+\? '<button id="sidlyBtn_'/.test(dash), 'dashboard: il pulsante compare solo con IMEI assegnato e stato ATTIVO')
-    ok(/fetch\('\/api\/sidly\/sync-assistito'/.test(dash) && /conferma_richiesta/.test(dash) && /escapeHtml\(a\.azione\)/.test(dash) && /escapeHtml\(c\.campo\)/.test(dash), 'dashboard: chiama l\'endpoint, gestisce la conferma omonimi ed esegue l\'escape dei valori mostrati')
+    ok(/fetch\('\/api\/sidly\/sync-assistito'/.test(dash) && /conferma_richiesta/.test(dash) && /escapeHtml\(a\.azione\)/.test(dash) && /escapeHtml\(c\.etichetta \|\| c\.campo\)/.test(dash) && /escapeHtml\(d\.etichetta \|\| d\.campo\)/.test(dash) && /sidlyShow\(a\)/.test(dash), 'dashboard: chiama l\'endpoint, gestisce la conferma omonimi ed esegue l\'escape dei valori mostrati')
     // Regressione: un apice mal scritto nel template rompeva TUTTO lo script della Dashboard
     const tpl = await import('../../src/modules/dashboard-templates-new')
     let scriptRotti = 0, scriptTotali = 0
@@ -444,7 +444,10 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       const sommario = JSON.stringify({ esito: rD.esito, azioni: rD.azioni.map(a => ({ azione: a.azione, risultato: a.risultato })), warning: rD.warning })
       ok(!sommario.includes('Via Vecchia'), 'sidly_sync: il riepilogo salvato nel DB non contiene valori anagrafici')
     }
-    ok(/Prima \(su SiDLY ora\)/.test(dash) && /<th[^>]*>Dopo<\/th>/.test(dash) && /c\.precedente === undefined/.test(dash), 'dashboard: il pannello mostra la tabella Prima / Dopo')
+    ok(/ORA SU SIDLY/.test(dash) && /DOPO LA SCRITTURA/.test(dash) && /c\.precedente === undefined/.test(dash) && /function sidlyCard/.test(dash), 'dashboard: una scheda per modifica con \"ORA SU SIDLY\" e \"DOPO LA SCRITTURA\"')
+    ok(/function sidlyRiepilogo/.test(dash) && /Già uguale al CRM/.test(dash) && /Verrà modificato/.test(dash) && /<details/.test(dash) && /Dettagli tecnici/.test(dash), 'dashboard: riepilogo per sezione e note tecniche nascoste nei \"Dettagli tecnici\"')
+    ok(/white-space:pre-line/.test(dash) && /max-width:760px/.test(dash), 'dashboard: valori su più righe (numeri a capo) e pannello largo abbastanza da non tagliarli')
+    ok(/r\.previsto !== 'invariato'/.test(dash), 'dashboard: il pulsante \"Conferma\" compare solo se c\'è qualcosa da scrivere')
     ok(/payload\.dry_run = true/.test(dash) && /conferma_scrittura = true/.test(dash) && /window\.sidlyConfirm/.test(dash) && /Conferma e scrivi su SiDLY/.test(dash), 'dashboard: il click apre SEMPRE l\'anteprima; si scrive solo dopo "Conferma e scrivi"')
     ok(!/sidlyPrev_/.test(dash), 'dashboard: un solo pulsante (nuvola) che parte dall\'anteprima')
     ok(/body\?\.dry_run !== true && body\?\.conferma_scrittura !== true/.test(idx), 'endpoint: senza dry_run e senza conferma_scrittura la scrittura viene rifiutata (400)')
@@ -554,6 +557,25 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       ok(!P.calls.some(c => c.method !== 'GET' && c.path !== '/user/login'), 'anteprima: nessuna scrittura su nessun endpoint')
       const diag = JSON.stringify(r.diagnostica || {})
       ok(!diag.includes('Dott. Rossi') && !diag.includes('Mario') && /forma_contatti/.test(diag) && /forma_patologie/.test(diag), 'diagnostica dettagli: solo struttura, nessun dato personale')
+    }
+
+    // testi leggibili e riepilogo per l'operatore
+    {
+      const plat = platformFrom(crm, { phones: [{ numberPrefix: '+39', number: '3470001111', repeatNumber: 1 }], whitelistNumbers: '' })
+      const P = makePlatform({ patients: { [IMEI]: plat }, contacts: [{ id: 1, name: 'Mario Bianchi', phone_num: '3470001111', family_kind: 'figlio', address: '', others: 'email: m@x.it' }, { id: 2, name: 'Luisa Verdi', phone_num: '+39 348 0002222', family_kind: '', address: '', others: '' }, { id: 3, name: 'Paolo Neri', phone_num: '3490003333', family_kind: '', address: '', others: '' }], diseases: { id: 1, nadcisnienie: 1, cukrzyca: 1, allergy: 'Penicillina', other_diseases: 'Ictus, Glaucoma', medicines: 'Cardioaspirina 100mg mattina', more_info: 'Cammina col bastone' }, card: { name_of_doctor: 'Dott. Gallo - 0101112222', hospital_info: 'Ospedale Galliera' } })
+      const r = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl, dryRun: true })
+      ok(r.assistito === 'Anna Rossi', 'anteprima: nome dell\'assistito per il titolo del pannello')
+      const sos = r.campi_inviati.find(c => c.campo === 'band.phones')
+      ok(sos?.etichetta === 'Numeri SOS (i 3 referenti)' && /Mario Bianchi \+393470001111/.test(sos?.mostra_dopo || '') && (sos?.mostra_dopo || '').split('\n').length === 3, 'SOS: etichetta italiana e un numero per riga con il nome del referente')
+      ok(sos?.mostra_prima === '+393470001111', 'SOS: \"prima\" leggibile (un solo numero)')
+      const wl = r.campi_inviati.find(c => c.campo === 'band.whitelistNumbers')
+      ok(wl?.etichetta === 'Numeri ammessi' && (wl?.mostra_dopo || '').split('\n').length === 2 && /Farmacia Centrale \+390102345678/.test(wl?.mostra_dopo || '') && wl?.mostra_prima === '', 'numeri ammessi: etichetta italiana, un numero per riga con il nome')
+      ok(!r.campi_inviati.some(c => !c.etichetta || c.etichetta === c.campo), 'ogni campo mostrato ha un\'etichetta in italiano (niente nomi tecnici)')
+      ok((r.riepilogo || []).find(x => /^Referenti/.test(x.sezione))?.stato === 'allineato' && (r.riepilogo || []).find(x => /^Numeri SOS/.test(x.sezione))?.stato === 'cambia' && (r.riepilogo || []).find(x => /^Numeri ammessi/.test(x.sezione))?.stato === 'cambia', 'riepilogo: referenti già allineati, SOS e numeri ammessi da cambiare')
+      ok((r.riepilogo || []).find(x => /^Patologie/.test(x.sezione))?.stato === 'allineato' && (r.riepilogo || []).find(x => /^Scheda assistito/.test(x.sezione))?.stato === 'allineato', 'riepilogo: patologie e scheda assistito già allineate')
+      const rm = await S.syncAssistito({ crm, env: ENV, fetchImpl: makePlatform({ patients: { [IMEI]: platformFrom(crm) }, detailStatus: 500 }).fetchImpl, dryRun: true })
+      ok((rm.riepilogo || []).find(x => /^Referenti/.test(x.sezione))?.stato === 'non_verificato', 'riepilogo: lettura fallita → \"non verificabile\" (mai \"già uguale\")')
+      ok(S.etichettaCampo('patologie.nadcisnienie') === 'Patologia: ipertensione' && S.etichettaCampo('referente2.telefono') === 'Referente 2 · telefono', 'etichette: patologie e referenti in italiano')
     }
 
     // errori: lettura o scrittura dei dettagli non riuscita

@@ -35,11 +35,15 @@ export type Fetch = (url: string, init?: any) => Promise<{ status: number; ok?: 
 export type Esito = 'creato' | 'aggiornato' | 'invariato' | 'errore' | 'anteprima' | 'conferma_richiesta'
 
 export interface Azione { azione: string; risultato: string; campi?: string[] }
-export interface CampoInviato { campo: string; valore: any; /** Valore attualmente su SiDLY (solo campi user.*; '' se vuoto): serve all'operatore per capire cosa verrebbe sovrascritto. */ precedente?: any }
+export interface CampoInviato { campo: string; valore: any; /** Testi per l'operatore (solo visualizzazione): nome leggibile e valori su piu' righe. */ etichetta?: string; mostra_prima?: string; mostra_dopo?: string; /** Valore attualmente su SiDLY (solo campi user.*; '' se vuoto): serve all'operatore per capire cosa verrebbe sovrascritto. */ precedente?: any }
 export interface Candidato { user_id: string; first_name: string; last_name: string }
 
 export interface SyncResult {
   esito: Esito
+  /** Nome e cognome dell'assistito, solo per il titolo del pannello (non viene salvato nel DB). */
+  assistito?: string
+  /** Una riga per sezione: cambia / gia' allineato / solo segnalato / non verificabile. */
+  riepilogo?: Riepilogo[]
   previsto?: 'creato' | 'aggiornato' | 'invariato'
   sidly_user_id: string | null
   azioni: Azione[]
@@ -129,7 +133,8 @@ export interface SosPhone { numberPrefix: string; number: string; repeatNumber: 
 export interface Referente { name: string; phone: string; family_kind?: string; others?: string }
 export interface WhitelistEntry { number: string; alias: string }
 export interface MedicalCrm { flags: Record<string, 1>; other_diseases?: string; allergy?: string; medicines?: string; more_info?: string }
-export interface Differenza { campo: string; crm: unknown; sidly: unknown }
+export interface Differenza { campo: string; crm: unknown; sidly: unknown; etichetta?: string }
+export interface Riepilogo { sezione: string; stato: 'cambia' | 'allineato' | 'solo_segnalato' | 'non_verificato' }
 export interface CrmPatient {
   imei: string
   referenti: Referente[]
@@ -720,6 +725,72 @@ async function syncDettagli(client: SidlyClient, crm: CrmPatient, imei: string, 
   return null
 }
 
+// ── Testi leggibili per l'operatore (solo visualizzazione: non influiscono su cio' che viene inviato) ───────────
+const FLAG_LABEL: Record<string, string> = {
+  nadcisnienie: 'ipertensione', cukrzyca: 'diabete', po_zawale: 'cardiopatia', alzheimer: 'demenza / Alzheimer', parkinson: 'Parkinson',
+  padaczka: 'epilessia', astma: 'BPCO / asma', arytmia: 'aritmia', rozrusznik: 'pacemaker', tarczyca: 'tiroide', aparat: 'apparecchio (aparat)',
+}
+const ETICHETTE: Record<string, string> = {
+  'user.firstName': 'Nome', 'user.lastName': 'Cognome', 'user.address': 'Indirizzo', 'user.phone': 'Telefono dell\'assistito', 'user.phonePrefix': 'Prefisso telefonico',
+  'user.date': 'Data di nascita', 'user.weight': 'Peso (kg)', 'user.height': 'Altezza (cm)',
+  'band.phones': 'Numeri SOS (i 3 referenti)', 'band.whitelistNumbers': 'Numeri ammessi', 'band.simNumber': 'Numero SIM',
+  'band.imei': 'IMEI del braccialetto', 'band.timezone': 'Fuso orario', 'band.lang_band': 'Lingua del braccialetto',
+  'patologie.allergy': 'Allergie', 'patologie.other_diseases': 'Altre patologie', 'patologie.medicines': 'Farmaci', 'patologie.more_info': 'Note mediche',
+  'scheda.name_of_doctor': 'Medico curante', 'scheda.hospital_info': 'Centro medico di riferimento',
+}
+export function etichettaCampo(campo: string): string {
+  if (ETICHETTE[campo]) return ETICHETTE[campo]
+  let m = campo.match(/^referente(\d)\.(nome|telefono|altro)$/)
+  if (m) return `Referente ${m[1]} · ${m[2] === 'altro' ? 'e-mail / note' : m[2]}`
+  m = campo.match(/^patologie\.(\w+)$/)
+  if (m && FLAG_LABEL[m[1]]) return 'Patologia: ' + FLAG_LABEL[m[1]]
+  return campo
+}
+const pad2 = (n: unknown) => String(n).padStart(2, '0')
+function mostra(v: unknown, campo: string): string {
+  if (v === undefined || v === null) return ''
+  if (campo.startsWith('patologie.') && (v === 0 || v === 1 || v === true || v === false)) return v ? 'Sì' : 'No'
+  if (Array.isArray(v)) return v.map(x => (x && typeof x === 'object')
+    ? `${(x as any).alias && (x as any).alias !== `${(x as any).numberPrefix}${(x as any).number}` ? (x as any).alias + ' ' : ''}${(x as any).numberPrefix ?? ''}${(x as any).number ?? ''}`
+    : String(x)).join('\n')
+  if (typeof v === 'object') {
+    const d = v as any
+    if (d.year && d.month && d.day) return `${pad2(d.day)}/${pad2(d.month)}/${d.year}`
+    return JSON.stringify(v)
+  }
+  return String(v)
+}
+const conAlias = (n: string, a: string) => (a && a !== n ? `${a} ${n}` : n)
+
+function decora(out: SyncResult, crm: CrmPatient): void {
+  out.assistito = `${crm.user.firstName} ${crm.user.lastName}`.trim()
+  out.campi_inviati = out.campi_inviati.map(c => {
+    const d: CampoInviato = { ...c, etichetta: etichettaCampo(c.campo) }
+    d.mostra_dopo = mostra(c.valore, c.campo)
+    if (c.precedente !== undefined) d.mostra_prima = mostra(c.precedente, c.campo)
+    if (c.campo === 'band.phones') d.mostra_dopo = (crm.band.phones || []).map(p => conAlias(p.numberPrefix + p.number, p.alias || '')).join('\n')
+    if (c.campo === 'band.whitelistNumbers') {
+      d.mostra_dopo = crm.whitelist.map(w => conAlias(w.number, w.alias)).join('\n')
+      if (c.precedente !== undefined) d.mostra_prima = String(c.precedente).split(',').filter(Boolean).join('\n')
+    }
+    return d
+  })
+  if (out.differenze) out.differenze = out.differenze.map(x => ({ ...x, etichetta: etichettaCampo(x.campo) }))
+
+  const has = (re: RegExp) => out.campi_inviati.some(c => re.test(c.campo))
+  const hasDiff = (re: RegExp) => (out.differenze || []).some(x => re.test(x.campo))
+  const letto = (nome: string) => { const a = out.azioni.find(x => x.azione.startsWith(nome)); return !a || /^2\d\d$/.test(a.risultato) }
+  const r: Riepilogo[] = []
+  r.push({ sezione: 'Anagrafica (nome, indirizzo, data di nascita, telefono, peso, altezza)', stato: has(/^user\./) ? 'cambia' : (out.warning.some(w => /Scheda completa SiDLY non leggibile/.test(w)) ? 'non_verificato' : 'allineato') })
+  if (crm.referenti.length) r.push({ sezione: 'Referenti ("Dettagli utente")', stato: !letto('GET /getContacts') ? 'non_verificato' : has(/^referente/) ? 'cambia' : 'allineato' })
+  if (crm.band.phones?.length) r.push({ sezione: 'Numeri SOS (devono coincidere con i 3 referenti)', stato: has(/^band\.phones$/) ? 'cambia' : 'allineato' })
+  if (crm.whitelist.length) r.push({ sezione: 'Numeri ammessi', stato: has(/^band\.whitelistNumbers$/) ? 'cambia' : 'allineato' })
+  if (crm.band.simNumber) r.push({ sezione: 'Numero SIM', stato: has(/^band\.simNumber$/) ? 'cambia' : out.warning.some(w => /Numero SIM diverso/.test(w)) ? 'solo_segnalato' : 'allineato' })
+  if (hasMedical(crm.medical)) r.push({ sezione: 'Patologie, farmaci, allergie, note mediche', stato: !letto('GET /getDiseases') ? 'non_verificato' : has(/^patologie\./) ? 'cambia' : hasDiff(/^patologie\./) ? 'solo_segnalato' : 'allineato' })
+  if (Object.keys(crm.scheda).length) r.push({ sezione: 'Scheda assistito (medico curante, centro di riferimento)', stato: !letto('GET /patientCard') ? 'non_verificato' : hasDiff(/^scheda\./) ? 'solo_segnalato' : 'allineato' })
+  out.riepilogo = r
+}
+
 export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
   const { crm, env } = opts
   const dry = !!opts.dryRun
@@ -866,6 +937,7 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
     }
 
     if (dry) { out.esito = 'anteprima'; out.previsto = previsto } else { out.esito = previsto }
+    decora(out, crm)
     return out
   } catch (e: any) {
     return fail(e?.message ? String(e.message).slice(0, 200) : 'Errore di comunicazione con SiDLY')
