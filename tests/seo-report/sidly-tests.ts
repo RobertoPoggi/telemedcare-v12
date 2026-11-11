@@ -347,6 +347,21 @@ export async function runSidlyTests(ok: Ok, section: Section) {
     const dash = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
     ok(/assistito\.imei && status === 'ATTIVO'\)\s+\? '<button id="sidlyBtn_'/.test(dash), 'dashboard: il pulsante compare solo con IMEI assegnato e stato ATTIVO')
     ok(/fetch\('\/api\/sidly\/sync-assistito'/.test(dash) && /conferma_richiesta/.test(dash) && /escapeHtml\(a\.azione\)/.test(dash) && /escapeHtml\(c\.campo\)/.test(dash), 'dashboard: chiama l\'endpoint, gestisce la conferma omonimi ed esegue l\'escape dei valori mostrati')
+    // Regressione: un apice mal scritto nel template rompeva TUTTO lo script della Dashboard
+    const tpl = await import('../../src/modules/dashboard-templates-new')
+    let scriptRotti = 0, scriptTotali = 0
+    for (const [nome, html] of Object.entries(tpl as Record<string, unknown>)) {
+      if (typeof html !== 'string') continue
+      for (const m of html.matchAll(/<script(?![^>]*\bsrc=)(?![^>]*type="(?!text\/javascript))[^>]*>([\s\S]*?)<\/script>/g)) {
+        scriptTotali++
+        try { new Function(m[1]) } catch (e: any) { scriptRotti++; ok(false, `template ${nome}: script inline con errore di sintassi (${e.message})`) }
+      }
+    }
+    ok(scriptTotali >= 6 && scriptRotti === 0, `template Dashboard: tutti gli script inline (${scriptTotali}) sono sintatticamente validi`)
+    ok(/associa: \\\\'/.test(dash) === true, 'dashboard: il pulsante "Associa questo" ha gli apici correttamente escapati')
+    ok(S.normalizeBaseUrl('  "https://api.x.com/api/"  ') === 'https://api.x.com/api' && S.normalizeBaseUrl('api.x.com/api') === 'https://api.x.com/api', 'SIDLY_BASE_URL: spazi, apici e "/" finali ripuliti; senza schema assume https')
+    ok(S.sidlyConfigError({ ...ENV, SIDLY_BASE_URL: 'http://x.com/api' } as any)?.includes('https') === true && S.sidlyConfigError({ ...ENV, SIDLY_BASE_URL: 'api.x.com/api' } as any) === null, 'SIDLY_BASE_URL: http:// rifiutato, host senza schema accettato come https')
+    ok(!(S.sidlyConfigError({ ...ENV, SIDLY_BASE_URL: 'ftp://segreto-xyz' } as any) || '').includes('segreto-xyz'), 'SIDLY_BASE_URL non valido: il messaggio non riporta il valore')
     const sec = readFileSync('src/modules/sidly-sync.ts', 'utf8')
     ok(!/console\.(log|warn|error)/.test(sec), 'sidly-sync.ts: nessun console.* (niente fuga di token o dati)')
     ok(!/CREATE TABLE IF NOT EXISTS sidly_sync[\s\S]*ALTER TABLE/.test(sec) && !/ALTER TABLE/.test(sec), 'nessun ALTER TABLE: lo stato sta nella tabella laterale sidly_sync')

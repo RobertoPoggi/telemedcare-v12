@@ -3405,7 +3405,7 @@ export const dashboard = `<!DOCTYPE html>
                     cands.forEach(function (c) {
                         h += '<div style="border:1px solid #ddd;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">' +
                             '<span>' + escapeHtml(c.first_name + ' ' + c.last_name) + ' &middot; ID SiDLY ' + escapeHtml(String(c.user_id)) + '</span>' +
-                            '<button onclick="window.syncSidly(' + id + ', {associa: \'' + String(c.user_id).replace(/[^0-9]/g, '') + '\'})" class="px-3 py-1 bg-teal-600 text-white rounded text-xs">Associa questo</button></div>';
+                            '<button onclick="window.syncSidly(' + id + ', {associa: \\'' + String(c.user_id).replace(/[^0-9]/g, '') + '\\'})" class="px-3 py-1 bg-teal-600 text-white rounded text-xs">Associa questo</button></div>';
                     });
                     h += '<div style="margin-top:8px"><button onclick="window.syncSidly(' + id + ', {confermaCrea: true})" class="px-3 py-2 bg-blue-600 text-white rounded text-sm">Crea un nuovo assistito</button></div>';
                     sidlyPanel(h);

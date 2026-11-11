@@ -312,11 +312,24 @@ export function diffPatient(crm: CrmPatient, plat: PlatformPatient): Diff {
 const tokenCache = new Map<string, string>()
 export function resetSidlyTokenCache() { tokenCache.clear() }
 
+/** Pulisce il valore del secret: spazi, apici attorno, "/" finali; senza schema assume https://. */
+export function normalizeBaseUrl(raw: string | undefined | null): string {
+  let v = String(raw || '').trim().replace(/^["'`]+|["'`]+$/g, '').trim()
+  if (v && !/^[a-z][a-z0-9+.-]*:\/\//i.test(v)) v = 'https://' + v.replace(/^\/+/, '')
+  return v.replace(/\/+$/, '')
+}
+
 export function sidlyConfigError(env: SidlyEnv): string | null {
   if (!env.SIDLY_USER || !env.SIDLY_PASSWORD || !env.SIDLY_BASE_URL) {
     return 'Integrazione SiDLY non configurata (mancano SIDLY_USER / SIDLY_PASSWORD / SIDLY_BASE_URL nei segreti Cloudflare)'
   }
-  if (!/^https:\/\//i.test(env.SIDLY_BASE_URL)) return 'SIDLY_BASE_URL deve iniziare con https://'
+  const base = normalizeBaseUrl(env.SIDLY_BASE_URL)
+  if (!/^https:\/\/[^\s/]+/i.test(base)) {
+    // Nessun frammento del valore nel messaggio: potrebbe essere un segreto incollato nel campo sbagliato
+    const raw = String(env.SIDLY_BASE_URL)
+    const hint = /^\s*http:\/\//i.test(raw) ? 'usa http:// (serve https://)' : `lunghezza ${raw.length} caratteri, schema non riconosciuto`
+    return `SIDLY_BASE_URL non valido: deve essere un indirizzo https:// (${hint})`
+  }
   return null
 }
 
@@ -324,7 +337,7 @@ export class SidlyClient {
   private base: string
   private cacheKey: string
   constructor(private env: SidlyEnv, private f: Fetch = (u, i) => fetch(u, i) as any) {
-    this.base = String(env.SIDLY_BASE_URL || '').replace(/\/+$/, '')
+    this.base = normalizeBaseUrl(env.SIDLY_BASE_URL)
     this.cacheKey = this.base + '|' + (env.SIDLY_USER || '')
   }
 
