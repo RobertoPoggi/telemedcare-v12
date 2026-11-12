@@ -12,7 +12,10 @@ Il prompt non documenta questi punti e non sono state fatte prove sulla piattafo
 8. **Sesso e descrizione**: non inviati, il CRM non ha una fonte affidabile. Servono?
 9. **PATCH parziale**: conferma che campi omessi non vengano azzerati.
 10. **HRV, FR, stress**: non presenti nei frame documentati. Bloccano il report medie dalla Dashboard (andrebbero mostrati come "non disponibile").
-11. **Canale 2**: URL del ricevitore frame (`SIDLY_FRAME_URL`), AES-256-CBC opzionale. L'endpoint `sidly/ingest` è da costruire.
+11. **Canale 2**: ricevitore `POST /api/sidly/ingest?k=TOKEN` COSTRUITO (vedi `TELEMETRIA.md`). Per attivarlo servono i segreti `SIDLY_INGEST_TOKEN` (>=16 caratteri), `SIDLY_FRAME_URL` (`https://telemedcare-v12.pages.dev/api/sidly/ingest?k=<stesso token>`) e, se si vuole la cifratura, `SIDLY_ENCRYPT_KEY` (32 byte). La registrazione su SiDLY e' un'azione confermata dalla Dashboard (anteprima, poi conferma).
+12. **Passi**: da verificare con l'anteprima dello storico se `chart[].y` dei passi e' per intervallo (si sommano) o progressivo del giorno; il report usa `PASSI_MODO` in `sidly-telemetria.ts` ('somma' di default). L'anteprima mostra `total` dichiarato vs somma dei punti.
+13. **Pseudonimizzazione**: il DB misure e' identificato (IMEI -> assistito). Se serve un report statistico anonimo (k-anonimato) va aggiunto uno strato a parte: da decidere.
+14. **Stress, sonno, indice di attivita'**: non forniti da SiDLY (confermato). HRV e passi solo dallo storico `/stats`.
 12. **`/getContacts`, `/getDiseases`, `/patientCard`**: forme di risposta ricavate dal bundle del portale, MAI viste su chiamate reali. L'anteprima mostra la struttura reale (`diagnostica.forma_*`): da confrontare prima di scrivere.
 13. **PATCH di `editContacts` / `editDiseases`**: il portale invia sempre l'intero modulo, quindi il CRM fa lo stesso (rimanda i valori gia' su SiDLY). Non e' provato come l'API tratti `contactNID`/`diseaseID` ne' campi omessi.
 14. **Cardiopatia → `po_zawale`** (post-infarto): assunzione dedotta dall'ordine della schermata. Confermare.

@@ -1523,6 +1523,10 @@ export const dashboard = `<!DOCTYPE html>
                         placeholder="🔍 Cerca assistito..."
                         onkeyup="filterAssistiti()"
                     />
+                    <button onclick="window.sidlyTelemetria()" style="display:flex;align-items:center;padding:8px 16px;border:0;border-radius:8px;background:#0d9488;color:#fff;cursor:pointer" title="Misure SiDLY degli assistiti: storico, frame, medie">
+                        <i class="fas fa-heartbeat mr-2"></i>
+                        Telemetria SiDLY
+                    </button>
                     <button onclick="nuovoAssistito()" class="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
                         <i class="fas fa-user-plus mr-2"></i>
                         Nuovo Assistito
@@ -3609,6 +3613,118 @@ export const dashboard = `<!DOCTYPE html>
             }
         }
         window.syncSidly = syncSidly;
+
+        // ========== Telemetria SiDLY: stato, storico, registrazione frame, medie ==========
+        function telFmt(x, d) { return (x === null || x === undefined) ? '&mdash;' : Number(x).toFixed(d).replace('.', ','); }
+        async function telApi(method, url, body) {
+            var init = { method: method, credentials: 'include', headers: {} };
+            if (body) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(body); }
+            var res = await fetch(url, init);
+            var j = null;
+            try { j = await res.json(); } catch (e) { j = { esito: 'errore', errore: 'Risposta non valida (HTTP ' + res.status + ')' }; }
+            j.__http = res.status;
+            return j;
+        }
+        var TEL_TH = 'text-align:left;padding:4px 6px;border-bottom:2px solid #e5e7eb;font-size:12px;color:#4b5563;white-space:nowrap';
+        var TEL_TD = 'padding:4px 6px;border-bottom:1px solid #f3f4f6;font-size:12px';
+        function telBox(titolo, corpo, colore) {
+            return '<div style="border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:10px"><div style="font-weight:700;margin-bottom:6px;color:' + (colore || '#111827') + '">' + titolo + '</div>' + corpo + '</div>';
+        }
+        window.sidlyTelemetria = async function (giorni) {
+            giorni = giorni || 30;
+            sidlyPanel('<p style="margin:0"><i class="fas fa-spinner fa-spin"></i> Lettura dello stato (nessuna scrittura)&hellip;</p>');
+            try {
+                var st = await telApi('GET', '/api/sidly/telemetria/stato');
+                if (st.esito !== 'ok') { sidlyPanel('<p style="color:#b91c1c;margin:0">' + escapeHtml(st.errore || 'Errore') + '</p>'); return; }
+                var rp = await telApi('GET', '/api/sidly/telemetria/report?giorni=' + giorni);
+                var cf = st.configurazione || {};
+                var h = '<h3 style="font-weight:700;font-size:17px;margin:0 0 10px">Telemetria SiDLY &middot; misure degli assistiti</h3>';
+                h += telBox('Configurazione', '<div style="font-size:13px">Indirizzo frame: <b>' + escapeHtml(String(cf.frame_url)) + '</b><br>Segreto del ricevitore: <b>' + escapeHtml(String(cf.ingest_token)) + '</b><br>Cifratura frame: <b>' + escapeHtml(String(cf.cifratura || '-')) + '</b>' +
+                    (st.tabelle_presenti ? '' : '<br><span style="color:#92400e">Le tabelle delle misure non esistono ancora: si creano al primo caricamento dello storico confermato o al primo frame ricevuto.</span>') + '</div>', '#0f766e');
+                // Stato per assistito
+                var t = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr>' + ['Assistito', 'Frame registrato', 'Ultimo frame', 'Batt.', 'Dispositivo', 'Misure dal', 'Misure al', 'Righe storico', 'Errore'].map(function (x) { return '<th style="' + TEL_TH + '">' + x + '</th>'; }).join('') + '</tr></thead><tbody>';
+                (st.assistiti || []).forEach(function (a) {
+                    t += '<tr><td style="' + TEL_TD + '">' + escapeHtml(a.nome || a.imei) + '</td>' +
+                        '<td style="' + TEL_TD + ';color:' + (a.frame_registrato ? '#15803d' : '#b45309') + '">' + (a.frame_registrato ? 'si' : 'no') + '</td>' +
+                        '<td style="' + TEL_TD + '">' + (a.ultimo_frame ? escapeHtml(a.ultimo_frame) + ' (' + telFmt(a.ore_dall_ultimo_frame, 1) + ' h fa)' : '&mdash;') + '</td>' +
+                        '<td style="' + TEL_TD + '">' + (a.batt === null ? '&mdash;' : a.batt + '%') + '</td>' +
+                        '<td style="' + TEL_TD + '">' + escapeHtml(a.device || '') + '</td>' +
+                        '<td style="' + TEL_TD + '">' + escapeHtml(a.misure_dal || '-') + '</td><td style="' + TEL_TD + '">' + escapeHtml(a.misure_al || '-') + '</td>' +
+                        '<td style="' + TEL_TD + '">' + (a.righe_storico || 0) + '</td><td style="' + TEL_TD + ';color:#b91c1c">' + escapeHtml(a.errore || '') + '</td></tr>';
+                });
+                t += '</tbody></table></div>';
+                h += telBox('Stato per assistito', t);
+                // Medie
+                var c = (rp && rp.coorte) || null;
+                var m = '';
+                if (rp && rp.esito === 'ok' && rp.assistiti && rp.assistiti.length) {
+                    var cols = [['hr', 'FC', 0], ['spo2', 'SpO2', 1], ['sdnn', 'SDNN', 0], ['rmssd', 'RMSSD', 0], ['resp', 'FR', 1]];
+                    m = '<div style="font-size:12px;color:#6b7280;margin-bottom:6px">Ultimi ' + giorni + ' giorni. FC bpm &middot; SpO2 % &middot; HRV (SDNN, RMSSD) ms &middot; FR atti/min &middot; passi per giorno. Misure di un assistito entro 2 minuti contano una volta.</div>' +
+                        '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + TEL_TH + '">Assistito</th>' + cols.map(function (x) { return '<th style="' + TEL_TH + '">' + x[1] + ' (media)</th>'; }).join('') + '<th style="' + TEL_TH + '">Passi/giorno</th><th style="' + TEL_TH + '">Giorni con dati</th></tr></thead><tbody>';
+                    rp.assistiti.forEach(function (a) {
+                        m += '<tr><td style="' + TEL_TD + '">' + escapeHtml(a.nome || a.imei) + '</td>' + cols.map(function (x) { var v = a.metriche[x[0]]; return '<td style="' + TEL_TD + '">' + telFmt(v.media, x[2]) + (v.n ? ' <span style="color:#9ca3af">(' + v.n + ')</span>' : '') + '</td>'; }).join('') +
+                            '<td style="' + TEL_TD + '">' + telFmt(a.passi_medi_giorno, 0) + '</td><td style="' + TEL_TD + '">' + a.giorni_con_dati + '</td></tr>';
+                    });
+                    m += '<tr style="background:#f0fdfa;font-weight:700"><td style="' + TEL_TD + '">Coorte (' + c.assistiti_con_dati + ' di ' + c.assistiti_totali + ')</td>' + cols.map(function (x) { return '<td style="' + TEL_TD + '">' + telFmt(c.metriche[x[0]].media, x[2]) + '</td>'; }).join('') + '<td style="' + TEL_TD + '">' + telFmt(c.passi_medi_giorno, 0) + '</td><td style="' + TEL_TD + '"></td></tr></tbody></table></div>' +
+                        '<div style="margin-top:6px;font-size:11px;color:#6b7280">Stress, sonno e indice di attivit&agrave; non sono forniti da SiDLY. HRV e passi arrivano solo dallo storico: se vuoti, caricare o aggiornare lo storico.</div>';
+                } else { m = '<span style="color:#6b7280;font-size:13px">Nessuna misura nel DB per il periodo.</span>'; }
+                h += telBox('Medie (ultimi ' + giorni + ' giorni)', m);
+                // Azioni
+                var d90 = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
+                h += telBox('Azioni (prima sempre un\\'anteprima: nulla viene scritto finch&eacute; non confermi)',
+                    '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><label style="font-size:13px">Storico dal <input id="telDa" type="date" value="' + d90 + '" style="border:1px solid #9ca3af;border-radius:4px;padding:3px"></label>' +
+                    '<button onclick="window.sidlyStoricoAnteprima()" style="' + SIDLY_BTN + '#0d9488">Anteprima storico</button>' +
+                    '<button onclick="window.sidlyFrameAnteprima(false)" style="' + SIDLY_BTN + '#2563eb">Anteprima registrazione frame</button></div><div id="telEsito" style="margin-top:10px"></div>');
+                sidlyPanel(h);
+            } catch (e) { sidlyPanel('<p style="color:#b91c1c;margin:0">Errore di comunicazione: ' + escapeHtml(e.message) + '</p>'); }
+        };
+        function telEsito(html) { var el = document.getElementById('telEsito'); if (el) el.innerHTML = html; }
+        window.sidlyStoricoAnteprima = async function () {
+            var da = (document.getElementById('telDa') || {}).value || '';
+            telEsito('<i class="fas fa-spinner fa-spin"></i> Lettura da SiDLY (solo lettura, nulla viene scritto)&hellip;');
+            var r = await telApi('POST', '/api/sidly/storico', { da: da, dry_run: true });
+            if (r.esito !== 'anteprima') { telEsito('<span style="color:#b91c1c">' + escapeHtml(r.errore || 'Errore') + '</span>'); return; }
+            var h = '<div style="font-size:13px;margin-bottom:6px">Anteprima su una settimana di dati, nessuna scrittura nel DB.</div>';
+            (r.assistiti || []).forEach(function (a) {
+                if (a.errore) { h += '<div style="color:#b91c1c;font-size:13px">' + escapeHtml(a.nome || a.imei) + ': ' + escapeHtml(a.errore) + '</div>'; return; }
+                var an = a.anteprima || {}; var pt = an.punti || {};
+                h += '<div style="font-size:13px;margin-bottom:4px"><b>' + escapeHtml(a.nome || a.imei) + '</b>: ' + Object.keys(pt).map(function (k) { return escapeHtml(k) + ' ' + pt[k]; }).join(', ') + ' &middot; stima righe totali ' + (an.stima_righe_totali || 0) +
+                    ' &middot; passi dichiarati ' + telFmt(an.passi && an.passi.dichiarato, 0) + ' vs somma punti ' + telFmt(an.passi && an.passi.somma_punti, 0) + ' &middot; allarmi trovati ' + (an.eventi_trovati === undefined ? '?' : an.eventi_trovati) + '</div>';
+            });
+            (r.avvisi || []).forEach(function (x) { h += '<div style="font-size:12px;color:#92400e">' + escapeHtml(x) + '</div>'; });
+            h += '<div style="margin-top:8px"><button onclick="window.sidlyStoricoScrivi()" style="' + SIDLY_BTN + '#dc2626">Conferma e carica lo storico nel DB del CRM</button></div>';
+            telEsito(h);
+        };
+        window.sidlyStoricoScrivi = async function () {
+            var da = (document.getElementById('telDa') || {}).value || '';
+            var tot = 0, giri = 0, r = null;
+            do {
+                giri++;
+                telEsito('<i class="fas fa-spinner fa-spin"></i> Caricamento storico, passaggio ' + giri + ' (righe scritte finora ' + tot + ')&hellip;');
+                r = await telApi('POST', '/api/sidly/storico', { da: da, conferma_scrittura: true });
+                if (r.esito !== 'eseguito') { telEsito('<span style="color:#b91c1c">' + escapeHtml(r.errore || 'Errore') + ' (righe scritte ' + tot + ')</span>'); return; }
+                tot += r.righe_scritte || 0;
+                var errs = (r.assistiti || []).filter(function (a) { return a.errore; });
+                if (errs.length) { telEsito('<span style="color:#b91c1c">Interrotto: ' + errs.map(function (a) { return escapeHtml((a.nome || a.imei) + ': ' + a.errore); }).join('; ') + '. Righe scritte: ' + tot + '. Puoi rilanciare: riprende da dove si era fermato.</span>'); return; }
+            } while (!r.completato && giri < 60);
+            telEsito('<span style="color:#15803d;font-weight:700">' + (r.completato ? 'Storico completo.' : 'Sospeso (rilancia per proseguire).') + '</span> Righe scritte: ' + tot + '. <button onclick="window.sidlyTelemetria()" style="' + SIDLY_BTN + '#0d9488">Aggiorna il quadro</button>');
+        };
+        window.sidlyFrameAnteprima = async function (scrivi) {
+            telEsito('<i class="fas fa-spinner fa-spin"></i> ' + (scrivi ? 'Registrazione in corso' : 'Verifica della configurazione (nulla viene scritto)') + '&hellip;');
+            var tot = 0, off = 0, errori = 0, r = null, giri = 0;
+            do {
+                giri++;
+                r = await telApi('POST', '/api/sidly/registra-frame', scrivi ? { conferma_scrittura: true, offset: off } : { dry_run: true });
+                if (r.esito === 'errore') { telEsito('<span style="color:#b91c1c">' + escapeHtml(r.errore || 'Errore') + '</span>'); return; }
+                tot += (r.assistiti || []).length; errori += r.errori || 0; off = r.prossimo_offset || 0;
+            } while (scrivi && !r.completato && giri < 20);
+            if (!scrivi) {
+                telEsito('<div style="font-size:13px">Verr&agrave; registrato su SiDLY l\\'indirizzo <b>' + escapeHtml(r.url) + '</b> (con segreto) per <b>' + r.totale + '</b> bracciali, cifratura <b>' + (r.cifrato ? 'attiva' : 'non attiva') + '</b>.<br><span style="color:#92400e">' + escapeHtml(r.avviso || '') + '</span></div>' +
+                    '<div style="margin-top:8px"><button onclick="window.sidlyFrameAnteprima(true)" style="' + SIDLY_BTN + '#dc2626">Conferma e registra su SiDLY</button></div>');
+            } else {
+                telEsito('<span style="color:' + (errori ? '#b45309' : '#15803d') + ';font-weight:700">' + (errori ? 'Registrazione con ' + errori + ' errori' : 'Registrazione completata') + '</span> su ' + tot + ' bracciali. <button onclick="window.sidlyTelemetria()" style="' + SIDLY_BTN + '#0d9488">Aggiorna il quadro</button>');
+            }
+        };
 
         // Variabile globale per tenere tutti gli assistiti
         let allAssistiti = [];

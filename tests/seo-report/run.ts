@@ -17,6 +17,7 @@ import { ReportAssertionError, addDays, dateRange, PctRegistry, checkPercentages
 import { makeFixture } from './fixture'
 import { runAdsTests } from './ads-tests'
 import { runSidlyTests } from './sidly-tests'
+import { runTelemetriaTests } from './sidly-telemetria-tests'
 import { FIXTURES, fixtureJson, writeFixtures } from './gen-fixtures'
 
 if (process.argv.includes('--write-fixtures')) { writeFixtures(); process.exit(0) }
@@ -579,6 +580,7 @@ section('F. Errori GA4 — il report non dichiara il falso quando le query falli
 
 await runAdsTests(ok, section)
 await runSidlyTests(ok, section)
+await runTelemetriaTests(ok, section)
 
 // ── 7) Lint sul sorgente del generatore ──────────────────────────────────────
 section('7. Sorgente del generatore: niente percentuali né divisori letterali')

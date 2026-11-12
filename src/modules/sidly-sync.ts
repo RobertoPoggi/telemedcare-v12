@@ -24,6 +24,10 @@ export interface SidlyEnv {
   SIDLY_BASE_URL?: string
   /** URL pubblico https a cui SiDLY deve inoltrare i frame (Canale 2). Se assente il passo viene saltato. */
   SIDLY_FRAME_URL?: string
+  /** Segreto (>=16 caratteri) che deve comparire come ?k= nell'URL di consegna frame: senza, il ricevitore rifiuta tutto. */
+  SIDLY_INGEST_TOKEN?: string
+  /** Chiave AES-256 (esattamente 32 byte) opzionale: se presente viene registrata con l'URL e i frame arrivano cifrati. */
+  SIDLY_ENCRYPT_KEY?: string
   /** JSON opzionale con i default operativi per la CREAZIONE (fall, sos_notif, minHr, ...). */
   SIDLY_BAND_DEFAULTS?: string
   /** Nome del campo utente nel body di /user/login. Default "login" (non documentato). */
