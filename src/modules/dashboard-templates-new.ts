@@ -3393,14 +3393,14 @@ export const dashboard = `<!DOCTYPE html>
             righe.forEach(function (x) {
                 if (x.gruppo !== gruppo) {
                     gruppo = x.gruppo;
-                    h += '<tr><td colspan="4" style="padding:5px 8px;background:#e5e7eb;font-weight:700;font-size:12px;letter-spacing:.03em">' + escapeHtml(gruppo) + '</td></tr>';
+                    h += '<tr data-gruppo="1"><td colspan="4" style="padding:5px 8px;background:#e5e7eb;font-weight:700;font-size:12px;letter-spacing:.03em">' + escapeHtml(gruppo) + '</td></tr>';
                 }
                 var st = SIDLY_STATI[x.stato] || SIDLY_STATI.non_verificato;
                 var td = 'padding:5px 8px;border-top:1px solid #f1f5f9;vertical-align:top;white-space:pre-line;word-break:break-word;';
                 var ultima = '<span style="color:' + st.c + ';font-weight:600;font-size:12px">' + st.t + '</span>';
                 if (x.verso && x.verso.length) ultima = '<div style="color:' + st.c + ';font-weight:600;font-size:12px;margin-bottom:3px">' + st.t + '</div>' + sidlySelect(x);
                 else if (x.nota) ultima += '<div style="color:#6b7280;font-size:11px;margin-top:2px;font-weight:400">non modificabile da qui: ' + escapeHtml(x.nota) + '</div>';
-                h += '<tr style="' + (st.bg ? 'background:' + st.bg : '') + '">' +
+                h += '<tr' + ((x.assenteSidly || x.assenteCrm) ? ' data-assente="1"' : '') + ' style="' + (st.bg ? 'background:' + st.bg : '') + '">' +
                     '<td style="' + td + 'font-weight:600">' + escapeHtml(x.campo) + '</td>' +
                     '<td style="' + td + '">' + sidlyCell(x.sidly, x.assenteSidly, 'campo non presente su SiDLY') + '</td>' +
                     '<td style="' + td + '">' + sidlyCell(x.crm, x.assenteCrm, 'campo non presente nel CRM') + '</td>' +
@@ -3408,6 +3408,24 @@ export const dashboard = `<!DOCTYPE html>
             });
             return h + '</tbody></table></div>';
         }
+        // Interruttore: nasconde le righe con campo presente in un solo ambiente (e i gruppi rimasti vuoti)
+        window.sidlyFiltra = function (attivo) {
+            if (typeof attivo === 'boolean') window.__sidlySoloComuni = attivo;
+            var nascondi = !!window.__sidlySoloComuni;
+            var righe = document.querySelectorAll('#sidlyPanel tr[data-assente]');
+            for (var i = 0; i < righe.length; i++) righe[i].style.display = nascondi ? 'none' : '';
+            var gruppi = document.querySelectorAll('#sidlyPanel tr[data-gruppo]');
+            for (var g = 0; g < gruppi.length; g++) {
+                var visibile = false, n = gruppi[g].nextElementSibling;
+                while (n && !n.hasAttribute('data-gruppo')) {
+                    if (n.style.display !== 'none') visibile = true;
+                    n = n.nextElementSibling;
+                }
+                gruppi[g].style.display = visibile ? '' : 'none';
+            }
+            var c = document.getElementById('sidlySoloComuni');
+            if (c) c.checked = nascondi;
+        };
         function sidlyConta(righe, stato) {
             return (righe || []).filter(function (x) { return x.stato === stato; }).length;
         }
@@ -3447,7 +3465,11 @@ export const dashboard = `<!DOCTYPE html>
             };
             var scelte = r.scelte_in_anteprima;
             var titolo = anteprima ? (scelte ? 'Controlla le modifiche scelte' + chi : 'SiDLY a confronto con il CRM' + chi) : escapeHtml(titoli[r.esito] || String(r.esito));
-            var h = '<h3 style="font-weight:700;font-size:17px;margin:0 0 4px;color:' + (colors[r.esito] || '#111') + '">' + titolo + '</h3>';
+            var haTabella = anteprima && !scelte && (r.confronto || []).length > 0;
+            var h3 = '<h3 style="font-weight:700;font-size:17px;margin:0 0 4px;color:' + (colors[r.esito] || '#111') + '">' + titolo + '</h3>';
+            var filtro = '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#374151;cursor:pointer;white-space:nowrap;border:1px solid #d1d5db;border-radius:6px;padding:4px 8px;background:#f9fafb" title="Nasconde le righe con un campo che esiste solo su SiDLY oppure solo nel CRM">' +
+                '<input type="checkbox" id="sidlySoloComuni" onchange="window.sidlyFiltra(this.checked)"' + (window.__sidlySoloComuni ? ' checked' : '') + '> Solo campi presenti in entrambi</label>';
+            var h = haTabella ? '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">' + h3 + filtro + '</div>' : h3;
             if (anteprima) h += '<div style="color:#92400e;font-size:13px;margin-bottom:2px">Anteprima: non è stato scritto nulla.</div>';
             if (r.errore) h += '<p style="color:#b91c1c;margin:0 0 6px">' + escapeHtml(r.errore) + '</p>';
 
@@ -3549,6 +3571,7 @@ export const dashboard = `<!DOCTYPE html>
                         out += '<div style="margin-top:14px;padding-top:10px;border-top:1px solid #eee"><button onclick="window.sidlyConfirm()" class="px-3 py-2 bg-teal-600 text-white rounded text-sm">Conferma e scrivi</button> <button onclick="window.sidlyIndietro()" class="px-3 py-2 bg-gray-200 rounded text-sm">Indietro: cambia le scelte</button> <span style="color:#666;font-size:12px">scrive davvero, solo le righe elencate sopra</span></div>';
                     }
                     sidlyPanel(out);
+                    window.sidlyFiltra();
                 }
             } catch (e) {
                 sidlyPanel('<h3 style="font-weight:700;color:#b91c1c;margin:0 0 6px">Errore di comunicazione</h3><p style="margin:0">' + escapeHtml(e.message) + '</p>');

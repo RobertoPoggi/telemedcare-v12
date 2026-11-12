@@ -523,6 +523,24 @@ export async function runSidlyTests(ok: Ok, section: Section) {
     ok(/sidlyVerifica/.test(dash) && /Mostra le ' \+ n \+ ' modifiche scelte/.test(dash) && /Scegli almeno una riga/.test(dash) && /b\.disabled = n === 0/.test(dash), 'dashboard: «Mostra le N modifiche scelte» è disattivato finché non si sceglie almeno una riga')
     ok(/if \(opts\.scrivi\) payload\.conferma_scrittura = true; else payload\.dry_run = true/.test(dash) && /payload\.scelte = opts\.scelte/.test(dash) && /window\.sidlyConfirm/.test(dash) && /Conferma e scrivi/.test(dash) && /Indietro: cambia le scelte/.test(dash) && /function sidlyScelte/.test(dash), 'dashboard: il click apre SEMPRE l\'anteprima; si scrive solo dopo «Conferma e scrivi» e solo le righe scelte (payload.scelte)')
     ok(/Verrà scritto su SiDLY/.test(dash) && /Verrà scritto nel CRM/.test(dash) && /Conferma e crea su SiDLY/.test(dash), 'dashboard: prima/dopo separati per SiDLY e CRM; per un assistito nuovo conferma esplicita di creazione')
+    ok(/id="sidlySoloComuni"/.test(dash) && /Solo campi presenti in entrambi/.test(dash) && /justify-content:space-between;align-items:flex-start/.test(dash) && /haTabella \? '<div style="display:flex/.test(dash), 'dashboard: interruttore «Solo campi presenti in entrambi» in alto a destra, solo sulla tabella di confronto')
+    ok(/tr\[data-assente\]/.test(dash) && /\(x\.assenteSidly \|\| x\.assenteCrm\) \? ' data-assente="1"'/.test(dash) && /tr\[data-gruppo\]/.test(dash) && /window\.sidlyFiltra\(\);/.test(dash), 'dashboard: il filtro nasconde le righe con campo presente in un solo ambiente e i gruppi rimasti vuoti, e resta attivo dopo ogni ricarica del pannello')
+    {
+      // Simulazione del filtro con un DOM minimo: righe assenti nascoste, gruppi vuoti nascosti, righe comuni sempre visibili
+      const m = dash.match(/window\.sidlyFiltra = function \(attivo\) \{[\s\S]*?\n        \};/)
+      type El = { style: { display: string }; attrs: Record<string, boolean>; next: El | null; hasAttribute(a: string): boolean; nextElementSibling: El | null }
+      const mk = (attrs: string[]): El => { const e: any = { style: { display: '' }, attrs: Object.fromEntries(attrs.map(a => [a, true])), nextElementSibling: null, hasAttribute(a: string) { return !!this.attrs[a] } }; return e }
+      const g1 = mk(['data-gruppo']), r1 = mk([]), r2 = mk(['data-assente']), g2 = mk(['data-gruppo']), r3 = mk(['data-assente']), g3 = mk(['data-gruppo']), r4 = mk([])
+      ;[g1, r1, r2, g2, r3, g3, r4].forEach((e, i, a) => { e.nextElementSibling = a[i + 1] || null })
+      const chk: any = { checked: false }
+      const win: any = {}
+      const doc = { querySelectorAll: (q: string) => (q.includes('data-assente') ? [r2, r3] : [g1, g2, g3]), getElementById: () => chk }
+      new Function('window', 'document', (m ? m[0] : 'throw new Error("sidlyFiltra assente")') + '; window.sidlyFiltra(true)')(win, doc)
+      ok(!!m && r2.style.display === 'none' && r3.style.display === 'none' && r1.style.display === '' && r4.style.display === '', 'filtro attivo: nascoste solo le righe con campo non presente in uno dei due ambienti')
+      ok(g1.style.display === '' && g2.style.display === 'none' && g3.style.display === '' && chk.checked === true, 'filtro attivo: il gruppo rimasto senza righe visibili sparisce, gli altri restano')
+      win.sidlyFiltra(false)
+      ok(r2.style.display === '' && r3.style.display === '' && g2.style.display === '', 'filtro disattivato: tornano visibili tutte le righe e tutti i gruppi')
+    }
     ok(!/sidlyPrev_/.test(dash), 'dashboard: un solo pulsante (nuvola) che parte dall\'anteprima')
     ok(/body\?\.dry_run !== true && body\?\.conferma_scrittura !== true/.test(idx), 'endpoint: senza dry_run e senza conferma_scrittura la scrittura viene rifiutata (400)')
     const sec = readFileSync('src/modules/sidly-sync.ts', 'utf8')
