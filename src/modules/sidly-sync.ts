@@ -323,7 +323,6 @@ export function buildCrmPatient(src: CrmSources, env: SidlyEnv): CrmPatient | { 
   const whitelist = buildWhitelist(cfg)
   if (whitelist.length) {
     band.whitelistNumbers = whitelist.map(w => w.number).join(',')
-    band.whiteListAlias = whitelist.map(w => w.alias.slice(0, 50).replace(/,/g, ' ')).join(',')
   }
   const scheda: CrmPatient['scheda'] = {}
   const doc = [toStr(cfg.medico_curante_nome), toStr(cfg.medico_curante_telefono)].filter(Boolean).join(' - ')
@@ -770,10 +769,10 @@ export function buildRows(crm: CrmPatient, raw: Raw): RigaInt[] {
     toSidly: w => { w.band.phones = (crm.band.phones || []).map(c => { const m = (plat.band.phones || []).find(p => phoneKey(p) === phoneKey(c)); return m && m.repeatNumber ? { ...c, repeatNumber: m.repeatNumber } : c }) },
     notaCrm: 'Nel CRM i numeri SOS sono i referenti: per cambiarli usa le righe dei referenti.' })
   const wlS = (plat.band.whitelist || []).join('\n')
-  const wlC = crm.whitelist.map(w => conAlias(w.number, w.alias)).join('\n')
+  const wlC = crm.whitelist.map(w => w.number).join('\n')
   const dset = (a: string[]) => a.map(digits).sort().join()
   if (wlS || wlC) def({ g: B, campo: 'Numeri ammessi (whitelist)', chiave: 'band.whitelist', s: wlS, c: wlC, eq: () => dset(plat.band.whitelist || []) === dset(crm.whitelist.map(w => w.number)),
-    toSidly: w => { w.band.whitelistNumbers = crm.band.whitelistNumbers; w.band.whiteListAlias = crm.band.whiteListAlias },
+    toSidly: w => { w.band.whitelistNumbers = crm.band.whitelistNumbers },
     notaCrm: 'Nel CRM i numeri ammessi hanno anche il nome: modificali dal CRM.' })
   def({ g: B, campo: 'Numero SIM', chiave: 'band.simNumber', s: plat.band.simNumber, c: crm.band.simNumber, eq: eqDigits,
     toSidly: w => { w.band.simNumber = crm.band.simNumber },

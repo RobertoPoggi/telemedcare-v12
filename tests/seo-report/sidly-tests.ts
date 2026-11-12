@@ -579,7 +579,7 @@ export async function runSidlyTests(ok: Ok, section: Section) {
     ok(crm.referenti.length === 3 && crm.referenti[0].name === 'Mario Bianchi' && crm.referenti[0].phone === '+393470001111', 'referenti: tre contatti del CRM con nome e telefono completo')
     ok(crm.band.phones?.length === 3 && crm.band.phones.every((p, i) => p.numberPrefix + p.number === crm.referenti[i].phone), 'SOS = i tre referenti, nello stesso ordine')
     ok(crm.band.phones?.[0].alias === 'Mario Bianchi', 'SOS: alias = nome del referente')
-    ok(crm.band.whitelistNumbers === '+390102345678,+393331234567' && crm.band.whiteListAlias === 'Farmacia Centrale,Vicina', 'numeri ammessi → whitelistNumbers / whiteListAlias (stringhe separate da virgola)')
+    ok(crm.band.whitelistNumbers === '+390102345678,+393331234567' && !('whiteListAlias' in crm.band), 'numeri ammessi → solo whitelistNumbers (numeri separati da virgola); nome e cognome NON vengono inviati')
     ok(crm.medical.flags.nadcisnienie === 1 && crm.medical.flags.cukrzyca === 1 && !('po_zawale' in crm.medical.flags), 'patologie CRM → interruttori SiDLY (ipertensione, diabete)')
     ok(/Ictus/.test(crm.medical.other_diseases || '') && /Glaucoma/.test(crm.medical.other_diseases || ''), 'patologie senza interruttore → testo "altre patologie"')
     ok(/Cardioaspirina 100mg mattina/.test(crm.medical.medicines || '') && crm.medical.allergy === 'Penicillina' && crm.medical.more_info === 'Cammina col bastone', 'farmaci, allergie e note → campi testuali')
@@ -720,7 +720,7 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       ok(sos?.etichetta === 'Numeri SOS (devono essere i 3 referenti)' && /Mario Bianchi \+393470001111/.test(sos?.mostra_dopo || '') && (sos?.mostra_dopo || '').split('\n').length === 3, 'SOS: etichetta italiana e un numero per riga con il nome del referente')
       ok(sos?.mostra_prima === '+393470001111', 'SOS: "prima" leggibile (un solo numero)')
       const wl = a.campi_inviati.find(c => c.campo === 'band.whitelist')
-      ok(!!wl && wl.etichetta === 'Numeri ammessi (whitelist)' && (wl.mostra_dopo || '').split('\n').length === 2 && /Farmacia Centrale \+390102345678/.test(wl.mostra_dopo || '') && wl.mostra_prima === '', 'numeri ammessi: etichetta italiana, un numero per riga con il nome')
+      ok(!!wl && wl.etichetta === 'Numeri ammessi (whitelist)' && (wl.mostra_dopo || '').split('\n').length === 2 && (wl.mostra_dopo || '') === '+390102345678\n+393331234567' && !/Farmacia|Centrale|Vicina/.test(wl.mostra_dopo || '') && wl.mostra_prima === '', 'numeri ammessi: etichetta italiana, un numero per riga, solo numeri (nessun nome)')
       ok(!a.campi_inviati.some(c => !c.etichetta || c.etichetta === c.campo), 'ogni campo mostrato ha un\'etichetta in italiano (niente nomi tecnici)')
       ok(S.etichettaCampo('patologie.nadcisnienie') === 'Patologia: ipertensione' && S.etichettaCampo('referente2.telefono') === 'Referente 2 · telefono', 'etichette: patologie e referenti in italiano')
     }

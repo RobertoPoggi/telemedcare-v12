@@ -32,3 +32,6 @@ Il prompt non documenta questi punti e non sono state fatte prove sulla piattafo
 - Il portale impone `firstName` 2-18 caratteri e `lastName` 2-20, `phone` 4-13 cifre, `address` max 370, `description` max 1500, `imei` 15 cifre.
 - Il portale usa `PATCH /manager/patient/{id}`, `GET /patient/{id}`, `GET /patient/myShortInfo?page=&count=` (risposta in `data[]`; la ricerca per nome del prompt potrebbe non essere supportata come filtro).
 - Formato di `date` non confermato (stringa o oggetto): il prompt indica `{year,month,day}`.
+
+- **Risolto (conferma utente):** Cardiopatia (CRM) = `po_zawale` (SiDLY).
+- **Whitelist:** a SiDLY si invia solo `whitelistNumbers`; `whiteListAlias` (nome e cognome) rimosso dopo il rifiuto HTTP 400 e l'indicazione dell'utente che la whitelist contiene solo numeri di telefono. Da riverificare sull'API reale.
