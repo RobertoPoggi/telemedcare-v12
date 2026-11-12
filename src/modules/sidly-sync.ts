@@ -1000,14 +1000,51 @@ async function leggiDettagli(client: SidlyClient, crm: CrmPatient, imei: string,
   if (dry && Object.keys(diag).length) out.diagnostica = { ...(out.diagnostica || {}), ...diag }
 }
 
+/** Impostazioni del braccialetto: nome nel modulo del portale <- nome nella scheda letta da SiDLY. */
+const BAND_FORM_CAMEL: Array<[string, string]> = [['minHr', 'min_hr'], ['maxHr', 'max_hr'], ['isHr', 'is_hr'], ['isSat', 'is_sat'], ['stepNotification', 'step_notification'], ['operatingMode', 'operating_mode'], ['isAlarmZone', 'is_alarm_zone']]
+const BAND_FORM_UGUALI = ['simNumber', 'steps', 'timezone', 'fall', 'measure', 'vol', 'full_batt_notif', 'low_batt_notif', 'wear_notif', 'not_wear_notif', 'sos_notif', 'fall_notif', 'sms_limit', 'zone_notif', 'name_notif', 'shr_notif', 'firmware_version', 'lang_band', 'beacon', 'night_mode']
+
+/**
+ * Il modulo "braccialetto" completo come lo invia il portale SiDLY quando si salva una scheda: tutte le impostazioni
+ * lette da SiDLY (rimandate INVARIATE) e, sopra, solo i campi decisi dall'operatore. Serve quando SiDLY rifiuta
+ * la richiesta parziale. Restituisce null se la scheda completa non e' stata letta.
+ */
+export function formBandCompleto(raw: Raw, planBand: Record<string, any>): Record<string, any> | null {
+  const f = raw.full
+  const root = f && typeof f === 'object' && f.data && typeof f.data === 'object' ? f.data : f
+  const b = root && typeof root === 'object' ? root.band : null
+  if (!b || typeof b !== 'object') return null
+  const has = (v: any) => v !== undefined && v !== null
+  const out: Record<string, any> = {}
+  out.phones = (Array.isArray(b.phones) ? b.phones : []).filter((p: any) => p && has(p.number) && p.number !== '')
+    .map((p: any) => ({ numberPrefix: p.numberPrefix, number: p.number, repeatNumber: p.repeatNumber, alias: has(p.alias) ? p.alias : null }))
+  for (const k of BAND_FORM_UGUALI) if (has(b[k])) out[k] = b[k]
+  for (const [k, sn] of BAND_FORM_CAMEL) if (has(b[sn])) out[k] = b[sn]
+  out.minHr = b.min_hr ? b.min_hr : 60
+  out.maxHr = b.max_hr ? b.max_hr : 120
+  out.minimumSat = Object.prototype.hasOwnProperty.call(b, 'minimum_sat') ? b.minimum_sat : -1
+  out.aac = b.aac ? 1 : 0
+  out.ivs = b.ivs ? 1 : 0
+  for (const k of ['night_start', 'night_stop']) if (has(b[k])) { let v = String(b[k]); if (v.substring(0, 2).includes(':')) v = ('0' + v).slice(-6); out[k] = v }
+  const lista = (v: any) => (Array.isArray(v) ? v.join(',') : has(v) ? String(v) : '')
+  out.whitelistNumbers = lista(b.whitelist_numbers ?? b.whitelistNumbers)
+  out.whiteListAlias = lista(b.white_list_alias ?? b.whiteListAlias)
+  const z = b.zone
+  out.zone = z && typeof z === 'object' && z.address ? { address: z.address, radius: z.radius, interval: z.interval, latitude: z.latitude, longitude: z.longitude } : null
+  Object.assign(out, planBand)
+  return out
+}
+
 /** Scrive su SiDLY SOLO cio' che e' nel piano. In anteprima elenca le chiamate senza eseguirle. */
 async function scriviSidly(client: SidlyClient, crm: CrmPatient, id: string, assoc: string, raw: Raw, plan: Plan, out: SyncResult, dry: boolean): Promise<string | null> {
   const body: any = {}
   if (Object.keys(plan.user).length) body.user = plan.user
   if (Object.keys(plan.band).length) body.band = plan.band
-  const chiamate: Array<{ azione: string; metodo: string; path: string; body: any; campi: string[]; errore: string }> = []
+  const chiamate: Array<{ azione: string; metodo: string; path: string; body: any; campi: string[]; errore: string; riprova?: any }> = []
   if (body.user || body.band) chiamate.push({
     azione: assoc ? 'PATCH /manager/patient/{user_id}' : 'PATCH /manager/patient/{imei}', metodo: 'PATCH', path: `/manager/patient/${enc(id)}`, body,
+    // Se SiDLY rifiuta la richiesta parziale (HTTP 400), si ritenta come il portale: modulo braccialetto completo, impostazioni invariate.
+    riprova: body.band ? (() => { const fb = formBandCompleto(raw, plan.band); return fb ? { ...(body.user ? { user: body.user } : {}), band: fb, lang: 'it' } : undefined })() : undefined,
     campi: [...Object.keys(plan.user).map(k => 'user.' + k), ...Object.keys(plan.band).map(k => 'band.' + k)], errore: 'Aggiornamento assistito su SiDLY non riuscito',
   })
   if (Object.keys(plan.contacts).length) chiamate.push({
@@ -1022,7 +1059,14 @@ async function scriviSidly(client: SidlyClient, crm: CrmPatient, id: string, ass
     if (dry) { out.azioni.push({ azione: c.azione, risultato: 'non eseguito (anteprima)', campi: c.campi }); continue }
     const p = await client.request(c.metodo, c.path, c.body)
     out.azioni.push({ azione: c.azione, risultato: String(p.status), campi: c.campi })
-    if (!ok2xx(p.status)) return `${c.errore} (HTTP ${p.status}${p.motivo ? ': ' + p.motivo : ', SiDLY non indica il motivo'}); non è stato scritto nulla da questa chiamata`
+    const perche = (r: { status: number; motivo?: string }) => `HTTP ${r.status}${r.motivo ? ': ' + r.motivo : ', SiDLY non indica il motivo'}`
+    if (!ok2xx(p.status) && c.riprova && (p.status === 400 || p.status === 422)) {
+      const p2 = await client.request(c.metodo, c.path, c.riprova)
+      out.azioni.push({ azione: c.azione + ' (secondo tentativo: modulo completo del braccialetto, impostazioni invariate)', risultato: String(p2.status), campi: [...c.campi, 'impostazioni del braccialetto rimandate invariate'] })
+      if (ok2xx(p2.status)) continue
+      return `${c.errore} (${perche(p)}); riprovato con il modulo completo del braccialetto come fa il portale, rifiutato anche questo (${perche(p2)}); non è stato scritto nulla da questa chiamata`
+    }
+    if (!ok2xx(p.status)) return `${c.errore} (${perche(p)}); non è stato scritto nulla da questa chiamata`
   }
   return null
 }

@@ -47,6 +47,8 @@ function makePlatform(opts: { patients?: Record<string, any>; tokenExpiresOnce?:
     }
     m = path.match(/^\/manager\/patient\/(\d+)$/)
     if (method === 'PATCH' && m && opts.patchPatient) return reply(opts.patchPatient.status, opts.patchPatient.body)
+    // SiDLY che accetta la modifica del braccialetto solo se arriva il modulo completo (come lo manda il portale)
+    if (method === 'PATCH' && m && opts.patchNeedsFullBand && body.band && (body.band.minHr === undefined || !body.lang)) return reply(400, { status: 400, errors: [] })
     if (method === 'PATCH' && m) {
       const p = patients[m[1]] || Object.values(patients).find((x: any) => String(x.user_id) === m![1])
       if (!p) return reply(404, {})
@@ -900,6 +902,29 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       const P3 = makePlatform({ patients: { [IMEI]: platformFrom(crm, { whitelistNumbers: '+390000000001', whiteListAlias: 'Mario' }) }, contacts: [], diseases: { id: 1 } })
       const d3 = await preview(crm, P3)
       ok(!(rowOf(d3, 'band.whitelistAlias')?.verso || []).length && /Prima allinea i numeri/.test(rowOf(d3, 'band.whitelistAlias')?.nota || ''), 'whitelist: numeri diversi → i nomi non si scrivono da soli (spiegazione a video)')
+    }
+    {
+      // 6) SiDLY rifiuta la PATCH parziale della whitelist (HTTP 400 senza motivo): secondo tentativo come il portale
+      const crm = crmOf({ config: { whitelist1_nome: 'Nicola', whitelist1_cognome: 'Zullo', whitelist1_telefono: '3403373508', whitelist2_nome: 'Luca', whitelist2_cognome: 'Zullo', whitelist2_telefono: '3393993993' } })
+      const extra = { whitelistNumbers: '', whiteListAlias: '', min_hr: 55, max_hr: 130, is_hr: 1, is_sat: 1, full_batt_notif: 1, sos_notif: 0, fall_notif: 1, night_mode: 1, night_start: '22:30', night_stop: '5:30', aac: 1, steps: '' }
+      const P = makePlatform({ patients: { [IMEI]: platformFrom(crm, extra) }, contacts: [], diseases: { id: 1 }, patchNeedsFullBand: true } as any)
+      const w = await scrivi(crm, P, [['band.whitelist', 'crm']])
+      const patches = P.calls.filter(c => c.method === 'PATCH' && /manager\/patient/.test(c.path))
+      ok(w.r.esito === 'aggiornato' && patches.length === 2 && Object.keys(patches[0].body.band).join() === 'whitelistNumbers,whiteListAlias', 'whitelist: la PATCH parziale è rifiutata (400) → secondo tentativo nella stessa operazione')
+      const b2 = patches[1]?.body
+      ok(b2?.lang === 'it' && b2.band.whitelistNumbers === '+393403373508,+393393993993' && b2.band.whiteListAlias === 'Nicola Zullo,Luca Zullo', 'secondo tentativo: numeri e nomi scelti dall\'operatore')
+      ok(b2?.band.minHr === 55 && b2.band.maxHr === 130 && b2.band.sos_notif === 0 && b2.band.fall_notif === 1 && b2.band.night_start === '22:30' && b2.band.night_stop === '05:30' && b2.band.aac === 1 && b2.band.ivs === 0 && b2.band.timezone === 'Europe/Rome' && b2.band.zone === null, 'secondo tentativo: le altre impostazioni del braccialetto sono rimandate INVARIATE (soglie, notifiche, notte, fuso), zona assente = null come il portale')
+      ok(w.r.azioni.some(a => /secondo tentativo/.test(a.azione) && a.risultato === '200'), 'il secondo tentativo compare tra le chiamate (dettagli tecnici)')
+      // se rifiuta anche il modulo completo: errore con entrambi i motivi, nulla scritto nel CRM
+      let crmScritto = 0
+      const P2 = makePlatform({ patients: { [IMEI]: platformFrom(crm, extra) }, contacts: [], diseases: { id: 1 }, patchPatient: { status: 400, body: { status: 400, errors: [] } } } as any)
+      const dd = await preview(crm, P2)
+      const e = await S.syncAssistito({ crm, env: ENV, fetchImpl: P2.fetchImpl, scelte: [sceltaDi(dd, 'band.whitelist', 'crm')], applyCrm: async () => { crmScritto++ } })
+      ok(e.esito === 'errore' && /riprovato con il modulo completo/.test(e.errore || '') && /non è stato scritto nulla/.test(e.errore || '') && P2.calls.filter(c => c.method === 'PATCH' && /manager\/patient/.test(c.path)).length === 2 && crmScritto === 0, 'rifiutati entrambi i tentativi: errore con i due motivi, nulla scritto')
+      // anteprima: non scrive nulla e non fa il secondo tentativo
+      const P3 = makePlatform({ patients: { [IMEI]: platformFrom(crm, extra) }, contacts: [], diseases: { id: 1 }, patchNeedsFullBand: true } as any)
+      await anteprimaScelte(crm, P3, [['band.whitelist', 'crm']])
+      ok(!P3.calls.some(c => c.method === 'PATCH'), 'anteprima: nessuna PATCH')
     }
     {
       // 4) assistito senza scheda di configurazione nel CRM: nessuna scelta che poi fallirebbe

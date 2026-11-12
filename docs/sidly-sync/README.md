@@ -37,7 +37,7 @@ Body: `{assistito_id, dry_run?, conferma_scrittura?, scelte?, associa_user_id?, 
 | CRM | SiDLY | Direzioni possibili |
 |---|---|---|
 | `contatto{1,2,3}_{nome,cognome,telefono,email}` | `GET /getContacts` + `PATCH /editContacts` | nome, telefono, e-mail: CRM→SiDLY e SiDLY→CRM (e-mail SiDLY→CRM solo se in "altro" c'e' un indirizzo; CRM→SiDLY lo aggiunge alle note senza perderle). Parentela e indirizzo del referente: solo su SiDLY. Il portale invia l'intero modulo: si rimandano anche i valori gia' presenti (ID, parentela, indirizzo, note). |
-| gli stessi tre numeri | `band.phones` (SOS) | solo CRM→SiDLY |
+| gli stessi tre numeri | `band.phones` (SOS) | solo CRM→SiDLY. Se SiDLY rifiuta la PATCH parziale (400), secondo tentativo con il modulo braccialetto completo (impostazioni invariate), come il portale |
 | `whitelist{1,2,3}_telefono` + nome/cognome | `band.whitelistNumbers` (solo numeri, virgola) e `band.whiteListAlias` (nomi, campo SEPARATO, stesso ordine). Il portale invia sempre i due campi insieme: lo facciamo anche noi nella stessa PATCH. Due righe distinte in tabella (numeri / nomi); i nomi si scrivono solo se i numeri coincidono | solo CRM→SiDLY |
 | `patologie_croniche` | interruttori di `GET/PATCH /getDiseases`/`editDiseases` | solo ACCENDERE, in entrambe le direzioni ("No" puo' voler dire "non compilato") |
 | `allergie`, `note_mediche` | `allergy`, `more_info` | entrambe le direzioni |
