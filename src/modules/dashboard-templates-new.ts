@@ -3501,8 +3501,11 @@ export const dashboard = `<!DOCTYPE html>
                     '<p style="margin:4px 0 0;font-size:13px;color:#374151">In ogni riga scegli quale valore è quello giusto. Di default non cambia niente.</p>';
                 h += sidlyConfronto(righe);
             }
-            if (daSidly.length) h += sidlyModifiche(anteprima ? 'Verrà scritto su SiDLY' : 'Scritto su SiDLY', daSidly);
-            if (nelCrm.length) h += sidlyModifiche(anteprima ? 'Verrà scritto nel CRM' : 'Scritto nel CRM', nelCrm);
+            var tSidly = anteprima ? 'Verrà scritto su SiDLY' : r.errore ? 'Non scritto su SiDLY (operazione fallita)' : 'Scritto su SiDLY';
+            var tCrm = anteprima ? 'Verrà scritto nel CRM' : r.errore ? 'Non scritto nel CRM (operazione fallita)' : 'Scritto nel CRM';
+            if (r.errore && (daSidly.length || nelCrm.length)) h += '<div style=\"margin:6px 0;font-size:13px;color:#991b1b\">Le modifiche qui sotto erano state scelte ma <b>NON sono state applicate</b>. Puoi riprovare o chiudere: i dati non sono cambiati.</div>';
+            if (daSidly.length) h += sidlyModifiche(tSidly, daSidly);
+            if (nelCrm.length) h += sidlyModifiche(tCrm, nelCrm);
 
             // Avvisi utili all’operatore; le note tecniche (URL frame, ecc.) stanno nei dettagli.
             var tecnici = [], utili = [];

@@ -12,7 +12,7 @@ const IMEI = '868298061208378'
 interface Call { method: string; path: string; body: any; token?: string }
 
 /** Piattaforma SiDLY finta e con stato: GET/POST/PATCH paziente, myShortInfo, set-url-for-band, login. */
-function makePlatform(opts: { patients?: Record<string, any>; tokenExpiresOnce?: boolean; alwaysFail?: number; searchResults?: any[]; searchStatus?: number; noFullRecord?: boolean; contacts?: any[]; diseases?: any; card?: any; detailStatus?: number; patchDetailStatus?: number } = {}) {
+function makePlatform(opts: { patients?: Record<string, any>; tokenExpiresOnce?: boolean; alwaysFail?: number; searchResults?: any[]; searchStatus?: number; noFullRecord?: boolean; contacts?: any[]; diseases?: any; card?: any; detailStatus?: number; patchDetailStatus?: number; patchPatient?: { status: number; body: any } } = {}) {
   const patients: Record<string, any> = opts.patients || {}
   const calls: Call[] = []
   let logins = 0
@@ -46,6 +46,7 @@ function makePlatform(opts: { patients?: Record<string, any>; tokenExpiresOnce?:
       return reply(201, { user_id: id })
     }
     m = path.match(/^\/manager\/patient\/(\d+)$/)
+    if (method === 'PATCH' && m && opts.patchPatient) return reply(opts.patchPatient.status, opts.patchPatient.body)
     if (method === 'PATCH' && m) {
       const p = patients[m[1]] || Object.values(patients).find((x: any) => String(x.user_id) === m![1])
       if (!p) return reply(404, {})
@@ -534,6 +535,7 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       ok(/Passo 1 di 2/.test(sez) && /Passo 2 di 2/.test(sez) && /Non scrive ancora/.test(sez) && /scrive davvero/.test(sez), 'dashboard: il flusso è spiegato a video in 2 passi (verifica, poi scrittura)')
       ok(/window\.confirm\('Hai scelto/.test(sez) && /NON sono state ancora scritte/.test(sez), 'dashboard: chiudendo il pannello con scelte non scritte compare un avviso di conferma')
       ok(/Fatto: ' \+/.test(sez) && /modifiche scritte/.test(sez) && /assistito creato su SiDLY/.test(sez) && /Non è stato scritto nulla/.test(sez), 'dashboard: dopo la scrittura messaggio esplicito (Fatto: N modifiche, X su SiDLY, Y nel CRM; oppure «Non è stato scritto nulla»)')
+      ok(/Non scritto su SiDLY \(operazione fallita\)/.test(sez) && /Non scritto nel CRM \(operazione fallita\)/.test(sez) && /NON sono state applicate/.test(sez), 'dashboard: se l\'operazione fallisce le righe scelte sono etichettate «Non scritto», mai «Scritto»')
       ok(/Rileggi il confronto/.test(sez) && /window\.__sidlyLastId = /.test(sez), 'dashboard: dopo la scrittura è disponibile «Rileggi il confronto» per controllare il risultato')
     }
     {
@@ -849,6 +851,16 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       const P2 = makePlatform({ patients: { [IMEI]: platformFrom(crm) }, contacts: [], diseases: { id: 1 }, patchDetailStatus: 500 })
       const r2 = (await scrivi(crm, P2, [['ref1.nome', 'crm']])).r
       ok(r2.esito === 'errore' && /referenti/i.test(r2.errore || ''), 'scrittura referenti fallita → esito errore con messaggio chiaro')
+    }
+
+    // SiDLY rifiuta la PATCH (HTTP 400): messaggio con il motivo, NIENTE scritto nel CRM, nessun falso «Scritto»
+    {
+      const P = makePlatform({ patients: { [IMEI]: platformFrom(crm, { whitelistNumbers: '', whiteListAlias: '' }) }, contacts: [], diseases: { id: 1 }, patchPatient: { status: 400, body: { message: 'whitelistNumbers: formato non valido' } } })
+      let crmScritto = 0
+      const dd = await preview(crm, makePlatform({ patients: { [IMEI]: platformFrom(crm, { whitelistNumbers: '', whiteListAlias: '' }) }, contacts: [], diseases: { id: 1 } }))
+      const e = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl, scelte: [sceltaDi(dd, 'band.whitelist', 'crm')], applyCrm: async () => { crmScritto++ } })
+      ok(e.esito === 'errore' && /HTTP 400: whitelistNumbers: formato non valido/.test(e.errore || '') && /non è stato scritto nulla/.test(e.errore || '') && crmScritto === 0, 'SiDLY risponde 400: l\'errore riporta il motivo del rifiuto e nulla viene scritto nel CRM')
+      ok(S.motivoErrore({ detail: [{ msg: 'x' }] }, '').includes('msg') && S.motivoErrore(null, '<html>502</html>') === '' && S.motivoErrore(null, 'Bad\nrequest   here') === 'Bad request here' && S.motivoErrore({ message: 'a'.repeat(500) }, '').length === 160, 'motivoErrore: estrae il messaggio, ignora HTML, ripulisce e limita a 160 caratteri')
     }
 
     // creazione: i dettagli vengono sincronizzati dopo il POST

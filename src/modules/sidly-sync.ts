@@ -453,7 +453,7 @@ export class SidlyClient {
     const text = await res.text()
     let json: any = null
     try { json = text ? JSON.parse(text) : null } catch { json = null }
-    return { status: res.status, json, headers: res.headers }
+    return { status: res.status, json, headers: res.headers, text }
   }
 
   private async login(): Promise<string> {
@@ -471,7 +471,7 @@ export class SidlyClient {
     return token
   }
 
-  async request(method: string, path: string, body?: any): Promise<{ status: number; json: any }> {
+  async request(method: string, path: string, body?: any): Promise<{ status: number; json: any; motivo?: string }> {
     let token = tokenCache.get(this.cacheKey) || await this.login()
     let r = await this.raw(method, path, body, token)
     if (r.status === 401 || r.status === 403) {
@@ -479,8 +479,19 @@ export class SidlyClient {
       token = await this.login()
       r = await this.raw(method, path, body, token)
     }
-    return { status: r.status, json: r.json }
+    return { status: r.status, json: r.json, motivo: r.status >= 400 ? motivoErrore(r.json, r.text) : '' }
   }
+}
+
+/** Estratto breve e ripulito del messaggio con cui SiDLY rifiuta una richiesta (mai token: la risposta non li contiene). */
+export function motivoErrore(json: any, text: string): string {
+  let m: unknown = ''
+  if (json && typeof json === 'object') {
+    m = json.message ?? json.detail ?? json.error ?? json.errors ?? json.msg ?? json.data?.message ?? ''
+    if (m && typeof m === 'object') { try { m = JSON.stringify(m) } catch { m = '' } }
+  }
+  if (!m && text && !/^\s*</.test(text)) m = text
+  return String(m || '').replace(/[\u0000-\u001f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -966,7 +977,7 @@ async function scriviSidly(client: SidlyClient, crm: CrmPatient, id: string, ass
     if (dry) { out.azioni.push({ azione: c.azione, risultato: 'non eseguito (anteprima)', campi: c.campi }); continue }
     const p = await client.request(c.metodo, c.path, c.body)
     out.azioni.push({ azione: c.azione, risultato: String(p.status), campi: c.campi })
-    if (!ok2xx(p.status)) return `${c.errore} (HTTP ${p.status})`
+    if (!ok2xx(p.status)) return `${c.errore} (HTTP ${p.status}${p.motivo ? ': ' + p.motivo : ''}); non è stato scritto nulla da questa chiamata`
   }
   return null
 }
