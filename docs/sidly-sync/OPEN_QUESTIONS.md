@@ -34,4 +34,4 @@ Il prompt non documenta questi punti e non sono state fatte prove sulla piattafo
 - Formato di `date` non confermato (stringa o oggetto): il prompt indica `{year,month,day}`.
 
 - **Risolto (conferma utente):** Cardiopatia (CRM) = `po_zawale` (SiDLY).
-- **Whitelist:** a SiDLY si invia solo `whitelistNumbers`; `whiteListAlias` (nome e cognome) rimosso dopo il rifiuto HTTP 400 e l'indicazione dell'utente che la whitelist contiene solo numeri di telefono. Da riverificare sull'API reale.
+- **Whitelist (aperta):** due HTTP 400 `{}` (prima con numeri+nomi, poi solo numeri). Dal bundle del portale: `whitelistNumbers` e `whiteListAlias` sono campi separati inviati SEMPRE insieme nel modulo band, e il portale invia l'intero modulo band (la nostra PATCH e' parziale). Ora inviamo entrambi i campi insieme; se resta 400 l'interfaccia mostra il motivo (o «SiDLY non indica il motivo»). Ipotesi residue: PATCH parziale non accettata, permessi.

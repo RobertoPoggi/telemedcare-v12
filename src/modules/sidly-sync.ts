@@ -201,7 +201,7 @@ function buildWhitelist(cfg: any): WhitelistEntry[] {
     const number = fullPhone(cfg[`whitelist${n}_telefono`])
     if (!number) continue
     const alias = [toStr(cfg[`whitelist${n}_nome`]), toStr(cfg[`whitelist${n}_cognome`])].filter(Boolean).join(' ')
-    out.push({ number, alias: alias || number })
+    out.push({ number, alias })
   }
   return out
 }
@@ -240,7 +240,12 @@ function buildMedical(cfg: any): MedicalCrm {
     try {
       const j = JSON.parse(fd)
       if (Array.isArray(j)) medicines = j.map((f: any) => typeof f === 'string' ? f.trim() : [f?.nome, f?.dosaggio, f?.orario].map(toStr).filter(Boolean).join(' ')).filter(Boolean).join('; ')
-      else medicines = fd
+      else if (j && typeof j === 'object' && Array.isArray((j as any).nomi)) {
+        // Formato salvato dal modulo del CRM: {"nomi":[..],"dosaggi":[..],"orari":[..]} (un elemento per farmaco)
+        const J: any = j
+        const n = Math.max(J.nomi.length, (J.dosaggi || []).length, (J.orari || []).length)
+        medicines = Array.from({ length: n }, (_, i) => [J.nomi[i], J.dosaggi?.[i], J.orari?.[i]].map(toStr).filter(Boolean).join(' ')).filter(Boolean).join('; ')
+      } else medicines = fd
     } catch { medicines = fd }
   }
   if (!medicines) medicines = toStr(cfg.farmaci_assunti)
@@ -300,7 +305,7 @@ export function buildCrmPatient(src: CrmSources, env: SidlyEnv): CrmPatient | { 
   }
 
   // Formato usato dal portale SiDLY: "Via, Citta', Provincia, CAP"
-  const address = [toStr(lead.indirizzoAssistito), toStr(lead.cittaAssistito), toStr(lead.provinciaAssistito), toStr(lead.capAssistito)].filter(Boolean).join(', ')
+  const address = [indirizzoIt(lead.indirizzoAssistito), toStr(lead.cittaAssistito), toStr(lead.provinciaAssistito), toStr(lead.capAssistito)].filter(Boolean).join(', ')
   if (address) user.address = address
 
   const band: CrmPatient['band'] = { imei, timezone: 'Europe/Rome', lang_band: 'IT' }
@@ -347,7 +352,7 @@ export function buildCrmPatient(src: CrmSources, env: SidlyEnv): CrmPatient | { 
 export interface PlatformPatient {
   userId: string | null
   user: { firstName?: string; lastName?: string; date?: { year: number; month: number; day: number } | null; weight?: number | null; height?: number | null; phonePrefix?: string; phone?: string; address?: string }
-  band: { phones?: SosPhone[]; simNumber?: string; whitelist?: string[] }
+  band: { phones?: SosPhone[]; simNumber?: string; whitelist?: string[]; whitelistAlias?: string[] }
 }
 
 export function normalizePlatformPatient(resp: any): PlatformPatient {
@@ -368,6 +373,8 @@ export function normalizePlatformPatient(resp: any): PlatformPatient {
     : []
   const rawWl = pick(b.whitelistNumbers, b.whitelist_numbers, root.whitelistNumbers, root.whitelist_numbers)
   const whitelist: string[] | undefined = rawWl === undefined ? undefined : (Array.isArray(rawWl) ? rawWl : String(rawWl).split(',')).map((x: any) => toStr(x)).filter(Boolean)
+  const rawAl = pick(b.whiteListAlias, b.white_list_alias, b.whitelistAlias, root.whiteListAlias, root.white_list_alias)
+  const whitelistAlias: string[] | undefined = rawAl === undefined ? undefined : (Array.isArray(rawAl) ? rawAl : String(rawAl).split(',')).map((x: any) => toStr(x))
   const id = pick(root.user_id, u.user_id, root.userId, u.userId, root.id, u.id)
   return {
     userId: id === undefined ? null : String(id),
@@ -381,7 +388,7 @@ export function normalizePlatformPatient(resp: any): PlatformPatient {
       phone: pick(u.phone),
       address: pick(u.address),
     },
-    band: { phones, simNumber: pick(b.simNumber, b.sim_number, u.sim_number, u.simNumber, root.sim_number, root.simNumber), whitelist },
+    band: { phones, simNumber: pick(b.simNumber, b.sim_number, u.sim_number, u.simNumber, root.sim_number, root.simNumber), whitelist, whitelistAlias },
   }
 }
 
@@ -489,7 +496,10 @@ export function motivoErrore(json: any, text: string): string {
     m = json.message ?? json.detail ?? json.error ?? json.errors ?? json.msg ?? json.data?.message ?? ''
     if (m && typeof m === 'object') { try { m = JSON.stringify(m) } catch { m = '' } }
   }
-  if (!m && text && !/^\s*</.test(text)) m = text
+  const vuoto = (x: unknown) => { const t = String(x ?? '').trim(); return t === '' || t === '{}' || t === '[]' || t === 'null' }
+  // Se il campo "messaggio" e' vuoto (es. {"errors":{}}) si mostra il corpo grezzo della risposta, mai una pagina HTML
+  if (vuoto(m) && text && !/^\s*</.test(text)) m = text
+  if (vuoto(m)) m = ''
   return String(m || '').replace(/[\u0000-\u001f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160)
 }
 
@@ -627,7 +637,7 @@ interface Plan {
 const newPlan = (): Plan => ({ user: {}, band: {}, contacts: {}, diseases: {}, ops: [] })
 const planHasSidly = (w: Plan) => !!(Object.keys(w.user).length || Object.keys(w.band).length || Object.keys(w.contacts).length || Object.keys(w.diseases).length)
 
-interface RigaInt extends RigaConfronto { toSidly?: (w: Plan) => void; toCrm?: (w: Plan) => void }
+interface RigaInt extends RigaConfronto { toSidly?: (w: Plan) => void; toCrm?: (w: Plan) => void; /** Altre voci scritte insieme a questa riga (es. i nomi dei numeri ammessi): mostrate in "prima / dopo" salvo che siano gia' scelte come riga propria. */ extra?: { copertoDa: string; campi: CampoInviato[] } }
 interface Raw { nuovo?: boolean; plat?: PlatformPatient; brief?: any; full?: any; contacts?: any; diseases?: any; card?: any }
 
 interface Def {
@@ -665,6 +675,13 @@ const conEmail = (others: string, email: string) => {
   const cur = emailOf(others)
   return cur ? others.replace(cur, () => email) : ((others ? others.trim() + ' ' : '') + 'email: ' + email)
 }
+const VIA_RE = /^(via|viale|v\.le|piazza|p\.zza|piazzale|corso|c\.so|largo|vicolo|strada|str\.|localit[aà]|loc\.|contrada|lungomare|lungotevere|lungarno|borgo|salita|vico|rione|traversa|circonvallazione)\b/i
+/** "29 Via Corinto" (ordine inglese: numero davanti) -> "Via Corinto 29" (ordine italiano). Altri testi restano identici. */
+export function indirizzoIt(v: unknown): string {
+  const t = toStr(v).trim()
+  const m = t.match(/^(\d+[A-Za-z]?(?:\/\d+[A-Za-z]?)?)\s*,?\s+(.+)$/)
+  return m && VIA_RE.test(m[2].trim()) ? `${m[2].trim()} ${m[1]}` : t
+}
 /** "Via X 1, Citta', MI, 20100" -> 4 caselle del CRM; null se non e' nel formato standard del portale. */
 export function parseIndirizzo(a: unknown): { indirizzo: string; citta: string; provincia: string; cap: string } | null {
   const m = toStr(a).match(/^(.+),\s*([^,]+),\s*([A-Za-z]{2}),\s*(\d{5})$/)
@@ -687,8 +704,18 @@ export function buildRows(crm: CrmPatient, raw: Raw): RigaInt[] {
   const fu = full.user || {}, fb = full.band || {}
   const letto = nuovo || !!raw.full
   const ha = (t: Tabella) => t === 'assistiti' || (t === 'configurations' && crm.fonti.config) || (t === 'leads' && crm.fonti.lead) || (t === 'ddts' && crm.fonti.ddt)
+  const tabDi = (o: CrmOp): Tabella => o.t === 'col' ? o.tabella : 'configurations'
   const def = (d: Def) => {
-    if (d.toCrm && d.needs && d.needs.some(t => !ha(t))) d = { ...d, toCrm: undefined, notaCrm: 'Nel CRM manca la scheda in cui salvare questo dato.' }
+    if (d.toCrm) {
+      const orig = d.toCrm
+      const prova = newPlan(); orig(prova)   // prova a secco: quali tabelle del CRM verrebbero scritte
+      const utili = prova.ops.filter(o => ha(tabDi(o)))
+      if ((d.needs && d.needs.some(t => !ha(t))) || (prova.ops.length > 0 && utili.length === 0)) {
+        d = { ...d, toCrm: undefined, notaCrm: 'Per questo assistito il CRM non ha la scheda di configurazione (richiesta collegata): qui non si può salvare questo dato.' }
+      } else if (utili.length < prova.ops.length) {
+        d = { ...d, toCrm: (w: Plan) => { const t = newPlan(); orig(t); w.ops.push(...t.ops.filter(o => ha(tabDi(o)))) } }
+      }
+    }
     rows.push(riga(d, nuovo))
   }
   /** Colonne di assistiti: si scrive solo se la colonna esiste davvero in questo database. */
@@ -713,7 +740,7 @@ export function buildRows(crm: CrmPatient, raw: Raw): RigaInt[] {
     toSidly: w => { w.user.date = crm.user.date },
     toCrm: plat.user.date ? (w => { colOp(w, 'user.date', 'configurations', 'data_nascita', iso(plat.user.date)); colOp(w, 'user.date', 'leads', 'dataNascitaAssistito', iso(plat.user.date)) }) : undefined })
   const ind = parseIndirizzo(plat.user.address)
-  def({ g: A, campo: 'Indirizzo', chiave: 'user.address', s: plat.user.address, c: crm.user.address, eq: eqAddress, nonVerificato: !letto, needs: ['leads'],
+  def({ g: A, campo: 'Indirizzo', chiave: 'user.address', s: plat.user.address, c: crm.user.address, eq: (a, b) => eqAddress(a, b) && indirizzoIt(toStr(a).split(',')[0]) === toStr(a).split(',')[0].trim(), nonVerificato: !letto, needs: ['leads'],
     toSidly: w => { w.user.address = crm.user.address },
     toCrm: ind ? (w => { colOp(w, 'user.address', 'leads', 'indirizzoAssistito', ind.indirizzo); colOp(w, 'user.address', 'leads', 'cittaAssistito', ind.citta); colOp(w, 'user.address', 'leads', 'provinciaAssistito', ind.provincia); colOp(w, 'user.address', 'leads', 'capAssistito', ind.cap) }) : undefined,
     notaCrm: 'L\'indirizzo su SiDLY non è nel formato «Via, Città, Provincia, CAP»: nel CRM è diviso in 4 caselle e non lo scompongo a caso.' })
@@ -771,9 +798,27 @@ export function buildRows(crm: CrmPatient, raw: Raw): RigaInt[] {
   const wlS = (plat.band.whitelist || []).join('\n')
   const wlC = crm.whitelist.map(w => w.number).join('\n')
   const dset = (a: string[]) => a.map(digits).sort().join()
-  if (wlS || wlC) def({ g: B, campo: 'Numeri ammessi (whitelist)', chiave: 'band.whitelist', s: wlS, c: wlC, eq: () => dset(plat.band.whitelist || []) === dset(crm.whitelist.map(w => w.number)),
-    toSidly: w => { w.band.whitelistNumbers = crm.band.whitelistNumbers },
-    notaCrm: 'Nel CRM i numeri ammessi hanno anche il nome: modificali dal CRM.' })
+  // Su SiDLY il nome (alias) e' un campo SEPARATO dai numeri (whiteListAlias) e segue l'ordine dei numeri: il portale invia i due campi insieme.
+  const aliasS = (plat.band.whitelistAlias || []).map(toStr)
+  const aliasC = crm.whitelist.map(w => w.alias)
+  const aliasList = (a: string[]) => a.filter(Boolean).join('\n')
+  const aliasStr = crm.whitelist.map(w => w.alias.slice(0, 50).replace(/,/g, ' ')).join(',')
+  const wlToSidly = (w: Plan) => { w.band.whitelistNumbers = crm.band.whitelistNumbers; w.band.whiteListAlias = aliasStr }
+  const aliasExtra: CampoInviato = { campo: 'band.whiteListAlias', etichetta: 'Nomi dei numeri ammessi', valore: aliasStr, precedente: aliasS.join(','), mostra_prima: aliasList(aliasS), mostra_dopo: aliasList(aliasC) }
+  if (wlS || wlC) {
+    def({ g: B, campo: 'Numeri ammessi (whitelist)', chiave: 'band.whitelist', s: wlS, c: wlC, eq: () => dset(plat.band.whitelist || []) === dset(crm.whitelist.map(w => w.number)),
+      toSidly: wlToSidly, notaCrm: 'Nel CRM i numeri ammessi hanno anche il nome: modificali dal CRM.' })
+    rows[rows.length - 1].extra = { copertoDa: 'band.whitelistAlias', campi: [aliasExtra] }
+  }
+  if (aliasList(aliasS) || aliasList(aliasC)) {
+    const stessiNumeri = (plat.band.whitelist || []).map(digits).join() === crm.whitelist.map(w => digits(w.number)).join()
+    const n = Math.max(aliasS.length, aliasC.length)
+    const aliasEq = () => Array.from({ length: n }).every((_, i) => squash(aliasS[i] || '') === squash(aliasC[i] || ''))
+    def({ g: B, campo: 'Nomi dei numeri ammessi', chiave: 'band.whitelistAlias', s: aliasList(aliasS), c: aliasList(aliasC), eq: aliasEq,
+      toSidly: stessiNumeri ? wlToSidly : undefined,
+      notaSidly: 'Prima allinea i numeri ammessi (riga sopra): su SiDLY i nomi seguono l\'ordine dei numeri.',
+      notaCrm: 'Nel CRM il nome ha due caselle (nome e cognome): modificalo dal CRM.' })
+  }
   def({ g: B, campo: 'Numero SIM', chiave: 'band.simNumber', s: plat.band.simNumber, c: crm.band.simNumber, eq: eqDigits,
     toSidly: w => { w.band.simNumber = crm.band.simNumber },
     toCrm: w => colOp(w, 'band.simNumber', 'ddts', 'sim_number', toStr(plat.band.simNumber)) })
@@ -856,6 +901,7 @@ function pianifica(rows: RigaInt[], scelte: SceltaRiga[]): { plan: Plan; campi: 
     if (s.verso === 'crm') {
       r.toSidly!(plan)
       campi.push({ campo: r.chiave!, etichetta: r.campo, valore: r.crm, precedente: r.sidly, mostra_prima: r.sidly, mostra_dopo: r.crm })
+      if (r.extra && !scelte.some(x => x.chiave === r.extra!.copertoDa && x.verso === 'crm')) campi.push(...r.extra.campi)
     } else {
       const before = plan.ops.length
       r.toCrm!(plan)
@@ -927,7 +973,7 @@ async function leggiScheda(client: SidlyClient, crm: CrmPatient, resJson: any, a
       plat = {
         userId: full.userId || brief.userId,
         user: { ...brief.user, ...Object.fromEntries(Object.entries(full.user).filter(([, v]) => v !== undefined && v !== null)) },
-        band: { phones: full.band.phones && full.band.phones.length ? full.band.phones : brief.band.phones, simNumber: full.band.simNumber ?? brief.band.simNumber, whitelist: full.band.whitelist ?? brief.band.whitelist },
+        band: { phones: full.band.phones && full.band.phones.length ? full.band.phones : brief.band.phones, simNumber: full.band.simNumber ?? brief.band.simNumber, whitelist: full.band.whitelist ?? brief.band.whitelist, whitelistAlias: full.band.whitelistAlias ?? brief.band.whitelistAlias },
       }
     }
   }
@@ -976,7 +1022,7 @@ async function scriviSidly(client: SidlyClient, crm: CrmPatient, id: string, ass
     if (dry) { out.azioni.push({ azione: c.azione, risultato: 'non eseguito (anteprima)', campi: c.campi }); continue }
     const p = await client.request(c.metodo, c.path, c.body)
     out.azioni.push({ azione: c.azione, risultato: String(p.status), campi: c.campi })
-    if (!ok2xx(p.status)) return `${c.errore} (HTTP ${p.status}${p.motivo ? ': ' + p.motivo : ''}); non è stato scritto nulla da questa chiamata`
+    if (!ok2xx(p.status)) return `${c.errore} (HTTP ${p.status}${p.motivo ? ': ' + p.motivo : ', SiDLY non indica il motivo'}); non è stato scritto nulla da questa chiamata`
   }
   return null
 }
@@ -990,7 +1036,7 @@ function decora(out: SyncResult, crm: CrmPatient, rows: RigaInt[]): void {
     if (c.precedente !== undefined && d.mostra_prima === undefined) d.mostra_prima = mostra(c.precedente, c.campo)
     return d
   })
-  out.confronto = rows.map(({ toSidly, toCrm, ...r }) => r)
+  out.confronto = rows.map(({ toSidly, toCrm, extra, ...r }) => r)
 }
 
 export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {

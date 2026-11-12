@@ -863,6 +863,68 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       ok(S.motivoErrore({ detail: [{ msg: 'x' }] }, '').includes('msg') && S.motivoErrore(null, '<html>502</html>') === '' && S.motivoErrore(null, 'Bad\nrequest   here') === 'Bad request here' && S.motivoErrore({ message: 'a'.repeat(500) }, '').length === 160, 'motivoErrore: estrae il messaggio, ignora HTML, ripulisce e limita a 160 caratteri')
     }
 
+    // Segnalazioni dell'utente (Giorgia Origoni, Vilma Pineda, Maria Immacolata Tomaselli)
+    {
+      // 1) farmaci: il CRM salva {"nomi":[],"dosaggi":[],"orari":[]}: va letto, non mostrato come JSON grezzo
+      const f = crmOf({ config: { farmaci_data: JSON.stringify({ nomi: ['zoloft', 'olanzapine'], dosaggi: ['1 compressa', '1 compressa'], orari: ['08:00', '20:00'] }) } })
+      ok(f.medical.medicines === 'zoloft 1 compressa 08:00; olanzapine 1 compressa 20:00' && !/[{}\[\]"]/.test(f.medical.medicines || ''), 'farmaci: formato {nomi,dosaggi,orari} del CRM → testo leggibile, senza JSON')
+      const f2 = crmOf({ config: { farmaci_data: JSON.stringify({ nomi: ['tachipirina', 'x'], dosaggi: ['500'], orari: [] }) } })
+      ok(f2.medical.medicines === 'tachipirina 500; x', 'farmaci: elenchi di lunghezza diversa → nessun errore, nessun dato perso')
+      // 2) indirizzo: ordine italiano (via, poi civico)
+      ok(S.indirizzoIt('29 Via Corinto') === 'Via Corinto 29' && S.indirizzoIt('5A Corso Italia') === 'Corso Italia 5A' && S.indirizzoIt('Via Roma 1') === 'Via Roma 1' && S.indirizzoIt('3 Maggio') === '3 Maggio' && S.indirizzoIt('') === '', 'indirizzo: «29 Via Corinto» → «Via Corinto 29»; già italiano o ambiguo → invariato')
+      const ci = crmOf({ lead: { indirizzoAssistito: '29 Via Corinto', cittaAssistito: 'Roma', provinciaAssistito: 'RM', capAssistito: '00146' } })
+      ok(ci.user.address === 'Via Corinto 29, Roma, RM, 00146', 'indirizzo verso SiDLY: ordine italiano (Via Corinto 29, Roma, RM, 00146)')
+      const pi = await preview(ci, makePlatform({ patients: { [IMEI]: platformFrom(ci, {}, { address: '29 Via Corinto, Roma, RM, 00146' }) } }))
+      ok(rowOf(pi, 'user.address')?.stato === 'diverso' && rowOf(pi, 'user.address')?.verso?.includes('crm'), 'indirizzo già scritto in ordine inglese su SiDLY → segnalato «diverso», correggibile con «vale il CRM»')
+      const pu = await preview(ci, makePlatform({ patients: { [IMEI]: platformFrom(ci) } }))
+      ok(rowOf(pu, 'user.address')?.stato === 'uguale', 'indirizzo in ordine italiano su entrambi → uguale')
+    }
+    {
+      // 3) nomi della whitelist: campo SEPARATO su SiDLY (whiteListAlias), scritto insieme ai numeri come fa il portale
+      const crm = crmOf({ config: { whitelist1_nome: 'Daniela', whitelist1_cognome: 'Rocca', whitelist1_telefono: '3357729675', whitelist2_nome: 'Stefania', whitelist2_cognome: 'Rocca', whitelist2_telefono: '3357301206' } })
+      ok(crm.band.whitelistNumbers === '+393357729675,+393357301206' && !('whiteListAlias' in crm.band) && crm.whitelist.map(w => w.alias).join() === 'Daniela Rocca,Stefania Rocca', 'whitelist: numeri e nomi tenuti separati')
+      const P = makePlatform({ patients: { [IMEI]: platformFrom(crm, { whitelistNumbers: '', whiteListAlias: '' }) }, contacts: [], diseases: { id: 1 } })
+      const d = await preview(crm, P)
+      ok(rowOf(d, 'band.whitelist')?.crm === '+393357729675\n+393357301206' && rowOf(d, 'band.whitelistAlias')?.crm === 'Daniela Rocca\nStefania Rocca' && !(rowOf(d, 'band.whitelistAlias')?.verso || []).length, 'whitelist: riga numeri (solo numeri) e riga «Nomi dei numeri ammessi» separate')
+      const w = await scrivi(crm, P, [['band.whitelist', 'crm']])
+      const pb = P.calls.find(c => c.method === 'PATCH' && /manager\/patient/.test(c.path))
+      ok(w.r.esito === 'aggiornato' && pb?.body.band.whitelistNumbers === '+393357729675,+393357301206' && pb?.body.band.whiteListAlias === 'Daniela Rocca,Stefania Rocca' && Object.keys(pb?.body.band).join() === 'whitelistNumbers,whiteListAlias', 'whitelist: numeri e nomi inviati insieme nella stessa PATCH, come il portale (due campi, stesso ordine)')
+      const Pf = makePlatform({ patients: { [IMEI]: platformFrom(crm, { whitelistNumbers: '', whiteListAlias: '' }) }, contacts: [], diseases: { id: 1 } })
+      const a = await anteprimaScelte(crm, Pf, [['band.whitelist', 'crm']])
+      ok(a.campi_inviati.some(c => c.campo === 'band.whiteListAlias' && c.mostra_dopo === 'Daniela Rocca\nStefania Rocca'), 'whitelist: nel «prima / dopo» compaiono anche i nomi')
+      // numeri uguali ma nomi diversi: si può correggere solo il nome
+      const P2 = makePlatform({ patients: { [IMEI]: platformFrom(crm, { whitelistNumbers: crm.band.whitelistNumbers, whiteListAlias: 'Vecchio,Altro' }) }, contacts: [], diseases: { id: 1 } })
+      const d2 = await preview(crm, P2)
+      ok(rowOf(d2, 'band.whitelist')?.stato === 'uguale' && rowOf(d2, 'band.whitelistAlias')?.stato === 'diverso' && rowOf(d2, 'band.whitelistAlias')?.verso?.join() === 'crm', 'whitelist: numeri uguali e nomi diversi → solo la riga dei nomi è modificabile')
+      // numeri diversi: i nomi non si possono allineare da soli
+      const P3 = makePlatform({ patients: { [IMEI]: platformFrom(crm, { whitelistNumbers: '+390000000001', whiteListAlias: 'Mario' }) }, contacts: [], diseases: { id: 1 } })
+      const d3 = await preview(crm, P3)
+      ok(!(rowOf(d3, 'band.whitelistAlias')?.verso || []).length && /Prima allinea i numeri/.test(rowOf(d3, 'band.whitelistAlias')?.nota || ''), 'whitelist: numeri diversi → i nomi non si scrivono da soli (spiegazione a video)')
+    }
+    {
+      // 4) assistito senza scheda di configurazione nel CRM: nessuna scelta che poi fallirebbe
+      const base = crmOf()
+      const senza: S.CrmPatient = S.buildCrmPatient({ ...SRC(), config: null }, ENV) as S.CrmPatient
+      ok(senza.fonti.config === false, 'assistito senza scheda di configurazione: riconosciuto')
+      const P = makePlatform({ patients: { [IMEI]: platformFrom(base, {}, { email: 'x@y.it', weight: 70 }) }, contacts: [{ id: 1, name: 'Mario Bianchi', phone_num: '3470001111', family_kind: '', address: '', others: 'email: m@x.it' }], diseases: { id: 1 } })
+      const d = await preview(senza, P)
+      const em = rowOf(d, 'user.email'), rn = rowOf(d, 'ref1.nome'), pe = rowOf(d, 'user.weight')
+      ok(!(em?.verso || []).includes('sidly') && /non ha la scheda di configurazione/.test(em?.nota || ''), 'senza scheda: e-mail non offerta verso il CRM, con spiegazione (niente errore dopo la conferma)')
+      ok(!(rn?.verso || []).includes('sidly'), 'senza scheda: referenti non offerti verso il CRM')
+      ok((pe?.verso || []).includes('sidly'), 'senza scheda: il peso resta scrivibile (colonna dell\'anagrafica assistiti)')
+      const ops: S.CrmOp[] = []
+      const w = await S.syncAssistito({ crm: senza, env: ENV, fetchImpl: P.fetchImpl, scelte: [sceltaDi(d, 'user.weight', 'sidly')], applyCrm: async o => { ops.push(...o) } })
+      ok(w.esito === 'aggiornato' && ops.length > 0 && ops.every(o => o.t === 'col' && o.tabella === 'assistiti'), 'senza scheda: la scrittura del peso tocca solo l\'anagrafica assistiti, mai la scheda mancante')
+    }
+    {
+      // 5) errore di SiDLY senza messaggio: si mostra il corpo grezzo o si dice che il motivo non è indicato
+      ok(S.motivoErrore({ errors: {} }, '{"errors":{}}') === '{"errors":{}}' && S.motivoErrore({}, '{}') === '' && S.motivoErrore({ errors: { band: 'x' } }, '').includes('band'), 'motivoErrore: {"errors":{}} → corpo grezzo; risposta vuota → nessun «{}» a video')
+      const crm = crmOf({ config: { whitelist1_telefono: '3357729675' } })
+      const P = makePlatform({ patients: { [IMEI]: platformFrom(crm, { whitelistNumbers: '', whiteListAlias: '' }) }, contacts: [], diseases: { id: 1 }, patchPatient: { status: 400, body: {} } })
+      const e = (await scrivi(crm, P, [['band.whitelist', 'crm']])).r
+      ok(e.esito === 'errore' && /HTTP 400, SiDLY non indica il motivo/.test(e.errore || ''), 'errore 400 senza motivo → «SiDLY non indica il motivo», non «{}»')
+    }
+
     // creazione: i dettagli vengono sincronizzati dopo il POST
     {
       const P = makePlatform({ contacts: [], diseases: { id: 3 } })

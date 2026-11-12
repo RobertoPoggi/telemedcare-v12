@@ -38,14 +38,14 @@ Body: `{assistito_id, dry_run?, conferma_scrittura?, scelte?, associa_user_id?, 
 |---|---|---|
 | `contatto{1,2,3}_{nome,cognome,telefono,email}` | `GET /getContacts` + `PATCH /editContacts` | nome, telefono, e-mail: CRM→SiDLY e SiDLY→CRM (e-mail SiDLY→CRM solo se in "altro" c'e' un indirizzo; CRM→SiDLY lo aggiunge alle note senza perderle). Parentela e indirizzo del referente: solo su SiDLY. Il portale invia l'intero modulo: si rimandano anche i valori gia' presenti (ID, parentela, indirizzo, note). |
 | gli stessi tre numeri | `band.phones` (SOS) | solo CRM→SiDLY |
-| `whitelist{1,2,3}_telefono` | `band.whitelistNumbers` (solo numeri, separati da virgola; nome/cognome NON inviati) | solo CRM→SiDLY |
+| `whitelist{1,2,3}_telefono` + nome/cognome | `band.whitelistNumbers` (solo numeri, virgola) e `band.whiteListAlias` (nomi, campo SEPARATO, stesso ordine). Il portale invia sempre i due campi insieme: lo facciamo anche noi nella stessa PATCH. Due righe distinte in tabella (numeri / nomi); i nomi si scrivono solo se i numeri coincidono | solo CRM→SiDLY |
 | `patologie_croniche` | interruttori di `GET/PATCH /getDiseases`/`editDiseases` | solo ACCENDERE, in entrambe le direzioni ("No" puo' voler dire "non compilato") |
 | `allergie`, `note_mediche` | `allergy`, `more_info` | entrambe le direzioni |
-| farmaci (`farmaci_data`), altre patologie | `medicines`, `other_diseases` | solo CRM→SiDLY (nel CRM hanno una struttura propria) |
+| farmaci (`farmaci_data`, JSON `{nomi,dosaggi,orari}` mostrato come «nome dosaggio orario; …»), altre patologie | `medicines`, `other_diseases` | solo CRM→SiDLY (nel CRM hanno una struttura propria) |
 | `medico_curante_*` | `GET /patientCard` | nessuna (scrittura su SiDLY non attiva; nel CRM nome e telefono sono nello stesso campo) |
 | `centro_medico_riferimento` | `patientCard.hospital_info` | solo SiDLY→CRM |
 
-Anagrafica: nome/cognome/data di nascita/telefono/peso/altezza in entrambe le direzioni; indirizzo SiDLY→CRM solo se nel formato "Via, Citta', Provincia, CAP" (nel CRM sono 4 caselle); e-mail assistito solo SiDLY→CRM; SIM in entrambe (CRM: `ddts.sim_number`).
+Anagrafica: l'indirizzo del CRM e' salvato anche come «29 Via Corinto» (numero prima): verso SiDLY viene scritto in ordine italiano «Via Corinto 29, Citta', Prov, CAP». Assistiti SENZA scheda di configurazione nel CRM: le righe che andrebbero salvate li' (e-mail, referenti, ecc.) non offrono SiDLY→CRM e spiegano perche'. Nome/cognome/data di nascita/telefono/peso/altezza in entrambe le direzioni; indirizzo SiDLY→CRM solo se nel formato "Via, Citta', Provincia, CAP" (nel CRM sono 4 caselle); e-mail assistito solo SiDLY→CRM; SIM in entrambe (CRM: `ddts.sim_number`).
 Mappatura patologie: ipertensione→`nadcisnienie`, diabete→`cukrzyca`, demenza→`alzheimer`, parkinson→`parkinson`, epilessia→`padaczka`, bpco→`astma`, cardiopatia→`po_zawale` (**assunzione**).
 In anteprima la sezione `diagnostica` mostra solo la STRUTTURA delle risposte, mai i valori. Dati sanitari: i valori mostrati nel pannello non sono salvati nel DB (`sidly_sync` salva solo esito/azioni/avvisi).
 
