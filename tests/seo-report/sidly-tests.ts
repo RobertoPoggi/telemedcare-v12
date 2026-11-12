@@ -927,6 +927,11 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       const w4 = await scrivi(crm, P4, [['band.whitelist', 'crm']])
       const pt = P4.calls.filter(c => c.method === 'PATCH' && /manager\/patient/.test(c.path))
       ok(w4.r.esito === 'aggiornato' && pt.length === 3 && pt[2].body.band.whitelistNumbers === '+393403373508,+393393993993' && pt[2].body.band.whiteListAlias === '' && w4.r.warning.some(x => /rifiutato i nomi/.test(x)), 'nomi rifiutati da SiDLY: scritti solo i numeri (terzo tentativo) con avviso esplicito')
+      // dettagli tecnici: richiesta e risposta delle chiamate rifiutate, senza password
+      const rif = e.azioni.filter(a => a.risultato === '400')
+      ok(rif.length === 3 && rif.every(a => !!a.richiesta && !!a.risposta), 'chiamate rifiutate: nei dettagli tecnici richiesta inviata e risposta di SiDLY')
+      ok(S.richiestaLeggibile({ wifi: { wifi_ssid: 'casa', wifi_passwd: 'segreta' }, password: 'x', token: 't', n: 1 }) === '{"wifi":{"wifi_ssid":"casa","wifi_passwd":"***"},"password":"***","token":"***","n":1}' && !rif.some(a => /segreta/.test(a.richiesta || '')) && S.richiestaLeggibile({ a: 'x'.repeat(5000) }).length <= 3001, 'dettagli tecnici: password e token oscurati, testo limitato')
+      ok(w.r.azioni.some(a => a.risultato === '200' && /tentativo 2/.test(a.azione)) && !w.r.azioni.some(a => /^2/.test(a.risultato) && a.richiesta), 'chiamate riuscite (200): nessuna richiesta mostrata, solo quelle rifiutate')
       // anteprima: non scrive nulla e non fa il secondo tentativo
       const P3 = makePlatform({ patients: { [IMEI]: platformFrom(crm, extra) }, contacts: [], diseases: { id: 1 }, patchNeedsFullBand: true } as any)
       await anteprimaScelte(crm, P3, [['band.whitelist', 'crm']])

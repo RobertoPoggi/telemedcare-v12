@@ -3515,7 +3515,13 @@ export const dashboard = `<!DOCTYPE html>
             h += '<details style="margin-top:14px"><summary style="cursor:pointer;color:#6b7280;font-size:12px">Dettagli tecnici</summary><div style="font-size:12px;color:#444">';
             if (r.sidly_user_id) h += '<div style="margin-top:6px">ID SiDLY: ' + escapeHtml(String(r.sidly_user_id)) + '</div>';
             h += sidlyList('Chiamate', (r.azioni || []).map(function (a) {
-                return escapeHtml(a.azione) + ' &rarr; <b>' + escapeHtml(String(a.risultato)) + '</b>';
+                var x = escapeHtml(a.azione) + ' &rarr; <b>' + escapeHtml(String(a.risultato)) + '</b>';
+                if (a.richiesta) {
+                    x += '<details style="margin:4px 0 6px"><summary style="cursor:pointer;color:#6b7280">richiesta inviata e risposta di SiDLY</summary>' +
+                        '<div style="font-weight:600;margin-top:4px">Inviato</div><pre style="white-space:pre-wrap;word-break:break-all;background:#f3f4f6;padding:6px;border-radius:4px;max-height:160px;overflow:auto;margin:2px 0">' + escapeHtml(a.richiesta) + '</pre>' +
+                        '<div style="font-weight:600">Risposta</div><pre style="white-space:pre-wrap;word-break:break-all;background:#f3f4f6;padding:6px;border-radius:4px;margin:2px 0">' + escapeHtml(a.risposta || '') + '</pre></details>';
+                }
+                return x;
             }));
             if (r.url_for_band) {
                 h += '<div style="margin-top:8px">URL di consegna frame: ' + (r.url_for_band.registrato ? 'registrato' : 'non registrato') + '</div>';

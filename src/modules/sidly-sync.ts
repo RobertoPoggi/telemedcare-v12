@@ -34,7 +34,16 @@ export type Fetch = (url: string, init?: any) => Promise<{ status: number; ok?: 
 
 export type Esito = 'creato' | 'aggiornato' | 'invariato' | 'errore' | 'anteprima' | 'conferma_richiesta'
 
-export interface Azione { azione: string; risultato: string; campi?: string[] }
+export interface Azione { azione: string; risultato: string; campi?: string[]; /** Solo per le chiamate rifiutate: corpo inviato (password oscurate) e risposta di SiDLY, per capire il rifiuto. */ richiesta?: string; risposta?: string }
+
+/** Corpo di una richiesta in forma leggibile per i dettagli tecnici: mai password (wifi_passwd, password, token) e al massimo 3000 caratteri. */
+export function richiestaLeggibile(body: any): string {
+  const mask = (v: any): any => Array.isArray(v) ? v.map(mask) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, /pass|token|secret/i.test(k) && x !== null && x !== '' ? '***' : mask(x)])) : v
+  let t = ''
+  try { t = JSON.stringify(mask(body)) } catch { t = '' }
+  return t.length > 3000 ? t.slice(0, 3000) + '…' : t
+}
+const rispostaBreve = (t: string) => { const x = toStr(t).replace(/\s+/g, ' ').trim(); return x.length > 600 ? x.slice(0, 600) + '…' : x }
 export interface CampoInviato { campo: string; valore: any; /** Testi per l'operatore (solo visualizzazione): nome leggibile e valori su piu' righe. */ etichetta?: string; mostra_prima?: string; mostra_dopo?: string; /** Valore attualmente su SiDLY (solo campi user.*; '' se vuoto): serve all'operatore per capire cosa verrebbe sovrascritto. */ precedente?: any }
 export interface Candidato { user_id: string; first_name: string; last_name: string }
 
@@ -477,7 +486,7 @@ export class SidlyClient {
     return token
   }
 
-  async request(method: string, path: string, body?: any): Promise<{ status: number; json: any; motivo?: string }> {
+  async request(method: string, path: string, body?: any): Promise<{ status: number; json: any; motivo?: string; testo?: string }> {
     let token = tokenCache.get(this.cacheKey) || await this.login()
     let r = await this.raw(method, path, body, token)
     if (r.status === 401 || r.status === 403) {
@@ -485,7 +494,7 @@ export class SidlyClient {
       token = await this.login()
       r = await this.raw(method, path, body, token)
     }
-    return { status: r.status, json: r.json, motivo: r.status >= 400 ? motivoErrore(r.json, r.text) : '' }
+    return { status: r.status, json: r.json, motivo: r.status >= 400 ? motivoErrore(r.json, r.text) : '', testo: r.status >= 400 ? r.text : '' }
   }
 }
 
@@ -1105,7 +1114,7 @@ async function scriviSidly(client: SidlyClient, crm: CrmPatient, id: string, ass
   for (const c of chiamate) {
     if (dry) { out.azioni.push({ azione: c.azione, risultato: 'non eseguito (anteprima)', campi: c.campi }); continue }
     const p = await client.request(c.metodo, c.path, c.body)
-    out.azioni.push({ azione: c.azione, risultato: String(p.status), campi: c.campi })
+    out.azioni.push({ azione: c.azione, risultato: String(p.status), campi: c.campi, ...(ok2xx(p.status) ? {} : { richiesta: richiestaLeggibile(c.body), risposta: rispostaBreve(p.testo || '') || '(risposta vuota)' }) })
     const perche = (r: { status: number; motivo?: string }) => `HTTP ${r.status}${r.motivo ? ': ' + r.motivo : ', SiDLY non indica il motivo'}`
     let ultimo = p, riprovati = 0
     if (!ok2xx(p.status) && c.riprove) {
@@ -1113,7 +1122,7 @@ async function scriviSidly(client: SidlyClient, crm: CrmPatient, id: string, ass
         if (ok2xx(ultimo.status) || !(p.status === 400 || p.status === 422)) break
         ultimo = await client.request(c.metodo, c.path, r.body)
         riprovati++
-        out.azioni.push({ azione: `${c.azione} (tentativo ${riprovati + 1}: ${r.etichetta})`, risultato: String(ultimo.status), campi: [...c.campi, 'resto della scheda rimandato invariato'] })
+        out.azioni.push({ azione: `${c.azione} (tentativo ${riprovati + 1}: ${r.etichetta})`, risultato: String(ultimo.status), campi: [...c.campi, 'resto della scheda rimandato invariato'], ...(ok2xx(ultimo.status) ? {} : { richiesta: richiestaLeggibile(r.body), risposta: rispostaBreve(ultimo.testo || '') || '(risposta vuota)' }) })
         if (ok2xx(ultimo.status) && r.avviso) out.warning.push(r.avviso)
       }
       if (riprovati > 0) {
