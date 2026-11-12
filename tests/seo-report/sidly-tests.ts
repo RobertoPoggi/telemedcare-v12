@@ -526,6 +526,17 @@ export async function runSidlyTests(ok: Ok, section: Section) {
     ok(/id="sidlySoloComuni"/.test(dash) && /Solo campi presenti in entrambi/.test(dash) && /justify-content:space-between;align-items:flex-start/.test(dash) && /haTabella \? '<div style="display:flex/.test(dash), 'dashboard: interruttore «Solo campi presenti in entrambi» in alto a destra, solo sulla tabella di confronto')
     ok(/tr\[data-assente\]/.test(dash) && /\(x\.assenteSidly \|\| x\.assenteCrm\) \? ' data-assente="1"'/.test(dash) && /tr\[data-gruppo\]/.test(dash) && /window\.sidlyFiltra\(\);/.test(dash), 'dashboard: il filtro nasconde le righe con campo presente in un solo ambiente e i gruppi rimasti vuoti, e resta attivo dopo ogni ricarica del pannello')
     {
+      // Richiesta utente: «non so se le modifiche sono state applicate» → pulsanti sempre visibili, avviso alla chiusura, messaggio di esito
+      const i0 = Math.min(...['closeSidlyPanel', 'var SIDLY_BTN'].map(k => dash.indexOf(k)).filter(n => n >= 0)), i1 = dash.indexOf('window.syncSidly = ')
+      const sez = i0 >= 0 && i1 > i0 ? dash.slice(i0, i1) : ''
+      ok(sez.length > 1000 && !/(?:bg|text|border)-teal-/.test(sez), 'dashboard: nel pannello SiDLY nessuna classe Tailwind teal-* (il CSS della Dashboard non le ha: i pulsanti sarebbero invisibili), si usano stili inline')
+      ok(/var SIDLY_BTN = 'padding:/.test(dash) && (sez.match(/SIDLY_BTN \+ '#/g) || []).length >= 5, 'dashboard: tutti i pulsanti del pannello usano lo stile inline con colore di sfondo esplicito')
+      ok(/Passo 1 di 2/.test(sez) && /Passo 2 di 2/.test(sez) && /Non scrive ancora/.test(sez) && /scrive davvero/.test(sez), 'dashboard: il flusso è spiegato a video in 2 passi (verifica, poi scrittura)')
+      ok(/window\.confirm\('Hai scelto/.test(sez) && /NON sono state ancora scritte/.test(sez), 'dashboard: chiudendo il pannello con scelte non scritte compare un avviso di conferma')
+      ok(/Fatto: ' \+/.test(sez) && /modifiche scritte/.test(sez) && /assistito creato su SiDLY/.test(sez) && /Non è stato scritto nulla/.test(sez), 'dashboard: dopo la scrittura messaggio esplicito (Fatto: N modifiche, X su SiDLY, Y nel CRM; oppure «Non è stato scritto nulla»)')
+      ok(/Rileggi il confronto/.test(sez) && /window\.__sidlyLastId = /.test(sez), 'dashboard: dopo la scrittura è disponibile «Rileggi il confronto» per controllare il risultato')
+    }
+    {
       // Simulazione del filtro con un DOM minimo: righe assenti nascoste, gruppi vuoti nascosti, righe comuni sempre visibili
       const m = dash.match(/window\.sidlyFiltra = function \(attivo\) \{[\s\S]*?\n        \};/)
       type El = { style: { display: string }; attrs: Record<string, boolean>; next: El | null; hasAttribute(a: string): boolean; nextElementSibling: El | null }
