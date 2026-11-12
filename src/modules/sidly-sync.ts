@@ -1001,8 +1001,9 @@ async function leggiDettagli(client: SidlyClient, crm: CrmPatient, imei: string,
 }
 
 /** Impostazioni del braccialetto: nome nel modulo del portale <- nome nella scheda letta da SiDLY. */
-const BAND_FORM_CAMEL: Array<[string, string]> = [['minHr', 'min_hr'], ['maxHr', 'max_hr'], ['isHr', 'is_hr'], ['isSat', 'is_sat'], ['stepNotification', 'step_notification'], ['operatingMode', 'operating_mode'], ['isAlarmZone', 'is_alarm_zone']]
-const BAND_FORM_UGUALI = ['simNumber', 'steps', 'timezone', 'fall', 'measure', 'vol', 'full_batt_notif', 'low_batt_notif', 'wear_notif', 'not_wear_notif', 'sos_notif', 'fall_notif', 'sms_limit', 'zone_notif', 'name_notif', 'shr_notif', 'firmware_version', 'lang_band', 'beacon', 'night_mode']
+// Solo le chiavi viste nel payload REALE del portale (Giorgia Origoni): non si inviano campi che il portale non manda.
+const BAND_FORM_CAMEL: Array<[string, string]> = [['minHr', 'min_hr'], ['maxHr', 'max_hr'], ['isHr', 'is_hr'], ['isSat', 'is_sat'], ['operatingMode', 'operating_mode'], ['isAlarmZone', 'is_alarm_zone']]
+const BAND_FORM_UGUALI = ['simNumber', 'timezone', 'fall', 'measure', 'vol', 'sos_notif', 'fall_notif', 'name_notif', 'firmware_version', 'lang_band', 'night_mode']
 
 /**
  * Il modulo "braccialetto" completo come lo invia il portale SiDLY quando si salva una scheda: tutte le impostazioni
@@ -1024,7 +1025,7 @@ export function formBandCompleto(raw: Raw, planBand: Record<string, any>): Recor
   out.maxHr = b.max_hr ? b.max_hr : 120
   out.minimumSat = Object.prototype.hasOwnProperty.call(b, 'minimum_sat') ? b.minimum_sat : -1
   out.aac = b.aac ? 1 : 0
-  out.ivs = b.ivs ? 1 : 0
+  if (String(root.type || '').toUpperCase() !== 'ONE') out.ivs = b.ivs ? 1 : 0
   for (const k of ['night_start', 'night_stop']) if (has(b[k])) { let v = String(b[k]); if (v.substring(0, 2).includes(':')) v = ('0' + v).slice(-6); out[k] = v }
   const lista = (v: any) => (Array.isArray(v) ? v.join(',') : has(v) ? String(v) : '')
   out.whitelistNumbers = lista(b.whitelist_numbers ?? b.whitelistNumbers)
@@ -1035,16 +1036,62 @@ export function formBandCompleto(raw: Raw, planBand: Record<string, any>): Recor
   return out
 }
 
+/**
+ * La richiesta IDENTICA a quella che invia il portale SiDLY quando si salva la scheda (verificata sul payload reale):
+ * { user (completo), band (completo), wifi: { wifi_ssid, wifi_passwd, band_imei }, lang }.
+ * Tutto cio' che non e' deciso dall'operatore viene rimandato com'e' su SiDLY. null se la scheda completa non e' stata letta.
+ */
+export function formPortale(raw: Raw, plan: Plan, imei: string, conNomiWhitelist: boolean): Record<string, any> | null {
+  const planBand: Record<string, any> = { ...plan.band }
+  if (!conNomiWhitelist) delete planBand.whiteListAlias
+  const band = formBandCompleto(raw, planBand)
+  if (!band) return null
+  const f = raw.full
+  const root = f && f.data && typeof f.data === 'object' ? f.data : f
+  const u = (root && root.user) || {}
+  const has = (v: any) => v !== undefined && v !== null
+  const user: Record<string, any> = {
+    firstName: u.first_name ?? u.firstName ?? '', lastName: u.last_name ?? u.lastName ?? '',
+  }
+  const email = toStr(u.email)
+  // il portale disattiva la casella e-mail quando e' gia' valorizzata (e non finisce con @sidly): in quel caso non viene inviata
+  if (!email || email.endsWith('@sidly')) user.email = email
+  const d = raw.plat?.user?.date
+  if (d && typeof d === 'object') user.date = { year: d.year, month: d.month, day: d.day }
+  user.sex = u.sex ? u.sex : null
+  for (const [k, v] of [['weight', u.weight], ['height', u.height], ['phonePrefix', u.phonePrefix ?? u.phone_prefix], ['phone', u.phone], ['address', u.address]] as Array<[string, any]>) if (has(v)) user[k] = v
+  user.avatar = has(u.avatar) ? u.avatar : ''
+  user.project = u.project && typeof u.project === 'object' ? (u.project.id ?? null) : null
+  user.type = u.type ? u.type : null
+  Object.assign(user, plan.user)
+  const w = root && root.wifi && typeof root.wifi === 'object' ? root.wifi : null
+  const b = root.band || {}
+  return { user, band, wifi: { wifi_ssid: w && has(w.wifi_ssid) ? w.wifi_ssid : null, wifi_passwd: w && has(w.wifi_passwd) ? w.wifi_passwd : null, band_imei: String(b.imei ?? imei) }, lang: 'it' }
+}
+
+interface Riprova { body: any; etichetta: string; avviso?: string }
+/** Tentativi successivi se SiDLY rifiuta la richiesta parziale: prima identica al portale, poi (se si scrivevano i nomi) senza i nomi. */
+function riproveComePortale(raw: Raw, plan: Plan, imei: string): Riprova[] {
+  const a = formPortale(raw, plan, imei, true)
+  if (!a) return []
+  const out: Riprova[] = [{ body: a, etichetta: 'richiesta identica a quella del portale: utente, braccialetto completo, wifi' }]
+  if (plan.band.whiteListAlias !== undefined) {
+    const b = formPortale(raw, plan, imei, false)
+    if (b) out.push({ body: b, etichetta: 'come il portale, senza modificare i nomi dei numeri ammessi', avviso: 'SiDLY ha rifiutato i nomi dei numeri ammessi (probabile braccialetto che non li gestisce): scritti solo i numeri, i nomi restano quelli presenti su SiDLY' })
+  }
+  return out
+}
+
 /** Scrive su SiDLY SOLO cio' che e' nel piano. In anteprima elenca le chiamate senza eseguirle. */
 async function scriviSidly(client: SidlyClient, crm: CrmPatient, id: string, assoc: string, raw: Raw, plan: Plan, out: SyncResult, dry: boolean): Promise<string | null> {
   const body: any = {}
   if (Object.keys(plan.user).length) body.user = plan.user
   if (Object.keys(plan.band).length) body.band = plan.band
-  const chiamate: Array<{ azione: string; metodo: string; path: string; body: any; campi: string[]; errore: string; riprova?: any }> = []
+  const chiamate: Array<{ azione: string; metodo: string; path: string; body: any; campi: string[]; errore: string; riprove?: Riprova[] }> = []
   if (body.user || body.band) chiamate.push({
     azione: assoc ? 'PATCH /manager/patient/{user_id}' : 'PATCH /manager/patient/{imei}', metodo: 'PATCH', path: `/manager/patient/${enc(id)}`, body,
-    // Se SiDLY rifiuta la richiesta parziale (HTTP 400), si ritenta come il portale: modulo braccialetto completo, impostazioni invariate.
-    riprova: body.band ? (() => { const fb = formBandCompleto(raw, plan.band); return fb ? { ...(body.user ? { user: body.user } : {}), band: fb, lang: 'it' } : undefined })() : undefined,
+    // Se SiDLY rifiuta la richiesta parziale (HTTP 400), si ritenta come il portale (payload verificato dal vivo).
+    riprove: body.band ? riproveComePortale(raw, plan, crm.imei) : undefined,
     campi: [...Object.keys(plan.user).map(k => 'user.' + k), ...Object.keys(plan.band).map(k => 'band.' + k)], errore: 'Aggiornamento assistito su SiDLY non riuscito',
   })
   if (Object.keys(plan.contacts).length) chiamate.push({
@@ -1060,11 +1107,19 @@ async function scriviSidly(client: SidlyClient, crm: CrmPatient, id: string, ass
     const p = await client.request(c.metodo, c.path, c.body)
     out.azioni.push({ azione: c.azione, risultato: String(p.status), campi: c.campi })
     const perche = (r: { status: number; motivo?: string }) => `HTTP ${r.status}${r.motivo ? ': ' + r.motivo : ', SiDLY non indica il motivo'}`
-    if (!ok2xx(p.status) && c.riprova && (p.status === 400 || p.status === 422)) {
-      const p2 = await client.request(c.metodo, c.path, c.riprova)
-      out.azioni.push({ azione: c.azione + ' (secondo tentativo: modulo completo del braccialetto, impostazioni invariate)', risultato: String(p2.status), campi: [...c.campi, 'impostazioni del braccialetto rimandate invariate'] })
-      if (ok2xx(p2.status)) continue
-      return `${c.errore} (${perche(p)}); riprovato con il modulo completo del braccialetto come fa il portale, rifiutato anche questo (${perche(p2)}); non è stato scritto nulla da questa chiamata`
+    let ultimo = p, riprovati = 0
+    if (!ok2xx(p.status) && c.riprove) {
+      for (const r of c.riprove) {
+        if (ok2xx(ultimo.status) || !(p.status === 400 || p.status === 422)) break
+        ultimo = await client.request(c.metodo, c.path, r.body)
+        riprovati++
+        out.azioni.push({ azione: `${c.azione} (tentativo ${riprovati + 1}: ${r.etichetta})`, risultato: String(ultimo.status), campi: [...c.campi, 'resto della scheda rimandato invariato'] })
+        if (ok2xx(ultimo.status) && r.avviso) out.warning.push(r.avviso)
+      }
+      if (riprovati > 0) {
+        if (ok2xx(ultimo.status)) continue
+        return `${c.errore} (${perche(p)}); riprovato con la richiesta identica a quella del portale (modulo completo), rifiutato anche questo (${perche(ultimo)}); non è stato scritto nulla da questa chiamata`
+      }
     }
     if (!ok2xx(p.status)) return `${c.errore} (${perche(p)}); non è stato scritto nulla da questa chiamata`
   }
