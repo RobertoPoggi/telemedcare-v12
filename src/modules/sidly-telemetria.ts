@@ -232,7 +232,10 @@ export interface StoricoAssistito {
   assistito_id: number; imei: string; nome: string; finestre: number; righe: number; fino_a: string | null; completato: boolean
   eventi?: number; errore?: string
   inizio_da?: string; aggiornato?: boolean
-  anteprima?: { finestra: string; punti: Record<string, number>; righe: number; da?: string; a?: string; passi: StatsParsed['passi']; eventi_trovati?: number; stima_righe_totali?: number; inizio_da?: string; finestre_totali?: number; esempio?: any[] }
+  /** Modalita' «ultime N»: dove riprendere se non e' finito, righe raccolte in tutto, periodo delle righe di questa richiesta. */
+  continua?: { prima_di: number; raccolte: number }
+  raccolte_totali?: number; dal?: string; al?: string
+  anteprima?: { finestra: string; ultime_stima?: number; punti: Record<string, number>; righe: number; da?: string; a?: string; passi: StatsParsed['passi']; eventi_trovati?: number; stima_righe_totali?: number; inizio_da?: string; finestre_totali?: number; esempio?: any[] }
 }
 export interface StoricoRisultato { httpStatus: number; result: { esito: 'anteprima' | 'eseguito' | 'errore'; completato?: boolean; errore?: string; assistiti?: StoricoAssistito[]; righe_scritte?: number; finestre_eseguite?: number; avvisi?: string[]; limiti?: { max_finestre: number; max_righe: number } } }
 
@@ -379,6 +382,131 @@ export async function eseguiStorico(o: StoricoOpzioni): Promise<StoricoRisultato
     if (!r.completato) tuttiCompleti = false
   }
   return { httpStatus: 200, result: { esito: 'eseguito', completato: tuttiCompleti, assistiti: res, righe_scritte: righeTot, finestre_eseguite: finestreTot, avvisi, limiti: { max_finestre: maxFinestre, max_righe: maxRighe } } }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// «Ultime N misurazioni»: prova controllata, UN assistito per richiesta
+// ─────────────────────────────────────────────────────────────────────────────
+/** Massimo di misurazioni (istanti) richiedibili per assistito in questa modalita'. */
+export const ULTIME_MAX = 5000
+/** Senza data di registrazione la ricerca all'indietro si ferma a questo periodo. */
+export const ULTIME_SENZA_REGISTRAZIONE_S = 365 * 86400
+
+export interface UltimeOpzioni {
+  db: any; env: SidlyEnv; ultime: number; assistitoId: number; dryRun: boolean
+  /** Ripresa: inizio della finestra piu' vecchia gia' letta e righe gia' raccolte (restituiti dalla richiesta precedente). */
+  primaDi?: number; raccolte?: number
+  nowSec?: number; fetchImpl?: Fetch; maxFinestre?: number
+}
+
+/**
+ * Importa le ULTIME `ultime` misurazioni di un assistito (una misurazione = un istante, cioe' una riga di sidly_misure).
+ * Legge da SiDLY a ritroso a finestre di 7 giorni (solo GET) e si ferma quando ha N righe o arriva alla data di attivazione
+ * del braccialetto: se le misurazioni sono meno di N, prende solo quelle. Le righe in eccesso della finestra piu' vecchia sono scartate.
+ * NON tocca il cursore dello storico completo (backfill_*): lo storico «dall'inizio» resta possibile dopo, senza duplicati.
+ * Anteprima (dryRun): solo l'ultima settimana, nessuna scrittura.
+ */
+export async function eseguiUltime(o: UltimeOpzioni): Promise<StoricoRisultato> {
+  const err = (httpStatus: number, errore: string): StoricoRisultato => ({ httpStatus, result: { esito: 'errore', errore } })
+  const cfg = sidlyConfigError(o.env)
+  if (cfg) return err(503, cfg)
+  const nowSec = o.nowSec ?? Math.floor(Date.now() / 1000)
+  const N = o.ultime
+  if (typeof N !== 'number' || !Number.isInteger(N) || N < 1 || N > ULTIME_MAX) return err(400, `Numero di misurazioni non valido (da 1 a ${ULTIME_MAX})`)
+  const gia = o.raccolte ?? 0
+  if (!Number.isInteger(gia) || gia < 0 || gia >= N) return err(400, 'Valore "raccolte" non valido')
+  const fineIniziale = o.primaDi ?? nowSec
+  if (!Number.isInteger(fineIniziale) || fineIniziale <= 0 || fineIniziale > nowSec || nowSec - fineIniziale > MAX_STORICO_S) return err(400, 'Valore "prima_di" non valido')
+  const lista = await assistitiAttivi(o.db, o.assistitoId)
+  if (!lista.length) return err(404, 'Assistito non trovato, non ATTIVO o senza IMEI')
+  const a = lista[0]
+  const client = new SidlyClient(o.env, o.fetchImpl)
+  const avvisi: string[] = []
+  const r: StoricoAssistito = { assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, finestre: 0, righe: 0, fino_a: null, completato: false }
+  const maxFinestre = o.dryRun ? 1 : Math.max(1, Math.min(o.maxFinestre ?? 8, 20))
+  const adesso = new Date(nowSec * 1000).toISOString()
+  if (!o.dryRun) { try { await assicuraTabelle(o.db) } catch { return err(500, 'Impossibile preparare le tabelle della telemetria') } }
+
+  // Limite della ricerca all'indietro: data di attivazione del braccialetto (se SiDLY la fornisce).
+  let registrato: number | null = null
+  let motivoReg = ''
+  try { const d = await dataRegistrazione(client, a.imei, nowSec); registrato = d.ts; motivoReg = d.errore || '' } catch (e: any) { motivoReg = String(e?.message || e).slice(0, 120) }
+  if (registrato === null) avvisi.push(`${a.nome || a.imei}: ${motivoReg || 'data di registrazione non disponibile'}. La ricerca e' limitata agli ultimi 12 mesi.`)
+  const pavimento = registrato ?? (nowSec - ULTIME_SENZA_REGISTRAZIONE_S)
+
+  let fine = fineIniziale
+  let raccolte = gia
+  const nuove: Misura[] = []
+  let errore = ''
+  let p0: StatsParsed | null = null
+  let inizioPrima = fine
+  while (fine - pavimento >= MIN_FINESTRA_S && raccolte < N && r.finestre < maxFinestre) {
+    const inizio = Math.max(pavimento, fine - FINESTRA_S)
+    let g
+    try { g = await client.request('GET', `/patient/${a.imei}/stats?fromDate=${encodeURIComponent(fmtSidlyData(inizio))}&toDate=${encodeURIComponent(fmtSidlyData(fine - 1))}`) }
+    catch (e: any) { errore = String(e?.message || e).slice(0, 160); break }
+    r.finestre++
+    if (g.status < 200 || g.status >= 300) { errore = `SiDLY ha risposto HTTP ${g.status}${g.motivo ? ': ' + g.motivo : ''}`; break }
+    const p = parseStats(g.json, a.imei)
+    if (!p0) { p0 = p; inizioPrima = inizio }
+    // dal piu' recente al piu' vecchio: si tengono solo le righe che servono per arrivare a N
+    const prese = [...p.righe].sort((x, y) => y.ts - x.ts).slice(0, N - raccolte)
+    nuove.push(...prese)
+    raccolte += prese.length
+    fine = inizio
+  }
+  const completato = !errore && (raccolte >= N || fine - pavimento < MIN_FINESTRA_S)
+  r.raccolte_totali = raccolte
+  r.righe = nuove.length
+  if (nuove.length) { r.al = fmtSidlyData(nuove[0].ts); r.dal = fmtSidlyData(nuove[nuove.length - 1].ts) }
+
+  if (o.dryRun) {
+    if (!errore && p0) {
+      let eventi: number | undefined
+      try {
+        const ev = await client.request('GET', `/patientIntegrateAlarm/${a.imei}`)
+        if (ev.status >= 200 && ev.status < 300) eventi = parseAllarmi(ev.json, a.imei).filter(e => e.ts >= pavimento).length
+      } catch { /* l'anteprima resta valida senza allarmi */ }
+      const giorni = Math.max(1, (nowSec - pavimento) / 86400)
+      const giorniCamp = Math.max(1, (fineIniziale - inizioPrima) / 86400)
+      const stima = Math.round(p0.righe.length / giorniCamp * giorni)
+      r.anteprima = { finestra: `${fmtSidlyData(inizioPrima)} - ${fmtSidlyData(fineIniziale)} (UTC, ultima settimana)`, punti: p0.punti, righe: p0.righe.length,
+        da: p0.da ? fmtSidlyData(p0.da) : undefined, a: p0.a ? fmtSidlyData(p0.a) : undefined, passi: p0.passi, eventi_trovati: eventi,
+        inizio_da: registrato !== null ? fmtSidlyData(registrato) + ' UTC' : undefined, stima_righe_totali: stima, ultime_stima: Math.min(N, stima) }
+    }
+    if (errore) r.errore = errore
+    return { httpStatus: 200, result: { esito: 'anteprima', assistiti: [r], avvisi, limiti: { max_finestre: maxFinestre, max_righe: N } } }
+  }
+
+  // ESECUZIONE: scrive le righe raccolte (un solo gruppo di batch) solo se non ci sono stati errori
+  if (!errore && nuove.length) {
+    try {
+      const st = istruzioniMisure(o.db, nuove)
+      for (let i = 0; i < st.length; i += 50) await o.db.batch(st.slice(i, i + 50))
+    } catch { errore = 'Scrittura nel DB non riuscita' }
+  }
+  // Allarmi: solo quando ha finito, e solo dal punto piu' vecchio delle misure tenute in poi
+  if (completato && !errore) {
+    const soglia = raccolte >= N && nuove.length ? nuove[nuove.length - 1].ts : pavimento
+    try {
+      const ev = await client.request('GET', `/patientIntegrateAlarm/${a.imei}`)
+      if (ev.status >= 200 && ev.status < 300) {
+        const tutti = parseAllarmi(ev.json, a.imei).filter(e => e.ts >= soglia)
+        if (tutti.length) await o.db.batch(tutti.map(e => istruzioneEvento(o.db, e, true)))
+        r.eventi = tutti.length
+      } else avvisi.push(`Allarmi di ${a.nome || a.imei} non letti (HTTP ${ev.status})`)
+    } catch { avvisi.push(`Allarmi di ${a.nome || a.imei} non importati`) }
+  }
+  // Stato: solo data di registrazione ed eventuale errore; il cursore dello storico completo NON viene toccato
+  try {
+    await o.db.prepare(`INSERT INTO sidly_stato (imei,assistito_id,registrato_ts,ultimo_errore,updated_at) VALUES (?,?,?,?,?)
+      ON CONFLICT(imei) DO UPDATE SET assistito_id=excluded.assistito_id, registrato_ts=COALESCE(excluded.registrato_ts,registrato_ts), ultimo_errore=excluded.ultimo_errore, updated_at=excluded.updated_at`)
+      .bind(a.imei, a.assistito_id, registrato, errore || null, adesso).run()
+  } catch { /* solo informativo */ }
+  if (errore) r.errore = errore
+  r.completato = completato
+  if (!completato && !errore) r.continua = { prima_di: fine, raccolte }
+  return { httpStatus: 200, result: { esito: 'eseguito', completato, assistiti: [r], righe_scritte: errore ? 0 : nuove.length, finestre_eseguite: r.finestre, avvisi, limiti: { max_finestre: maxFinestre, max_righe: N } } }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

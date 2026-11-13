@@ -195,6 +195,112 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
   }
 
   // ───────────────────────────────────────────────────────────────────
+  section('SiDLY telemetria 8b: «ultime N misurazioni» per assistito (prova controllata)')
+  {
+    const nuovoDb = async () => {
+      const d = await makeD1(); T.dimenticaTabelle()
+      d.raw.run(`INSERT INTO assistiti (id, imei, status, nome_assistito, cognome_assistito) VALUES (1, '${IMEI_A}', 'ATTIVO', 'Giorgia', 'Origoni'), (2, '${IMEI_B}', 'ATTIVO', 'Laura', 'Calvi'), (3, '${IMEI_X}', 'CESSATO', 'Non', 'Attivo')`)
+      return d
+    }
+    const base = (d: any, P: any, extra: any = {}) => ({ db: d.db, env: ENV, ultime: 100, assistitoId: 1, dryRun: false, nowSec: NOW, fetchImpl: P.fetchImpl, ...extra })
+
+    // Anteprima: solo GET, nessuna scrittura (nemmeno le tabelle)
+    {
+      const d = await nuovoDb(); const P = makeSidly()
+      const r = await T.eseguiUltime(base(d, P, { dryRun: true, ultime: 1000 }))
+      ok(r.httpStatus === 200 && r.result.esito === 'anteprima' && r.result.assistiti!.length === 1 && !!r.result.assistiti![0].anteprima, 'ultime: anteprima per un solo assistito')
+      ok(!d.hasTable('sidly_misure') && !d.hasTable('sidly_stato') && d.stats.batches === 0 && d.stats.singles === 0, 'ultime: anteprima senza NESSUNA scrittura nel DB')
+      ok(P.calls.every(c => c.method === 'GET') && P.calls.filter(c => c.path.includes('/stats')).length === 1, 'ultime: anteprima = solo GET, una sola finestra /stats')
+    }
+
+    // Esecuzione con N minore del disponibile: esattamente N, le piu' recenti
+    const d = await nuovoDb(); const P = makeSidly()
+    const r1 = await T.eseguiUltime(base(d, P, { ultime: 100 }))
+    const a1 = r1.result.assistiti![0]
+    ok(r1.result.esito === 'eseguito' && r1.result.completato === true && d.count('sidly_misure') === 100, `ultime 100: esattamente 100 misurazioni importate (trovate ${d.count('sidly_misure')})`)
+    const mx = Number(d.q('SELECT MAX(ts) AS m FROM sidly_misure')[0].m), mn = Number(d.q('SELECT MIN(ts) AS m FROM sidly_misure')[0].m)
+    ok(mx >= NOW - 3600 && mx <= NOW, 'ultime 100: sono le PIU\' RECENTI (la piu\' nuova e\' di meno di un\'ora fa)')
+    ok(mx - mn === 99 * 3600, 'ultime 100: 100 istanti orari consecutivi senza buchi')
+    ok(a1.raccolte_totali === 100 && !!a1.dal && !!a1.al, 'ultime 100: risposta con periodo coperto (dal/al)')
+    ok(P.calls.every(c => c.method === 'GET'), 'ultime: nessuna scrittura su SiDLY (solo GET)')
+    const st = d.q('SELECT * FROM sidly_stato WHERE imei = ?', IMEI_A)[0]
+    ok(st && st.backfill_fino_ts === null && st.backfill_da_ts === null && st.completo_ts === null, 'ultime: il cursore dello storico completo NON viene toccato')
+    ok(st.registrato_ts === Date.UTC(2026, 10, 2) / 1000, 'ultime: salvata la data di attivazione del braccialetto')
+    ok(d.count('sidly_misure') === 100 && d.q('SELECT COUNT(DISTINCT imei) AS n FROM sidly_misure')[0].n === 1, 'ultime: solo le misure dell\'assistito richiesto')
+
+    // Rilancio: nessun duplicato
+    await T.eseguiUltime(base(d, P, { ultime: 100 }))
+    ok(d.count('sidly_misure') === 100, 'ultime: rilancio identico = nessun duplicato')
+
+    // N maggiore di quelle esistenti: prende solo quelle che ci sono
+    const d2 = await nuovoDb(); const P2 = makeSidly()
+    const r2 = await T.eseguiUltime(base(d2, P2, { ultime: 1000 }))
+    const tot = d2.count('sidly_misure')
+    ok(r2.result.completato === true && tot > 100 && tot < 1000, `ultime 1000 con meno di 1000 misurazioni disponibili: prende solo quelle che esistono (${tot})`)
+    ok(Number(d2.q('SELECT MIN(ts) AS m FROM sidly_misure')[0].m) >= Date.UTC(2026, 10, 2) / 1000, 'ultime 1000: non va prima della data di attivazione del braccialetto')
+    const pagine = r2.result.assistiti![0].finestre
+    ok(pagine >= 2 && P2.calls.filter(c => c.path.includes('/stats')).length === pagine, `ultime 1000: legge a ritroso a finestre di 7 giorni e si ferma all'attivazione (${pagine} finestre)`)
+
+    // Ripresa a pezzi (una finestra per richiesta) = stesso risultato di una richiesta sola
+    const d3 = await nuovoDb(); const P3 = makeSidly()
+    let r3 = await T.eseguiUltime(base(d3, P3, { ultime: 1000, maxFinestre: 1 }))
+    let giri = 1
+    while (!r3.result.completato && giri < 10) {
+      const c = r3.result.assistiti![0].continua!
+      r3 = await T.eseguiUltime(base(d3, P3, { ultime: 1000, maxFinestre: 1, primaDi: c.prima_di, raccolte: c.raccolte })); giri++
+    }
+    ok(giri >= 2 && d3.count('sidly_misure') === tot, `ultime: ripresa con prima_di + raccolte (${giri} richieste) = stesso numero di misure di una richiesta sola (${tot})`)
+
+    // N tagliato esattamente a meta' di una finestra: nessuna riga in piu'
+    const d4 = await nuovoDb(); const P4 = makeSidly()
+    await T.eseguiUltime(base(d4, P4, { ultime: 200 }))
+    ok(d4.count('sidly_misure') === 200, 'ultime 200 (oltre una finestra da 168): esattamente 200, le righe in eccesso della finestra piu\' vecchia sono scartate')
+
+    // Compatibile con lo storico completo successivo: nessun duplicato, copre tutto
+    const dC = await nuovoDb(); const PC = makeSidly()
+    await T.eseguiUltime(base(dC, PC, { ultime: 100 }))
+    let g = 0
+    while (!(await T.eseguiStorico({ db: dC.db, env: ENV, da: 'inizio', dryRun: false, assistitoId: 1, nowSec: NOW, fetchImpl: PC.fetchImpl, maxFinestre: 20 })).result.completato && g++ < 10) { /* rilancia */ }
+    ok(dC.count('sidly_misure') === tot, `dopo «ultime 100», lo storico dall'inizio completa senza duplicati (${dC.count('sidly_misure')} = ${tot})`)
+
+    // Allarmi: solo dal punto piu' vecchio delle misure tenute
+    const iso = (x: number) => new Date(x * 1000).toISOString().replace('.000Z', '+00:00')
+    const dA = await nuovoDb()
+    const PA = makeSidly({ alarms: [
+      { id: 21, type: 'sos', receivedDate: iso(NOW - 3600), pulse: 80, batteryLevel: 50 },
+      { id: 22, type: 'fall', receivedDate: iso(NOW - 8 * 86400), pulse: 80, batteryLevel: 50 }] })
+    await T.eseguiUltime(base(dA, PA, { ultime: 100 }))
+    ok(dA.count('sidly_eventi') === 1 && dA.q('SELECT tipo FROM sidly_eventi')[0].tipo === 'sos', 'ultime 100: importa solo gli allarmi del periodo coperto dalle misure (non quello di 8 giorni fa)')
+
+    // Errori e validazioni
+    const dE = await nuovoDb()
+    const rE = await T.eseguiUltime(base(dE, makeSidly({ statsStatus: 500 })))
+    ok(rE.result.assistiti![0].errore!.includes('HTTP 500') && dE.count('sidly_misure') === 0 && rE.result.completato === false, 'ultime: errore 500 di SiDLY: nessuna riga scritta, errore riportato')
+    ok(/HTTP 500/.test(dE.q('SELECT ultimo_errore FROM sidly_stato')[0]?.ultimo_errore || ''), 'ultime: errore salvato nello stato')
+    for (const [n, nome] of [[0, '0'], [-5, 'negativo'], [1.5, 'decimale'], [T.ULTIME_MAX + 1, 'oltre il massimo']] as const) {
+      ok((await T.eseguiUltime(base(dE, makeSidly(), { ultime: n as number, dryRun: true }))).httpStatus === 400, `ultime ${nome}: 400`)
+    }
+    ok((await T.eseguiUltime(base(dE, makeSidly(), { ultime: 100, raccolte: 100, dryRun: true }))).httpStatus === 400, 'ultime: "raccolte" non valido: 400')
+    ok((await T.eseguiUltime(base(dE, makeSidly(), { primaDi: NOW + 1000, dryRun: true }))).httpStatus === 400, 'ultime: "prima_di" nel futuro: 400')
+    ok((await T.eseguiUltime(base(dE, makeSidly(), { assistitoId: 3, dryRun: true }))).httpStatus === 404, 'ultime: assistito non ATTIVO: 404')
+    ok((await T.eseguiUltime({ ...base(dE, makeSidly()), env: {} })).httpStatus === 503, 'ultime: senza credenziali SiDLY: 503')
+
+    // Data di registrazione non disponibile (es. HTTP 404/assente): avviso e ricerca limitata a 12 mesi, nessuna data inventata
+    const dR = await nuovoDb()
+    const rR = await T.eseguiUltime(base(dR, makeSidly({ registerDate: undefined }), { ultime: 100 }))
+    ok(rR.result.completato === true && dR.count('sidly_misure') === 100 && (rR.result.avvisi || []).some(x => /12 mesi/.test(x)), 'ultime: senza data di registrazione le ultime N si leggono comunque, con avviso (ricerca limitata a 12 mesi)')
+    ok(dR.q('SELECT registrato_ts FROM sidly_stato')[0].registrato_ts === null, 'ultime: senza data di registrazione non si salva nessuna data inventata')
+
+    // Sorgente: rotta e Dashboard
+    const idx = readFileSync('src/index.tsx', 'utf8'), dash = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
+    const i = idx.search(/app\.post\('\/api\/sidly\/storico'/)
+    const blk = idx.slice(i, i + 3500)
+    ok(/body\?\.ultime/.test(blk) && /Con "ultime" serve assistito_id/.test(blk) && /checkSessionOrKey\(/.test(blk) && /conferma_scrittura === true/.test(blk), 'rotta storico: «ultime» richiede assistito_id, resta protetta e scrive solo con conferma_scrittura')
+    ok(/telModoUltime/.test(dash) && /ultime:\s*n,\s*assistito_id/.test(dash) && /dry_run:\s*true/.test(dash), 'Dashboard: modalita\' «Ultime N» con anteprima in sola lettura prima della conferma')
+    ok(/id="telN"[^>]*value="1000"/.test(dash), 'Dashboard: valore predefinito 1000 misurazioni per assistito')
+  }
+
+  // ───────────────────────────────────────────────────────────────────
   section('SiDLY telemetria 9: allarmi letti da SiDLY (nessun duplicato)')
   {
     const d = await makeD1(); T.dimenticaTabelle()

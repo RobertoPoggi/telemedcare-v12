@@ -22024,7 +22024,16 @@ app.post('/api/sidly/storico', async (c) => {
   const scrive = body?.conferma_scrittura === true && body?.dry_run !== true
   const id = body?.assistito_id !== undefined && body?.assistito_id !== null ? Number(body.assistito_id) : undefined
   if (id !== undefined && (!Number.isInteger(id) || id <= 0)) return c.json({ esito: 'errore', errore: 'assistito_id non valido' }, 400)
-  const { eseguiStorico } = await import('./modules/sidly-telemetria')
+  const { eseguiStorico, eseguiUltime } = await import('./modules/sidly-telemetria')
+  // Modalita' «ultime N misurazioni»: un assistito per richiesta (limite di chiamate per richiesta), ripresa con prima_di + raccolte
+  if (body?.ultime !== undefined && body?.ultime !== null) {
+    if (id === undefined) return c.json({ esito: 'errore', errore: 'Con "ultime" serve assistito_id (una richiesta per assistito)' }, 400)
+    const ru = await eseguiUltime({ db: c.env.DB, env: c.env as any, ultime: Number(body.ultime), assistitoId: id, dryRun: !scrive,
+      primaDi: body?.prima_di !== undefined && body?.prima_di !== null ? Number(body.prima_di) : undefined,
+      raccolte: body?.raccolte !== undefined && body?.raccolte !== null ? Number(body.raccolte) : undefined })
+    console.log('[SIDLY-ULTIME]', JSON.stringify({ esito: ru.result.esito, scrive, righe: (ru.result as any).righe_scritte, completato: (ru.result as any).completato }))
+    return c.json(ru.result, ru.httpStatus as any)
+  }
   const r = await eseguiStorico({ db: c.env.DB, env: c.env as any, da: String(body?.da || ''), dryRun: !scrive, assistitoId: id })
   console.log('[SIDLY-STORICO]', JSON.stringify({ esito: r.result.esito, scrive, righe: (r.result as any).righe_scritte, completato: (r.result as any).completato }))
   return c.json(r.result, r.httpStatus as any)
