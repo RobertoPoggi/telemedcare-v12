@@ -228,9 +228,22 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
     ok(st.registrato_ts === Date.UTC(2026, 10, 2) / 1000, 'ultime: salvata la data di attivazione del braccialetto')
     ok(d.count('sidly_misure') === 100 && d.q('SELECT COUNT(DISTINCT imei) AS n FROM sidly_misure')[0].n === 1, 'ultime: solo le misure dell\'assistito richiesto')
 
-    // Rilancio: nessun duplicato
-    await T.eseguiUltime(base(d, P, { ultime: 100 }))
-    ok(d.count('sidly_misure') === 100, 'ultime: rilancio identico = nessun duplicato')
+    // Rilancio: le misurazioni gia' nel DB non si rileggono ne' si riscrivono; si aggiungono le 100 NUOVE successive (piu' vecchie)
+    const mnPrima = mn
+    const dryDopo = await T.eseguiUltime(base(d, P, { ultime: 100, dryRun: true }))
+    ok(dryDopo.result.assistiti![0].anteprima?.gia_nel_db === 100, 'ultime: l\'anteprima dopo un import dice quante misurazioni sono gia\' nel DB (100)')
+    const scritturePrima = d.stats.singles + d.stats.stmtsInBatches
+    const r1b = await T.eseguiUltime(base(d, P, { ultime: 100 }))
+    ok(r1b.result.completato === true && r1b.result.righe_scritte === 100 && d.count('sidly_misure') === 200, `ultime: rilancio = altre 100 misurazioni NUOVE (non le stesse 100): totale ${d.count('sidly_misure')}`)
+    const mn2 = Number(d.q('SELECT MIN(ts) AS m FROM sidly_misure')[0].m), mx2 = Number(d.q('SELECT MAX(ts) AS m FROM sidly_misure')[0].m)
+    ok(mx2 === mx && mn2 === mnPrima - 100 * 3600 && mx2 - mn2 === 199 * 3600, 'ultime: il rilancio parte dalla piu\' recente NON presente e prosegue a ritroso senza buchi ne\' sovrapposizioni')
+    ok(d.stats.singles + d.stats.stmtsInBatches > scritturePrima, 'ultime: il rilancio scrive solo righe nuove')
+    // Se tutto il recente e' gia' nel DB e l'assistito e' arrivato all'inizio, non c'e' nulla da aggiungere
+    const dTutto = await nuovoDb(); const PT = makeSidly()
+    await T.eseguiUltime(base(dTutto, PT, { ultime: 1000 }))
+    const totTutto = dTutto.count('sidly_misure')
+    const rTutto = await T.eseguiUltime(base(dTutto, PT, { ultime: 1000 }))
+    ok(rTutto.result.completato === true && rTutto.result.righe_scritte === 0 && dTutto.count('sidly_misure') === totTutto, 'ultime: se le misurazioni disponibili sono gia\' tutte nel DB, il rilancio non aggiunge nulla')
 
     // N maggiore di quelle esistenti: prende solo quelle che ci sono
     const d2 = await nuovoDb(); const P2 = makeSidly()

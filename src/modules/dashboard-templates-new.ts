@@ -3552,16 +3552,38 @@ export const dashboard = `<!DOCTYPE html>
             var m = r.scheda_mancante;
             if (!m) return '';
             if (!m.possibile) {
-                return '<div style="margin:8px 0;padding:10px 12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;color:#92400e;font-size:13px"><b>Manca la scheda di configurazione.</b> Non posso crearla in automatico: ' + escapeHtml(m.motivo || 'dati insufficienti') + '</div>';
+                var box = '<div style="margin:8px 0;padding:10px 12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;color:#92400e;font-size:13px"><b>Manca la scheda di configurazione.</b> Non posso crearla in automatico: ' + escapeHtml(m.motivo || 'dati insufficienti') + '</div>';
+                if (m.scegli) {
+                    window.__sidlyCand = m.candidati || [];
+                    var cb = '<div style="margin:0 0 8px;padding:10px 12px;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;font-size:13px;color:#78350f"><b>Scegli tu la richiesta (lead) da collegare a questo assistito</b>';
+                    window.__sidlyCand.forEach(function (x, i) {
+                        cb += '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:6px"><span>' + escapeHtml(x.assistito || 'assistito non indicato') + (x.richiedente ? ' &middot; richiedente ' + escapeHtml(x.richiedente) : '') + (x.email ? ' &middot; ' + escapeHtml(x.email) : '') + ' <span style="color:#6b7280">(' + escapeHtml(x.id) + ')</span></span>' +
+                            '<button onclick="window.sidlySchedaScegli(' + id + ',' + i + ')" style="' + SIDLY_BTN + '#d97706">Usa questa (anteprima)</button></div>';
+                    });
+                    if (!window.__sidlyCand.length) cb += '<div style="color:#6b7280;margin-top:4px">Nessuna richiesta con cognome o e-mail simili.</div>';
+                    cb += '<div style="margin-top:8px">Oppure scrivi l&rsquo;ID della richiesta: <input id="sidlyLeadId" style="border:1px solid #9ca3af;border-radius:4px;padding:3px;width:220px"> <button onclick="window.sidlySchedaScegli(' + id + ',-1)" style="' + SIDLY_BTN + '#d97706">Usa questo ID (anteprima)</button></div>' +
+                        '<div style="margin-top:6px;font-size:12px">Si vede prima cosa verr&agrave; scritto: nulla viene salvato finch&eacute; non confermi.</div></div>';
+                    box += cb;
+                }
+                return box;
             }
             return '<div style="margin:8px 0;padding:10px 12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;color:#92400e;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:10px">' +
                 '<span><b>Manca la scheda di configurazione.</b> Senza scheda alcuni campi (contatti, whitelist, SOS) non sono modificabili da qui. Si può creare dai dati della richiesta collegata' + (m.collegamento ? ' (' + escapeHtml(m.collegamento) + ')' : '') + '.</span>' +
                 '<button onclick="window.sidlyCreaScheda(' + id + ', false)" style="' + SIDLY_BTN + '#d97706">Crea scheda di configurazione (anteprima)</button></div>';
         }
+        window.sidlySchedaScegli = function (id, i) {
+            var lead = '';
+            if (i >= 0) { var c = (window.__sidlyCand || [])[i]; lead = c ? String(c.id) : ''; }
+            else { lead = String((document.getElementById('sidlyLeadId') || {}).value || '').trim(); }
+            if (!lead) { alert('Scegli una richiesta o scrivi il suo ID.'); return; }
+            window.__sidlySchedaLead = lead;
+            window.sidlyCreaScheda(id, false);
+        };
         window.sidlyCreaScheda = async function (id, conferma) {
             sidlyPanel('<p style="margin:0"><i class="fas fa-spinner fa-spin"></i> ' + (conferma ? 'Creazione della scheda' : 'Preparazione anteprima (nulla viene scritto)') + '&hellip;</p>');
             try {
                 var payload = { assistito_id: id };
+                if (window.__sidlySchedaLead) payload.lead_id = window.__sidlySchedaLead;
                 if (conferma) payload.conferma_scrittura = true; else payload.dry_run = true;
                 var res = await fetch('/api/sidly/crea-scheda', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
                 var r = await res.json();
@@ -3591,6 +3613,7 @@ export const dashboard = `<!DOCTYPE html>
         async function syncSidly(id, opts) {
             opts = opts || {};
             window.__sidlyLastId = id;
+            window.__sidlySchedaLead = null;
             var btn = document.getElementById('sidlyBtn_' + id);
             var oldHtml = btn ? btn.innerHTML : '';
             if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
@@ -3714,7 +3737,7 @@ export const dashboard = `<!DOCTYPE html>
                 // Azioni
                 h += telBox('1. Carica lo storico delle misure da SiDLY (prima sempre un\\'anteprima: nulla viene scritto finch&eacute; non confermi)',
                     '<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:13px">' +
-                    '<label><input type="radio" name="telModo" id="telModoUltime" value="ultime" checked onchange="document.getElementById(\\'telDa\\').disabled = true"> <b>Ultime</b> <input id="telN" type="number" min="1" max="5000" value="1000" style="width:80px;border:1px solid #9ca3af;border-radius:4px;padding:3px"> <b>misurazioni per assistito</b> (se sono meno le prende tutte: prova controllata)</label>' +
+                    '<label><input type="radio" name="telModo" id="telModoUltime" value="ultime" checked onchange="document.getElementById(\\'telDa\\').disabled = true"> <b>Ultime</b> <input id="telN" type="number" min="1" max="5000" value="1000" style="width:80px;border:1px solid #9ca3af;border-radius:4px;padding:3px"> <b>misurazioni nuove per assistito</b> (salta quelle gi&agrave; nel DB: a ogni rilancio ne aggiunge altre, partendo dalla pi&ugrave; recente; se sono meno le prende tutte)</label>' +
                     '<label><input type="radio" name="telModo" id="telModoInizio" value="inizio" onchange="document.getElementById(\\'telDa\\').disabled = true"> <b>Dall&rsquo;inizio</b> (data di attivazione di ogni braccialetto: tutti i dati)</label>' +
                     '<label><input type="radio" name="telModo" id="telModoData" value="data" onchange="document.getElementById(\\'telDa\\').disabled = false"> Da una data <input id="telDa" type="date" disabled style="border:1px solid #9ca3af;border-radius:4px;padding:3px"></label></div>' +
                     '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px"><button onclick="window.sidlyStoricoAnteprima()" style="' + SIDLY_BTN + '#0d9488">Anteprima storico</button></div>');
@@ -3751,13 +3774,13 @@ export const dashboard = `<!DOCTYPE html>
                 var errore = r.esito !== 'anteprima' ? (r.errore || 'Errore') : a.errore;
                 if (errore || !a.anteprima) { ko++; h += '<div style="color:#b91c1c;font-size:13px">' + escapeHtml(lista[i].nome) + ': ' + escapeHtml(errore || 'nessun dato letto') + ' &mdash; verr&agrave; saltato</div>'; continue; }
                 var an = a.anteprima; var pt = an.punti || {};
-                var prev = Math.min(n, an.stima_righe_totali || 0);
+                var prev = typeof an.ultime_stima === 'number' ? an.ultime_stima : Math.min(n, an.stima_righe_totali || 0);
                 stimaTot += prev; okIds.push(lista[i].assistito_id);
-                h += '<div style="font-size:13px;margin-bottom:3px"><b>' + escapeHtml(lista[i].nome) + '</b>: attivo da ' + escapeHtml(an.inizio_da || 'data non disponibile (ultimi 12 mesi)') + ' &middot; ultima settimana ' + (an.righe || 0) + ' misurazioni &middot; da importare circa <b>' + prev + '</b> &middot; ' + Object.keys(pt).map(function (k) { return escapeHtml(k) + ' ' + pt[k]; }).join(', ') + '</div>';
+                h += '<div style="font-size:13px;margin-bottom:3px"><b>' + escapeHtml(lista[i].nome) + '</b>: attivo da ' + escapeHtml(an.inizio_da || 'data non disponibile (ultimi 12 mesi)') + ' &middot; gi&agrave; nel DB ' + (an.gia_nel_db || 0) + ' &middot; ultima settimana ' + (an.righe || 0) + ' misurazioni &middot; nuove da importare circa <b>' + prev + '</b> &middot; ' + Object.keys(pt).map(function (k) { return escapeHtml(k) + ' ' + pt[k]; }).join(', ') + '</div>';
             }
             if (ko) h += '<div style="font-size:12px;color:#92400e;margin-top:4px">Gli assistiti con errore (di solito IMEI non trovato su SiDLY) non vengono importati.</div>';
             window.__telUltimeOk = okIds; window.__telUltimeN = n;
-            h += '<div style="font-size:12px;color:#6b7280;margin-top:6px">Totale stimato: circa ' + stimaTot + ' righe per ' + okIds.length + ' assistiti. Se rilanci, le righe gi&agrave; presenti non si duplicano.</div>';
+            h += '<div style="font-size:12px;color:#6b7280;margin-top:6px">Totale stimato: circa ' + stimaTot + ' righe per ' + okIds.length + ' assistiti. Le misurazioni gi&agrave; nel DB non vengono rilette n&eacute; riscritte.</div>';
             if (okIds.length) h += '<div style="margin-top:8px"><button onclick="window.sidlyUltimeScrivi()" style="' + SIDLY_BTN + '#dc2626">Conferma e importa le ultime ' + n + ' misurazioni di ' + okIds.length + ' assistiti nel DB del CRM</button></div>';
             telEsito(h);
         }

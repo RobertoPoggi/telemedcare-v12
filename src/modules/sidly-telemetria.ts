@@ -235,7 +235,7 @@ export interface StoricoAssistito {
   /** Modalita' «ultime N»: dove riprendere se non e' finito, righe raccolte in tutto, periodo delle righe di questa richiesta. */
   continua?: { prima_di: number; raccolte: number }
   raccolte_totali?: number; dal?: string; al?: string
-  anteprima?: { finestra: string; ultime_stima?: number; punti: Record<string, number>; righe: number; da?: string; a?: string; passi: StatsParsed['passi']; eventi_trovati?: number; stima_righe_totali?: number; inizio_da?: string; finestre_totali?: number; esempio?: any[] }
+  anteprima?: { finestra: string; ultime_stima?: number; gia_nel_db?: number; punti: Record<string, number>; righe: number; da?: string; a?: string; passi: StatsParsed['passi']; eventi_trovati?: number; stima_righe_totali?: number; inizio_da?: string; finestre_totali?: number; esempio?: any[] }
 }
 export interface StoricoRisultato { httpStatus: number; result: { esito: 'anteprima' | 'eseguito' | 'errore'; completato?: boolean; errore?: string; assistiti?: StoricoAssistito[]; righe_scritte?: number; finestre_eseguite?: number; avvisi?: string[]; limiti?: { max_finestre: number; max_righe: number } } }
 
@@ -400,9 +400,10 @@ export interface UltimeOpzioni {
 }
 
 /**
- * Importa le ULTIME `ultime` misurazioni di un assistito (una misurazione = un istante, cioe' una riga di sidly_misure).
- * Legge da SiDLY a ritroso a finestre di 7 giorni (solo GET) e si ferma quando ha N righe o arriva alla data di attivazione
- * del braccialetto: se le misurazioni sono meno di N, prende solo quelle. Le righe in eccesso della finestra piu' vecchia sono scartate.
+ * Importa le ULTIME `ultime` misurazioni NUOVE di un assistito (una misurazione = un istante, cioe' una riga di sidly_misure):
+ * quelle gia' presenti nel DB non contano e non si riscrivono, quindi a ogni rilancio si aggiungono le N successive partendo dalla piu' recente.
+ * Legge da SiDLY a ritroso a finestre di 7 giorni (solo GET) e si ferma quando ha N righe nuove o arriva alla data di attivazione
+ * del braccialetto: se le misurazioni nuove sono meno di N, prende solo quelle. Le righe in eccesso della finestra piu' vecchia sono scartate.
  * NON tocca il cursore dello storico completo (backfill_*): lo storico «dall'inizio» resta possibile dopo, senza duplicati.
  * Anteprima (dryRun): solo l'ultima settimana, nessuna scrittura.
  */
@@ -440,6 +441,7 @@ export async function eseguiUltime(o: UltimeOpzioni): Promise<StoricoRisultato> 
   let errore = ''
   let p0: StatsParsed | null = null
   let inizioPrima = fine
+  let giaNelDb = 0
   while (fine - pavimento >= MIN_FINESTRA_S && raccolte < N && r.finestre < maxFinestre) {
     const inizio = Math.max(pavimento, fine - FINESTRA_S)
     let g
@@ -449,8 +451,11 @@ export async function eseguiUltime(o: UltimeOpzioni): Promise<StoricoRisultato> 
     if (g.status < 200 || g.status >= 300) { errore = `SiDLY ha risposto HTTP ${g.status}${g.motivo ? ': ' + g.motivo : ''}`; break }
     const p = parseStats(g.json, a.imei)
     if (!p0) { p0 = p; inizioPrima = inizio }
-    // dal piu' recente al piu' vecchio: si tengono solo le righe che servono per arrivare a N
-    const prese = [...p.righe].sort((x, y) => y.ts - x.ts).slice(0, N - raccolte)
+    // Si contano solo le misurazioni NON ancora nel DB: un rilancio aggiunge le N successive (le piu' nuove non presenti), senza rileggere quelle gia' caricate.
+    const presenti = new Set<number>((await safeAll(o.db, 'SELECT ts FROM sidly_misure WHERE imei = ? AND ts >= ? AND ts < ?', a.imei, inizio, fine)).map((x: any) => Number(x.ts)))
+    giaNelDb += p.righe.filter(x => presenti.has(x.ts)).length
+    // dal piu' recente al piu' vecchio: si tengono solo le righe nuove che servono per arrivare a N
+    const prese = p.righe.filter(x => !presenti.has(x.ts)).sort((x, y) => y.ts - x.ts).slice(0, N - raccolte)
     nuove.push(...prese)
     raccolte += prese.length
     fine = inizio
@@ -470,9 +475,10 @@ export async function eseguiUltime(o: UltimeOpzioni): Promise<StoricoRisultato> 
       const giorni = Math.max(1, (nowSec - pavimento) / 86400)
       const giorniCamp = Math.max(1, (fineIniziale - inizioPrima) / 86400)
       const stima = Math.round(p0.righe.length / giorniCamp * giorni)
+      const nelDb = Number((await safeFirst(o.db, 'SELECT COUNT(*) AS n FROM sidly_misure WHERE imei = ?', a.imei))?.n) || 0
       r.anteprima = { finestra: `${fmtSidlyData(inizioPrima)} - ${fmtSidlyData(fineIniziale)} (UTC, ultima settimana)`, punti: p0.punti, righe: p0.righe.length,
         da: p0.da ? fmtSidlyData(p0.da) : undefined, a: p0.a ? fmtSidlyData(p0.a) : undefined, passi: p0.passi, eventi_trovati: eventi,
-        inizio_da: registrato !== null ? fmtSidlyData(registrato) + ' UTC' : undefined, stima_righe_totali: stima, ultime_stima: Math.min(N, stima) }
+        inizio_da: registrato !== null ? fmtSidlyData(registrato) + ' UTC' : undefined, stima_righe_totali: stima, gia_nel_db: nelDb, ultime_stima: Math.min(N, Math.max(0, stima - nelDb)) }
     }
     if (errore) r.errore = errore
     return { httpStatus: 200, result: { esito: 'anteprima', assistiti: [r], avvisi, limiti: { max_finestre: maxFinestre, max_righe: N } } }

@@ -22004,7 +22004,7 @@ app.post('/api/sidly/crea-scheda', async (c) => {
     return c.json({ esito: 'errore', errore: 'assistito_id mancante o non valido' }, 400)
   }
   const { creaScheda } = await import('./modules/sidly-sync')
-  const { httpStatus, result } = await creaScheda(c.env.DB, assistitoId, { conferma: body?.conferma_scrittura === true })
+  const { httpStatus, result } = await creaScheda(c.env.DB, assistitoId, { conferma: body?.conferma_scrittura === true, leadId: typeof body?.lead_id === 'string' ? body.lead_id : undefined })
   console.log('[SIDLY-SCHEDA]', JSON.stringify({ assistito_id: assistitoId, esito: result.esito, conferma: body?.conferma_scrittura === true }))
   return c.json(result, httpStatus as any)
 })

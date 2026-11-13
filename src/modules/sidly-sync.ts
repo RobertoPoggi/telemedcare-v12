@@ -45,7 +45,12 @@ const rispostaBreve = (t: string) => { const x = toStr(t).replace(/\s+/g, ' ').t
 export interface CampoInviato { campo: string; valore: any; /** Testi per l'operatore (solo visualizzazione): nome leggibile e valori su piu' righe. */ etichetta?: string; mostra_prima?: string; mostra_dopo?: string; /** Valore attualmente su SiDLY (solo campi user.*; '' se vuoto): serve all'operatore per capire cosa verrebbe sovrascritto. */ precedente?: any }
 export interface Candidato { user_id: string; first_name: string; last_name: string; /** IMEI che l'assistito ha su SiDLY (letto da /patient/{user_id}). */ imei?: string }
 /** Scheda di configurazione assente nel CRM: si puo' creare (con anteprima e conferma) se c'e' una richiesta collegata. */
-export interface SchedaMancante { possibile: boolean; lead_id?: string; collegamento?: string; motivo?: string }
+export interface CandidatoScheda { id: string; assistito: string; richiedente: string; email: string }
+export interface SchedaMancante {
+  possibile: boolean; lead_id?: string; collegamento?: string; motivo?: string
+  /** Nessuna richiesta collegabile in automatico: l'operatore puo' sceglierla a mano tra i candidati (o scrivere l'ID). */
+  scegli?: boolean; candidati?: CandidatoScheda[]
+}
 
 export interface SyncResult {
   esito: Esito
@@ -1363,7 +1368,26 @@ export async function loadCrmSources(db: any, assistitoId: number): Promise<CrmS
 // ─────────────────────────────────────────────────────────────────────────────
 interface PianoScheda { insert: boolean; link: boolean; leadId: string; valori: Array<{ campo: string; valore: string }>; riga: any[] }
 
-async function pianoScheda(db: any, assistitoId: number): Promise<{ info: SchedaMancante; piano?: PianoScheda }> {
+/** Richieste che potrebbero essere quella dell'assistito: stesso cognome (assistito o richiedente), cognome del referente, stessa e-mail. Solo per aiutare la scelta dell'operatore. */
+async function candidatiScheda(db: any, a: any, cognome: string): Promise<CandidatoScheda[]> {
+  const cond: string[] = [], bind: string[] = [], visti = new Set<string>()
+  const add = (col: string, v: string) => {
+    const x = v.toLowerCase().trim(); const k = col + ':' + x
+    if (!x || visti.has(k)) return
+    visti.add(k); cond.push(`LOWER(TRIM(${col})) = ?`); bind.push(x)
+  }
+  add('cognomeAssistito', cognome); add('cognomeRichiedente', cognome); add('cognomeRichiedente', toStr(a.cognome_caregiver)); add('email', toStr(a.email))
+  if (!cond.length) return []
+  try {
+    const r = await db.prepare(`SELECT id, nomeAssistito, cognomeAssistito, nomeRichiedente, cognomeRichiedente, email FROM leads WHERE ${cond.join(' OR ')} LIMIT 8`).bind(...bind).all()
+    return (r?.results || []).filter((x: any) => x && x.id).map((x: any) => ({
+      id: String(x.id), assistito: [x.nomeAssistito, x.cognomeAssistito].map(toStr).filter(Boolean).join(' '),
+      richiedente: [x.nomeRichiedente, x.cognomeRichiedente].map(toStr).filter(Boolean).join(' '), email: toStr(x.email),
+    }))
+  } catch { return [] }
+}
+
+async function pianoScheda(db: any, assistitoId: number, leadScelto?: string): Promise<{ info: SchedaMancante; piano?: PianoScheda }> {
   const a = await safeFirst(db, 'SELECT * FROM assistiti WHERE id = ?', assistitoId)
   if (!a) return { info: { possibile: false, motivo: 'Assistito non trovato' } }
   let leadId: string | null = a.lead_id ? String(a.lead_id) : null
@@ -1374,8 +1398,15 @@ async function pianoScheda(db: any, assistitoId: number): Promise<{ info: Scheda
   }
   let nome = toStr(a.nome_assistito), cognome = toStr(a.cognome_assistito)
   if (!nome || !cognome) { const sp = splitNome(a.nome); nome = nome || sp.nome; cognome = cognome || sp.cognome }
+  // Richiesta scelta dall'operatore (quando il collegamento automatico non c'e').
+  if (leadScelto) {
+    if (leadId && leadId !== leadScelto) return { info: { possibile: false, lead_id: leadId, collegamento, motivo: `L'assistito è già collegato alla richiesta ${leadId}: non posso collegarlo a un'altra.` } }
+    const ex = await safeFirst(db, 'SELECT id FROM leads WHERE id = ?', leadScelto)
+    if (!ex) return { info: { possibile: false, scegli: true, candidati: await candidatiScheda(db, a, cognome), motivo: `La richiesta «${leadScelto.slice(0, 60)}» non esiste nel CRM.` } }
+    leadId = leadScelto; collegamento = 'scelta'
+  }
   if (!leadId) {
-    if (!nome || !cognome) return { info: { possibile: false, motivo: 'L\'assistito non è collegato a nessuna richiesta e nome/cognome mancano: non posso cercarla.' } }
+    if (!nome || !cognome) return { info: { possibile: false, scegli: true, candidati: await candidatiScheda(db, a, cognome), motivo: 'L\'assistito non è collegato a nessuna richiesta e nome/cognome mancano: non posso cercarla.' } }
     // Ultima possibilita': la richiesta con lo stesso nome e cognome dell'assistito (accettata solo se UNICA).
     let n = 0, id = ''
     try {
@@ -1383,8 +1414,8 @@ async function pianoScheda(db: any, assistitoId: number): Promise<{ info: Scheda
       const rows = (r?.results || []).filter((x: any) => x && x.id)
       n = rows.length; id = rows[0] ? String(rows[0].id) : ''
     } catch { n = 0 }
-    if (n === 0) return { info: { possibile: false, motivo: 'Nessuna richiesta (lead) collegata a questo assistito né con lo stesso nome: la scheda nasce da una richiesta, non posso inventarla.' } }
-    if (n > 1) return { info: { possibile: false, motivo: 'Più richieste con lo stesso nome e cognome: non so quale collegare. Collega a mano l\'assistito alla richiesta giusta.' } }
+    if (n === 0) return { info: { possibile: false, scegli: true, candidati: await candidatiScheda(db, a, cognome), motivo: 'Nessuna richiesta (lead) collegata a questo assistito né con lo stesso nome: la scheda nasce da una richiesta, non posso inventarla. Scegline una tu.' } }
+    if (n > 1) return { info: { possibile: false, scegli: true, candidati: await candidatiScheda(db, a, cognome), motivo: 'Più richieste con lo stesso nome e cognome: non so quale collegare. Scegli tu quella giusta.' } }
     leadId = id; collegamento = 'nome'
   }
   const esiste = await safeFirst(db, 'SELECT id FROM configurations WHERE leadId = ? ORDER BY id DESC LIMIT 1', leadId)
@@ -1418,17 +1449,23 @@ export interface CreaSchedaRisultato {
 }
 
 /** Crea la scheda di configurazione mancante (e, se serve, collega l'assistito alla sua richiesta). Senza conferma e' solo un'anteprima. */
-export async function creaScheda(db: any, assistitoId: number, o: { conferma: boolean }): Promise<{ httpStatus: number; result: CreaSchedaRisultato }> {
+export async function creaScheda(db: any, assistitoId: number, o: { conferma: boolean; leadId?: string }): Promise<{ httpStatus: number; result: CreaSchedaRisultato }> {
   const a = await safeFirst(db, 'SELECT id, status FROM assistiti WHERE id = ?', assistitoId)
   if (!a) return { httpStatus: 404, result: { esito: 'errore', errore: 'Assistito non trovato' } }
   if (String(a.status || '').toUpperCase() !== 'ATTIVO') return { httpStatus: 422, result: { esito: 'errore', errore: 'Consentito solo per assistiti con stato ATTIVO' } }
-  const { info, piano } = await pianoScheda(db, assistitoId)
+  const { info, piano } = await pianoScheda(db, assistitoId, o.leadId ? String(o.leadId).trim().slice(0, 100) : undefined)
   if (!info.possibile || !piano) return { httpStatus: 409, result: { esito: 'errore', errore: info.motivo || 'Scheda non creabile', lead_id: info.lead_id, collegamento: info.collegamento } }
   const scritture: NonNullable<CreaSchedaRisultato['scritture']> = []
   if (piano.insert) scritture.push({ tabella: 'configurations', operazione: 'crea la scheda di configurazione', dettaglio: `collegata alla richiesta ${piano.leadId}; stato SIDLY_SYNC; solo nome, cognome, data di nascita e indirizzo presi dalla richiesta` })
-  if (piano.link) scritture.push({ tabella: 'assistiti', operazione: 'collega l\'assistito alla richiesta', dettaglio: `lead_id = ${piano.leadId} (${info.collegamento === 'nome' ? 'trovata per nome e cognome: unica corrispondenza' : 'ricavata dal contratto'})` })
+  if (piano.link) scritture.push({ tabella: 'assistiti', operazione: 'collega l\'assistito alla richiesta', dettaglio: `lead_id = ${piano.leadId} (${info.collegamento === 'nome' ? 'trovata per nome e cognome: unica corrispondenza' : info.collegamento === 'scelta' ? 'richiesta scelta dall\'operatore' : 'ricavata dal contratto'})` })
   const avvisi: string[] = []
   if (info.collegamento === 'nome') avvisi.push('La richiesta è stata trovata solo per nome e cognome (nessun collegamento diretto): controlla che sia quella giusta.')
+  if (info.collegamento === 'scelta') {
+    avvisi.push('La richiesta l\'hai scelta tu: controlla che sia quella giusta.')
+    const altri = await safeFirst(db, 'SELECT COUNT(*) AS n FROM assistiti WHERE lead_id = ? AND id != ?', piano.leadId, assistitoId)
+    if (Number(altri?.n) > 0) avvisi.push(`La richiesta ${piano.leadId} è già collegata ad altri ${Number(altri?.n)} assistiti.`)
+    if (!piano.insert) avvisi.push('La richiesta ha già una scheda di configurazione: verrà solo collegato l\'assistito, senza creare un\'altra scheda.')
+  }
   avvisi.push('Referenti, telefono, e-mail e dati medici non vengono inventati: dopo la creazione riapri il confronto e scegli «vale SiDLY» riga per riga.')
   const base = { lead_id: piano.leadId, collegamento: info.collegamento, scritture, valori: piano.valori, avvisi }
   if (!o.conferma) return { httpStatus: 200, result: { esito: 'anteprima', ...base } }

@@ -1140,6 +1140,49 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       const r2 = await S.creaScheda(d.db, 99, { conferma: true })
       ok(r2.httpStatus === 404, 'crea scheda: assistito inesistente → 404')
     }
+    // scelta manuale della richiesta (nessun collegamento automatico possibile)
+    {
+      const colonne = (raw: any) => {
+        raw.run(`ALTER TABLE leads ADD COLUMN nomeRichiedente TEXT`); raw.run(`ALTER TABLE leads ADD COLUMN cognomeRichiedente TEXT`); raw.run(`ALTER TABLE leads ADD COLUMN email TEXT`)
+        raw.run(`ALTER TABLE assistiti ADD COLUMN cognome_caregiver TEXT`); raw.run(`ALTER TABLE assistiti ADD COLUMN email TEXT`)
+        raw.run(`INSERT INTO leads (id, nomeAssistito, cognomeAssistito, dataNascitaAssistito, indirizzoAssistito, cittaAssistito, provinciaAssistito, capAssistito, nomeRichiedente, cognomeRichiedente, email) VALUES ('L50', 'Maria', 'Bianchi', '1940-05-05', 'Via Verdi 3', 'Torino', 'TO', '10100', 'Paolo', 'Rossi', 'p.rossi@x.it')`)
+        raw.run(`INSERT INTO leads (id, nomeAssistito, cognomeAssistito, nomeRichiedente, cognomeRichiedente, email) VALUES ('L51', 'Luca', 'Verdi', 'Anna', 'Neri', 'altra@x.it')`)
+      }
+      const d = nuovoDb((raw: any) => { seedBase({ senzaLead: true })(raw); colonne(raw) })
+      const m = await S.schedaMancante(d.db, 7)
+      ok(m.possibile === false && m.scegli === true && (m.candidati || []).some(x => x.id === 'L50' && x.richiedente === 'Paolo Rossi') && !(m.candidati || []).some(x => x.id === 'L51'), 'scheda: senza collegamento automatico propone come candidate le richieste con lo stesso cognome (del richiedente), non le altre')
+      ok(/Scegli|scegli|Scegline/.test(m.motivo || ''), 'scheda: il messaggio invita a scegliere la richiesta')
+      const an = await S.creaScheda(d.db, 7, { conferma: false, leadId: 'L50' })
+      ok(an.httpStatus === 200 && an.result.esito === 'anteprima' && an.result.collegamento === 'scelta' && d.stats.writes.length === 0, 'scheda scelta a mano: anteprima, nessuna scrittura')
+      ok((an.result.valori || []).some(v => v.campo === 'Nome' && v.valore === 'Maria') && (an.result.avvisi || []).some(a => /hai scelta tu/.test(a)), 'scheda scelta a mano: mostra i dati della richiesta scelta e chiede di controllarla')
+      ok((an.result.scritture || []).length === 2 && an.result.scritture!.some(x => x.tabella === 'assistiti'), 'scheda scelta a mano: dichiara scheda + collegamento assistito')
+      const ok1 = await S.creaScheda(d.db, 7, { conferma: true, leadId: 'L50' })
+      ok(ok1.httpStatus === 200 && ok1.result.esito === 'creata' && d.q(`SELECT leadId, nome_assistito, status FROM configurations`)[0].leadId === 'L50' && d.q('SELECT lead_id FROM assistiti WHERE id = 7')[0].lead_id === 'L50', 'scheda scelta a mano: con conferma crea la scheda dalla richiesta scelta e collega l\'assistito')
+      ok(d.q('SELECT COUNT(*) AS n FROM configurations')[0].n === 1 && d.q(`SELECT status FROM configurations`)[0].status === 'SIDLY_SYNC', 'scheda scelta a mano: una sola scheda, stato SIDLY_SYNC')
+      const dX = nuovoDb((raw: any) => { seedBase({ senzaLead: true })(raw); colonne(raw) })
+      const rX = await S.creaScheda(dX.db, 7, { conferma: true, leadId: 'NON-ESISTE' })
+      ok(rX.httpStatus === 409 && /non esiste/.test(rX.result.errore || '') && dX.stats.writes.length === 0, 'scheda scelta a mano: ID inesistente -> errore, nessuna scrittura')
+      const dI = nuovoDb((raw: any) => { seedBase({ senzaLead: true })(raw); colonne(raw); raw.run(`INSERT INTO assistiti (id, nome, imei, status, lead_id, nome_assistito, cognome_assistito) VALUES (8, 'Altro', '868298061200001', 'ATTIVO', 'L50', 'Altro', 'Tizio')`) })
+      const rI = await S.creaScheda(dI.db, 7, { conferma: false, leadId: 'L50' })
+      ok((rI.result.avvisi || []).some(a => /già collegata ad altri 1/.test(a)), 'scheda scelta a mano: avvisa se la richiesta e\' gia\' collegata a un altro assistito')
+      // assistito gia' collegato a una richiesta: non si puo' dirottare su un'altra
+      const dL = nuovoDb((raw: any) => { seedBase({ leadIdAssistito: 'L9' })(raw); colonne(raw) })
+      const rL = await S.creaScheda(dL.db, 7, { conferma: true, leadId: 'L50' })
+      ok(rL.httpStatus === 409 && /già collegato alla richiesta L9/.test(rL.result.errore || '') && dL.stats.writes.length === 0, 'scheda scelta a mano: un assistito gia\' collegato non si sposta su un\'altra richiesta')
+      // la richiesta scelta ha gia' una scheda: solo collegamento, nessuna seconda scheda
+      const dS = nuovoDb((raw: any) => { seedBase({ senzaLead: true })(raw); colonne(raw); raw.run(`INSERT INTO configurations (leadId, nome_assistito) VALUES ('L50', 'Maria')`) })
+      const rS = await S.creaScheda(dS.db, 7, { conferma: true, leadId: 'L50' })
+      ok(rS.result.esito === 'creata' && dS.q('SELECT COUNT(*) AS n FROM configurations')[0].n === 1 && dS.q('SELECT lead_id FROM assistiti WHERE id = 7')[0].lead_id === 'L50', 'scheda scelta a mano: richiesta con scheda esistente -> solo collegamento, nessun doppione')
+      // senza le colonne opzionali (ambiente diverso): nessun errore, solo nessun candidato
+      const dN = nuovoDb(seedBase({ senzaLead: true }))
+      const mN = await S.schedaMancante(dN.db, 7)
+      ok(mN.possibile === false && mN.scegli === true && Array.isArray(mN.candidati), 'scheda: senza le colonne opzionali la scelta manuale resta disponibile (elenco candidati vuoto, ID digitabile)')
+      // sorgenti: rotta e Dashboard
+      const idx = readFileSync('src/index.tsx', 'utf8'), dash = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
+      const i = idx.search(/app\.post\('\/api\/sidly\/crea-scheda'/)
+      ok(/lead_id/.test(idx.slice(i, i + 1500)) && /checkSessionOrKey\(/.test(idx.slice(i, i + 700)), 'rotta crea-scheda: accetta lead_id scelto dall\'operatore ed e\' protetta')
+      ok(/sidlySchedaScegli/.test(dash) && /payload\.lead_id = window\.__sidlySchedaLead/.test(dash) && /window\.__sidlySchedaLead = null/.test(dash), 'Dashboard: scelta della richiesta (candidati o ID) con anteprima prima della conferma')
+    }
     // runSidlySync: scheda_mancante + blocco IMEI in uso con DB vero
     {
       S.resetSidlyTokenCache()
@@ -1161,7 +1204,7 @@ export async function runSidlyTests(ok: Ok, section: Section) {
   {
     const idx = readFileSync('src/index.tsx', 'utf8')
     ok(/app\.post\('\/api\/sidly\/crea-scheda', async \(c\) => \{\s+const guard = checkSessionOrKey\([\s\S]{0,300}if \(!guard\.ok\)[\s\S]{0,200}if \(!c\.env\?\.DB\)/.test(idx), 'endpoint crea-scheda: il controllo accessi è la prima istruzione')
-    ok(/creaScheda\(c\.env\.DB, assistitoId, \{ conferma: body\?\.conferma_scrittura === true \}\)/.test(idx), 'endpoint crea-scheda: si scrive solo con conferma_scrittura === true (altrimenti anteprima)')
+    ok(/creaScheda\(c\.env\.DB, assistitoId, \{ conferma: body\?\.conferma_scrittura === true(, leadId: [^}]*)? \}\)/.test(idx) && !/conferma: true/.test(idx.slice(idx.search(/app\.post\('\/api\/sidly\/crea-scheda'/), idx.search(/app\.post\('\/api\/sidly\/crea-scheda'/) + 1500)), 'endpoint crea-scheda: si scrive solo con conferma_scrittura === true (altrimenti anteprima)')
     ok(/'\[SIDLY-SCHEDA\]', JSON\.stringify\(\{ assistito_id: assistitoId, esito: result\.esito/.test(idx), 'endpoint crea-scheda: log senza dati personali')
     const dash = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
     ok(/fetch\('\/api\/sidly\/crea-scheda'/.test(dash) && /Conferma e crea la scheda/.test(dash) && /scheda_mancante/.test(dash), 'dashboard: pulsante «Crea scheda di configurazione» con anteprima e conferma')

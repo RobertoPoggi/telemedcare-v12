@@ -18,6 +18,9 @@ Body: `{ assistito_id, dry_run?, associa_user_id?, conferma_crea? }`
 ## Regola del titolare
 Il CRM non scrive mai URL sui braccialetti e non riceve frame: legge solo lo storico misurazioni da SiDLY via API (vedi `TELEMETRIA.md`), per uso solo statistico. Assistiti e caregiver continuano a usare SiDLY.
 
+## Scheda di configurazione mancante
+Se l'assistito non ha la scheda e il CRM non trova da solo la richiesta (lead) collegata, il pannello propone le richieste con cognome o e-mail simili e permette di scrivere l'ID a mano: `POST /api/sidly/crea-scheda` accetta `lead_id`. Anteprima prima, nessuna scrittura senza `conferma_scrittura:true`; un assistito gia' collegato a una richiesta non si sposta su un'altra; se la richiesta ha gia' una scheda si crea solo il collegamento.
+
 ## Comportamento
 Nessuna scrittura automatica. Il pulsante mostra il confronto SiDLY | CRM; scrive solo le righe su cui l'operatore sceglie una direzione.
 - Assente in piattaforma → creazione (assistito + braccialetto, poi referenti e patologie dal CRM), solo dopo "Conferma e crea su SiDLY".
