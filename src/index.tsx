@@ -99,9 +99,6 @@ type Bindings = {
   SIDLY_USER?: string
   SIDLY_PASSWORD?: string
   SIDLY_BASE_URL?: string
-  SIDLY_FRAME_URL?: string
-  SIDLY_INGEST_TOKEN?: string
-  SIDLY_ENCRYPT_KEY?: string
   SIDLY_BAND_DEFAULTS?: string
   SIDLY_LOGIN_FIELD?: string
   // Google OAuth (Sheets — scope spreadsheets)
@@ -22016,18 +22013,6 @@ app.post('/api/sidly/crea-scheda', async (c) => {
 // SiDLY TELEMETRIA: ricevitore frame, storico, registrazione frame, report medie
 // ========================================
 
-// POST /api/sidly/ingest?k=TOKEN - ricevitore dei frame inoltrati da SiDLY (Canale 2). SiDLY non puo' mandare le nostre intestazioni:
-// l'autenticazione e' il segreto SIDLY_INGEST_TOKEN nell'URL registrato. Risponde subito; i frame di IMEI sconosciuti sono ignorati (202).
-app.post('/api/sidly/ingest', async (c) => {
-  const { verificaTokenIngest, gestisciFrame } = await import('./modules/sidly-telemetria')
-  const t = verificaTokenIngest(c.req.query('k'), c.env as any)
-  if (!t.ok) return c.json({ ok: false, errore: t.errore }, t.status as any)
-  if (!c.env?.DB) return c.json({ ok: false, errore: 'Database non configurato' }, 500)
-  const corpo = await c.req.text()
-  const r = await gestisciFrame(c.env.DB, c.env as any, corpo, Math.floor(Date.now() / 1000))
-  return c.json(r.body, r.status as any)
-})
-
 // POST /api/sidly/storico - carica lo storico delle misure (GET /patient/{imei}/stats). Body: { da:'AAAA-MM-GG', dry_run? , conferma_scrittura?, assistito_id? }
 // Senza conferma_scrittura:true si fa solo l'anteprima (nessuna scrittura nel DB). Si richiama finche' completato=true (riprende dal cursore).
 app.post('/api/sidly/storico', async (c) => {
@@ -22045,31 +22030,14 @@ app.post('/api/sidly/storico', async (c) => {
   return c.json(r.result, r.httpStatus as any)
 })
 
-// POST /api/sidly/registra-frame - registra (o rimuove) su SiDLY l'URL di consegna frame per gli assistiti ATTIVI. Body: { dry_run? , conferma_scrittura?, rimuovi?, assistito_id?, offset? }
-app.post('/api/sidly/registra-frame', async (c) => {
-  const guard = checkSessionOrKey(c.req.header('Cookie'), c.req.header('Authorization'), [c.env?.API_KEY, c.env?.ADMIN_SECRET_TOKEN])
-  if (!guard.ok) return c.json({ esito: 'errore', errore: guard.error }, guard.status)
-  if (!c.env?.DB) return c.json({ esito: 'errore', errore: 'Database non configurato' }, 500)
-  let body: any = null
-  try { body = await c.req.json() } catch { body = null }
-  const scrive = body?.conferma_scrittura === true && body?.dry_run !== true
-  const id = body?.assistito_id !== undefined && body?.assistito_id !== null ? Number(body.assistito_id) : undefined
-  if (id !== undefined && (!Number.isInteger(id) || id <= 0)) return c.json({ esito: 'errore', errore: 'assistito_id non valido' }, 400)
-  const { registraFrame } = await import('./modules/sidly-telemetria')
-  const r = await registraFrame({ db: c.env.DB, env: c.env as any, dryRun: !scrive, rimuovi: body?.rimuovi === true, assistitoId: id, offset: Number(body?.offset) || 0 })
-  console.log('[SIDLY-REGISTRA-FRAME]', JSON.stringify({ esito: r.result.esito, scrive, rimuovi: body?.rimuovi === true, errori: r.result.errori }))
-  return c.json(r.result, r.httpStatus as any)
-})
-
-// GET /api/sidly/telemetria/stato - stato per assistito (frame ricevuti, copertura, storico). Sola lettura.
+// GET /api/sidly/telemetria/stato - stato per assistito (copertura dello storico letto da SiDLY). Sola lettura.
 app.get('/api/sidly/telemetria/stato', async (c) => {
   const guard = checkSessionOrKey(c.req.header('Cookie'), c.req.header('Authorization'), [c.env?.API_KEY, c.env?.ADMIN_SECRET_TOKEN])
   if (!guard.ok) return c.json({ esito: 'errore', errore: guard.error }, guard.status)
   if (!c.env?.DB) return c.json({ esito: 'errore', errore: 'Database non configurato' }, 500)
-  const { statoTelemetria, urlFrameDaVerificare } = await import('./modules/sidly-telemetria')
+  const { statoTelemetria } = await import('./modules/sidly-telemetria')
   const st = await statoTelemetria(c.env.DB)
-  const v = urlFrameDaVerificare(c.env as any)
-  return c.json({ esito: 'ok', ...st, configurazione: { frame_url: v.ok ? 'ok' : v.errore, cifratura: v.ok ? (v.cifrato ? 'attiva' : 'non attiva') : null, ingest_token: ((c.env as any)?.SIDLY_INGEST_TOKEN || '').length >= 16 ? 'ok' : 'mancante' } })
+  return c.json({ esito: 'ok', ...st })
 })
 
 // GET /api/sidly/telemetria/dataset?da=&a=&assistito_id=&dopo=&limite= - dataset delle sole misure in CSV (una pagina; cursore in X-Prossimo-Cursore). Nessun nome: solo assistito_id e IMEI.

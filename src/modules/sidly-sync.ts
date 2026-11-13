@@ -8,7 +8,7 @@
  *  - mai inviare campi vuoti del CRM (si omettono, non si azzera)
  *  - configurazione operativa (SOS, soglie, zone, notifiche) = master la piattaforma:
  *    su assistito esistente si riempie solo se vuota, se diverge si segnala un warning
- *  - URL di consegna frame registrato solo se configurato (SIDLY_FRAME_URL)
+ *  - MAI scrivere URL di consegna frame sui braccialetti: il CRM non riceve frame, legge solo lo storico da SiDLY via API
  *
  * Nessun segreto nei log o nelle risposte. Le risposte della piattaforma non vengono mai copiate
  * nei messaggi d'errore (solo il codice HTTP).
@@ -22,12 +22,6 @@ export interface SidlyEnv {
   SIDLY_USER?: string
   SIDLY_PASSWORD?: string
   SIDLY_BASE_URL?: string
-  /** URL pubblico https a cui SiDLY deve inoltrare i frame (Canale 2). Se assente il passo viene saltato. */
-  SIDLY_FRAME_URL?: string
-  /** Segreto (>=16 caratteri) che deve comparire come ?k= nell'URL di consegna frame: senza, il ricevitore rifiuta tutto. */
-  SIDLY_INGEST_TOKEN?: string
-  /** Chiave AES-256 (esattamente 32 byte) opzionale: se presente viene registrata con l'URL e i frame arrivano cifrati. */
-  SIDLY_ENCRYPT_KEY?: string
   /** JSON opzionale con i default operativi per la CREAZIONE (fall, sos_notif, minHr, ...). */
   SIDLY_BAND_DEFAULTS?: string
   /** Nome del campo utente nel body di /user/login. Default "login" (non documentato). */
@@ -64,7 +58,6 @@ export interface SyncResult {
   azioni: Azione[]
   warning: string[]
   campi_inviati: CampoInviato[]
-  url_for_band: { registrato: boolean; url?: string; motivo?: string }
   candidati?: Candidato[]
   motivo_conferma?: string
   /** Gli omonimi si possono solo associare (mai creare un nuovo assistito): l'IMEI del CRM non e' accessibile su SiDLY. */
@@ -1192,7 +1185,7 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
   const dry = !!opts.dryRun
   const client = new SidlyClient(env, opts.fetchImpl)
   const out: SyncResult = {
-    esito: 'errore', sidly_user_id: null, azioni: [], warning: [...crm.warnings], campi_inviati: [], url_for_band: { registrato: false },
+    esito: 'errore', sidly_user_id: null, azioni: [], warning: [...crm.warnings], campi_inviati: [],
   }
   const fail = (msg: string): SyncResult => { out.esito = 'errore'; out.errore = msg; return out }
   const raw: Raw = {}
@@ -1319,24 +1312,6 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
       }
     } else {
       return fail(`Risposta inattesa da SiDLY nella ricerca dell'assistito (HTTP ${res.status})`)
-    }
-
-    // URL di consegna frame (Canale 2): solo se configurato.
-    const frameUrl = (env.SIDLY_FRAME_URL || '').trim()
-    if (!frameUrl || !/^https:\/\//i.test(frameUrl)) {
-      out.url_for_band = { registrato: false, motivo: 'SIDLY_FRAME_URL non configurato (o non https): registrazione saltata' }
-      out.warning.push('URL di consegna frame non registrato: SIDLY_FRAME_URL non configurato')
-    } else if (dry) {
-      out.url_for_band = { registrato: false, url: frameUrl, motivo: 'non eseguito (anteprima)' }
-      out.azioni.push({ azione: 'POST /manager/set-url-for-band', risultato: 'non eseguito (anteprima)' })
-    } else {
-      const u = await client.request('POST', '/manager/set-url-for-band', { imei: imeiBraccialetto(raw, crm, !!assoc), url: frameUrl })
-      out.azioni.push({ azione: 'POST /manager/set-url-for-band', risultato: String(u.status) })
-      if (ok2xx(u.status)) out.url_for_band = { registrato: true, url: frameUrl }
-      else {
-        out.url_for_band = { registrato: false, url: frameUrl, motivo: `HTTP ${u.status}` }
-        out.warning.push(`Registrazione dell'URL di consegna frame non riuscita (HTTP ${u.status})`)
-      }
     }
 
     if (dry) { out.esito = 'anteprima'; out.previsto = previsto } else { out.esito = previsto }

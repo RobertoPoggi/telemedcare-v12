@@ -6,12 +6,12 @@ import { checkSessionOrKey } from '../../src/modules/admin-guard'
 type Ok = (c: boolean, msg: string) => void
 type Section = (t: string) => void
 
-const ENV: S.SidlyEnv = { SIDLY_USER: 'u-test', SIDLY_PASSWORD: 'p-segreta-xyz', SIDLY_BASE_URL: 'https://api.sidly-platform-dev.com/api', SIDLY_FRAME_URL: 'https://crm.example/api/sidly/ingest' }
+const ENV: S.SidlyEnv = { SIDLY_USER: 'u-test', SIDLY_PASSWORD: 'p-segreta-xyz', SIDLY_BASE_URL: 'https://api.sidly-platform-dev.com/api' }
 const IMEI = '868298061208378'
 
 interface Call { method: string; path: string; body: any; token?: string }
 
-/** Piattaforma SiDLY finta e con stato: GET/POST/PATCH paziente, myShortInfo, set-url-for-band, login. */
+/** Piattaforma SiDLY finta e con stato: GET/POST/PATCH paziente, myShortInfo, login. Le chiamate verso i dispositivi (set/delete-url-for-band) rispondono 200 ma i test verificano che NON partano mai. */
 function makePlatform(opts: { patients?: Record<string, any>; tokenExpiresOnce?: boolean; alwaysFail?: number; searchResults?: any[]; searchStatus?: number; noFullRecord?: boolean; contacts?: any[]; diseases?: any; card?: any; detailStatus?: number; patchDetailStatus?: number; patchPatient?: { status: number; body: any }; patchNeedsFullBand?: boolean; rejectAlias?: boolean; forbidImei?: string } = {}) {
   const patients: Record<string, any> = opts.patients || {}
   const calls: Call[] = []
@@ -178,12 +178,12 @@ export async function runSidlyTests(ok: Ok, section: Section) {
     ok(r1.esito === 'creato' && r1.sidly_user_id === '14879', 'caso 1: assistito assente → "creato" con user_id')
     const post = P.calls.find(c => c.method === 'POST' && c.path === '/manager/patient')
     ok(!!post && post.body.user.firstName === 'Anna' && post.body.band.imei === IMEI && post.body.band.timezone === 'Europe/Rome', 'caso 1: POST con user e band completi')
-    ok(r1.url_for_band.registrato === true && P.calls.some(c => c.path === '/manager/set-url-for-band' && c.body.imei === IMEI && c.body.url === ENV.SIDLY_FRAME_URL), 'caso 8: dopo la creazione l\'URL di consegna frame è registrato per l\'IMEI')
+    ok(!('url_for_band' in r1) && !P.calls.some(c => /url-for-band/.test(c.path)), 'regola titolare: dopo la creazione NESSUN URL di consegna frame viene scritto sul braccialetto')
     const callsBefore = P.calls.length
     const r2 = await S.syncAssistito({ crm: crmOf(), env: ENV, fetchImpl: P.fetchImpl })
     ok(r2.esito === 'invariato', 'caso 1: secondo click → "invariato"')
     ok(!P.calls.slice(callsBefore).some(c => c.method === 'PATCH' || (c.method === 'POST' && c.path === '/manager/patient')), 'caso 1: il secondo giro non crea duplicati e non invia PATCH')
-    ok(P.calls.slice(callsBefore).filter(c => c.path === '/manager/set-url-for-band').length === 1 && r2.url_for_band.registrato, 'caso 8: l\'URL di consegna viene ri-registrato (idempotente) al nuovo click')
+    ok(!P.calls.slice(callsBefore).some(c => /url-for-band/.test(c.path)), 'regola titolare: neppure al secondo click si toccano gli URL dei braccialetti')
     ok(Object.keys(P.patients).length === 1, 'caso 1: in piattaforma resta un solo assistito')
   }
 
@@ -192,7 +192,7 @@ export async function runSidlyTests(ok: Ok, section: Section) {
     const crm = crmOf()
     const P = makePlatform({ patients: { [IMEI]: platformFrom(crm) } })
     const r = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl })
-    ok(r.esito === 'invariato' && scrittureGET(P).filter(c => c.path !== '/manager/set-url-for-band').length === 0, 'caso 2: tutto uguale → \"invariato\", nessuna PATCH')
+    ok(r.esito === 'invariato' && scrittureGET(P).length === 0, 'caso 2: tutto uguale → \"invariato\", nessuna PATCH')
     ok(r.sidly_user_id === '14879', 'caso 2: user_id letto dalla piattaforma')
   }
 
@@ -368,16 +368,15 @@ export async function runSidlyTests(ok: Ok, section: Section) {
     ok(r2.esito === 'anteprima' && r2.previsto === 'aggiornato' && r2.campi_inviati.length === 1 && r2.azioni.some(a => /PATCH \/manager\/patient/.test(a.azione) && a.risultato === 'non eseguito (anteprima)') && !P.calls.some(c => c.method !== 'GET'), 'anteprima con scelte: elenca la PATCH non eseguita e non scrive nulla')
   }
   {
+    // Anche se qualcuno impostasse ancora la vecchia variabile SIDLY_FRAME_URL, il CRM non scrive mai URL sui braccialetti.
     S.resetSidlyTokenCache()
     const P = makePlatform({ patients: { [IMEI]: platformFrom(crmOf()) } })
-    const r = await S.syncAssistito({ crm: crmOf(), env: { ...ENV, SIDLY_FRAME_URL: '' }, fetchImpl: P.fetchImpl })
-    ok(r.esito === 'invariato' && r.url_for_band.registrato === false && !P.calls.some(c => c.path === '/manager/set-url-for-band') && r.warning.some(w => /SIDLY_FRAME_URL/.test(w)), 'senza SIDLY_FRAME_URL: registrazione saltata con warning (mai un URL inventato)')
-  }
-  {
-    S.resetSidlyTokenCache()
-    const P = makePlatform({ patients: { [IMEI]: platformFrom(crmOf()) } })
-    const r = await S.syncAssistito({ crm: crmOf(), env: { ...ENV, SIDLY_FRAME_URL: 'http://non-sicuro.example/x' }, fetchImpl: P.fetchImpl })
-    ok(r.url_for_band.registrato === false && !P.calls.some(c => c.path === '/manager/set-url-for-band'), 'URL di consegna non https → rifiutato')
+    const envVecchio = { ...ENV, SIDLY_FRAME_URL: 'https://crm.example/api/sidly/ingest?k=0123456789abcdef', SIDLY_INGEST_TOKEN: '0123456789abcdef' } as any
+    const r = await S.syncAssistito({ crm: crmOf(), env: envVecchio, fetchImpl: P.fetchImpl })
+    ok(r.esito === 'invariato' && !('url_for_band' in r) && !P.calls.some(c => /url-for-band/.test(c.path)) && scrittureGET(P).length === 0, 'regola titolare: con la vecchia variabile SIDLY_FRAME_URL impostata NON si scrive nessun URL sul braccialetto, nessuna scrittura')
+    const P2 = makePlatform({})
+    const rc = await S.syncAssistito({ crm: crmOf(), env: envVecchio, fetchImpl: P2.fetchImpl, confermaCrea: true })
+    ok(rc.esito === 'creato' && !P2.calls.some(c => /url-for-band/.test(c.path)) && !rc.warning.some(w => /frame|URL di consegna/i.test(w)), 'regola titolare: neppure creando un assistito si scrive un URL sul braccialetto (e nessun avviso sui frame)')
   }
   {
     S.resetSidlyTokenCache()
@@ -606,7 +605,7 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       const plat = platformFrom(crm, { phones: [], whitelistNumbers: '', whiteListAlias: '' })
       const P = makePlatform({ patients: { [IMEI]: plat }, contacts: [], diseases: { id: 55, walking_person: 'sì', hearing: 'ok' }, card: {} })
       const r0 = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl })
-      ok(r0.esito === 'invariato' && scrittureGET(P).filter(c => c.path !== '/manager/set-url-for-band').length === 0, 'piattaforma vuota, nessuna scelta: nessuna scrittura su nessun endpoint')
+      ok(r0.esito === 'invariato' && scrittureGET(P).length === 0, 'piattaforma vuota, nessuna scelta: nessuna scrittura su nessun endpoint')
       const d0 = await preview(crm, P)
       ok(['ref1.nome', 'ref1.telefono', 'ref1.email', 'pat.nadcisnienie', 'pat.medicines', 'band.phones', 'band.whitelist'].every(k => rowOf(d0, k)?.stato !== 'uguale' && rowOf(d0, k)?.verso?.join() === 'crm'), 'piattaforma vuota: per referenti, patologie, SOS e numeri ammessi l\'unica scelta possibile è «vale il CRM»')
       const { r } = await scrivi(crm, P, [['ref1.nome', 'crm'], ['ref1.telefono', 'crm'], ['ref1.email', 'crm'], ['ref2.nome', 'crm'], ['ref3.telefono', 'crm'], ['pat.nadcisnienie', 'crm'], ['pat.cukrzyca', 'crm'], ['pat.medicines', 'crm'], ['pat.allergy', 'crm'], ['band.phones', 'crm'], ['band.whitelist', 'crm']])
@@ -989,8 +988,7 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       ok(!!r && (r.verso || []).includes('sidly') && !(r.verso || []).includes('crm'), 'IMEI: si può salvare nel CRM quello di SiDLY, mai scrivere l\'IMEI del CRM su SiDLY')
       const { r: w, ops } = await scrivi(crm, P, [['IMEI', 'sidly']], { associaUserId: '96504' })
       ok(w.esito === 'aggiornato' && ops.length === 1 && ops[0].t === 'col' && (ops[0] as any).tabella === 'assistiti' && (ops[0] as any).col === 'imei' && (ops[0] as any).val === IMEI_NEW, 'IMEI: scelta «vale SiDLY» → una sola scrittura: assistiti.imei = IMEI di SiDLY')
-      const scrSidly = scrittureGET(P)
-      ok(!scrSidly.some(c => c.method === 'PATCH' || (c.method === 'POST' && c.path === '/manager/patient')) && scrSidly.every(c => c.path === '/manager/set-url-for-band' && c.body.imei === IMEI_NEW), 'IMEI: la correzione nel CRM non modifica l\'assistito su SiDLY (solo la registrazione dell\'URL frame, con l\'IMEI nuovo)')
+      ok(scrittureGET(P).length === 0, 'IMEI: la correzione nel CRM non scrive nulla su SiDLY (nessuna PATCH, nessun URL sul braccialetto)')
       ok(w.warning.some(x => /Cambio IMEI/.test(x)), 'IMEI: avviso che dispositivi, DDT e contratti restano come sono')
     }
     // b) IMEI uguale: nessuna proposta
@@ -1052,14 +1050,13 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       const r2 = await S.syncAssistito({ crm, env: ENV, fetchImpl: P2.fetchImpl })
       ok(r2.esito === 'errore' && /ricerca per nome non è riuscita/.test(r2.errore || '') && !P2.calls.some(c => c.method === 'POST'), '403 con ricerca per nome fallita: errore, mai «crea nuovo»')
     }
-    // h) frame URL: con assistito associato si usa l'IMEI di SiDLY, non quello vecchio del CRM
+    // h) assistito associato con IMEI diverso: qualunque scrittura su SiDLY non tocca mai gli URL dei braccialetti
     {
       S.resetSidlyTokenCache()
       const crm = crmOf(assistitoVecchio)
       const P = makePlatform({ patients: { '96504': { user_id: 96504, imei: IMEI_NEW, user: { firstName: 'Anna', lastName: 'Rossi' }, band: { imei: IMEI_NEW } } } })
       const { r } = await scrivi(crm, P, [["Telefono dell'assistito", 'crm']], { associaUserId: '96504' })
-      const u = P.calls.find(c => c.path === '/manager/set-url-for-band')
-      ok(r.esito === 'aggiornato' && (!u || u.body.imei === IMEI_NEW), 'frame URL: per un assistito associato si usa l\'IMEI di SiDLY, non quello obsoleto del CRM')
+      ok(r.esito === 'aggiornato' && !P.calls.some(c => /url-for-band/.test(c.path)), 'assistito associato con IMEI diverso: la scrittura su SiDLY non tocca gli URL dei braccialetti')
     }
   }
 

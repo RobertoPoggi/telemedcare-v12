@@ -10,11 +10,8 @@ import type { Fetch, SidlyEnv } from '../../src/modules/sidly-sync'
 type Ok = (c: boolean, msg: string) => void
 type Section = (t: string) => void
 
-const TOKEN = 'tok-ingest-0123456789ab'
-const KEY32 = 'k'.repeat(32)
 const BASE = 'https://api.sidly-platform-dev.com/api'
-const FRAME_URL = `https://telemedcare-v12.pages.dev/api/sidly/ingest?k=${TOKEN}`
-const ENV: SidlyEnv & { SIDLY_INGEST_TOKEN?: string; SIDLY_ENCRYPT_KEY?: string } = { SIDLY_USER: 'u-test', SIDLY_PASSWORD: 'p-segreta-xyz', SIDLY_BASE_URL: BASE, SIDLY_FRAME_URL: FRAME_URL, SIDLY_INGEST_TOKEN: TOKEN }
+const ENV: SidlyEnv = { SIDLY_USER: 'u-test', SIDLY_PASSWORD: 'p-segreta-xyz', SIDLY_BASE_URL: BASE }
 const IMEI_A = '868298061208378'
 const IMEI_B = '868298066718967'
 const IMEI_X = '868298060000001'
@@ -54,7 +51,7 @@ async function makeD1() {
 }
 
 interface Call { method: string; path: string; body: any }
-/** SiDLY finta: login, /stats con punti orari, allarmi, set/delete-url-for-band. */
+/** SiDLY finta: login, /stats con punti orari, allarmi. Le chiamate verso i dispositivi (set/delete-url-for-band) rispondono 200 ma i test verificano che NON partano mai. */
 function makeSidly(opts: { statsStatus?: number; alarms?: any[]; urlStatus?: number; registerDate?: any; registerWrap?: boolean } = {}) {
   const calls: Call[] = []
   const fetchImpl: Fetch = async (url, init) => {
@@ -93,145 +90,11 @@ const NOW = Date.UTC(2026, 10, 12, 12, 0, 0) / 1000
 
 export async function runTelemetriaTests(ok: Ok, section: Section) {
   // ───────────────────────────────────────────────────────────────────
-  section('SiDLY telemetria 1: cifratura AES-256-CBC (IV = primi 16 byte)')
-  {
-    const frame = { imei: IMEI_A, reason: 'TIMER', pulse: 71, respiration: 14, hr_store: [{ index: 0, hr: 70, sat: 98, timestamp: 1678886400 }], network_access: 'FDD LTE' }
-    const iv = new Uint8Array(16).map((_, i) => i + 1)
-    const enc = await T.cifraFrameTest(frame, KEY32, iv)
-    ok(enc.encrypted === true && typeof enc.data === 'string' && !enc.data.includes('868298'), 'il payload cifrato non contiene l\'IMEI in chiaro')
-    const raw = Uint8Array.from(atob(enc.data), c => c.charCodeAt(0))
-    ok(Array.from(raw.slice(0, 16)).join(',') === Array.from(iv).join(','), 'i primi 16 byte del base64 sono l\'IV')
-    const dec = await T.decifraFrame(enc, KEY32)
-    ok(JSON.stringify(dec) === JSON.stringify(frame), 'decifratura: JSON identico, compresi respiration, hr_store e campi di rete')
-    let errKey = false
-    try { await T.decifraFrame(enc, 'x'.repeat(32)) } catch { errKey = true }
-    ok(errKey, 'chiave sbagliata: la decifratura fallisce (nessun JSON inventato)')
-    let errLen = false
-    try { await T.decifraFrame(enc, 'corta') } catch { errLen = true }
-    ok(errLen && !T.chiaveCifraturaValida('corta') && T.chiaveCifraturaValida(KEY32) && !T.chiaveCifraturaValida('k'.repeat(33)), 'la chiave deve essere di esattamente 32 byte')
-    let errShort = false
-    try { await T.decifraFrame({ data: 'AAAA' }, KEY32) } catch { errShort = true }
-    ok(errShort, 'dati cifrati troppo corti: rifiutati')
-  }
-
-  // ───────────────────────────────────────────────────────────────────
-  section('SiDLY telemetria 2: ora locale del braccialetto -> UTC')
-  {
-    const inv = Date.UTC(2026, 10, 12, 10, 0, 0) / 1000 // 10:00 "locale" in novembre (UTC+1)
-    ok(T.bandLocalToUtc(inv) === Date.UTC(2026, 10, 12, 9, 0, 0) / 1000, 'inverno: 10:00 locale = 09:00 UTC')
-    const est = Date.UTC(2026, 6, 1, 10, 0, 0) / 1000
-    ok(T.bandLocalToUtc(est) === Date.UTC(2026, 6, 1, 8, 0, 0) / 1000, 'estate: 10:00 locale = 08:00 UTC')
-  }
-
-  // ───────────────────────────────────────────────────────────────────
-  section('SiDLY telemetria 3: lettura dei frame (TIMMEAS, hr_store, SOS, campi legacy)')
-  {
-    const lt = (h: number, m = 0) => Date.UTC(2026, 10, 12, h, m, 0) / 1000
-    const batch = { imei: IMEI_A, reason: 'TIMER', meas: '', pulse: 75, temp: 255, beacon: '', loc: 'NO CONNECTION', trustLvl: '1', batt_percent: 0, batt_mv: 0, steps: 0, signal: null, device_type: 'Vital', is_wifi: true, network_access: 'FDD LTE', network_band: 'LTE BAND 20', rsrp: '-101dBm', oprt: 'Play', saturation: 98, respiration: 16, lat: null, long: null,
-      measurements: [
-        { index: 0, hr: 72, hr_quality: 1, sat: 97, sat_quality: 2, wear_percent: null, reason: 'TIMER', timestamp: lt(10, 0) },
-        { index: 1, hr: 68, hr_quality: 2, sat: 0, sat_quality: 0, wear_percent: 95.0, reason: 'TIMER', timestamp: lt(10, 30) },
-        { index: 2, hr: 0, hr_quality: 0, sat: 0, sat_quality: 0, wear_percent: null, reason: 'TIMER', timestamp: lt(11, 0) },
-        { index: 3, hr: 75, hr_quality: 1, sat: 98, sat_quality: 1, wear_percent: null, reason: 'TIMER', timestamp: lt(11, 30) },
-      ] }
-    const p = T.parseFrame(batch, NOW) as T.FrameParsed
-    ok(!('errore' in p) && p.misure.length === 3, 'TIMMEAS: 4 voci, quella senza hr/sat/wear è scartata → 3 misure')
-    const m1 = p.misure.find(m => m.ts === Date.UTC(2026, 10, 12, 9, 30) / 1000)!
-    ok(!!m1 && m1.hr === 68 && m1.spo2 === null && m1.wear === 95 && m1.hr_q === 2, 'voce con sat=0: SpO2 assente (non zero), wear_percent conservato')
-    const ult = p.misure.reduce((a, b) => (b.ts > a.ts ? b : a))
-    ok(ult.ts === Date.UTC(2026, 10, 12, 10, 30) / 1000 && ult.hr === 75 && ult.resp === 16, 'la frequenza respiratoria del frame va sulla misura più recente del batch')
-    ok(p.misure.every(m => m.temp === undefined || m.temp === null) && p.misure.every(m => m.steps === undefined || m.steps === null), 'temp 255 (nessun sensore) e passi del frame non diventano misure')
-    ok(p.eventi.length === 0, 'un frame TIMER non genera eventi')
-    ok(/WiFi/.test(p.stato.rete) && /LTE BAND 20/.test(p.stato.rete) && /Play/.test(p.stato.rete) && p.stato.device === 'Vital', 'campi di rete e tipo dispositivo salvati come stato (diagnostica)')
-
-    // Care Pro, senza batch: un solo punto all'istante di arrivo (minuto)
-    const cp = T.parseFrame({ imei: IMEI_A, reason: 'TIMER', pulse: 80, saturation: 96, temp: 36.4, trustLvl: 3, steps: 55, batt_percent: 60, device_type: 'Care Pro', loc: '9.19,45.48,GPS' }, NOW) as T.FrameParsed
-    ok(cp.misure.length === 1 && cp.misure[0].ts === Math.floor(NOW / 60) * 60 && cp.misure[0].hr === 80 && cp.misure[0].temp === 36.4 && cp.misure[0].hr_q === 3, 'Care Pro TIMER: una misura con FC, SpO2, temperatura e qualità')
-    ok(cp.misure[0].steps === undefined || cp.misure[0].steps === null, 'passi del frame ignorati (ambigui: solo da /stats)')
-    const hs = T.parseFrame({ imei: IMEI_A, reason: 'TIMER', hr_store: [{ index: 1, hr: 70, hr_quality: 2, sat: 98, sat_quality: 2, reason: 'TIMER', timestamp: lt(8, 0) }] }, NOW) as T.FrameParsed
-    ok(hs.misure.length === 1 && hs.misure[0].ts === Date.UTC(2026, 10, 12, 7, 0) / 1000 && hs.misure[0].spo2 === 98, 'hr_store letto come batch (ora locale → UTC)')
-
-    // SOS: lat/long storici invertiti
-    const sos = T.parseFrame({ imei: IMEI_A, reason: 'SOS', meas: 'PRE', pulse: 0, saturation: 0, temp: 0.0, trustLvl: 0, batt_percent: 35, lat: '9.199744', long: '45.480154', loc: '9.199744,45.480154,GPS' }, NOW) as T.FrameParsed
-    ok(sos.eventi.length === 1 && sos.eventi[0].tipo === 'sos' && sos.eventi[0].lat === 45.480154 && sos.eventi[0].lon === 9.199744, 'SOS: il campo "lat" è la longitudine e "long" la latitudine (corretto nel DB)')
-    ok(sos.misure.length === 0 && sos.eventi[0].pulse === null && sos.eventi[0].batt === 35, 'SOS con pulse 0: nessuna misura inventata')
-    const fl = T.parseFrame({ imei: IMEI_A, reason: 'FALL', loc: '9.5,45.5,AGPS', pulse: 90, temp: 36.2 }, NOW) as T.FrameParsed
-    ok(fl.eventi[0].tipo === 'fall' && fl.eventi[0].lat === 45.5 && fl.eventi[0].lon === 9.5, 'senza lat/long si usa loc "lon,lat,SORGENTE" (longitudine per prima)')
-    const nc = T.parseFrame({ imei: IMEI_A, reason: 'ZONE', loc: 'NO CONNECTION', lat: null, long: null }, NOW) as T.FrameParsed
-    ok(nc.eventi[0].tipo === 'zone' && nc.eventi[0].lat === null && nc.eventi[0].lon === null, 'posizione assente: coordinate nulle, non 0,0')
-    const info = T.parseFrame({ imei: IMEI_A, reason: 'INFO', meas: 'Band removed' }, NOW) as T.FrameParsed
-    ok(info.eventi[0].tipo === 'info' && info.eventi[0].dettaglio === 'Band removed', 'INFO: evento con il testo (es. Band removed)')
-    ok('errore' in (T.parseFrame({ reason: 'TIMER' }, NOW) as any) && 'errore' in (T.parseFrame({ imei: '12' }, NOW) as any) && 'errore' in (T.parseFrame([] as any, NOW) as any), 'frame senza IMEI valido o non oggetto: rifiutato')
-  }
-
-  // ───────────────────────────────────────────────────────────────────
-  section('SiDLY telemetria 4: token del ricevitore')
-  {
-    ok(T.verificaTokenIngest(TOKEN, ENV).ok === true, 'token corretto accettato')
-    const no = T.verificaTokenIngest('sbagliato-ma-lungo-abc', ENV)
-    ok(!no.ok && (no as any).status === 401, 'token sbagliato → 401')
-    const mancante = T.verificaTokenIngest(undefined, ENV)
-    ok(!mancante.ok && (mancante as any).status === 401, 'token assente → 401')
-    const nonCfg = T.verificaTokenIngest(TOKEN, {})
-    ok(!nonCfg.ok && (nonCfg as any).status === 503, 'SIDLY_INGEST_TOKEN non configurato → 503 (mai accesso aperto)')
-    const corto = T.verificaTokenIngest('abc', { SIDLY_INGEST_TOKEN: 'abc' })
-    ok(!corto.ok && (corto as any).status === 503, 'token configurato troppo corto (<16) → 503')
-    ok(T.tokenUguale('abc', 'abc') && !T.tokenUguale('abc', 'abd') && !T.tokenUguale('abc', 'abcd') && !T.tokenUguale('', ''), 'confronto token')
-  }
-
-  // ───────────────────────────────────────────────────────────────────
-  section('SiDLY telemetria 5: ricevitore frame sul DB (dedupe, IMEI ignoti, cifrato)')
-  {
-    const d = await makeD1(); T.dimenticaTabelle()
-    d.raw.run(`INSERT INTO assistiti (id, imei, status, nome_assistito, cognome_assistito) VALUES (1, '${IMEI_A}', 'ATTIVO', 'Giorgia', 'Origoni')`)
-    const lt = (h: number, m = 0) => Date.UTC(2026, 10, 12, h, m, 0) / 1000
-    const frame = { imei: IMEI_A, reason: 'TIMER', device_type: 'Vital', pulse: 75, saturation: 98, respiration: 16, temp: 255, network_access: 'FDD LTE', measurements: [
-      { index: 0, hr: 72, hr_quality: 1, sat: 97, sat_quality: 2, wear_percent: null, reason: 'TIMER', timestamp: lt(10, 0) },
-      { index: 1, hr: 75, hr_quality: 1, sat: 98, sat_quality: 1, wear_percent: 90, reason: 'TIMER', timestamp: lt(10, 30) }] }
-
-    const ignoto = await T.gestisciFrame(d.db, ENV, JSON.stringify({ ...frame, imei: IMEI_X }), NOW)
-    ok(ignoto.status === 202 && ignoto.body.ignorato && !d.hasTable('sidly_misure'), 'IMEI non di un nostro assistito: 202, ignorato e nessuna tabella creata')
-
-    const r1 = await T.gestisciFrame(d.db, ENV, JSON.stringify(frame), NOW)
-    ok(r1.status === 200 && r1.body.misure === 2 && d.count('sidly_misure') === 2, 'frame TIMMEAS: 2 misure salvate')
-    ok(d.stats.batches === 2 && d.stats.stmtsInBatches >= 5, 'un frame = un blocco (batch) per le misure, gli eventi e lo stato (più uno, solo la prima volta, per creare le tabelle)')
-    const bPrima = d.stats.batches
-    const r2 = await T.gestisciFrame(d.db, ENV, JSON.stringify(frame), NOW + 5)
-    ok(d.stats.batches === bPrima + 1, 'dal secondo frame: esattamente un batch per frame (tabelle già pronte)')
-    ok(r2.status === 200 && d.count('sidly_misure') === 2, 'stesso frame inviato due volte: nessun duplicato (chiave imei+istante)')
-    const row = d.q(`SELECT * FROM sidly_misure WHERE ts = ?`, Date.UTC(2026, 10, 12, 9, 30) / 1000)[0]
-    ok(row && row.hr === 75 && row.spo2 === 98 && row.resp === 16 && row.wear === 90 && row.fonte === 'frame', 'riga: FC, SpO2, FR e wear sulla stessa riga')
-    const st = d.q(`SELECT * FROM sidly_stato WHERE imei = ?`, IMEI_A)[0]
-    ok(st.n_frame === 2 && st.device_type === 'Vital' && st.assistito_id === 1 && /LTE/.test(st.rete), 'stato: 2 frame ricevuti, dispositivo, rete')
-
-    const sos = { imei: IMEI_A, reason: 'SOS', meas: 'PRE', pulse: 0, batt_percent: 40, lat: '9.19', long: '45.48' }
-    await T.gestisciFrame(d.db, ENV, JSON.stringify(sos), NOW)
-    await T.gestisciFrame(d.db, ENV, JSON.stringify(sos), NOW + 10)
-    ok(d.count('sidly_eventi') === 1, 'SOS ripetuto entro lo stesso minuto: un solo evento')
-    const ev = d.q(`SELECT * FROM sidly_eventi`)[0]
-    ok(ev.tipo === 'sos' && ev.lat === 45.48 && ev.lon === 9.19 && ev.origine === 'frame', 'evento SOS con coordinate corrette')
-
-    // Frame cifrato
-    const envC = { ...ENV, SIDLY_ENCRYPT_KEY: KEY32 }
-    const cif = await T.cifraFrameTest({ imei: IMEI_A, reason: 'TIMER', pulse: 66, saturation: 95, device_type: 'Vital', respiration: 13 }, KEY32, new Uint8Array(16).fill(7))
-    const rc = await T.gestisciFrame(d.db, envC, JSON.stringify(cif), NOW + 3600)
-    ok(rc.status === 200 && d.q(`SELECT hr, resp FROM sidly_misure WHERE ts = ?`, Math.floor((NOW + 3600) / 60) * 60)[0]?.hr === 66, 'frame cifrato: decifrato e salvato (campo respiration compreso)')
-    const rc2 = await T.gestisciFrame(d.db, ENV, JSON.stringify(cif), NOW)
-    ok(rc2.status === 400 && /SIDLY_ENCRYPT_KEY/.test(rc2.body.errore), 'frame cifrato senza chiave configurata: 400 con messaggio chiaro')
-    const cifX = await T.cifraFrameTest({ imei: IMEI_A, reason: 'TIMER', pulse: 66 }, 'z'.repeat(32), new Uint8Array(16).fill(1))
-    const rc3 = await T.gestisciFrame(d.db, envC, JSON.stringify(cifX), NOW)
-    ok(rc3.status === 400 && !/zzzz/.test(JSON.stringify(rc3.body)), 'frame cifrato con altra chiave: 400, nessuna chiave nella risposta')
-    ok((await T.gestisciFrame(d.db, ENV, '{non json', NOW)).status === 400, 'JSON non valido: 400')
-    ok((await T.gestisciFrame(d.db, ENV, JSON.stringify({ imei: IMEI_A, x: 'a'.repeat(270000) }), NOW)).status === 413, 'frame enorme: 413')
-    ok((await T.gestisciFrame(d.db, ENV, JSON.stringify({ reason: 'TIMER' }), NOW)).status === 400, 'frame senza IMEI: 400')
-  }
-
-  // ───────────────────────────────────────────────────────────────────
   section('SiDLY telemetria 6: scrittura delle misure (fusione, COALESCE, blocchi)')
   {
     const d = await makeD1(); T.dimenticaTabelle(); await T.assicuraTabelle(d.db)
     const ts = 1780000000
-    await d.db.batch(T.istruzioniMisure(d.db, [{ imei: IMEI_A, ts, fonte: 'frame', hr: 70, spo2: 98 }]))
+    await d.db.batch(T.istruzioniMisure(d.db, [{ imei: IMEI_A, ts, fonte: 'stats', hr: 70, spo2: 98 }]))
     await d.db.batch(T.istruzioniMisure(d.db, [{ imei: IMEI_A, ts, fonte: 'stats', hr: null, resp: 15, sdnn: 40 }]))
     const r = d.q(`SELECT * FROM sidly_misure`)
     ok(r.length === 1 && r[0].hr === 70 && r[0].spo2 === 98 && r[0].resp === 15 && r[0].sdnn === 40 && r[0].fonte === 'stats', 'un valore assente non cancella quello già salvato; i nuovi valori si aggiungono')
@@ -243,7 +106,7 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
     ok(ist.length === 3, '100 righe → 3 INSERT multi-riga (40 per istruzione), non 100 scritture')
     await d.db.batch(ist)
     ok(d.count('sidly_misure') === 101, 'tutte le righe scritte')
-    ok(T.fondiMisure([{ imei: 'abc', ts: 5, fonte: 'frame', hr: 70 }, { imei: IMEI_A, ts: -1, fonte: 'frame', hr: 70 }, { imei: IMEI_A, ts: 0, fonte: 'frame', hr: 70 }]).length === 0, 'IMEI non numerico o istante non valido: scartati (niente testo libero nell\'SQL)')
+    ok(T.fondiMisure([{ imei: 'abc', ts: 5, fonte: 'stats', hr: 70 }, { imei: IMEI_A, ts: -1, fonte: 'stats', hr: 70 }, { imei: IMEI_A, ts: 0, fonte: 'stats', hr: 70 }]).length === 0, 'IMEI non numerico o istante non valido: scartati (niente testo libero nell\'SQL)')
     ok(d.q(`SELECT COUNT(*) AS n FROM pragma_table_info('sidly_misure')`)[0].n < 30, 'tabella misure con poche colonne (limite D1 di 100 colonne rispettato)')
   }
 
@@ -332,12 +195,11 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
   }
 
   // ───────────────────────────────────────────────────────────────────
-  section('SiDLY telemetria 9: allarmi dallo storico (senza duplicare quelli arrivati come frame)')
+  section('SiDLY telemetria 9: allarmi letti da SiDLY (nessun duplicato)')
   {
     const d = await makeD1(); T.dimenticaTabelle()
     d.raw.run(`INSERT INTO assistiti (id, imei, status) VALUES (1, '${IMEI_A}', 'ATTIVO')`)
     const tSos = Date.UTC(2026, 10, 5, 8, 30, 0) / 1000
-    await T.gestisciFrame(d.db, ENV, JSON.stringify({ imei: IMEI_A, reason: 'SOS', batt_percent: 50, lat: '9.1', long: '45.4' }), tSos)
     const iso = (s: number) => new Date(s * 1000).toISOString().replace('.000Z', '+00:00')
     const alarms = [
       { id: 11, type: 'sos', receivedDate: iso(tSos + 90), pulse: 88, batteryLevel: 50, sat: 95, temperature: 36.1, latitude: 45.4, longitude: 9.1, handledBy: 'Op Uno', description: { caseDescription: 'Chiamata ai familiari' } },
@@ -345,49 +207,13 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
       { id: 13, type: 'immo', receivedDate: iso(Date.UTC(2026, 9, 1, 15, 0, 0) / 1000) }] // prima del periodo
     const P = makeSidly({ alarms })
     const r = await T.eseguiStorico({ db: d.db, env: ENV, da: '2026-11-01', dryRun: false, nowSec: NOW, fetchImpl: P.fetchImpl, maxFinestre: 10 })
-    ok(r.result.completato === true && d.count('sidly_eventi') === 2, 'SOS già ricevuto come frame non si duplica; la caduta è importata; l\'allarme precedente al periodo no')
+    ok(r.result.completato === true && d.count('sidly_eventi') === 2, 'allarmi letti da SiDLY: SOS e caduta importati; l\'allarme precedente al periodo no')
     ok(d.q(`SELECT origine FROM sidly_eventi WHERE tipo = 'fall'`)[0]?.origine === 'api' && d.q(`SELECT lat FROM sidly_eventi WHERE tipo = 'fall'`)[0]?.lat === null, 'allarme da API: origine api, posizione assente = nulla')
     await T.eseguiStorico({ db: d.db, env: ENV, da: '2026-11-01', dryRun: false, nowSec: NOW + 7 * 3600, fetchImpl: P.fetchImpl, maxFinestre: 10 })
     ok(d.count('sidly_eventi') === 2, 'rilancio: gli allarmi non si duplicano')
     const alarms2 = [...alarms, { id: 14, type: 'sos', receivedDate: iso(NOW + 3 * 3600), pulse: 70, batteryLevel: 40 }]
     await T.eseguiStorico({ db: d.db, env: ENV, da: '2026-11-01', dryRun: false, nowSec: NOW + 14 * 3600, fetchImpl: makeSidly({ alarms: alarms2 }).fetchImpl, maxFinestre: 10 })
     ok(d.count('sidly_eventi') === 3, 'un nuovo allarme comparso dopo viene importato all\'aggiornamento successivo')
-  }
-
-  // ───────────────────────────────────────────────────────────────────
-  section('SiDLY telemetria 10: registrazione dell\'URL frame (sola anteprima di default)')
-  {
-    const d = await makeD1(); T.dimenticaTabelle()
-    d.raw.run(`INSERT INTO assistiti (id, imei, status, nome_assistito, cognome_assistito) VALUES (1, '${IMEI_A}', 'ATTIVO', 'Giorgia', 'Origoni'), (2, '${IMEI_B}', 'ATTIVO', 'Laura', 'Calvi')`)
-    const P = makeSidly()
-    const dry = await T.registraFrame({ db: d.db, env: ENV, dryRun: true, fetchImpl: P.fetchImpl })
-    ok(dry.result.esito === 'anteprima' && dry.result.assistiti.length === 2 && P.calls.length === 0 && !d.hasTable('sidly_stato'), 'anteprima: nessuna chiamata a SiDLY e nessuna scrittura')
-    ok(!JSON.stringify(dry.result).includes(TOKEN) && dry.result.url === 'https://telemedcare-v12.pages.dev/api/sidly/ingest', 'il token non compare mai nella risposta (solo indirizzo senza ?k=)')
-
-    const cfg = (env: any) => T.urlFrameDaVerificare(env)
-    ok(!(cfg({ ...ENV, SIDLY_FRAME_URL: '' }) as any).ok && /non configurato/.test((cfg({ ...ENV, SIDLY_FRAME_URL: '' }) as any).errore), 'senza SIDLY_FRAME_URL: errore')
-    ok(/https/.test((cfg({ ...ENV, SIDLY_FRAME_URL: `http://x.it/api/sidly/ingest?k=${TOKEN}` }) as any).errore), 'URL http: rifiutato')
-    ok(/ingest/.test((cfg({ ...ENV, SIDLY_FRAME_URL: `https://x.it/altro?k=${TOKEN}` }) as any).errore), 'URL che non punta a /api/sidly/ingest: rifiutato')
-    ok(/SIDLY_INGEST_TOKEN/.test((cfg({ ...ENV, SIDLY_INGEST_TOKEN: undefined }) as any).errore), 'senza SIDLY_INGEST_TOKEN: rifiutato (il ricevitore scarterebbe tutto)')
-    ok(/\?k=/.test((cfg({ ...ENV, SIDLY_FRAME_URL: 'https://x.it/api/sidly/ingest?k=altro-token-0123456789' }) as any).errore), '?k= diverso dal token: rifiutato')
-    ok(/32 byte/.test((cfg({ ...ENV, SIDLY_ENCRYPT_KEY: 'corta' }) as any).errore), 'chiave di cifratura non da 32 byte: rifiutata')
-    ok((cfg(ENV) as any).ok === true && (cfg(ENV) as any).cifrato === false && (cfg({ ...ENV, SIDLY_ENCRYPT_KEY: KEY32 }) as any).cifrato === true, 'configurazione valida, con o senza cifratura')
-    const nc = await T.registraFrame({ db: d.db, env: { ...ENV, SIDLY_FRAME_URL: undefined }, dryRun: false, fetchImpl: P.fetchImpl })
-    ok(nc.httpStatus === 422 && P.calls.length === 0, 'configurazione non valida: nessuna scrittura su SiDLY')
-
-    const real = await T.registraFrame({ db: d.db, env: { ...ENV, SIDLY_ENCRYPT_KEY: KEY32 }, dryRun: false, fetchImpl: P.fetchImpl })
-    const posts = P.calls.filter(c => c.path === '/manager/set-url-for-band')
-    ok(real.result.esito === 'eseguito' && posts.length === 2 && posts.every(c => c.method === 'POST' && c.body.url === FRAME_URL && c.body.encryptKey === KEY32), 'registrazione reale: POST set-url-for-band per ogni IMEI con url e encryptKey')
-    ok(!JSON.stringify(real.result).includes(TOKEN) && !JSON.stringify(real.result).includes(KEY32), 'risposta all\'utente senza token né chiave di cifratura')
-    ok(d.q(`SELECT COUNT(*) AS n FROM sidly_stato WHERE frame_registrato_at IS NOT NULL`)[0].n === 2, 'stato: frame_registrato_at salvato per i due assistiti')
-    const un = await T.registraFrame({ db: d.db, env: ENV, dryRun: false, assistitoId: 1, fetchImpl: P.fetchImpl })
-    ok(un.result.assistiti.length === 1 && P.calls.filter(c => c.path === '/manager/set-url-for-band' && !('encryptKey' in c.body)).length === 1, 'un solo assistito con assistito_id; senza cifratura nessun encryptKey nel body')
-    const del = await T.registraFrame({ db: d.db, env: ENV, dryRun: false, rimuovi: true, fetchImpl: P.fetchImpl })
-    ok(P.calls.filter(c => c.path === '/manager/delete-url-for-band' && c.method === 'DELETE').length === 2 && d.q(`SELECT COUNT(*) AS n FROM sidly_stato WHERE frame_registrato_at IS NOT NULL`)[0].n === 0 && del.result.azione === 'rimozione', 'rimozione: DELETE delete-url-for-band e stato azzerato')
-    const bad = await T.registraFrame({ db: d.db, env: ENV, dryRun: false, fetchImpl: makeSidly({ urlStatus: 403 }).fetchImpl })
-    ok(bad.result.esito === 'parziale' && bad.result.errori === 2 && /HTTP 403/.test(bad.result.assistiti[0].risultato), 'rifiuto di SiDLY: riportato per assistito (HTTP 403)')
-    const bat = await T.registraFrame({ db: d.db, env: ENV, dryRun: true, limite: 1, fetchImpl: P.fetchImpl })
-    ok(bat.result.completato === true || bat.result.assistiti.length === 1, 'registrazione a lotti (limite per richiesta)')
   }
 
   // ───────────────────────────────────────────────────────────────────
@@ -403,12 +229,12 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
     await T.assicuraTabelle(d.db)
     const T0 = Math.floor((NOW - 3 * 86400) / 86400) * 86400 + 12 * 3600 // mezzogiorno UTC di 3 giorni fa (multiplo di 120)
     await d.db.batch(T.istruzioniMisure(d.db, [
-      { imei: IMEI_A, ts: T0, fonte: 'frame', hr: 60, spo2: 96, steps: 100 },
-      { imei: IMEI_A, ts: T0 + 3600, fonte: 'frame', hr: 70, spo2: 98 },
+      { imei: IMEI_A, ts: T0, fonte: 'stats', hr: 60, spo2: 96, steps: 100 },
+      { imei: IMEI_A, ts: T0 + 3600, fonte: 'stats', hr: 70, spo2: 98 },
       { imei: IMEI_A, ts: T0 + 3630, fonte: 'stats', hr: 72, sdnn: 40, rmssd: 30, resp: 14 }, // stesso istante del precedente (entro 2 minuti)
       { imei: IMEI_A, ts: T0 + 7200, fonte: 'stats', hr: 80, steps: 200, resp: 16, sdnn: 50 },
       { imei: IMEI_A, ts: T0 + 86400, fonte: 'stats', steps: 500 },
-      { imei: IMEI_B, ts: T0, fonte: 'frame', hr: 90, spo2: 94 },
+      { imei: IMEI_B, ts: T0, fonte: 'stats', hr: 90, spo2: 94 },
       { imei: IMEI_A, ts: NOW - 100 * 86400, fonte: 'stats', hr: 200 }, // fuori periodo
     ]))
     const r = await T.reportMedie(d.db, { giorni: 30, nowSec: NOW })
@@ -427,11 +253,11 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
     const lungo = await T.reportMedie(d.db, { giorni: 400, assistitoId: 1, nowSec: NOW })
     ok(lungo.assistiti[0].metriche.hr.max === 200, 'periodo più lungo: la misura vecchia entra')
 
-    await d.db.batch([d.db.prepare(`INSERT INTO sidly_stato (imei, assistito_id, ultimo_frame_ts, ultimo_reason, batt, device_type, n_frame, frame_registrato_at, backfill_fino_ts, backfill_righe) VALUES (?,?,?,?,?,?,?,?,?,?)`).bind(IMEI_A, 1, NOW - 3600, 'TIMER', 80, 'Vital', 12, '2026-11-12T10:00:00Z', NOW, 276)])
+    await d.db.batch([d.db.prepare(`INSERT INTO sidly_stato (imei, assistito_id, backfill_fino_ts, backfill_righe) VALUES (?,?,?,?)`).bind(IMEI_A, 1, NOW, 276)])
     const s = await T.statoTelemetria(d.db, NOW)
     const sa = s.assistiti.find(x => x.imei === IMEI_A)!
-    ok(s.tabelle_presenti === true && sa.frame_registrato === true && sa.ore_dall_ultimo_frame === 1 && sa.n_frame === 12 && sa.righe_storico === 276 && sa.misure_dal !== null, 'stato: frame registrato, ore dall\'ultimo frame, righe di storico, copertura')
-    ok(s.assistiti.find(x => x.imei === IMEI_B)!.frame_registrato === false, 'assistito senza frame registrato: evidenziato')
+    ok(s.tabelle_presenti === true && sa.righe_storico === 276 && sa.misure_dal !== null && sa.storico_fino_a !== null, 'stato: righe di storico, copertura e data fino a cui lo storico è stato letto da SiDLY')
+    ok(!('frame_registrato' in sa) && !('ultimo_frame' in sa) && !('n_frame' in sa), 'stato: nessun concetto di frame ricevuti/registrati (i dati arrivano solo da SiDLY via API)')
   }
 
   // ───────────────────────────────────────────────────────────────────
@@ -440,18 +266,26 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
     const idx = readFileSync('src/index.tsx', 'utf8')
     const mod = readFileSync('src/modules/sidly-telemetria.ts', 'utf8')
     const blocco = (re: RegExp) => { const i = idx.search(re); return i < 0 ? '' : idx.slice(i, i + 1400) }
-    const ing = blocco(/app\.post\('\/api\/sidly\/ingest'/)
-    ok(!!ing && /verificaTokenIngest/.test(ing) && !/checkSessionOrKey/.test(ing.split('\n\n')[0]), 'il ricevitore usa il token nell\'URL (SiDLY non può mandare cookie)')
-    for (const [re, nome] of [[/app\.post\('\/api\/sidly\/storico'/, 'storico'], [/app\.post\('\/api\/sidly\/registra-frame'/, 'registra-frame'], [/app\.get\('\/api\/sidly\/telemetria\/stato'/, 'stato'], [/app\.get\('\/api\/sidly\/telemetria\/report'/, 'report']] as const) {
+    for (const [re, nome] of [[/app\.post\('\/api\/sidly\/storico'/, 'storico'], [/app\.get\('\/api\/sidly\/telemetria\/stato'/, 'stato'], [/app\.get\('\/api\/sidly\/telemetria\/report'/, 'report']] as const) {
       const b = blocco(re)
       ok(!!b && /checkSessionOrKey\(/.test(b), `endpoint ${nome}: protetto da sessione dashboard o chiave`)
     }
-    ok(/conferma_scrittura === true/.test(blocco(/app\.post\('\/api\/sidly\/storico'/)) && /conferma_scrittura === true/.test(blocco(/app\.post\('\/api\/sidly\/registra-frame'/)), 'storico e registrazione: senza conferma_scrittura è sempre anteprima')
+    ok(/conferma_scrittura === true/.test(blocco(/app\.post\('\/api\/sidly\/storico'/)), 'storico: senza conferma_scrittura è sempre anteprima')
     ok(!/console\./.test(mod), 'il modulo non scrive log (nessun rischio di stampare token o chiavi)')
     ok(!/SELECT\s+(l\.)?\*\s+FROM\s+leads/i.test(mod) && !/ALTER\s+TABLE\s+leads/i.test(mod), 'nessun ALTER su leads e nessun SELECT * su leads (limite D1 di 100 colonne)')
     ok((mod.match(/ALTER\s+TABLE\s+\w+/gi) || []).every(x => /sidly_stato$/i.test(x)), 'l\'unico ALTER e\' la migrazione di una tabella della telemetria (sidly_stato)')
     ok(/app\.get\('\/api\/sidly\/telemetria\/dataset'/.test(idx) && /checkSessionOrKey\(/.test(blocco(/app\.get\('\/api\/sidly\/telemetria\/dataset'/)), 'endpoint dataset: protetto da sessione dashboard o chiave')
-    ok(/SIDLY_INGEST_TOKEN\?: string/.test(idx) && /SIDLY_ENCRYPT_KEY\?: string/.test(idx), 'nuovi segreti dichiarati nell\'Env')
+    // REGOLA DEL TITOLARE: i dati passano sempre da SiDLY (API in lettura); il CRM non riceve frame e non tocca gli URL dei braccialetti.
+    const sync = readFileSync('src/modules/sidly-sync.ts', 'utf8')
+    const dash = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
+    const codice = (t: string) => t.split('\n').filter(l => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n')
+    ok(!/url-for-band/.test(codice(mod)) && !/url-for-band/.test(codice(sync)) && !/url-for-band/.test(codice(idx)) && !/url-for-band/.test(codice(dash)), 'REGOLA: nessun codice chiama set-url-for-band / delete-url-for-band (il CRM non modifica gli URL dei braccialetti)')
+    ok(!/app\.(post|get|put|all)\('\/api\/sidly\/(ingest|registra-frame)/.test(idx), 'REGOLA: non esistono rotte per ricevere frame (/api/sidly/ingest) né per registrare URL (/api/sidly/registra-frame)')
+    ok(!/SIDLY_FRAME_URL|SIDLY_INGEST_TOKEN|SIDLY_ENCRYPT_KEY/.test(codice(idx)) && !/SIDLY_FRAME_URL|SIDLY_INGEST_TOKEN|SIDLY_ENCRYPT_KEY/.test(codice(sync)) && !/SIDLY_FRAME_URL|SIDLY_INGEST_TOKEN|SIDLY_ENCRYPT_KEY/.test(codice(mod)), 'REGOLA: nessuna variabile d\'ambiente per frame, token di ingest o cifratura')
+    ok(!/gestisciFrame|parseFrame|decifraFrame|registraFrame|verificaTokenIngest/.test(codice(mod) + codice(idx)), 'REGOLA: nessuna funzione che elabora frame dei braccialetti')
+    ok(!/sendFrame|sidlyFrame|registra-frame|Ricezione dei frame/.test(dash), 'REGOLA: la Dashboard non offre nessuna azione sui frame')
+    const richieste = [...mod.matchAll(/client\.request\('([A-Z]+)',\s*`([^`]*)`/g)].map(m => m[1] + ' ' + m[2].replace(/\$\{[^}]*\}/g, '{x}').replace(/\?.*$/, ''))
+    ok(richieste.length >= 3 && richieste.every(r => r.startsWith('GET ')), `REGOLA: la telemetria usa SiDLY solo in lettura (GET): ${[...new Set(richieste)].join(', ')}`)
   }
 
   // ───────────────────────────────────────────────────────────────────

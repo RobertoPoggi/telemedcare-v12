@@ -1523,7 +1523,7 @@ export const dashboard = `<!DOCTYPE html>
                         placeholder="🔍 Cerca assistito..."
                         onkeyup="filterAssistiti()"
                     />
-                    <button onclick="window.sidlyTelemetria()" style="display:flex;align-items:center;padding:8px 16px;border:0;border-radius:8px;background:#0d9488;color:#fff;cursor:pointer" title="Misure SiDLY degli assistiti: storico, frame, medie">
+                    <button onclick="window.sidlyTelemetria()" style="display:flex;align-items:center;padding:8px 16px;border:0;border-radius:8px;background:#0d9488;color:#fff;cursor:pointer" title="Misure SiDLY degli assistiti: storico letto da SiDLY, medie (uso statistico)">
                         <i class="fas fa-heartbeat mr-2"></i>
                         Telemetria SiDLY
                     </button>
@@ -3511,9 +3511,9 @@ export const dashboard = `<!DOCTYPE html>
             if (daSidly.length) h += sidlyModifiche(tSidly, daSidly);
             if (nelCrm.length) h += sidlyModifiche(tCrm, nelCrm);
 
-            // Avvisi utili all’operatore; le note tecniche (URL frame, ecc.) stanno nei dettagli.
+            // Avvisi utili all’operatore; le note tecniche stanno nei dettagli.
             var tecnici = [], utili = [];
-            (r.warning || []).forEach(function (w) { (/SIDLY_FRAME_URL|URL di consegna|Parametri operativi/.test(w) ? tecnici : utili).push(w); });
+            (r.warning || []).forEach(function (w) { (/Parametri operativi/.test(w) ? tecnici : utili).push(w); });
             h += sidlyList('Da sapere', utili.map(function (w) { return escapeHtml(w); }));
 
             h += '<details style="margin-top:14px"><summary style="cursor:pointer;color:#6b7280;font-size:12px">Dettagli tecnici</summary><div style="font-size:12px;color:#444">';
@@ -3527,9 +3527,6 @@ export const dashboard = `<!DOCTYPE html>
                 }
                 return x;
             }));
-            if (r.url_for_band) {
-                h += '<div style="margin-top:8px">URL di consegna frame: ' + (r.url_for_band.registrato ? 'registrato' : 'non registrato') + '</div>';
-            }
             h += sidlyList('Note tecniche', tecnici.map(function (w) { return escapeHtml(w); }));
             h += '</div></details>';
             return h;
@@ -3663,7 +3660,7 @@ export const dashboard = `<!DOCTYPE html>
         }
         window.syncSidly = syncSidly;
 
-        // ========== Telemetria SiDLY: stato, storico, registrazione frame, medie ==========
+        // ========== Telemetria SiDLY: stato, storico (letto da SiDLY), medie ==========
         function telFmt(x, d) { return (x === null || x === undefined) ? '&mdash;' : Number(x).toFixed(d).replace('.', ','); }
         async function telApi(method, url, body) {
             var init = { method: method, credentials: 'include', headers: {} };
@@ -3686,19 +3683,14 @@ export const dashboard = `<!DOCTYPE html>
                 var st = await telApi('GET', '/api/sidly/telemetria/stato');
                 if (st.esito !== 'ok') { sidlyPanel('<p style="color:#b91c1c;margin:0">' + escapeHtml(st.errore || 'Errore') + '</p>'); return; }
                 var rp = await telApi('GET', '/api/sidly/telemetria/report?giorni=' + giorni);
-                var cf = st.configurazione || {};
                 var h = '<h3 style="font-weight:700;font-size:17px;margin:0 0 10px">Telemetria SiDLY &middot; misure degli assistiti</h3>';
-                h += telBox('Configurazione', '<div style="font-size:13px">Indirizzo frame: <b>' + escapeHtml(String(cf.frame_url)) + '</b><br>Segreto del ricevitore: <b>' + escapeHtml(String(cf.ingest_token)) + '</b><br>Cifratura frame: <b>' + escapeHtml(String(cf.cifratura || '-')) + '</b>' +
-                    (st.tabelle_presenti ? '' : '<br><span style="color:#92400e">Le tabelle delle misure non esistono ancora: si creano al primo caricamento dello storico confermato o al primo frame ricevuto.</span>') + '</div>', '#0f766e');
+                h += telBox('Come funziona', '<div style="font-size:13px">I dati passano <b>sempre da SiDLY</b>: il CRM li <b>legge</b> con le API di SiDLY (storico misure e allarmi). Non riceve dati dai braccialetti e <b>non modifica nessuna impostazione dei dispositivi</b>. Uso solo statistico, non gestionale: assistiti e caregiver continuano a usare la piattaforma SiDLY.' +
+                    (st.tabelle_presenti ? '' : '<br><span style="color:#92400e">Le tabelle delle misure non esistono ancora: si creano al primo caricamento dello storico confermato.</span>') + '</div>', '#0f766e');
                 // Stato per assistito
-                var t = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr>' + ['Assistito', 'Frame registrato', 'Ultimo frame', 'Batt.', 'Dispositivo', 'Misure dal', 'Misure al', 'Righe storico', 'Errore'].map(function (x) { return '<th style="' + TEL_TH + '">' + x + '</th>'; }).join('') + '</tr></thead><tbody>';
+                var t = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr>' + ['Assistito', 'Misure dal', 'Misure al', 'Storico letto fino a', 'Righe storico', 'Errore'].map(function (x) { return '<th style="' + TEL_TH + '">' + x + '</th>'; }).join('') + '</tr></thead><tbody>';
                 (st.assistiti || []).forEach(function (a) {
                     t += '<tr><td style="' + TEL_TD + '">' + escapeHtml(a.nome || a.imei) + '</td>' +
-                        '<td style="' + TEL_TD + ';color:' + (a.frame_registrato ? '#15803d' : '#b45309') + '">' + (a.frame_registrato ? 'si' : 'no') + '</td>' +
-                        '<td style="' + TEL_TD + '">' + (a.ultimo_frame ? escapeHtml(a.ultimo_frame) + ' (' + telFmt(a.ore_dall_ultimo_frame, 1) + ' h fa)' : '&mdash;') + '</td>' +
-                        '<td style="' + TEL_TD + '">' + (a.batt === null ? '&mdash;' : a.batt + '%') + '</td>' +
-                        '<td style="' + TEL_TD + '">' + escapeHtml(a.device || '') + '</td>' +
-                        '<td style="' + TEL_TD + '">' + escapeHtml(a.misure_dal || '-') + '</td><td style="' + TEL_TD + '">' + escapeHtml(a.misure_al || '-') + '</td>' +
+                        '<td style="' + TEL_TD + '">' + escapeHtml(a.misure_dal || '-') + '</td><td style="' + TEL_TD + '">' + escapeHtml(a.misure_al || '-') + '</td><td style="' + TEL_TD + '">' + escapeHtml(a.storico_fino_a || '-') + '</td>' +
                         '<td style="' + TEL_TD + '">' + (a.righe_storico || 0) + '</td><td style="' + TEL_TD + ';color:#b91c1c">' + escapeHtml(a.errore || '') + '</td></tr>';
                 });
                 t += '</tbody></table></div>';
@@ -3719,14 +3711,12 @@ export const dashboard = `<!DOCTYPE html>
                 } else { m = '<span style="color:#6b7280;font-size:13px">Nessuna misura nel DB per il periodo.</span>'; }
                 h += telBox('Medie (ultimi ' + giorni + ' giorni)', m);
                 // Azioni
-                h += telBox('1. Carica lo storico delle misure (prima sempre un\\'anteprima: nulla viene scritto finch&eacute; non confermi)',
+                h += telBox('1. Carica lo storico delle misure da SiDLY (prima sempre un\\'anteprima: nulla viene scritto finch&eacute; non confermi)',
                     '<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:13px">' +
                     '<label><input type="radio" name="telModo" id="telModoInizio" value="inizio" checked onchange="document.getElementById(\\'telDa\\').disabled = true"> <b>Dall&rsquo;inizio</b> (data di attivazione di ogni braccialetto: tutti i dati)</label>' +
                     '<label><input type="radio" name="telModo" id="telModoData" value="data" onchange="document.getElementById(\\'telDa\\').disabled = false"> Da una data <input id="telDa" type="date" disabled style="border:1px solid #9ca3af;border-radius:4px;padding:3px"></label></div>' +
                     '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px"><button onclick="window.sidlyStoricoAnteprima()" style="' + SIDLY_BTN + '#0d9488">Anteprima storico</button></div>');
-                h += telBox('2. Ricezione dei frame in tempo reale',
-                    '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><button onclick="window.sidlyFrameAnteprima(false)" style="' + SIDLY_BTN + '#2563eb">Anteprima registrazione frame</button></div>');
-                h += telBox('3. Dataset delle sole misure (per le analisi statistiche)',
+                h += telBox('2. Dataset delle sole misure (per le analisi statistiche)',
                     '<div style="font-size:12px;color:#6b7280;margin-bottom:6px">File CSV con una riga per assistito e istante: FC, SpO2, temperatura, passi, HRV, FR, qualit&agrave; del segnale. Solo id assistito e IMEI, nessun nome.</div>' +
                     '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><button id="telDatasetBtn" onclick="window.sidlyDataset()" style="' + SIDLY_BTN + '#0f766e"><i class="fas fa-download"></i> Scarica dataset misure (CSV)</button></div><div id="telDatasetEsito" style="margin-top:6px;font-size:12px"></div>');
                 h += '<div id="telEsito" style="margin-top:10px"></div>';
@@ -3796,23 +3786,6 @@ export const dashboard = `<!DOCTYPE html>
                 if (out) out.innerHTML = '<span style="color:#b91c1c">Errore: ' + escapeHtml(e.message) + '</span>';
             } finally { if (btn) btn.disabled = false; }
         };
-        window.sidlyFrameAnteprima = async function (scrivi) {
-            telEsito('<i class="fas fa-spinner fa-spin"></i> ' + (scrivi ? 'Registrazione in corso' : 'Verifica della configurazione (nulla viene scritto)') + '&hellip;');
-            var tot = 0, off = 0, errori = 0, r = null, giri = 0;
-            do {
-                giri++;
-                r = await telApi('POST', '/api/sidly/registra-frame', scrivi ? { conferma_scrittura: true, offset: off } : { dry_run: true });
-                if (r.esito === 'errore') { telEsito('<span style="color:#b91c1c">' + escapeHtml(r.errore || 'Errore') + '</span>'); return; }
-                tot += (r.assistiti || []).length; errori += r.errori || 0; off = r.prossimo_offset || 0;
-            } while (scrivi && !r.completato && giri < 20);
-            if (!scrivi) {
-                telEsito('<div style="font-size:13px">Verr&agrave; registrato su SiDLY l\\'indirizzo <b>' + escapeHtml(r.url) + '</b> (con segreto) per <b>' + r.totale + '</b> bracciali, cifratura <b>' + (r.cifrato ? 'attiva' : 'non attiva') + '</b>.<br><span style="color:#92400e">' + escapeHtml(r.avviso || '') + '</span></div>' +
-                    '<div style="margin-top:8px"><button onclick="window.sidlyFrameAnteprima(true)" style="' + SIDLY_BTN + '#dc2626">Conferma e registra su SiDLY</button></div>');
-            } else {
-                telEsito('<span style="color:' + (errori ? '#b45309' : '#15803d') + ';font-weight:700">' + (errori ? 'Registrazione con ' + errori + ' errori' : 'Registrazione completata') + '</span> su ' + tot + ' bracciali. <button onclick="window.sidlyTelemetria()" style="' + SIDLY_BTN + '#0d9488">Aggiorna il quadro</button>');
-            }
-        };
-
         // Variabile globale per tenere tutti gli assistiti
         let allAssistiti = [];
 

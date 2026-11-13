@@ -11,8 +11,8 @@ Il prompt non documenta questi punti e non sono state fatte prove sulla piattafo
 7. **`myShortInfo`**: forma della risposta (assunto `items[]`) e se la ricerca è esatta o parziale.
 8. **Sesso e descrizione**: non inviati, il CRM non ha una fonte affidabile. Servono?
 9. **PATCH parziale**: conferma che campi omessi non vengano azzerati.
-10. **HRV, FR, stress**: non presenti nei frame documentati. Bloccano il report medie dalla Dashboard (andrebbero mostrati come "non disponibile").
-11. **Canale 2**: ricevitore `POST /api/sidly/ingest?k=TOKEN` COSTRUITO (vedi `TELEMETRIA.md`). Per attivarlo servono i segreti `SIDLY_INGEST_TOKEN` (>=16 caratteri), `SIDLY_FRAME_URL` (`https://telemedcare-v12.pages.dev/api/sidly/ingest?k=<stesso token>`) e, se si vuole la cifratura, `SIDLY_ENCRYPT_KEY` (32 byte). La registrazione su SiDLY e' un'azione confermata dalla Dashboard (anteprima, poi conferma).
+10. **HRV, FR, stress**: HRV e FR arrivano dallo storico `/stats`; stress, sonno e attivita' non sono disponibili (mostrati come "non disponibile").
+11. **Canale 2 (frame)**: RIMOSSO per decisione del titolare. Nessun frame ricevuto, nessun URL scritto sui braccialetti; dati solo via API SiDLY in lettura; uso statistico.
 12. **Passi**: da verificare con l'anteprima dello storico se `chart[].y` dei passi e' per intervallo (si sommano) o progressivo del giorno; il report usa `PASSI_MODO` in `sidly-telemetria.ts` ('somma' di default). L'anteprima mostra `total` dichiarato vs somma dei punti.
 13. **Pseudonimizzazione**: il DB misure e' identificato (IMEI -> assistito). Se serve un report statistico anonimo (k-anonimato) va aggiunto uno strato a parte: da decidere.
 15. **Data di registrazione**: `da:'inizio'` si basa su `registerDate` di `/patientIntegrate/{imei}` (formato e presenza non verificati su chiamate reali; il codice accetta secondi, millisecondi e ISO). Se manca, l'anteprima lo dice e serve una data esplicita. Anche il volume di `/stats` su finestre da 7 giorni e' da verificare con l'anteprima.

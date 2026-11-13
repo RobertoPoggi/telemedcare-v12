@@ -1,21 +1,22 @@
 /**
- * Telemetria SiDLY: DB delle misure degli assistiti eCura.
+ * Telemetria SiDLY: DB statistico delle misure degli assistiti eCura.
  *
- *  - Ricevitore frame (push):  gestisciFrame()   <- POST /api/sidly/ingest?k=TOKEN
- *  - Storico (pull):           eseguiStorico()   <- GET /patient/{imei}/stats  (+ /patientIntegrateAlarm/{imei})
- *  - Registrazione frame:      registraFrame()   -> POST /manager/set-url-for-band (o DELETE .../delete-url-for-band)
- *  - Report medie:             reportMedie(), statoTelemetria()
+ * PRINCIPI (decisi dal titolare, non negoziabili):
+ *  - i dati passano SEMPRE da SiDLY: il CRM li LEGGE con le API di SiDLY (GET /patient/{imei}/stats e GET /patientIntegrateAlarm/{imei});
+ *  - il CRM NON riceve frame dai braccialetti e NON scrive URL di consegna sui dispositivi (nessun set-url-for-band / delete-url-for-band);
+ *  - uso esclusivamente statistico, non gestionale: assistiti e caregiver continuano a usare la piattaforma SiDLY.
+ *
+ *  - Storico (pull):  eseguiStorico()  <- GET /patient/{imei}/stats  (+ /patientIntegrateAlarm/{imei})
+ *  - Report medie / dataset CSV: reportMedie(), datasetMisure(), statoTelemetria()
  *
  * Vincoli di D1 rispettati:
- *  - nessun ALTER sulla tabella leads (100 colonne): solo tabelle laterali nuove (sidly_misure, sidly_eventi, sidly_stato);
+ *  - nessun ALTER sulla tabella leads (100 colonne): solo tabelle laterali (sidly_misure, sidly_eventi, sidly_stato);
  *  - UNA riga per (imei, istante) con tutte le metriche in colonne: meno scritture (limite giornaliero di operazioni D1);
  *  - scritture sempre a blocchi (db.batch) e storico a finestre di 7 giorni con tetto di righe per chiamata, ripartendo dal cursore;
- *  - le letture (GET stato/report) NON creano tabelle: le tabelle si creano alla prima scrittura confermata o al primo frame.
+ *  - le letture (GET stato/report) NON creano tabelle: le tabelle si creano alla prima scrittura confermata.
  *
- * Cosa arriva da dove (documentazione SiDLY aggiornata): i frame del Vital portano FC, SpO2, temperatura, respiration (FR), hr_store, measurements[] e campi di rete;
- * HRV (SDNN/RMSSD), passi, indice di stress, sonno e indice di attivita' NON sono nei frame. HRV e passi arrivano solo da /stats, quindi servono aggiornamenti
- * periodici dello storico (riletture degli ultimi giorni); stress/sonno/attivita' non sono disponibili. Il ritmo dei frame non e' fisso (i Vital mandano batch).
- * Tutti i timestamp di SiDLY sono UTC, tranne quelli delle misure TIMMEAS / hr_store dei frame, che sono in ora locale del braccialetto.
+ * HRV (SDNN/RMSSD), passi e le altre metriche arrivano da /stats, quindi servono aggiornamenti periodici dello storico (riletture degli ultimi giorni).
+ * Tutti i timestamp di /stats e degli allarmi di SiDLY sono UTC.
  */
 import { SidlyClient, sidlyConfigError, type SidlyEnv, type Fetch } from './sidly-sync'
 
@@ -30,8 +31,7 @@ export const EVENTI_SQL = `CREATE TABLE IF NOT EXISTS sidly_eventi (
   PRIMARY KEY (imei, ts, tipo)) WITHOUT ROWID`
 export const STATO_SQL = `CREATE TABLE IF NOT EXISTS sidly_stato (
   imei TEXT PRIMARY KEY, assistito_id INTEGER,
-  ultimo_frame_ts INTEGER, ultimo_reason TEXT, batt INTEGER, device_type TEXT, segnale TEXT, rete TEXT, n_frame INTEGER DEFAULT 0,
-  frame_registrato_at TEXT, backfill_da_ts INTEGER, backfill_fino_ts INTEGER, backfill_righe INTEGER DEFAULT 0,
+  backfill_da_ts INTEGER, backfill_fino_ts INTEGER, backfill_righe INTEGER DEFAULT 0,
   ultimo_errore TEXT, registrato_ts INTEGER, completo_ts INTEGER, updated_at TEXT)`
 
 let tabelleOk: any = null
@@ -54,8 +54,7 @@ export function dimenticaTabelle(): void { tabelleOk = null }
 // ─────────────────────────────────────────────────────────────────────────────
 const digits = (v: unknown) => String(v ?? '').replace(/\D/g, '')
 const IMEI_RE = /^\d{14,17}$/
-export const BAND_TZ = 'Europe/Rome'
-/** Misure ravvicinate (frame vs storico) si fondono in un solo punto per queste finestre di secondi nei report. */
+/** Misure ravvicinate si fondono in un solo punto per queste finestre di secondi nei report. */
 export const BUCKET_S = 120
 
 function num(v: unknown): number | null {
@@ -66,60 +65,10 @@ function num(v: unknown): number | null {
 function inRange(v: number | null, lo: number, hi: number): number | null { return v !== null && v >= lo && v <= hi ? v : null }
 const sqlNum = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? String(v) : 'NULL')
 
-function offsetSec(utcSec: number, tz: string): number {
-  const p = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' }).formatToParts(new Date(utcSec * 1000))
-  const g = (t: string) => Number(p.find(x => x.type === t)?.value)
-  return Date.UTC(g('year'), g('month') - 1, g('day'), g('hour'), g('minute'), g('second')) / 1000 - utcSec
-}
-/** Il braccialetto manda l'ora locale come se fosse un epoch: lo riporto a UTC con il fuso del braccialetto. */
-export function bandLocalToUtc(localSec: number, tz: string = BAND_TZ): number {
-  let u = localSec - offsetSec(localSec, tz)
-  u = localSec - offsetSec(u, tz)
-  return Math.round(u)
-}
-
-const b64ToBytes = (s: string) => { const bin = atob(s.replace(/\s+/g, '')); const out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out }
-const bytesToB64 = (b: Uint8Array) => { let s = ''; for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return btoa(s) }
-
-/** Chiave di cifratura valida = stringa di esattamente 32 byte (AES-256). */
-export function chiaveCifraturaValida(k: unknown): k is string { return typeof k === 'string' && new TextEncoder().encode(k).length === 32 }
-
-/** AES-256-CBC: data = base64( IV(16 byte) | cifrato ), padding PKCS7 (come da documentazione SiDLY). */
-export async function decifraFrame(payload: { data: string }, key: string): Promise<any> {
-  if (!chiaveCifraturaValida(key)) throw new Error('chiave di cifratura non valida (servono 32 byte)')
-  const raw = b64ToBytes(String(payload?.data || ''))
-  if (raw.length < 32) throw new Error('dati cifrati troppo corti')
-  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(key), { name: 'AES-CBC' }, false, ['decrypt'])
-  const pt = await crypto.subtle.decrypt({ name: 'AES-CBC', iv: raw.slice(0, 16) }, k, raw.slice(16))
-  return JSON.parse(new TextDecoder().decode(pt))
-}
-/** Solo per i test (simula quello che fa SiDLY). */
-export async function cifraFrameTest(obj: any, key: string, iv: Uint8Array): Promise<{ encrypted: true; data: string }> {
-  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(key), { name: 'AES-CBC' }, false, ['encrypt'])
-  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-CBC', iv }, k, new TextEncoder().encode(JSON.stringify(obj))))
-  const all = new Uint8Array(16 + ct.length); all.set(iv, 0); all.set(ct, 16)
-  return { encrypted: true, data: bytesToB64(all) }
-}
-
-/** Confronto a tempo costante del token del ricevitore. */
-export function tokenUguale(a: string, b: string): boolean {
-  if (typeof a !== 'string' || typeof b !== 'string' || !a || !b) return false
-  const ea = new TextEncoder().encode(a), eb = new TextEncoder().encode(b)
-  let d = ea.length ^ eb.length
-  for (let i = 0; i < Math.max(ea.length, eb.length); i++) d |= (ea[i] ?? 0) ^ (eb[i] ?? 0)
-  return d === 0
-}
-export function verificaTokenIngest(fornito: string | undefined | null, env: { SIDLY_INGEST_TOKEN?: string }): { ok: true } | { ok: false; status: number; errore: string } {
-  const atteso = (env.SIDLY_INGEST_TOKEN || '').trim()
-  if (atteso.length < 16) return { ok: false, status: 503, errore: 'Ricevitore frame non configurato (manca SIDLY_INGEST_TOKEN, almeno 16 caratteri)' }
-  if (!fornito || !tokenUguale(fornito, atteso)) return { ok: false, status: 401, errore: 'Token non valido' }
-  return { ok: true }
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Modello dati
 // ─────────────────────────────────────────────────────────────────────────────
-export type Fonte = 'frame' | 'stats'
+export type Fonte = 'stats'
 export interface Misura {
   imei: string; ts: number; fonte: Fonte
   hr?: number | null; hr_q?: number | null; spo2?: number | null; spo2_q?: number | null; temp?: number | null
@@ -128,10 +77,9 @@ export interface Misura {
 }
 const COLS = ['hr', 'hr_q', 'spo2', 'spo2_q', 'temp', 'steps', 'steps_tot', 'pressure', 'sdnn', 'rmssd', 'resp', 'hr_rest', 'wear'] as const
 export interface Evento {
-  imei: string; ts: number; tipo: string; origine: 'frame' | 'api'; alarm_id?: number | null; batt?: number | null
+  imei: string; ts: number; tipo: string; origine: 'api'; alarm_id?: number | null; batt?: number | null
   pulse?: number | null; spo2?: number | null; temp?: number | null; lat?: number | null; lon?: number | null; dettaglio?: string; gestito_da?: string
 }
-export interface StatoFrame { ts: number; reason: string; batt: number | null; device: string; segnale: string; rete: string }
 
 /** Fonde righe con la stessa chiave (imei, ts): i valori presenti vincono su quelli assenti. */
 export function fondiMisure(righe: Misura[]): Misura[] {
@@ -153,7 +101,7 @@ export function istruzioniMisure(db: any, righe: Misura[], dimBlocco = 40): any[
   const out: any[] = []
   const set = COLS.map(c => `${c}=COALESCE(excluded.${c},${c})`).join(',') + ',fonte=excluded.fonte'
   for (let i = 0; i < rr.length; i += dimBlocco) {
-    const vals = rr.slice(i, i + dimBlocco).map(r => `('${r.imei}',${r.ts},${COLS.map(c => sqlNum((r as any)[c])).join(',')},'${r.fonte === 'stats' ? 'stats' : 'frame'}')`).join(',')
+    const vals = rr.slice(i, i + dimBlocco).map(r => `('${r.imei}',${r.ts},${COLS.map(c => sqlNum((r as any)[c])).join(',')},'stats')`).join(',')
     out.push(db.prepare(`INSERT INTO sidly_misure (imei,ts,${COLS.join(',')},fonte) VALUES ${vals} ON CONFLICT(imei,ts) DO UPDATE SET ${set}`))
   }
   return out
@@ -167,115 +115,6 @@ function istruzioneEvento(db: any, e: Evento, aggiorna: boolean): any {
   const n = (v: any) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
   return db.prepare(sql).bind(e.imei, e.ts, e.tipo, e.origine, n(e.alarm_id), n(e.batt), n(e.pulse), n(e.spo2), n(e.temp), n(e.lat), n(e.lon),
     e.dettaglio ? String(e.dettaglio).replace(/[\u0000-\u001f]+/g, ' ').slice(0, 300) : null, e.gestito_da ? String(e.gestito_da).slice(0, 80) : null)
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Frame in arrivo (push)
-// ─────────────────────────────────────────────────────────────────────────────
-const REASON_EVENTO: Record<string, string> = { SOS: 'sos', FALL: 'fall', ZONE: 'zone', SOS_CPL: 'sos_cpl', INFO: 'info' }
-
-function posizioneFrame(f: any): { lat: number | null; lon: number | null } {
-  // Convenzione storica: il campo "lat" contiene la LONGITUDINE e "long" la LATITUDINE; "loc" = "lon,lat,SORGENTE".
-  let lon = num(f.lat), lat = num(f.long)
-  if ((lon === null || lat === null) && typeof f.loc === 'string') {
-    const p = f.loc.split(',')
-    if (p.length >= 2) { lon = num(p[0]); lat = num(p[1]) }
-  }
-  lat = inRange(lat, -90, 90); lon = inRange(lon, -180, 180)
-  if (lat === null || lon === null || (lat === 0 && lon === 0)) return { lat: null, lon: null }
-  return { lat, lon }
-}
-
-export interface FrameParsed { imei: string; misure: Misura[]; eventi: Evento[]; stato: StatoFrame }
-
-export function parseFrame(f: any, nowSec: number, tz: string = BAND_TZ): FrameParsed | { errore: string } {
-  if (!f || typeof f !== 'object' || Array.isArray(f)) return { errore: 'frame non valido' }
-  const imei = digits(f.imei)
-  if (!IMEI_RE.test(imei)) return { errore: 'IMEI mancante o non valido' }
-  const reason = String(f.reason || '').trim().toUpperCase()
-  const misure: Misura[] = []
-  const eventi: Evento[] = []
-
-  const hrQ = num(f.trustLvl)
-  const pulse = inRange(num(f.pulse), 25, 250) // 0 / null = nessuna misura
-  const spo2 = inRange(num(f.saturation), 50, 100)
-  const temp = inRange(num(f.temp), 20, 45) // 255 = sensore assente, 0 = nessun dato
-  // I passi del frame sono ambigui (intervallo oppure dall'ultimo reset): si prendono solo da /stats, per non contarli due volte.
-  const resp = inRange(num(f.respiration), 3, 60)
-  const batt = inRange(num(f.batt_percent), 1, 100)
-
-  const voci: any[] = []
-  if (Array.isArray(f.measurements)) voci.push(...f.measurements)
-  if (Array.isArray(f.hr_store)) voci.push(...f.hr_store)
-  let ultimo: Misura | null = null
-  for (const v of voci) {
-    const lt = num(v?.timestamp)
-    if (lt === null || lt <= 0) continue
-    const ts = bandLocalToUtc(Math.round(lt), tz)
-    const m: Misura = { imei, ts, fonte: 'frame',
-      hr: inRange(num(v.hr), 25, 250), spo2: inRange(num(v.sat), 50, 100),
-      wear: inRange(num(v.wear_percent), 0, 100) }
-    if (m.hr !== null) m.hr_q = num(v.hr_quality)
-    if (m.spo2 !== null) m.spo2_q = num(v.sat_quality)
-    if (m.hr === null && m.spo2 === null && m.wear === null) continue
-    misure.push(m)
-    if (!ultimo || m.ts >= ultimo.ts) ultimo = m
-  }
-  const haBatch = voci.length > 0
-  if (reason === 'TIMER') {
-    if (haBatch) {
-      // TIMMEAS: il top-level ripete la misura piu' recente del batch; qui si aggiungono solo i campi che il batch non ha.
-      if (ultimo && resp !== null) ultimo.resp = resp
-    } else {
-      const ts = Math.floor(nowSec / 60) * 60
-      const m: Misura = { imei, ts, fonte: 'frame', hr: pulse, hr_q: pulse !== null ? hrQ : null, spo2, spo2_q: spo2 !== null ? hrQ : null, temp, resp }
-      if (COLS.some(c => (m as any)[c] !== null && (m as any)[c] !== undefined && c !== 'hr_q' && c !== 'spo2_q')) misure.push(m)
-    }
-    if (temp !== null && ultimo && haBatch) ultimo.temp = temp
-  }
-
-  const tipo = REASON_EVENTO[reason]
-  if (tipo) {
-    const pos = posizioneFrame(f)
-    const det = String(f.meas || f.type || '').trim()
-    eventi.push({ imei, ts: Math.floor(nowSec / 60) * 60, tipo, origine: 'frame', batt, pulse, spo2, temp, lat: pos.lat, lon: pos.lon, dettaglio: det || undefined })
-  }
-
-  // Campi di rete (Vital): solo diagnostica dell'ultimo frame, nessun dato sanitario.
-  const rete = [f.is_wifi === true ? 'WiFi' : '', f.network_access, f.network_band, f.rsrp, f.oprt].filter(x => x !== null && x !== undefined && String(x).trim() !== '').map(x => String(x).replace(/[^\w .+\-/]/g, '').slice(0, 24)).join(' | ').slice(0, 90)
-  return { imei, misure, eventi, stato: { ts: Math.round(nowSec), reason, batt, device: String(f.device_type || '').slice(0, 30), segnale: f.signal === null || f.signal === undefined ? '' : String(f.signal).slice(0, 20), rete } }
-}
-
-export interface IngestRisultato { status: number; body: Record<string, any> }
-
-/** Elabora un frame ricevuto. Risposta veloce: una sola lettura (assistito noto) + un solo blocco di scritture. */
-export async function gestisciFrame(db: any, env: SidlyEnv, corpo: string, nowSec: number): Promise<IngestRisultato> {
-  if (corpo.length > 262144) return { status: 413, body: { ok: false, errore: 'frame troppo grande' } }
-  let json: any
-  try { json = JSON.parse(corpo) } catch { return { status: 400, body: { ok: false, errore: 'JSON non valido' } } }
-  if (json && json.encrypted === true) {
-    if (!chiaveCifraturaValida(env.SIDLY_ENCRYPT_KEY)) return { status: 400, body: { ok: false, errore: 'frame cifrato ma SIDLY_ENCRYPT_KEY non configurata' } }
-    try { json = await decifraFrame(json, env.SIDLY_ENCRYPT_KEY) } catch { return { status: 400, body: { ok: false, errore: 'decifratura non riuscita' } } }
-  }
-  const p = parseFrame(json, nowSec)
-  if ('errore' in p) return { status: 400, body: { ok: false, errore: p.errore } }
-
-  // Si registrano solo i dati dei bracciali dei nostri assistiti.
-  const as = await db.prepare('SELECT id FROM assistiti WHERE imei = ? LIMIT 1').bind(p.imei).first()
-  if (!as) return { status: 202, body: { ok: true, ignorato: 'IMEI non associato a un assistito' } }
-
-  try {
-    await assicuraTabelle(db)
-    const st: any[] = [...istruzioniMisure(db, p.misure), ...p.eventi.map(e => istruzioneEvento(db, e, false))]
-    st.push(db.prepare(`INSERT INTO sidly_stato (imei,assistito_id,ultimo_frame_ts,ultimo_reason,batt,device_type,segnale,rete,n_frame,updated_at) VALUES (?,?,?,?,?,?,?,?,1,?)
-      ON CONFLICT(imei) DO UPDATE SET assistito_id=excluded.assistito_id, ultimo_frame_ts=excluded.ultimo_frame_ts, ultimo_reason=excluded.ultimo_reason,
-        batt=COALESCE(excluded.batt,batt), device_type=COALESCE(NULLIF(excluded.device_type,''),device_type), segnale=excluded.segnale, rete=excluded.rete, n_frame=COALESCE(n_frame,0)+1, updated_at=excluded.updated_at`)
-      .bind(p.imei, (as as any).id ?? null, p.stato.ts, p.stato.reason, p.stato.batt, p.stato.device, p.stato.segnale, p.stato.rete, new Date(nowSec * 1000).toISOString()))
-    await db.batch(st)
-  } catch (e: any) {
-    return { status: 500, body: { ok: false, errore: 'scrittura non riuscita' } }
-  }
-  return { status: 200, body: { ok: true, misure: fondiMisure(p.misure).length, eventi: p.eventi.length } }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -529,9 +368,7 @@ export async function eseguiStorico(o: StoricoOpzioni): Promise<StoricoRisultato
           const ultimoApi = await safeFirst(o.db, `SELECT MAX(ts) AS m FROM sidly_eventi WHERE imei = ? AND origine = 'api'`, a.imei)
           const soglia = Math.max(daA, ultimoApi?.m ? Number(ultimoApi.m) - 86400 : 0)
           const tutti = parseAllarmi(ev.json, a.imei).filter(e => e.ts >= soglia)
-          const frame = await safeAll(o.db, `SELECT ts, tipo FROM sidly_eventi WHERE imei = ? AND origine = 'frame'`, a.imei)
-          // Un allarme gia' arrivato come frame (stesso tipo, entro 10 minuti) non si duplica.
-          const nuovi = tutti.filter(e => !frame.some((f: any) => f.tipo === e.tipo && Math.abs(Number(f.ts) - e.ts) <= 600))
+          const nuovi = tutti
           if (nuovi.length) await o.db.batch(nuovi.map(e => istruzioneEvento(o.db, e, true)))
           r.eventi = nuovi.length
           alOk = true
@@ -542,63 +379,6 @@ export async function eseguiStorico(o: StoricoOpzioni): Promise<StoricoRisultato
     if (!r.completato) tuttiCompleti = false
   }
   return { httpStatus: 200, result: { esito: 'eseguito', completato: tuttiCompleti, assistiti: res, righe_scritte: righeTot, finestre_eseguite: finestreTot, avvisi, limiti: { max_finestre: maxFinestre, max_righe: maxRighe } } }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Registrazione dell'URL di consegna frame (Canale 2) per tutti gli assistiti attivi
-// ─────────────────────────────────────────────────────────────────────────────
-export function urlFrameDaVerificare(env: SidlyEnv): { ok: true; url: string; cifrato: boolean } | { ok: false; errore: string } {
-  const u = (env.SIDLY_FRAME_URL || '').trim()
-  if (!u) return { ok: false, errore: 'SIDLY_FRAME_URL non configurato' }
-  let url: URL
-  try { url = new URL(u) } catch { return { ok: false, errore: 'SIDLY_FRAME_URL non e\' un indirizzo valido' } }
-  if (url.protocol !== 'https:') return { ok: false, errore: 'SIDLY_FRAME_URL deve essere https://' }
-  if (!/\/api\/sidly\/ingest\/?$/.test(url.pathname)) return { ok: false, errore: 'SIDLY_FRAME_URL deve puntare a /api/sidly/ingest del CRM' }
-  const t = (env.SIDLY_INGEST_TOKEN || '').trim()
-  if (t.length < 16) return { ok: false, errore: 'Manca SIDLY_INGEST_TOKEN (almeno 16 caratteri): senza, il ricevitore rifiuta tutti i frame' }
-  if (!tokenUguale(url.searchParams.get('k') || '', t)) return { ok: false, errore: 'SIDLY_FRAME_URL deve contenere ?k= uguale a SIDLY_INGEST_TOKEN' }
-  if (env.SIDLY_ENCRYPT_KEY && !chiaveCifraturaValida(env.SIDLY_ENCRYPT_KEY)) return { ok: false, errore: 'SIDLY_ENCRYPT_KEY non valida: servono esattamente 32 byte' }
-  return { ok: true, url: u, cifrato: !!env.SIDLY_ENCRYPT_KEY }
-}
-
-export interface RegistraOpzioni { db: any; env: SidlyEnv; dryRun: boolean; rimuovi?: boolean; assistitoId?: number; offset?: number; limite?: number; fetchImpl?: Fetch; nowSec?: number }
-export async function registraFrame(o: RegistraOpzioni): Promise<{ httpStatus: number; result: any }> {
-  const cfg = sidlyConfigError(o.env)
-  if (cfg) return { httpStatus: 503, result: { esito: 'errore', errore: cfg } }
-  const v = urlFrameDaVerificare(o.env)
-  if (!v.ok) return { httpStatus: 422, result: { esito: 'errore', errore: v.errore } }
-  const lista = await assistitiAttivi(o.db, o.assistitoId)
-  if (!lista.length) return { httpStatus: 404, result: { esito: 'errore', errore: 'Nessun assistito ATTIVO con IMEI' } }
-  const limite = Math.max(1, Math.min(o.limite ?? 20, 30))
-  const offset = Math.max(0, o.offset ?? 0)
-  const fetta = lista.slice(offset, offset + limite)
-  const host = new URL(v.url)
-  const mostrato = host.origin + host.pathname // mai il token
-  const base = { url: mostrato, cifrato: v.cifrato, totale: lista.length }
-  if (o.dryRun) {
-    return { httpStatus: 200, result: { esito: 'anteprima', ...base, azione: o.rimuovi ? 'DELETE /manager/delete-url-for-band' : 'POST /manager/set-url-for-band',
-      assistiti: fetta.map(a => ({ assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, risultato: 'non eseguito (anteprima)' })), completato: true,
-      avviso: 'L\'indirizzo registrato SOSTITUISCE quello eventualmente gia\' impostato su SiDLY per quei braccialetti' } }
-  }
-  const client = new SidlyClient(o.env, o.fetchImpl)
-  const out: any[] = []
-  try { await assicuraTabelle(o.db) } catch { /* lo stato e' solo informativo */ }
-  for (const a of fetta) {
-    try {
-      const body: any = o.rimuovi ? { imei: a.imei, url: 'non-usato' } : { imei: a.imei, url: v.url }
-      if (!o.rimuovi && v.cifrato) body.encryptKey = o.env.SIDLY_ENCRYPT_KEY
-      const r = await client.request(o.rimuovi ? 'DELETE' : 'POST', o.rimuovi ? '/manager/delete-url-for-band' : '/manager/set-url-for-band', body)
-      const ok = r.status >= 200 && r.status < 300
-      out.push({ assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, risultato: ok ? 'ok' : `HTTP ${r.status}${r.motivo ? ': ' + r.motivo : ''}` })
-      if (ok) {
-        const t = o.rimuovi ? null : new Date((o.nowSec ?? Math.floor(Date.now() / 1000)) * 1000).toISOString()
-        try { await o.db.prepare(`INSERT INTO sidly_stato (imei,assistito_id,frame_registrato_at,updated_at) VALUES (?,?,?,?) ON CONFLICT(imei) DO UPDATE SET frame_registrato_at=excluded.frame_registrato_at, updated_at=excluded.updated_at`).bind(a.imei, a.assistito_id, t, t || new Date().toISOString()).run() } catch { /* ignore */ }
-      }
-    } catch (e: any) { out.push({ assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, risultato: 'errore: ' + String(e?.message || e).slice(0, 120) }) }
-  }
-  const prossimo = offset + fetta.length
-  const errori = out.filter(x => x.risultato !== 'ok').length
-  return { httpStatus: 200, result: { esito: errori ? 'parziale' : 'eseguito', ...base, azione: o.rimuovi ? 'rimozione' : 'registrazione', assistiti: out, completato: prossimo >= lista.length, prossimo_offset: prossimo, errori } }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -626,10 +406,9 @@ export async function statoTelemetria(db: any, nowSec: number = Math.floor(Date.
     assistiti: lista.map(a => {
       const s = byImei.get(a.imei) || {}
       const r = rg.get(a.imei) || {}
-      const ultimo = s.ultimo_frame_ts ? Number(s.ultimo_frame_ts) : null
       return {
         assistito_id: a.assistito_id, imei: a.imei, nome: a.nome,
-        frame_registrato: !!s.frame_registrato_at, ultimo_frame: fm(ultimo), ore_dall_ultimo_frame: ultimo ? Math.round((nowSec - ultimo) / 360) / 10 : null, n_frame: s.n_frame ?? 0, batt: s.batt ?? null, device: s.device_type || null, rete: s.rete || null,
+        // nessun dato arriva dai braccialetti: tutto e' letto da SiDLY con le API
         misure_dal: fm(r.dal), misure_al: fm(r.al), storico_fino_a: fm(s.backfill_fino_ts), righe_storico: s.backfill_righe ?? 0, errore: s.ultimo_errore || null,
       }
     }),
@@ -651,7 +430,7 @@ export async function reportMedie(db: any, o: { giorni: number; assistitoId?: nu
   const lista = await assistitiAttivi(db, o.assistitoId)
   const aggr = METRICHE.map(([c]) => `AVG(${c}) AS ${c}_a, MIN(${c}) AS ${c}_mn, MAX(${c}) AS ${c}_mx`).join(', ')
   const outer = METRICHE.map(([c]) => `COUNT(${c}_a) AS ${c}_n, AVG(${c}_a) AS ${c}_m, AVG(${c}_a*${c}_a) AS ${c}_q, MIN(${c}_mn) AS ${c}_min, MAX(${c}_mx) AS ${c}_max`).join(', ')
-  // I punti entro BUCKET_S (frame + storico dello stesso istante) contano una volta sola.
+  // I punti entro BUCKET_S (punti dello stesso istante) contano una volta sola.
   const sqlM = `SELECT COUNT(*) AS punti, ${outer} FROM (SELECT ts/${BUCKET_S} AS b, ${aggr} FROM sidly_misure WHERE imei = ? AND ts >= ? AND ts < ? GROUP BY b)`
   const passi = PASSI_MODO === 'max' ? 'MAX(steps)' : 'SUM(s)'
   const sqlS = `SELECT d, COUNT(*) AS n, ${passi} AS s FROM (SELECT (ts+${OFFSET_GIORNO_S})/86400 AS d, ts/${BUCKET_S} AS b, MAX(steps) AS s FROM sidly_misure WHERE imei = ? AND ts >= ? AND ts < ? GROUP BY d, b) GROUP BY d`
@@ -711,7 +490,7 @@ export async function datasetMisure(db: any, o: DatasetOpzioni): Promise<{ ok: t
   if (da === null || (o.a && a === null)) return { ok: false, status: 400, errore: 'Date non valide (formato AAAA-MM-GG)' }
   const fine = a === null ? 4102444800 : a + 86400
   const tab = await safeFirst(db, `SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name='sidly_misure'`)
-  if (!tab || Number(tab.n) < 1) return { ok: false, status: 404, errore: 'Nessuna misura: le tabelle non sono ancora state create (caricare prima lo storico o ricevere i frame)' }
+  if (!tab || Number(tab.n) < 1) return { ok: false, status: 404, errore: 'Nessuna misura: le tabelle non sono ancora state create (caricare prima lo storico da SiDLY)' }
   const where = ['m.ts >= ?', 'm.ts < ?']
   const par: any[] = [da, fine]
   if (o.assistitoId !== undefined) {
