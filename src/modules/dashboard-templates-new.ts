@@ -3547,6 +3547,38 @@ export const dashboard = `<!DOCTYPE html>
             var p = window.__sidlyBase;
             if (p) syncSidly(p.id, p.opts);
         };
+        // Elenco cliccabile di richieste (lead): niente ID da conoscere.
+        function sidlyLeadRisultati(id, lista, titolo) {
+            var h = '<div style="margin-top:8px;font-size:12px;color:#6b7280">' + escapeHtml(titolo || '') + '</div>';
+            (lista || []).forEach(function (x, i) {
+                var extra = [x.telefono, x.citta, x.data].filter(Boolean).map(escapeHtml).join(' &middot; ');
+                var badge = '';
+                if (x.collegata_a && x.collegata_a.length) badge += ' <span style="background:#fee2e2;color:#991b1b;border-radius:4px;padding:1px 5px;font-size:11px">gi&agrave; collegata a ' + escapeHtml(x.collegata_a.join(', ')) + '</span>';
+                if (x.ha_scheda) badge += ' <span style="background:#e5e7eb;color:#374151;border-radius:4px;padding:1px 5px;font-size:11px">ha gi&agrave; una scheda</span>';
+                h += '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:6px;padding:6px 8px;background:#fff;border:1px solid #fde68a;border-radius:6px"><span><b>' + escapeHtml(x.assistito || 'assistito non indicato') + '</b>' + (x.richiedente ? ' &middot; richiedente ' + escapeHtml(x.richiedente) : '') + (x.email ? ' &middot; ' + escapeHtml(x.email) : '') + (extra ? '<br><span style="color:#6b7280">' + extra + '</span>' : '') + badge + '</span>' +
+                    '<button onclick="window.sidlySchedaScegli(' + id + ',' + i + ')" style="' + SIDLY_BTN + '#d97706;white-space:nowrap">Usa questa (anteprima)</button></div>';
+            });
+            return h;
+        }
+        window.sidlyCercaLead = async function (id) {
+            var box = document.getElementById('sidlyLeadRes');
+            var q = String((document.getElementById('sidlyLeadQ') || {}).value || '').trim();
+            if (!box) return;
+            var mio = (window.__sidlyCercaSeq = (window.__sidlyCercaSeq || 0) + 1);
+            box.innerHTML = '<div style="margin-top:8px;color:#6b7280"><i class="fas fa-spinner fa-spin"></i> Ricerca&hellip;</div>';
+            try {
+                var res = await fetch('/api/sidly/cerca-lead?q=' + encodeURIComponent(q), { credentials: 'include' });
+                var r = await res.json();
+                if (mio !== window.__sidlyCercaSeq) return;
+                if (r.esito !== 'ok') { box.innerHTML = '<div style="margin-top:8px;color:#991b1b">' + escapeHtml(r.errore || 'Ricerca non riuscita') + '</div>'; return; }
+                window.__sidlyCand = r.risultati || [];
+                box.innerHTML = sidlyLeadRisultati(id, window.__sidlyCand, window.__sidlyCand.length ? (q ? 'Richieste trovate (le pi\u00f9 recenti prima):' : 'Richieste pi\u00f9 recenti:') : 'Nessuna richiesta trovata: prova con meno parole (solo il cognome) o con un\\'altra scrittura.');
+            } catch (e) { if (mio === window.__sidlyCercaSeq) box.innerHTML = '<div style="margin-top:8px;color:#991b1b">Ricerca non riuscita: ' + escapeHtml(String(e && e.message || e)) + '</div>'; }
+        };
+        window.sidlyCercaLeadDebounce = function (id) {
+            clearTimeout(window.__sidlyCercaT);
+            window.__sidlyCercaT = setTimeout(function () { window.sidlyCercaLead(id); }, 350);
+        };
         // Scheda di configurazione mancante: avviso + pulsante (anteprima -> conferma -> si riapre il confronto).
         function sidlySchedaBox(r, id) {
             var m = r.scheda_mancante;
@@ -3555,13 +3587,12 @@ export const dashboard = `<!DOCTYPE html>
                 var box = '<div style="margin:8px 0;padding:10px 12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;color:#92400e;font-size:13px"><b>Manca la scheda di configurazione.</b> Non posso crearla in automatico: ' + escapeHtml(m.motivo || 'dati insufficienti') + '</div>';
                 if (m.scegli) {
                     window.__sidlyCand = m.candidati || [];
-                    var cb = '<div style="margin:0 0 8px;padding:10px 12px;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;font-size:13px;color:#78350f"><b>Scegli tu la richiesta (lead) da collegare a questo assistito</b>';
-                    window.__sidlyCand.forEach(function (x, i) {
-                        cb += '<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:6px"><span>' + escapeHtml(x.assistito || 'assistito non indicato') + (x.richiedente ? ' &middot; richiedente ' + escapeHtml(x.richiedente) : '') + (x.email ? ' &middot; ' + escapeHtml(x.email) : '') + ' <span style="color:#6b7280">(' + escapeHtml(x.id) + ')</span></span>' +
-                            '<button onclick="window.sidlySchedaScegli(' + id + ',' + i + ')" style="' + SIDLY_BTN + '#d97706">Usa questa (anteprima)</button></div>';
-                    });
-                    if (!window.__sidlyCand.length) cb += '<div style="color:#6b7280;margin-top:4px">Nessuna richiesta con cognome o e-mail simili.</div>';
-                    cb += '<div style="margin-top:8px">Oppure scrivi l&rsquo;ID della richiesta: <input id="sidlyLeadId" style="border:1px solid #9ca3af;border-radius:4px;padding:3px;width:220px"> <button onclick="window.sidlySchedaScegli(' + id + ',-1)" style="' + SIDLY_BTN + '#d97706">Usa questo ID (anteprima)</button></div>' +
+                    var cb = '<div style="margin:0 0 8px;padding:10px 12px;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;font-size:13px;color:#78350f"><b>Trova la richiesta (lead) da collegare a questo assistito</b>' +
+                        '<div style="margin-top:6px;display:flex;gap:6px;align-items:center"><input id="sidlyLeadQ" value="' + escapeHtml(m.ricerca || '') + '" placeholder="Nome, cognome, e-mail, telefono o citt&agrave;" oninput="window.sidlyCercaLeadDebounce(' + id + ')" onkeydown="if(event.key===\\'Enter\\'){window.sidlyCercaLead(' + id + ')}" style="border:1px solid #9ca3af;border-radius:4px;padding:4px 6px;flex:1;min-width:180px">' +
+                        '<button onclick="window.sidlyCercaLead(' + id + ')" style="' + SIDLY_BTN + '#d97706">Cerca</button></div>' +
+                        '<div style="font-size:12px;margin-top:3px;color:#92400e">Scrivi anche solo una parte (es. &laquo;cacace&raquo; oppure &laquo;giulia cacace&raquo; o un pezzo del telefono). Con la casella vuota vedi le richieste pi&ugrave; recenti.</div>' +
+                        '<div id="sidlyLeadRes">' + sidlyLeadRisultati(id, window.__sidlyCand, m.candidati && m.candidati.length ? 'Richieste simili trovate in automatico:' : 'Nessuna richiesta simile in automatico: prova a cercare con un\\'altra parola.') + '</div>' +
+                        '<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px">Conosco gi&agrave; l&rsquo;ID della richiesta</summary><div style="margin-top:4px"><input id="sidlyLeadId" style="border:1px solid #9ca3af;border-radius:4px;padding:3px;width:220px"> <button onclick="window.sidlySchedaScegli(' + id + ',-1)" style="' + SIDLY_BTN + '#d97706">Usa questo ID (anteprima)</button></div></details>' +
                         '<div style="margin-top:6px;font-size:12px">Si vede prima cosa verr&agrave; scritto: nulla viene salvato finch&eacute; non confermi.</div></div>';
                     box += cb;
                 }

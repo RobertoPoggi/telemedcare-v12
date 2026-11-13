@@ -22009,6 +22009,18 @@ app.post('/api/sidly/crea-scheda', async (c) => {
   return c.json(result, httpStatus as any)
 })
 
+// GET /api/sidly/cerca-lead?q=testo - cerca le richieste (lead) per nome, cognome, e-mail, telefono, citta' o ID, cosi' l'operatore
+// non deve conoscere l'ID. SOLO LETTURA: nessuna scrittura.
+app.get('/api/sidly/cerca-lead', async (c) => {
+  const guard = checkSessionOrKey(c.req.header('Cookie'), c.req.header('Authorization'), [c.env?.API_KEY, c.env?.ADMIN_SECRET_TOKEN])
+  if (!guard.ok) return c.json({ esito: 'errore', errore: guard.error }, guard.status)
+  if (!c.env?.DB) return c.json({ esito: 'errore', errore: 'Database non configurato' }, 500)
+  const { cercaLead } = await import('./modules/sidly-sync')
+  const r = await cercaLead(c.env.DB, String(c.req.query('q') || '').slice(0, 120), 10)
+  if (r.errore) return c.json({ esito: 'errore', errore: r.errore, risultati: [] }, 500)
+  return c.json({ esito: 'ok', risultati: r.risultati })
+})
+
 // ========================================
 // SiDLY TELEMETRIA: ricevitore frame, storico, registrazione frame, report medie
 // ========================================

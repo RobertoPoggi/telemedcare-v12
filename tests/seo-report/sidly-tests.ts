@@ -1177,6 +1177,62 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       const dN = nuovoDb(seedBase({ senzaLead: true }))
       const mN = await S.schedaMancante(dN.db, 7)
       ok(mN.possibile === false && mN.scegli === true && Array.isArray(mN.candidati), 'scheda: senza le colonne opzionali la scelta manuale resta disponibile (elenco candidati vuoto, ID digitabile)')
+      // ── ricerca delle richieste senza conoscere l'ID ──
+      {
+        const dR = nuovoDb((raw: any) => {
+          seedBase({ senzaLead: true })(raw); colonne(raw)
+          raw.run(`ALTER TABLE leads ADD COLUMN telefono TEXT`); raw.run(`ALTER TABLE leads ADD COLUMN timestamp TEXT`)
+          raw.run(`UPDATE assistiti SET nome_assistito='Iginio', cognome_assistito='Cacace', nome='Iginio Cacace' WHERE id=7`)
+          raw.run(`ALTER TABLE assistiti ADD COLUMN nome_caregiver TEXT`)
+          raw.run(`INSERT INTO leads (id, nomeAssistito, cognomeAssistito, nomeRichiedente, cognomeRichiedente, email, telefono, cittaAssistito, timestamp) VALUES ('LEAD-C1', 'Iginio', 'Cacace', 'Giulia', 'Cacace', 'giulia.c@x.it', '+39 347 466 9963', 'Milano', '2026-03-01 10:00:00')`)
+          raw.run(`INSERT INTO leads (id, nomeAssistito, cognomeAssistito, nomeRichiedente, cognomeRichiedente, email, telefono, cittaAssistito, timestamp) VALUES ('LEAD-C2', 'Mario', 'Bianchi', 'Luisa', 'Bianchi', 'luisa@x.it', '3331112222', 'Roma', '2026-04-01 10:00:00')`)
+          raw.run(`INSERT INTO leads (id, nomeAssistito, cognomeAssistito, nomeRichiedente, cognomeRichiedente, email, telefono, cittaAssistito, timestamp) VALUES ('LEAD-C3', '100%', 'Test_', 'Pino', 'Verdi', 'pino@x.it', '0200000000', 'Napoli', '2026-02-01 10:00:00')`)
+          raw.run(`INSERT INTO assistiti (id, nome, imei, status, lead_id) VALUES (9, 'Altra Persona', '868298061200009', 'ATTIVO', 'LEAD-C2')`)
+          raw.run(`INSERT INTO configurations (leadId, nome_assistito) VALUES ('LEAD-C2', 'Mario')`)
+        })
+        const ids = (r: any) => (r.risultati || []).map((x: any) => x.id)
+        const c1 = await S.cercaLead(dR.db, 'cacace')
+        ok(ids(c1).join() === 'LEAD-C1', 'cerca-lead: per cognome (minuscolo, senza ID)')
+        ok(ids(await S.cercaLead(dR.db, 'CAC')).join() === 'LEAD-C1', 'cerca-lead: anche solo una parte del cognome, senza distinguere maiuscole')
+        ok(ids(await S.cercaLead(dR.db, 'giulia cacace')).join() === 'LEAD-C1', 'cerca-lead: nome del richiedente + cognome (piu\' parole, tutte devono comparire)')
+        ok(ids(await S.cercaLead(dR.db, 'giulia bianchi')).length === 0, 'cerca-lead: parole che non stanno insieme nella stessa richiesta non trovano nulla')
+        ok(ids(await S.cercaLead(dR.db, 'giulia.c@x')).join() === 'LEAD-C1', 'cerca-lead: per e-mail (anche parziale)')
+        ok(ids(await S.cercaLead(dR.db, '3474669963')).join() === 'LEAD-C1', 'cerca-lead: per telefono scritto senza spazi, anche se in archivio ha +39 e spazi')
+        ok(ids(await S.cercaLead(dR.db, '466 996')).join() === 'LEAD-C1', 'cerca-lead: per un pezzo di telefono')
+        ok(ids(await S.cercaLead(dR.db, 'roma')).join() === 'LEAD-C2', 'cerca-lead: per citta\'')
+        ok(ids(await S.cercaLead(dR.db, 'LEAD-C1')).join() === 'LEAD-C1', 'cerca-lead: l\'ID (anche parziale) funziona ancora')
+        ok(ids(await S.cercaLead(dR.db, '100%')).join() === 'LEAD-C3' && ids(await S.cercaLead(dR.db, '%')).join() === 'LEAD-C3', 'cerca-lead: % e _ sono cercati come caratteri normali (nessun jolly)')
+        const tutte = await S.cercaLead(dR.db, '')
+        ok(ids(tutte).join() === 'LEAD-C2,LEAD-C1,LEAD-C3,L51,L50' || ids(tutte).slice(0, 3).join() === 'LEAD-C2,LEAD-C1,LEAD-C3', 'cerca-lead: senza testo elenca le piu\' recenti prima')
+        const c2 = (await S.cercaLead(dR.db, 'bianchi')).risultati[0]
+        ok(c2.collegata_a?.join() === 'Altra Persona' && c2.ha_scheda === true, 'cerca-lead: indica se la richiesta e\' gia\' collegata a un altro assistito e se ha gia\' una scheda')
+        ok(c1.risultati[0].collegata_a?.length === 0 && c1.risultati[0].ha_scheda === false && c1.risultati[0].telefono === '+39 347 466 9963' && c1.risultati[0].citta === 'Milano' && c1.risultati[0].data === '2026-03-01', 'cerca-lead: mostra telefono, citta\' e data per riconoscere la richiesta')
+        const inj = await S.cercaLead(dR.db, `x' OR 1=1 --`)
+        ok(inj.risultati.length === 0 && !inj.errore, 'cerca-lead: testo con apici/SQL e\' solo testo (nessuna iniezione)')
+        ok((await S.cercaLead(dR.db, 'zzq wwq yyq xxq kkq jjq hhq')).risultati.length === 0, 'cerca-lead: molte parole non rompono la ricerca')
+        ok(dR.stats.writes.length === 0, 'cerca-lead: sola lettura, nessuna scrittura')
+        // candidati automatici piu' larghi: la richiesta di Iginio si trova anche solo dal cognome del referente / dal telefono
+        const dM = nuovoDb((raw: any) => { seedBase({ senzaLead: true })(raw); colonne(raw); raw.run(`UPDATE assistiti SET nome_assistito='Iginio', cognome_assistito='Cacace' WHERE id=7`); raw.run(`INSERT INTO leads (id, nomeAssistito, cognomeAssistito, nomeRichiedente, cognomeRichiedente, email) VALUES ('LM', NULL, NULL, 'Giulia', 'Cacace', 'giulia@x.it')`) })
+        const mI = await S.schedaMancante(dM.db, 7)
+        ok(mI.scegli === true && mI.ricerca === 'Cacace' && (mI.candidati || []).some(x => x.id === 'LM'), 'scheda: i candidati automatici ora trovano la richiesta (cognome parziale/referente) e la ricerca e\' precompilata col cognome')
+        // assistito con cognome scritto diversamente (es. "Cacaci"): il prefisso del cognome lo trova comunque
+        const dP = nuovoDb((raw: any) => { seedBase({ senzaLead: true })(raw); colonne(raw); raw.run(`UPDATE assistiti SET cognome_assistito='Cacacci', nome_assistito='Iginio' WHERE id=7`); raw.run(`INSERT INTO leads (id, nomeAssistito, cognomeAssistito, nomeRichiedente, cognomeRichiedente, email) VALUES ('LP', 'Iginio', 'Cacace', 'G', 'Cacace', 'g@x.it')`) })
+        ok(((await S.schedaMancante(dP.db, 7)).candidati || []).some(x => x.id === 'LP'), 'scheda: cognome scritto in modo leggermente diverso -> la richiesta e\' comunque proposta (prefisso del cognome)')
+        // telefono dell'assistito uguale a quello della richiesta
+        const dT = nuovoDb((raw: any) => { seedBase({ senzaLead: true })(raw); colonne(raw); raw.run(`ALTER TABLE leads ADD COLUMN telefono TEXT`); raw.run(`ALTER TABLE assistiti ADD COLUMN telefono TEXT`); raw.run(`UPDATE assistiti SET telefono='+39 347 4669963' WHERE id=7`); raw.run(`INSERT INTO leads (id, nomeAssistito, cognomeAssistito, nomeRichiedente, cognomeRichiedente, email, telefono) VALUES ('LT', 'Xx', 'Yy', 'Zz', 'Kk', 'k@x.it', '3474669963')`) })
+        ok(((await S.schedaMancante(dT.db, 7)).candidati || []).some(x => x.id === 'LT'), 'scheda: stesso telefono dell\'assistito -> la richiesta e\' proposta anche con nomi diversi')
+        // errore SQL non nascosto
+        const dE = { prepare: (sql: string) => ({ bind: () => ({ all: async () => { if (/FROM leads/.test(sql) && !/pragma/.test(sql)) throw new Error('boom'); return { results: [] } } }), all: async () => ({ results: [] }) }) }
+        const rE = await S.cercaLead(dE, 'cacace')
+        ok(rE.risultati.length === 0 && /Ricerca non riuscita: boom/.test(rE.errore || ''), 'cerca-lead: un errore del database viene segnalato, non nascosto')
+        // sorgenti
+        const ix = readFileSync('src/index.tsx', 'utf8'), ss = readFileSync('src/modules/sidly-sync.ts', 'utf8'), dh = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
+        const k = ix.search(/app\.get\('\/api\/sidly\/cerca-lead'/)
+        ok(k > 0 && /checkSessionOrKey\(/.test(ix.slice(k, k + 500)) && !/\.run\(|INSERT|UPDATE|DELETE/.test(ix.slice(k, k + 900)), 'rotta cerca-lead: protetta (sessione o chiave) e di sola lettura')
+        const cs = ss.slice(ss.indexOf('const LEAD_COL_TESTO'), ss.indexOf('async function pianoScheda'))
+        ok(!/SELECT\s+\*/i.test(cs) && /pragma_table_info\('leads'\)/.test(cs), 'cerca-lead: colonne elencate esplicitamente (mai SELECT * su leads, limite D1 di 100 colonne)')
+        ok(/sidlyCercaLead\b/.test(dh) && /api\/sidly\/cerca-lead\?q=/.test(dh) && /sidlyLeadQ/.test(dh) && /<details[^>]*>.{0,80}Conosco gi/.test(dh.replace(/\n/g, ' ')), 'Dashboard: ricerca per testo con risultati cliccabili; l\'ID resta solo come opzione secondaria')
+      }
       // sorgenti: rotta e Dashboard
       const idx = readFileSync('src/index.tsx', 'utf8'), dash = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
       const i = idx.search(/app\.post\('\/api\/sidly\/crea-scheda'/)

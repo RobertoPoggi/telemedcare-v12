@@ -45,11 +45,21 @@ const rispostaBreve = (t: string) => { const x = toStr(t).replace(/\s+/g, ' ').t
 export interface CampoInviato { campo: string; valore: any; /** Testi per l'operatore (solo visualizzazione): nome leggibile e valori su piu' righe. */ etichetta?: string; mostra_prima?: string; mostra_dopo?: string; /** Valore attualmente su SiDLY (solo campi user.*; '' se vuoto): serve all'operatore per capire cosa verrebbe sovrascritto. */ precedente?: any }
 export interface Candidato { user_id: string; first_name: string; last_name: string; /** IMEI che l'assistito ha su SiDLY (letto da /patient/{user_id}). */ imei?: string }
 /** Scheda di configurazione assente nel CRM: si puo' creare (con anteprima e conferma) se c'e' una richiesta collegata. */
-export interface CandidatoScheda { id: string; assistito: string; richiedente: string; email: string }
+export interface CandidatoScheda {
+  id: string; assistito: string; richiedente: string; email: string
+  /** Solo per aiutare a riconoscere la richiesta giusta. */
+  telefono?: string; citta?: string; data?: string
+  /** Assistiti gia' collegati a questa richiesta (nomi): se non vuoto, probabilmente NON e' quella giusta. */
+  collegata_a?: string[]
+  /** La richiesta ha gia' una scheda di configurazione. */
+  ha_scheda?: boolean
+}
 export interface SchedaMancante {
   possibile: boolean; lead_id?: string; collegamento?: string; motivo?: string
   /** Nessuna richiesta collegabile in automatico: l'operatore puo' sceglierla a mano tra i candidati (o scrivere l'ID). */
   scegli?: boolean; candidati?: CandidatoScheda[]
+  /** Testo con cui precompilare la ricerca (cognome dell'assistito). */
+  ricerca?: string
 }
 
 export interface SyncResult {
@@ -1368,23 +1378,107 @@ export async function loadCrmSources(db: any, assistitoId: number): Promise<CrmS
 // ─────────────────────────────────────────────────────────────────────────────
 interface PianoScheda { insert: boolean; link: boolean; leadId: string; valori: Array<{ campo: string; valore: string }>; riga: any[] }
 
-/** Richieste che potrebbero essere quella dell'assistito: stesso cognome (assistito o richiedente), cognome del referente, stessa e-mail. Solo per aiutare la scelta dell'operatore. */
-async function candidatiScheda(db: any, a: any, cognome: string): Promise<CandidatoScheda[]> {
-  const cond: string[] = [], bind: string[] = [], visti = new Set<string>()
-  const add = (col: string, v: string) => {
-    const x = v.toLowerCase().trim(); const k = col + ':' + x
-    if (!x || visti.has(k)) return
-    visti.add(k); cond.push(`LOWER(TRIM(${col})) = ?`); bind.push(x)
-  }
-  add('cognomeAssistito', cognome); add('cognomeRichiedente', cognome); add('cognomeRichiedente', toStr(a.cognome_caregiver)); add('email', toStr(a.email))
-  if (!cond.length) return []
+// ── Ricerca delle richieste (lead) senza conoscere l'ID ──
+// Solo colonne con nome fisso (mai SELECT * su leads: limite D1 di 100 colonne); le colonne mancanti si saltano.
+const LEAD_COL_TESTO = ['nomeAssistito', 'cognomeAssistito', 'nomeRichiedente', 'cognomeRichiedente', 'email', 'emailRichiedente', 'cittaAssistito', 'id']
+const LEAD_COL_TEL = ['telefono', 'telefonoRichiedente']
+const LEAD_COL_VISTA = ['nomeAssistito', 'cognomeAssistito', 'nomeRichiedente', 'cognomeRichiedente', 'email', 'telefono', 'cittaAssistito']
+const qi = (c: string) => '"' + c.replace(/"/g, '') + '"'
+const likeEsc = (t: string) => t.replace(/[\\%_]/g, (m) => '\\' + m)
+const soloCifre = (t: string) => t.replace(/[^0-9]/g, '')
+
+async function colonneLeads(db: any): Promise<Set<string>> {
+  const out = new Set<string>()
   try {
-    const r = await db.prepare(`SELECT id, nomeAssistito, cognomeAssistito, nomeRichiedente, cognomeRichiedente, email FROM leads WHERE ${cond.join(' OR ')} LIMIT 8`).bind(...bind).all()
-    return (r?.results || []).filter((x: any) => x && x.id).map((x: any) => ({
-      id: String(x.id), assistito: [x.nomeAssistito, x.cognomeAssistito].map(toStr).filter(Boolean).join(' '),
-      richiedente: [x.nomeRichiedente, x.cognomeRichiedente].map(toStr).filter(Boolean).join(' '), email: toStr(x.email),
-    }))
-  } catch { return [] }
+    const r = await db.prepare("SELECT name FROM pragma_table_info('leads')").all()
+    for (const x of (r?.results || [])) if (x?.name) out.add(String(x.name))
+  } catch { /* si prova comunque con le colonne di base */ }
+  if (!out.size) { out.add('id'); out.add('nomeAssistito'); out.add('cognomeAssistito') }
+  return out
+}
+
+export interface RisultatoRicerca { risultati: CandidatoScheda[]; errore?: string }
+
+/** Esegue la SELECT sulle richieste e aggiunge, per ogni risultato, se e' gia' collegata a un assistito o ha gia' una scheda. */
+async function leadRows(db: any, cols: Set<string>, where: string, binds: any[], limit: number): Promise<RisultatoRicerca> {
+  const vista = LEAD_COL_VISTA.filter((c) => cols.has(c))
+  const dataCol = cols.has('timestamp') ? 'timestamp' : cols.has('created_at') ? 'created_at' : ''
+  const sel = ['id', ...vista, ...(dataCol ? [dataCol] : [])].map(qi).join(', ')
+  const ord = dataCol ? qi(dataCol) + ' DESC' : 'rowid DESC'
+  let rows: any[] = []
+  try {
+    const r = await db.prepare(`SELECT ${sel} FROM leads${where ? ' WHERE ' + where : ''} ORDER BY ${ord} LIMIT ${Math.max(1, Math.min(20, limit | 0))}`).bind(...binds).all()
+    rows = (r?.results || []).filter((x: any) => x && x.id)
+  } catch (e: any) {
+    return { risultati: [], errore: 'Ricerca non riuscita: ' + String(e?.message || e).slice(0, 160) }
+  }
+  const ids = rows.map((x) => String(x.id))
+  const collegate = new Map<string, string[]>(), conScheda = new Set<string>()
+  if (ids.length) {
+    const ph = ids.map(() => '?').join(',')
+    try {
+      const r = await db.prepare(`SELECT lead_id, nome FROM assistiti WHERE lead_id IN (${ph})`).bind(...ids).all()
+      for (const x of (r?.results || [])) { const k = String(x.lead_id); collegate.set(k, [...(collegate.get(k) || []), toStr(x.nome) || 'assistito']) }
+    } catch { /* colonna assente: nessun avviso */ }
+    try {
+      const r = await db.prepare(`SELECT DISTINCT leadId FROM configurations WHERE leadId IN (${ph})`).bind(...ids).all()
+      for (const x of (r?.results || [])) conScheda.add(String(x.leadId))
+    } catch { /* tabella assente: nessun avviso */ }
+  }
+  return {
+    risultati: rows.map((x) => ({
+      id: String(x.id),
+      assistito: [x.nomeAssistito, x.cognomeAssistito].map(toStr).filter(Boolean).join(' '),
+      richiedente: [x.nomeRichiedente, x.cognomeRichiedente].map(toStr).filter(Boolean).join(' '),
+      email: toStr(x.email), telefono: toStr(x.telefono), citta: toStr(x.cittaAssistito),
+      data: dataCol ? toStr(x[dataCol]).slice(0, 10) : '',
+      collegata_a: collegate.get(String(x.id)) || [], ha_scheda: conScheda.has(String(x.id)),
+    })),
+  }
+}
+
+/**
+ * Cerca le richieste per testo libero: ogni parola deve comparire in nome/cognome (assistito o richiedente), e-mail, citta' o ID;
+ * una parola con almeno 3 cifre cerca anche nei telefoni. Senza testo elenca le richieste piu' recenti. Solo lettura.
+ */
+export async function cercaLead(db: any, testo: string, limite = 10): Promise<RisultatoRicerca> {
+  const tokens = toStr(testo).toLowerCase().split(/\s+/).map((t) => t.slice(0, 40)).filter(Boolean).slice(0, 5)
+  const cols = await colonneLeads(db)
+  const testoCols = LEAD_COL_TESTO.filter((c) => cols.has(c)), telCols = LEAD_COL_TEL.filter((c) => cols.has(c))
+  const and: string[] = [], bind: string[] = []
+  for (const t of tokens) {
+    const or: string[] = []
+    for (const c of testoCols) { or.push(`LOWER(${qi(c)}) LIKE ? ESCAPE '\\'`); bind.push('%' + likeEsc(t) + '%') }
+    const d = soloCifre(t)
+    if (d.length >= 3) for (const c of telCols) { or.push(`REPLACE(REPLACE(REPLACE(REPLACE(${qi(c)},' ',''),'+',''),'-',''),'.','') LIKE ?`); bind.push('%' + d + '%') }
+    if (or.length) and.push('(' + or.join(' OR ') + ')')
+  }
+  return leadRows(db, cols, and.join(' AND '), bind, limite)
+}
+
+/** Richieste che potrebbero essere quella dell'assistito: cognome simile (anche solo l'inizio), cognome/nome del referente, stessa e-mail, stesso telefono. Solo per aiutare la scelta. */
+async function candidatiScheda(db: any, a: any, cognome: string): Promise<CandidatoScheda[]> {
+  const cols = await colonneLeads(db)
+  const cond: string[] = [], bind: string[] = [], visti = new Set<string>()
+  const like = (col: string, v: string) => {
+    const x = v.toLowerCase().trim(); const k = col + ':' + x
+    if (!x || !cols.has(col) || visti.has(k)) return
+    visti.add(k); cond.push(`LOWER(${qi(col)}) LIKE ? ESCAPE '\\'`); bind.push('%' + likeEsc(x) + '%')
+  }
+  const eq = (col: string, v: string) => {
+    const x = v.toLowerCase().trim(); const k = '=' + col + ':' + x
+    if (!x || !cols.has(col) || visti.has(k)) return
+    visti.add(k); cond.push(`LOWER(TRIM(${qi(col)})) = ?`); bind.push(x)
+  }
+  const cg = toStr(a.cognome_caregiver)
+  for (const c of ['cognomeAssistito', 'cognomeRichiedente']) { like(c, cognome); if (cognome.length >= 5) like(c, cognome.slice(0, 4)) }
+  like('cognomeRichiedente', cg); like('cognomeAssistito', cg)
+  const email = toStr(a.email); eq('email', email); eq('emailRichiedente', email)
+  const tel = soloCifre(toStr(a.telefono)).slice(-9)
+  if (tel.length >= 6) for (const c of LEAD_COL_TEL) if (cols.has(c)) { cond.push(`REPLACE(REPLACE(REPLACE(REPLACE(${qi(c)},' ',''),'+',''),'-',''),'.','') LIKE ?`); bind.push('%' + tel) }
+  if (!cond.length) return []
+  const r = await leadRows(db, cols, cond.join(' OR '), bind, 8)
+  return r.risultati
 }
 
 async function pianoScheda(db: any, assistitoId: number, leadScelto?: string): Promise<{ info: SchedaMancante; piano?: PianoScheda }> {
@@ -1402,11 +1496,11 @@ async function pianoScheda(db: any, assistitoId: number, leadScelto?: string): P
   if (leadScelto) {
     if (leadId && leadId !== leadScelto) return { info: { possibile: false, lead_id: leadId, collegamento, motivo: `L'assistito è già collegato alla richiesta ${leadId}: non posso collegarlo a un'altra.` } }
     const ex = await safeFirst(db, 'SELECT id FROM leads WHERE id = ?', leadScelto)
-    if (!ex) return { info: { possibile: false, scegli: true, candidati: await candidatiScheda(db, a, cognome), motivo: `La richiesta «${leadScelto.slice(0, 60)}» non esiste nel CRM.` } }
+    if (!ex) return { info: { possibile: false, scegli: true, ricerca: cognome, candidati: await candidatiScheda(db, a, cognome), motivo: `La richiesta «${leadScelto.slice(0, 60)}» non esiste nel CRM.` } }
     leadId = leadScelto; collegamento = 'scelta'
   }
   if (!leadId) {
-    if (!nome || !cognome) return { info: { possibile: false, scegli: true, candidati: await candidatiScheda(db, a, cognome), motivo: 'L\'assistito non è collegato a nessuna richiesta e nome/cognome mancano: non posso cercarla.' } }
+    if (!nome || !cognome) return { info: { possibile: false, scegli: true, ricerca: cognome, candidati: await candidatiScheda(db, a, cognome), motivo: 'L\'assistito non è collegato a nessuna richiesta e nome/cognome mancano: non posso cercarla.' } }
     // Ultima possibilita': la richiesta con lo stesso nome e cognome dell'assistito (accettata solo se UNICA).
     let n = 0, id = ''
     try {
@@ -1414,8 +1508,8 @@ async function pianoScheda(db: any, assistitoId: number, leadScelto?: string): P
       const rows = (r?.results || []).filter((x: any) => x && x.id)
       n = rows.length; id = rows[0] ? String(rows[0].id) : ''
     } catch { n = 0 }
-    if (n === 0) return { info: { possibile: false, scegli: true, candidati: await candidatiScheda(db, a, cognome), motivo: 'Nessuna richiesta (lead) collegata a questo assistito né con lo stesso nome: la scheda nasce da una richiesta, non posso inventarla. Scegline una tu.' } }
-    if (n > 1) return { info: { possibile: false, scegli: true, candidati: await candidatiScheda(db, a, cognome), motivo: 'Più richieste con lo stesso nome e cognome: non so quale collegare. Scegli tu quella giusta.' } }
+    if (n === 0) return { info: { possibile: false, scegli: true, ricerca: cognome, candidati: await candidatiScheda(db, a, cognome), motivo: 'Nessuna richiesta (lead) collegata a questo assistito né con lo stesso nome: la scheda nasce da una richiesta, non posso inventarla. Scegline una tu.' } }
+    if (n > 1) return { info: { possibile: false, scegli: true, ricerca: cognome, candidati: await candidatiScheda(db, a, cognome), motivo: 'Più richieste con lo stesso nome e cognome: non so quale collegare. Scegli tu quella giusta.' } }
     leadId = id; collegamento = 'nome'
   }
   const esiste = await safeFirst(db, 'SELECT id FROM configurations WHERE leadId = ? ORDER BY id DESC LIMIT 1', leadId)
