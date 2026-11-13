@@ -3670,25 +3670,36 @@ export const dashboard = `<!DOCTYPE html>
                 } else { m = '<span style="color:#6b7280;font-size:13px">Nessuna misura nel DB per il periodo.</span>'; }
                 h += telBox('Medie (ultimi ' + giorni + ' giorni)', m);
                 // Azioni
-                var d90 = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10);
-                h += telBox('Azioni (prima sempre un\\'anteprima: nulla viene scritto finch&eacute; non confermi)',
-                    '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><label style="font-size:13px">Storico dal <input id="telDa" type="date" value="' + d90 + '" style="border:1px solid #9ca3af;border-radius:4px;padding:3px"></label>' +
-                    '<button onclick="window.sidlyStoricoAnteprima()" style="' + SIDLY_BTN + '#0d9488">Anteprima storico</button>' +
-                    '<button onclick="window.sidlyFrameAnteprima(false)" style="' + SIDLY_BTN + '#2563eb">Anteprima registrazione frame</button></div><div id="telEsito" style="margin-top:10px"></div>');
+                h += telBox('1. Carica lo storico delle misure (prima sempre un\\'anteprima: nulla viene scritto finch&eacute; non confermi)',
+                    '<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:13px">' +
+                    '<label><input type="radio" name="telModo" id="telModoInizio" value="inizio" checked onchange="document.getElementById(\\'telDa\\').disabled = true"> <b>Dall&rsquo;inizio</b> (data di attivazione di ogni braccialetto: tutti i dati)</label>' +
+                    '<label><input type="radio" name="telModo" id="telModoData" value="data" onchange="document.getElementById(\\'telDa\\').disabled = false"> Da una data <input id="telDa" type="date" disabled style="border:1px solid #9ca3af;border-radius:4px;padding:3px"></label></div>' +
+                    '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px"><button onclick="window.sidlyStoricoAnteprima()" style="' + SIDLY_BTN + '#0d9488">Anteprima storico</button></div>');
+                h += telBox('2. Ricezione dei frame in tempo reale',
+                    '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><button onclick="window.sidlyFrameAnteprima(false)" style="' + SIDLY_BTN + '#2563eb">Anteprima registrazione frame</button></div>');
+                h += telBox('3. Dataset delle sole misure (per le analisi statistiche)',
+                    '<div style="font-size:12px;color:#6b7280;margin-bottom:6px">File CSV con una riga per assistito e istante: FC, SpO2, temperatura, passi, HRV, FR, qualit&agrave; del segnale. Solo id assistito e IMEI, nessun nome.</div>' +
+                    '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><button id="telDatasetBtn" onclick="window.sidlyDataset()" style="' + SIDLY_BTN + '#0f766e"><i class="fas fa-download"></i> Scarica dataset misure (CSV)</button></div><div id="telDatasetEsito" style="margin-top:6px;font-size:12px"></div>');
+                h += '<div id="telEsito" style="margin-top:10px"></div>';
                 sidlyPanel(h);
             } catch (e) { sidlyPanel('<p style="color:#b91c1c;margin:0">Errore di comunicazione: ' + escapeHtml(e.message) + '</p>'); }
         };
         function telEsito(html) { var el = document.getElementById('telEsito'); if (el) el.innerHTML = html; }
+        function telDa() {
+            var i = document.getElementById('telModoInizio');
+            if (!i || i.checked) return 'inizio';
+            return (document.getElementById('telDa') || {}).value || '';
+        }
         window.sidlyStoricoAnteprima = async function () {
-            var da = (document.getElementById('telDa') || {}).value || '';
+            var da = telDa();
             telEsito('<i class="fas fa-spinner fa-spin"></i> Lettura da SiDLY (solo lettura, nulla viene scritto)&hellip;');
             var r = await telApi('POST', '/api/sidly/storico', { da: da, dry_run: true });
             if (r.esito !== 'anteprima') { telEsito('<span style="color:#b91c1c">' + escapeHtml(r.errore || 'Errore') + '</span>'); return; }
-            var h = '<div style="font-size:13px;margin-bottom:6px">Anteprima su una settimana di dati, nessuna scrittura nel DB.</div>';
+            var h = '<div style="font-size:13px;margin-bottom:6px">Anteprima su una settimana di dati, nessuna scrittura nel DB. Periodo: <b>' + (da === 'inizio' ? 'dall&rsquo;attivazione di ciascun braccialetto' : 'dal ' + escapeHtml(da)) + '</b>.</div>';
             (r.assistiti || []).forEach(function (a) {
                 if (a.errore) { h += '<div style="color:#b91c1c;font-size:13px">' + escapeHtml(a.nome || a.imei) + ': ' + escapeHtml(a.errore) + '</div>'; return; }
                 var an = a.anteprima || {}; var pt = an.punti || {};
-                h += '<div style="font-size:13px;margin-bottom:4px"><b>' + escapeHtml(a.nome || a.imei) + '</b>: ' + Object.keys(pt).map(function (k) { return escapeHtml(k) + ' ' + pt[k]; }).join(', ') + ' &middot; stima righe totali ' + (an.stima_righe_totali || 0) +
+                h += '<div style="font-size:13px;margin-bottom:4px"><b>' + escapeHtml(a.nome || a.imei) + '</b>: parte da ' + escapeHtml(an.inizio_da || '?') + ' (' + (an.finestre_totali || '?') + ' finestre da 7 giorni) &middot; ' + Object.keys(pt).map(function (k) { return escapeHtml(k) + ' ' + pt[k]; }).join(', ') + ' &middot; stima righe totali ' + (an.stima_righe_totali || 0) +
                     ' &middot; passi dichiarati ' + telFmt(an.passi && an.passi.dichiarato, 0) + ' vs somma punti ' + telFmt(an.passi && an.passi.somma_punti, 0) + ' &middot; allarmi trovati ' + (an.eventi_trovati === undefined ? '?' : an.eventi_trovati) + '</div>';
             });
             (r.avvisi || []).forEach(function (x) { h += '<div style="font-size:12px;color:#92400e">' + escapeHtml(x) + '</div>'; });
@@ -3696,7 +3707,7 @@ export const dashboard = `<!DOCTYPE html>
             telEsito(h);
         };
         window.sidlyStoricoScrivi = async function () {
-            var da = (document.getElementById('telDa') || {}).value || '';
+            var da = telDa();
             var tot = 0, giri = 0, r = null;
             do {
                 giri++;
@@ -3708,6 +3719,33 @@ export const dashboard = `<!DOCTYPE html>
                 if (errs.length) { telEsito('<span style="color:#b91c1c">Interrotto: ' + errs.map(function (a) { return escapeHtml((a.nome || a.imei) + ': ' + a.errore); }).join('; ') + '. Righe scritte: ' + tot + '. Puoi rilanciare: riprende da dove si era fermato.</span>'); return; }
             } while (!r.completato && giri < 60);
             telEsito('<span style="color:#15803d;font-weight:700">' + (r.completato ? 'Storico completo.' : 'Sospeso (rilancia per proseguire).') + '</span> Righe scritte: ' + tot + '. <button onclick="window.sidlyTelemetria()" style="' + SIDLY_BTN + '#0d9488">Aggiorna il quadro</button>');
+        };
+        window.sidlyDataset = async function () {
+            var btn = document.getElementById('telDatasetBtn'); var out = document.getElementById('telDatasetEsito');
+            if (btn) btn.disabled = true;
+            var parti = [], cur = '', righe = 0, pagine = 0;
+            try {
+                do {
+                    pagine++;
+                    if (out) out.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparazione del file: pagina ' + pagine + ' (righe ' + righe + ')&hellip;';
+                    var res = await fetch('/api/sidly/telemetria/dataset' + (cur ? '?dopo=' + encodeURIComponent(cur) : ''), { credentials: 'include' });
+                    if (!res.ok) {
+                        var e = null; try { e = await res.json(); } catch (x) { e = null; }
+                        if (out) out.innerHTML = '<span style="color:#b91c1c">' + escapeHtml((e && e.errore) || ('Errore HTTP ' + res.status)) + '</span>';
+                        return;
+                    }
+                    parti.push(await res.text());
+                    righe += Number(res.headers.get('X-Righe') || 0);
+                    cur = res.headers.get('X-Prossimo-Cursore') || '';
+                } while (cur && pagine < 500);
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob(parti, { type: 'text/csv;charset=utf-8' }));
+                a.download = 'misure_sidly_' + new Date().toISOString().slice(0, 10) + '.csv';
+                document.body.appendChild(a); a.click(); a.remove();
+                if (out) out.innerHTML = '<span style="color:#15803d;font-weight:700">File scaricato</span>: ' + righe + ' righe' + (cur ? ' (interrotto: rilancia per il resto)' : '') + '.';
+            } catch (e) {
+                if (out) out.innerHTML = '<span style="color:#b91c1c">Errore: ' + escapeHtml(e.message) + '</span>';
+            } finally { if (btn) btn.disabled = false; }
         };
         window.sidlyFrameAnteprima = async function (scrivi) {
             telEsito('<i class="fas fa-spinner fa-spin"></i> ' + (scrivi ? 'Registrazione in corso' : 'Verifica della configurazione (nulla viene scritto)') + '&hellip;');

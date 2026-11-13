@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import * as T from '../../src/modules/sidly-telemetria'
+import { SidlyClient } from '../../src/modules/sidly-sync'
 import type { Fetch, SidlyEnv } from '../../src/modules/sidly-sync'
 
 type Ok = (c: boolean, msg: string) => void
@@ -54,7 +55,7 @@ async function makeD1() {
 
 interface Call { method: string; path: string; body: any }
 /** SiDLY finta: login, /stats con punti orari, allarmi, set/delete-url-for-band. */
-function makeSidly(opts: { statsStatus?: number; alarms?: any[]; urlStatus?: number } = {}) {
+function makeSidly(opts: { statsStatus?: number; alarms?: any[]; urlStatus?: number; registerDate?: any; registerWrap?: boolean } = {}) {
   const calls: Call[] = []
   const fetchImpl: Fetch = async (url, init) => {
     const method = init?.method || 'GET'
@@ -75,6 +76,11 @@ function makeSidly(opts: { statsStatus?: number; alarms?: any[]; urlStatus?: num
         return { chart, stats: { min: 1, max: 2, mean: 1.5 } }
       }
       return reply(200, { pulse: pts(3600, 70), sat: pts(3600, 97), sdnn: pts(86400, 42), rmssd: pts(86400, 35), respiration: pts(3600, 15), steps: { dailyTarget: 5000, ...pts(3600, 100), total: 2400, totalKm: 1.8 }, lastMeasurements: [] })
+    }
+    if (method === 'GET' && /^\/patientIntegrate\/\d+$/.test(path)) {
+      const rd = 'registerDate' in opts ? opts.registerDate : Date.UTC(2026, 10, 3, 10, 0, 0) / 1000
+      const o: any = { imei: path.split('/').pop(), ...(rd === undefined ? {} : { registerDate: rd }) }
+      return reply(200, opts.registerWrap ? { data: o } : o)
     }
     if (method === 'GET' && /^\/patientIntegrateAlarm\/\d+$/.test(path)) return reply(200, opts.alarms || [])
     if (path === '/manager/set-url-for-band' || path === '/manager/delete-url-for-band') return reply(opts.urlStatus || 200, {})
@@ -281,7 +287,7 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
 
     ok((await T.eseguiStorico({ db: d.db, env: ENV, da: 'ieri', dryRun: true, nowSec: NOW, fetchImpl: P.fetchImpl })).httpStatus === 400, 'data di inizio non valida: 400')
     ok((await T.eseguiStorico({ db: d.db, env: ENV, da: '2026-12-01', dryRun: true, nowSec: NOW, fetchImpl: P.fetchImpl })).httpStatus === 400, 'data di inizio nel futuro: 400')
-    ok((await T.eseguiStorico({ db: d.db, env: ENV, da: '2020-01-01', dryRun: true, nowSec: NOW, fetchImpl: P.fetchImpl })).httpStatus === 400, 'periodo oltre ~26 mesi: 400')
+    ok((await T.eseguiStorico({ db: d.db, env: ENV, da: '2010-01-01', dryRun: true, nowSec: NOW, fetchImpl: P.fetchImpl })).httpStatus === 400, 'periodo oltre 10 anni: 400')
     ok((await T.eseguiStorico({ db: d.db, env: {}, da: '2026-11-01', dryRun: true, nowSec: NOW, fetchImpl: P.fetchImpl })).httpStatus === 503, 'senza credenziali SiDLY: 503')
 
     // Esecuzione con una sola finestra per chiamata: si riprende dal cursore
@@ -297,13 +303,16 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
     ok(/fromDate=2026-11-01%2000%3A00%3A00/.test(wins[0].path) && /toDate=2026-11-07%2023%3A59%3A59/.test(wins[0].path), 'finestra in UTC con formato AAAA-MM-GG HH:MM:SS, fine inclusa -1 secondo')
     const nCalls = P.calls.length
     const e3 = await T.eseguiStorico({ db: d.db, env: ENV, da: '2026-11-01', dryRun: false, assistitoId: 1, nowSec: NOW, fetchImpl: P.fetchImpl })
-    ok(d.count('sidly_misure') === 276 && e3.result.completato === true, 'rilancio a storico completo: nessun duplicato')
-    ok(P.calls.slice(nCalls).filter(c => c.path.includes('/stats')).length >= 1, 'a storico completo si rileggono comunque gli ultimi 2 giorni (HRV e passi possono arrivare in ritardo)')
-    const e4 = await T.eseguiStorico({ db: d.db, env: ENV, da: '2026-11-01', dryRun: false, assistitoId: 1, nowSec: NOW + 7200, fetchImpl: P.fetchImpl })
-    ok(e4.result.completato === true && d.count('sidly_misure') === 278, 'aggiornamento incrementale dopo 2 ore: solo 2 punti nuovi')
-    ok(d.stats.batches <= 12, `scritture a blocchi: ${d.stats.batches} batch in totale per 278 punti (non una scrittura per punto)`)
+    ok(d.count('sidly_misure') === 276 && e3.result.completato === true && e3.result.assistiti![0].aggiornato === true, 'rilancio a storico completo: nessun duplicato, assistito «aggiornato»')
+    ok(P.calls.length === nCalls, 'assistito aggiornato da meno di 6 ore: nessuna chiamata a SiDLY (si risparmiano richieste)')
+    const e3b = await T.eseguiStorico({ db: d.db, env: ENV, da: '2026-11-01', dryRun: false, assistitoId: 1, nowSec: NOW + T.AGGIORNATO_S + 60, fetchImpl: P.fetchImpl })
+    ok(e3b.result.assistiti![0].aggiornato !== true && P.calls.slice(nCalls).filter(c => c.path.includes('/stats')).length >= 1, 'oltre le 6 ore si rileggono gli ultimi 2 giorni (HRV e passi possono arrivare in ritardo)')
+    const T7 = NOW + 13 * 3600
+    const e4 = await T.eseguiStorico({ db: d.db, env: ENV, da: '2026-11-01', dryRun: false, assistitoId: 1, nowSec: T7, fetchImpl: P.fetchImpl })
+    ok(e4.result.completato === true && d.count('sidly_misure') === 289, `aggiornamento incrementale dopo 13 ore (oltre le 6 di «aggiornato»): solo i punti nuovi, nessun duplicato (trovate ${d.count('sidly_misure')} righe)`)
+    ok(d.stats.batches <= 16, `scritture a blocchi: ${d.stats.batches} batch in totale per 289 punti (non una scrittura per punto)`)
     const stato = d.q(`SELECT * FROM sidly_stato WHERE imei = ?`, IMEI_A)[0]
-    ok(stato.backfill_da_ts === Date.UTC(2026, 10, 1) / 1000 && stato.backfill_fino_ts === NOW + 7200 && stato.ultimo_errore === null, 'stato: inizio, cursore e nessun errore')
+    ok(stato.backfill_da_ts === Date.UTC(2026, 10, 1) / 1000 && stato.backfill_fino_ts === T7 && stato.ultimo_errore === null && stato.completo_ts === T7, 'stato: inizio, cursore e nessun errore')
 
     // Tetto di righe per richiesta
     const d2 = await makeD1(); T.dimenticaTabelle()
@@ -338,10 +347,10 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
     const r = await T.eseguiStorico({ db: d.db, env: ENV, da: '2026-11-01', dryRun: false, nowSec: NOW, fetchImpl: P.fetchImpl, maxFinestre: 10 })
     ok(r.result.completato === true && d.count('sidly_eventi') === 2, 'SOS già ricevuto come frame non si duplica; la caduta è importata; l\'allarme precedente al periodo no')
     ok(d.q(`SELECT origine FROM sidly_eventi WHERE tipo = 'fall'`)[0]?.origine === 'api' && d.q(`SELECT lat FROM sidly_eventi WHERE tipo = 'fall'`)[0]?.lat === null, 'allarme da API: origine api, posizione assente = nulla')
-    await T.eseguiStorico({ db: d.db, env: ENV, da: '2026-11-01', dryRun: false, nowSec: NOW + 3600, fetchImpl: P.fetchImpl, maxFinestre: 10 })
+    await T.eseguiStorico({ db: d.db, env: ENV, da: '2026-11-01', dryRun: false, nowSec: NOW + 7 * 3600, fetchImpl: P.fetchImpl, maxFinestre: 10 })
     ok(d.count('sidly_eventi') === 2, 'rilancio: gli allarmi non si duplicano')
-    const alarms2 = [...alarms, { id: 14, type: 'sos', receivedDate: iso(NOW + 100), pulse: 70, batteryLevel: 40 }]
-    await T.eseguiStorico({ db: d.db, env: ENV, da: '2026-11-01', dryRun: false, nowSec: NOW + 7200, fetchImpl: makeSidly({ alarms: alarms2 }).fetchImpl, maxFinestre: 10 })
+    const alarms2 = [...alarms, { id: 14, type: 'sos', receivedDate: iso(NOW + 3 * 3600), pulse: 70, batteryLevel: 40 }]
+    await T.eseguiStorico({ db: d.db, env: ENV, da: '2026-11-01', dryRun: false, nowSec: NOW + 14 * 3600, fetchImpl: makeSidly({ alarms: alarms2 }).fetchImpl, maxFinestre: 10 })
     ok(d.count('sidly_eventi') === 3, 'un nuovo allarme comparso dopo viene importato all\'aggiornamento successivo')
   }
 
@@ -439,7 +448,85 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
     }
     ok(/conferma_scrittura === true/.test(blocco(/app\.post\('\/api\/sidly\/storico'/)) && /conferma_scrittura === true/.test(blocco(/app\.post\('\/api\/sidly\/registra-frame'/)), 'storico e registrazione: senza conferma_scrittura è sempre anteprima')
     ok(!/console\./.test(mod), 'il modulo non scrive log (nessun rischio di stampare token o chiavi)')
-    ok(!/SELECT\s+(l\.)?\*\s+FROM\s+leads/i.test(mod) && !/ALTER\s+TABLE/i.test(mod), 'nessun ALTER e nessun SELECT * su leads (limite D1 di 100 colonne)')
+    ok(!/SELECT\s+(l\.)?\*\s+FROM\s+leads/i.test(mod) && !/ALTER\s+TABLE\s+leads/i.test(mod), 'nessun ALTER su leads e nessun SELECT * su leads (limite D1 di 100 colonne)')
+    ok((mod.match(/ALTER\s+TABLE\s+\w+/gi) || []).every(x => /sidly_stato$/i.test(x)), 'l\'unico ALTER e\' la migrazione di una tabella della telemetria (sidly_stato)')
+    ok(/app\.get\('\/api\/sidly\/telemetria\/dataset'/.test(idx) && /checkSessionOrKey\(/.test(blocco(/app\.get\('\/api\/sidly\/telemetria\/dataset'/)), 'endpoint dataset: protetto da sessione dashboard o chiave')
     ok(/SIDLY_INGEST_TOKEN\?: string/.test(idx) && /SIDLY_ENCRYPT_KEY\?: string/.test(idx), 'nuovi segreti dichiarati nell\'Env')
+  }
+
+  // ───────────────────────────────────────────────────────────────────
+  section('SiDLY telemetria 13: storico dall\'inizio (data di registrazione) e dataset delle sole misure')
+  {
+    const REG = Date.UTC(2026, 10, 3, 10, 0, 0) / 1000
+    const INIZIO = Date.UTC(2026, 10, 2) / 1000 // mezzanotte UTC del giorno di registrazione meno un giorno
+    const cl = (o: any = {}) => new SidlyClient(ENV, makeSidly(o).fetchImpl)
+    const dr = async (o: any) => T.dataRegistrazione(cl(o), IMEI_A, NOW)
+    ok((await dr({ registerDate: REG })).ts === INIZIO, 'registerDate in secondi → mezzanotte UTC del giorno prima')
+    ok((await dr({ registerDate: REG * 1000 })).ts === INIZIO, 'registerDate in millisecondi riconosciuto')
+    ok((await dr({ registerDate: '2026-11-03T10:00:00+00:00' })).ts === INIZIO, 'registerDate ISO riconosciuto')
+    ok((await dr({ registerDate: REG, registerWrap: true })).ts === INIZIO, 'risposta avvolta in data{} riconosciuta')
+    ok((await dr({ registerDate: undefined })).ts === null && /data di registrazione/.test((await dr({ registerDate: undefined })).errore || ''), 'registerDate assente → nessuna data inventata, errore esplicito')
+    ok((await dr({ registerDate: 5 })).ts === null && (await dr({ registerDate: NOW + 90 * 86400 })).ts === null, 'registerDate implausibile (1970 o nel futuro) → rifiutata')
+
+    const d = await makeD1(); T.dimenticaTabelle()
+    d.raw.run(`INSERT INTO assistiti (id, imei, status, nome_assistito, cognome_assistito) VALUES (1, '${IMEI_A}', 'ATTIVO', 'Giorgia', 'Origoni'), (2, '${IMEI_B}', 'ATTIVO', 'Laura', 'Calvi')`)
+    const P = makeSidly()
+    const dry = await T.eseguiStorico({ db: d.db, env: ENV, da: 'inizio', dryRun: true, assistitoId: 1, nowSec: NOW, fetchImpl: P.fetchImpl })
+    ok(dry.result.esito === 'anteprima' && dry.result.assistiti![0].anteprima?.inizio_da === '2026-11-02 00:00:00 UTC' && (dry.result.assistiti![0].anteprima?.finestre_totali || 0) >= 2, 'anteprima «inizio»: data di partenza e numero di finestre dichiarati')
+    ok(!d.hasTable('sidly_misure') && d.stats.batches === 0 && d.stats.singles === 0 && P.calls.every(c => c.method === 'GET'), 'anteprima «inizio»: nessuna scrittura (DB e SiDLY)')
+
+    const r = await T.eseguiStorico({ db: d.db, env: ENV, da: 'inizio', dryRun: false, nowSec: NOW, fetchImpl: P.fetchImpl, maxFinestre: 20, maxRighe: 20000 })
+    ok(r.result.completato === true && d.count('sidly_misure') === 2 * 252, `«inizio»: entrambi gli assistiti caricati dalla registrazione fino a oggi (2 × 252, trovate ${d.count('sidly_misure')})`)
+    ok(d.q(`SELECT MIN(ts) AS m FROM sidly_misure`)[0].m === INIZIO, 'la prima misura è quella della data di partenza: nessun dato tagliato a 90 giorni o simili')
+    ok(d.q(`SELECT registrato_ts, completo_ts FROM sidly_stato WHERE imei = ?`, IMEI_A)[0].registrato_ts === INIZIO, 'data di registrazione salvata nello stato')
+    const n0 = P.calls.length
+    const r2 = await T.eseguiStorico({ db: d.db, env: ENV, da: 'inizio', dryRun: false, nowSec: NOW + 3600, fetchImpl: P.fetchImpl })
+    ok(r2.result.completato === true && P.calls.length === n0 && d.count('sidly_misure') === 2 * 252, 'rilancio entro 6 ore: nessuna chiamata (nemmeno la data di registrazione) e nessun duplicato')
+
+    // Periodo esteso all'indietro: si riparte dalla nuova data
+    const r3 = await T.eseguiStorico({ db: d.db, env: ENV, da: '2026-10-25', dryRun: false, assistitoId: 1, nowSec: NOW + 3600, fetchImpl: P.fetchImpl, maxFinestre: 20 })
+    ok(r3.result.completato === true && d.q(`SELECT MIN(ts) AS m FROM sidly_misure WHERE imei = ?`, IMEI_A)[0].m === Date.UTC(2026, 9, 25) / 1000, 'periodo esteso all\'indietro: si carica anche la parte precedente')
+
+    // Senza data di registrazione: non si inventa nulla
+    const d2 = await makeD1(); T.dimenticaTabelle()
+    d2.raw.run(`INSERT INTO assistiti (id, imei, status) VALUES (1, '${IMEI_A}', 'ATTIVO')`)
+    const r4 = await T.eseguiStorico({ db: d2.db, env: ENV, da: 'inizio', dryRun: false, nowSec: NOW, fetchImpl: makeSidly({ registerDate: undefined }).fetchImpl })
+    ok(r4.result.completato === false && /data di registrazione/.test(r4.result.assistiti![0].errore || '') && d2.count('sidly_misure') === 0, '«inizio» senza registerDate: nessuna riga, errore che chiede una data esplicita')
+
+    // Migrazione di sidly_stato creata prima delle colonne nuove
+    const d3 = await makeD1(); T.dimenticaTabelle()
+    d3.raw.run(`CREATE TABLE sidly_stato (imei TEXT PRIMARY KEY, assistito_id INTEGER, ultimo_frame_ts INTEGER, ultimo_reason TEXT, batt INTEGER, device_type TEXT, segnale TEXT, rete TEXT, n_frame INTEGER, frame_registrato_at TEXT, backfill_da_ts INTEGER, backfill_fino_ts INTEGER, backfill_righe INTEGER, ultimo_errore TEXT, updated_at TEXT)`)
+    await T.assicuraTabelle(d3.db)
+    const cols = d3.q(`SELECT name FROM pragma_table_info('sidly_stato')`).map((x: any) => x.name)
+    ok(cols.includes('registrato_ts') && cols.includes('completo_ts'), 'migrazione: colonne registrato_ts e completo_ts aggiunte a una tabella esistente')
+    T.dimenticaTabelle(); await T.assicuraTabelle(d3.db)
+    ok(true, 'migrazione ripetibile senza errori')
+
+    // Dataset CSV
+    const tot = d.count('sidly_misure')
+    const ds = await T.datasetMisure(d.db, {})
+    ok(ds.ok === true && ds.csv.split('\n')[0] === T.DATASET_COLONNE.join(','), 'dataset: intestazione con le colonne dichiarate')
+    ok(ds.ok === true && ds.righe === tot && ds.prossimo === null && ds.csv.trim().split('\n').length === tot + 1, 'dataset: tutte le righe in una pagina, nessun cursore residuo')
+    ok(ds.ok === true && !/Giorgia|Origoni|Laura|Calvi/.test(ds.csv) && ds.csv.split('\n')[1].split(',')[0] === '1', 'dataset: solo id assistito e IMEI, nessun nome')
+    let cur: string | null = null, righe = 0, pag = 0, header = 0, prevKey = ''
+    let sorted = true
+    do {
+      const pg: any = await T.datasetMisure(d.db, { limite: 100, dopo: cur || undefined })
+      ok(pg.ok === true, 'dataset: pagina valida')
+      const linee = pg.csv.split('\n').filter((x: string) => x)
+      if (linee[0].startsWith('assistito_id')) { header++; linee.shift() }
+      for (const l of linee) { const c = l.split(','); const k = c[1] + ':' + String(c[3]).padStart(12, '0'); if (k <= prevKey) sorted = false; prevKey = k }
+      righe += pg.righe; pag++; cur = pg.prossimo
+    } while (cur && pag < 50)
+    ok(righe === tot && header === 1 && pag === Math.ceil(tot / 100) && sorted, `dataset a pagine da 100: ${pag} pagine, ${righe}/${tot} righe, un'unica intestazione, ordine (imei, ts) stabile, nessun duplicato né buco`)
+    const f1 = await T.datasetMisure(d.db, { assistitoId: 2 })
+    ok(f1.ok === true && f1.csv.trim().split('\n').slice(1).every(l => l.split(',')[1] === IMEI_B) && f1.righe === 252, 'dataset: filtro per assistito')
+    const f2 = await T.datasetMisure(d.db, { da: '2026-11-05', a: '2026-11-05', assistitoId: 2 })
+    ok(f2.ok === true && f2.righe === 24, 'dataset: filtro per periodo (un giorno = 24 misure orarie, estremi inclusi)')
+    ok((await T.datasetMisure(d.db, { da: 'ieri' })).ok === false && (await T.datasetMisure(d.db, { dopo: 'xx' })).ok === false && (await T.datasetMisure(d.db, { assistitoId: 99 })).ok === false, 'dataset: date, cursore e assistito non validi → errore')
+    const vuoto = await makeD1(); T.dimenticaTabelle()
+    const nv: any = await T.datasetMisure(vuoto.db, {})
+    ok(nv.ok === false && nv.status === 404, 'dataset senza tabelle: 404 (nessuna creazione di tabelle in lettura)')
+    ok(!vuoto.hasTable('sidly_misure'), 'dataset: sola lettura')
   }
 }

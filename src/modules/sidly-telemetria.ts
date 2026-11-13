@@ -32,13 +32,18 @@ export const STATO_SQL = `CREATE TABLE IF NOT EXISTS sidly_stato (
   imei TEXT PRIMARY KEY, assistito_id INTEGER,
   ultimo_frame_ts INTEGER, ultimo_reason TEXT, batt INTEGER, device_type TEXT, segnale TEXT, rete TEXT, n_frame INTEGER DEFAULT 0,
   frame_registrato_at TEXT, backfill_da_ts INTEGER, backfill_fino_ts INTEGER, backfill_righe INTEGER DEFAULT 0,
-  ultimo_errore TEXT, updated_at TEXT)`
+  ultimo_errore TEXT, registrato_ts INTEGER, completo_ts INTEGER, updated_at TEXT)`
 
 let tabelleOk: any = null
 /** Crea le tabelle (una volta per istanza). Chiamata SOLO da percorsi di scrittura. */
 export async function assicuraTabelle(db: any): Promise<void> {
   if (tabelleOk === db) return
   await db.batch([db.prepare(MISURE_SQL), db.prepare(EVENTI_SQL), db.prepare(STATO_SQL)])
+  // Tabella creata da una versione precedente: aggiunge le due colonne nuove (solo sidly_stato, piccola).
+  try {
+    const c = await db.prepare(`SELECT COUNT(*) AS n FROM pragma_table_info('sidly_stato') WHERE name IN ('registrato_ts','completo_ts')`).first()
+    if (Number(c?.n) < 2) for (const col of ['registrato_ts', 'completo_ts']) { try { await db.prepare(`ALTER TABLE sidly_stato ADD COLUMN ${col} INTEGER`).run() } catch { /* gia' presente */ } }
+  } catch { /* solo migrazione */ }
   tabelleOk = db
 }
 /** Solo per i test: dimentica che le tabelle sono state create. */
@@ -347,6 +352,10 @@ export function parseAllarmi(json: any, imei: string): Evento[] {
 export const FINESTRA_S = 7 * 86400
 /** Giorni riletti a ogni aggiornamento incrementale. */
 export const RILETTURA_S = 2 * 86400
+/** Se l'ultimo completamento e' piu' recente di cosi', l'assistito e' considerato aggiornato: nessuna chiamata (evita di rileggere gli stessi giorni a ogni passaggio). */
+export const AGGIORNATO_S = 6 * 3600
+/** Tetto del periodo richiesto (10 anni). */
+export const MAX_STORICO_S = 3650 * 86400
 const MIN_FINESTRA_S = 3600
 export const fmtSidlyData = (s: number) => new Date(s * 1000).toISOString().slice(0, 19).replace('T', ' ')
 /** 'YYYY-MM-DD' -> secondi UTC a mezzanotte; null se non valida. */
@@ -383,18 +392,41 @@ export interface StoricoOpzioni {
 export interface StoricoAssistito {
   assistito_id: number; imei: string; nome: string; finestre: number; righe: number; fino_a: string | null; completato: boolean
   eventi?: number; errore?: string
-  anteprima?: { finestra: string; punti: Record<string, number>; righe: number; da?: string; a?: string; passi: StatsParsed['passi']; eventi_trovati?: number; stima_righe_totali?: number; esempio?: any[] }
+  inizio_da?: string; aggiornato?: boolean
+  anteprima?: { finestra: string; punti: Record<string, number>; righe: number; da?: string; a?: string; passi: StatsParsed['passi']; eventi_trovati?: number; stima_righe_totali?: number; inizio_da?: string; finestre_totali?: number; esempio?: any[] }
 }
 export interface StoricoRisultato { httpStatus: number; result: { esito: 'anteprima' | 'eseguito' | 'errore'; completato?: boolean; errore?: string; assistiti?: StoricoAssistito[]; righe_scritte?: number; finestre_eseguite?: number; avvisi?: string[]; limiti?: { max_finestre: number; max_righe: number } } }
 
+/** Data di registrazione del braccialetto su SiDLY (registerDate di /patientIntegrate/{imei}): mezzanotte UTC meno un giorno di margine. */
+export async function dataRegistrazione(client: SidlyClient, imei: string, nowSec: number): Promise<{ ts: number | null; errore?: string }> {
+  const g = await client.request('GET', `/patientIntegrate/${imei}`)
+  if (g.status < 200 || g.status >= 300) return { ts: null, errore: `data di registrazione non letta (HTTP ${g.status})` }
+  const j = g.json && typeof g.json === 'object' && g.json.data && typeof g.json.data === 'object' && !Array.isArray(g.json.data) ? g.json.data : g.json
+  const raw = j?.registerDate
+  let v = num(raw)
+  if (v === null && typeof raw === 'string') { const t = Date.parse(raw); if (Number.isFinite(t)) v = Math.round(t / 1000) }
+  if (v !== null && v > 1e12) v = Math.round(v / 1000)
+  if (v === null || v < 946684800 || v > nowSec + 86400) return { ts: null, errore: 'data di registrazione non disponibile su SiDLY: indica una data di inizio' }
+  return { ts: Math.floor(v / 86400) * 86400 - 86400 }
+}
+
+/**
+ * Storico dalle misure di SiDLY. `da` = 'AAAA-MM-GG' oppure 'inizio' (per ogni assistito dalla data di registrazione del suo braccialetto).
+ * Riprende dal cursore salvato; un assistito completato resta "aggiornato" per AGGIORNATO_S (nessuna chiamata); dopo, rilegge gli ultimi RILETTURA_S.
+ */
 export async function eseguiStorico(o: StoricoOpzioni): Promise<StoricoRisultato> {
   const cfg = sidlyConfigError(o.env)
   if (cfg) return { httpStatus: 503, result: { esito: 'errore', errore: cfg } }
   const nowSec = o.nowSec ?? Math.floor(Date.now() / 1000)
-  const daSec = dataToSec(o.da)
-  if (daSec === null) return { httpStatus: 400, result: { esito: 'errore', errore: 'Data di inizio non valida (formato AAAA-MM-GG)' } }
-  if (daSec > nowSec) return { httpStatus: 400, result: { esito: 'errore', errore: 'La data di inizio e\' nel futuro' } }
-  if (nowSec - daSec > 800 * 86400) return { httpStatus: 400, result: { esito: 'errore', errore: 'Periodo troppo lungo (massimo circa 26 mesi)' } }
+  const inizio = String(o.da || '').trim().toLowerCase() === 'inizio'
+  let daSec = 0
+  if (!inizio) {
+    const d = dataToSec(o.da)
+    if (d === null) return { httpStatus: 400, result: { esito: 'errore', errore: 'Data di inizio non valida (formato AAAA-MM-GG, oppure "inizio")' } }
+    if (d > nowSec) return { httpStatus: 400, result: { esito: 'errore', errore: 'La data di inizio e\' nel futuro' } }
+    if (nowSec - d > MAX_STORICO_S) return { httpStatus: 400, result: { esito: 'errore', errore: 'Periodo troppo lungo (massimo 10 anni)' } }
+    daSec = d
+  }
   const maxFinestre = Math.max(1, Math.min(o.maxFinestre ?? 6, 20))
   const maxRighe = Math.max(100, Math.min(o.maxRighe ?? 4000, 20000))
   const lista = await assistitiAttivi(o.db, o.assistitoId)
@@ -404,23 +436,30 @@ export async function eseguiStorico(o: StoricoOpzioni): Promise<StoricoRisultato
   const res: StoricoAssistito[] = []
   let finestreTot = 0, righeTot = 0
 
-  // ANTEPRIMA: una finestra per al massimo 3 assistiti, nessuna scrittura (nemmeno la creazione delle tabelle).
+  // ANTEPRIMA: l'ultima settimana di al massimo 3 assistiti (stima il totale), nessuna scrittura (nemmeno la creazione delle tabelle).
   if (o.dryRun) {
     const campione = lista.slice(0, 3)
     if (lista.length > campione.length) avvisi.push(`Anteprima su ${campione.length} assistiti su ${lista.length} (le chiamate a SiDLY sono limitate per richiesta)`)
     for (const a of campione) {
       const r: StoricoAssistito = { assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, finestre: 0, righe: 0, fino_a: null, completato: false }
       try {
-        const fine = Math.min(daSec + FINESTRA_S, nowSec)
-        const g = await client.request('GET', `/patient/${a.imei}/stats?fromDate=${encodeURIComponent(fmtSidlyData(daSec))}&toDate=${encodeURIComponent(fmtSidlyData(fine - 1))}`)
+        let daA = daSec
+        if (inizio) {
+          const d = await dataRegistrazione(client, a.imei, nowSec)
+          if (d.ts === null) { r.errore = d.errore; res.push(r); continue }
+          daA = d.ts
+        }
+        const campDa = Math.max(daA, nowSec - FINESTRA_S)
+        const g = await client.request('GET', `/patient/${a.imei}/stats?fromDate=${encodeURIComponent(fmtSidlyData(campDa))}&toDate=${encodeURIComponent(fmtSidlyData(nowSec - 1))}`)
         if (g.status < 200 || g.status >= 300) { r.errore = `SiDLY ha risposto HTTP ${g.status}${g.motivo ? ': ' + g.motivo : ''}`; res.push(r); continue }
         const p = parseStats(g.json, a.imei)
         const ev = await client.request('GET', `/patientIntegrateAlarm/${a.imei}`)
-        const giorni = Math.max(1, Math.ceil((nowSec - daSec) / 86400))
-        const giorniFin = Math.max(1, (fine - daSec) / 86400)
-        r.anteprima = { finestra: `${fmtSidlyData(daSec)} - ${fmtSidlyData(fine)} (UTC)`, punti: p.punti, righe: p.righe.length, da: p.da ? fmtSidlyData(p.da) : undefined, a: p.a ? fmtSidlyData(p.a) : undefined, passi: p.passi,
+        const giorni = Math.max(1, (nowSec - daA) / 86400)
+        const giorniCamp = Math.max(1, (nowSec - campDa) / 86400)
+        r.anteprima = { finestra: `${fmtSidlyData(campDa)} - ${fmtSidlyData(nowSec)} (UTC, ultima settimana)`, punti: p.punti, righe: p.righe.length, da: p.da ? fmtSidlyData(p.da) : undefined, a: p.a ? fmtSidlyData(p.a) : undefined, passi: p.passi,
           eventi_trovati: ev.status >= 200 && ev.status < 300 ? parseAllarmi(ev.json, a.imei).length : undefined,
-          stima_righe_totali: Math.round(p.righe.length / giorniFin * giorni), esempio: p.righe.slice(0, 3).map(x => ({ ts: fmtSidlyData(x.ts), hr: x.hr ?? null, spo2: x.spo2 ?? null, steps: x.steps ?? null, resp: x.resp ?? null })) }
+          inizio_da: fmtSidlyData(daA) + ' UTC', finestre_totali: Math.ceil((nowSec - daA) / FINESTRA_S),
+          stima_righe_totali: Math.round(p.righe.length / giorniCamp * giorni), esempio: p.righe.slice(0, 3).map(x => ({ ts: fmtSidlyData(x.ts), hr: x.hr ?? null, spo2: x.spo2 ?? null, steps: x.steps ?? null, resp: x.resp ?? null })) }
         r.righe = p.righe.length
       } catch (e: any) { r.errore = String(e?.message || e).slice(0, 160) }
       res.push(r)
@@ -428,20 +467,33 @@ export async function eseguiStorico(o: StoricoOpzioni): Promise<StoricoRisultato
     return { httpStatus: 200, result: { esito: 'anteprima', assistiti: res, avvisi, limiti: { max_finestre: maxFinestre, max_righe: maxRighe } } }
   }
 
-  // ESECUZIONE: riprende dal cursore salvato; si ferma a fine budget e il chiamante richiama finche' completato=true.
+  // ESECUZIONE
   try { await assicuraTabelle(o.db) } catch { return { httpStatus: 500, result: { esito: 'errore', errore: 'Impossibile preparare le tabelle della telemetria' } } }
   let tuttiCompleti = true
+  const adesso = new Date(nowSec * 1000).toISOString()
   for (const a of lista) {
     const r: StoricoAssistito = { assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, finestre: 0, righe: 0, fino_a: null, completato: false, eventi: 0 }
     res.push(r)
-    const st = await safeFirst(o.db, 'SELECT backfill_da_ts, backfill_fino_ts FROM sidly_stato WHERE imei = ?', a.imei)
-    let da0: number = st?.backfill_da_ts ?? daSec
-    let cursore: number = st?.backfill_fino_ts ?? daSec
-    if (st?.backfill_da_ts != null && daSec < st.backfill_da_ts) { da0 = daSec; cursore = daSec } // periodo esteso all'indietro: si riparte (idempotente)
-    // Aggiornamento periodico: HRV (SDNN/RMSSD), passi e FR arrivano solo da /stats e possono comparire in ritardo,
-    // quindi a storico gia' al passo si rileggono gli ultimi RILETTURA_S (idempotente: stesse chiavi, nessun duplicato).
-    else if (st?.backfill_fino_ts != null && nowSec - cursore < RILETTURA_S + FINESTRA_S) cursore = Math.max(da0, Math.min(cursore, nowSec - RILETTURA_S))
-    r.fino_a = fmtSidlyData(cursore)
+    const st = await safeFirst(o.db, 'SELECT backfill_da_ts, backfill_fino_ts, registrato_ts, completo_ts FROM sidly_stato WHERE imei = ?', a.imei)
+    let daA: number | null = inizio ? (st?.registrato_ts != null ? Number(st.registrato_ts) : null) : daSec
+    const estende = st?.backfill_da_ts != null && daA !== null && daA < Number(st.backfill_da_ts)
+    if (st?.backfill_fino_ts != null) r.fino_a = fmtSidlyData(Number(st.backfill_fino_ts))
+    if (st?.backfill_da_ts != null) r.inizio_da = fmtSidlyData(Number(st.backfill_da_ts))
+    // Gia' aggiornato da poco: nessuna chiamata.
+    if (!estende && st?.completo_ts != null && nowSec - Number(st.completo_ts) < AGGIORNATO_S) { r.completato = true; r.aggiornato = true; continue }
+    // Budget della richiesta finito: gli altri assistiti restano in coda per il passaggio successivo (nessuna chiamata).
+    if (finestreTot >= maxFinestre || righeTot >= maxRighe) { tuttiCompleti = false; continue }
+    if (daA === null) {
+      const d = await dataRegistrazione(client, a.imei, nowSec)
+      if (d.ts === null) { r.errore = d.errore; tuttiCompleti = false; continue }
+      daA = d.ts
+      try { await o.db.prepare(`INSERT INTO sidly_stato (imei,assistito_id,registrato_ts,updated_at) VALUES (?,?,?,?) ON CONFLICT(imei) DO UPDATE SET registrato_ts=excluded.registrato_ts, assistito_id=excluded.assistito_id, updated_at=excluded.updated_at`).bind(a.imei, a.assistito_id, daA, adesso).run() } catch { /* si rilegge al prossimo passaggio */ }
+    }
+    let da0: number = st?.backfill_da_ts != null ? Number(st.backfill_da_ts) : daA
+    let cursore: number = st?.backfill_fino_ts != null ? Number(st.backfill_fino_ts) : daA
+    if (st?.backfill_da_ts != null && daA < Number(st.backfill_da_ts)) { da0 = daA; cursore = daA } // periodo esteso all'indietro: si riparte (idempotente)
+    else if (st?.completo_ts != null) cursore = Math.max(da0, cursore - RILETTURA_S) // aggiornamento: HRV e passi possono arrivare in ritardo
+    r.fino_a = fmtSidlyData(cursore); r.inizio_da = fmtSidlyData(da0)
     let errore = ''
     while (nowSec - cursore >= MIN_FINESTRA_S) {
       if (finestreTot >= maxFinestre || righeTot >= maxRighe) break
@@ -454,34 +506,38 @@ export async function eseguiStorico(o: StoricoOpzioni): Promise<StoricoRisultato
       const p = parseStats(g.json, a.imei)
       try {
         const st2: any[] = [...istruzioniMisure(o.db, p.righe)]
-        st2.push(o.db.prepare(`INSERT INTO sidly_stato (imei,assistito_id,backfill_da_ts,backfill_fino_ts,backfill_righe,ultimo_errore,updated_at) VALUES (?,?,?,?,?,NULL,?)
+        // completo_ts a NULL: finche' non si e' arrivati a oggi (e importati gli allarmi) il cursore riprende esattamente da qui
+        st2.push(o.db.prepare(`INSERT INTO sidly_stato (imei,assistito_id,backfill_da_ts,backfill_fino_ts,backfill_righe,ultimo_errore,completo_ts,updated_at) VALUES (?,?,?,?,?,NULL,NULL,?)
           ON CONFLICT(imei) DO UPDATE SET assistito_id=excluded.assistito_id, backfill_da_ts=excluded.backfill_da_ts, backfill_fino_ts=excluded.backfill_fino_ts,
-            backfill_righe=COALESCE(backfill_righe,0)+excluded.backfill_righe, ultimo_errore=NULL, updated_at=excluded.updated_at`)
-          .bind(a.imei, a.assistito_id, da0, fine, p.righe.length, new Date(nowSec * 1000).toISOString()))
+            backfill_righe=COALESCE(backfill_righe,0)+excluded.backfill_righe, ultimo_errore=NULL, completo_ts=NULL, updated_at=excluded.updated_at`)
+          .bind(a.imei, a.assistito_id, da0, fine, p.righe.length, adesso))
         await o.db.batch(st2)
       } catch { errore = 'Scrittura nel DB non riuscita'; break }
       cursore = fine; r.finestre++; r.righe += p.righe.length; righeTot += p.righe.length; r.fino_a = fmtSidlyData(cursore)
     }
     if (errore) {
       r.errore = errore
-      try { await o.db.prepare(`INSERT INTO sidly_stato (imei,assistito_id,ultimo_errore,updated_at) VALUES (?,?,?,?) ON CONFLICT(imei) DO UPDATE SET ultimo_errore=excluded.ultimo_errore, updated_at=excluded.updated_at`).bind(a.imei, a.assistito_id, errore, new Date(nowSec * 1000).toISOString()).run() } catch { /* solo diagnostica */ }
+      try { await o.db.prepare(`INSERT INTO sidly_stato (imei,assistito_id,ultimo_errore,updated_at) VALUES (?,?,?,?) ON CONFLICT(imei) DO UPDATE SET ultimo_errore=excluded.ultimo_errore, updated_at=excluded.updated_at`).bind(a.imei, a.assistito_id, errore, adesso).run() } catch { /* solo diagnostica */ }
     }
     r.completato = !errore && nowSec - cursore < MIN_FINESTRA_S
-    // Allarmi (patientIntegrateAlarm): a ogni aggiornamento a storico completato, solo i nuovi (con 1 giorno di margine per gli aggiornamenti di gestione).
+    // Arrivati a oggi: allarmi (patientIntegrateAlarm), solo i nuovi (1 giorno di margine per gli aggiornamenti di gestione); poi l'assistito risulta aggiornato.
     if (r.completato) {
+      let alOk = false
       try {
         const ev = await client.request('GET', `/patientIntegrateAlarm/${a.imei}`)
         if (ev.status >= 200 && ev.status < 300) {
           const ultimoApi = await safeFirst(o.db, `SELECT MAX(ts) AS m FROM sidly_eventi WHERE imei = ? AND origine = 'api'`, a.imei)
-          const soglia = Math.max(daSec, ultimoApi?.m ? Number(ultimoApi.m) - 86400 : 0)
+          const soglia = Math.max(daA, ultimoApi?.m ? Number(ultimoApi.m) - 86400 : 0)
           const tutti = parseAllarmi(ev.json, a.imei).filter(e => e.ts >= soglia)
           const frame = await safeAll(o.db, `SELECT ts, tipo FROM sidly_eventi WHERE imei = ? AND origine = 'frame'`, a.imei)
           // Un allarme gia' arrivato come frame (stesso tipo, entro 10 minuti) non si duplica.
           const nuovi = tutti.filter(e => !frame.some((f: any) => f.tipo === e.tipo && Math.abs(Number(f.ts) - e.ts) <= 600))
           if (nuovi.length) await o.db.batch(nuovi.map(e => istruzioneEvento(o.db, e, true)))
           r.eventi = nuovi.length
-        } else avvisi.push(`Allarmi di ${a.nome || a.imei} non letti (HTTP ${ev.status}): verranno ritentati`)
-      } catch { avvisi.push(`Allarmi di ${a.nome || a.imei} non importati: verranno ritentati`) }
+          alOk = true
+        } else avvisi.push(`Allarmi di ${a.nome || a.imei} non letti (HTTP ${ev.status}): verranno ritentati al prossimo aggiornamento`)
+      } catch { avvisi.push(`Allarmi di ${a.nome || a.imei} non importati: verranno ritentati al prossimo aggiornamento`) }
+      if (alOk) { try { await o.db.prepare('UPDATE sidly_stato SET completo_ts = ? WHERE imei = ?').bind(nowSec, a.imei).run() } catch { /* ritenta al prossimo passaggio */ } }
     }
     if (!r.completato) tuttiCompleti = false
   }
@@ -636,4 +692,49 @@ export async function reportMedie(db: any, o: { giorni: number; assistitoId?: nu
     coorte: { assistiti_con_dati: righe.filter(r => r.punti > 0).length, assistiti_totali: righe.length, metriche: coorte, passi_medi_giorno: pm.length ? pm.reduce((t, x) => t + x, 0) / pm.length : null, passi_assistiti: pm.length },
     passi_modo: PASSI_MODO,
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Dataset delle sole misure (CSV) per le analisi statistiche
+// ─────────────────────────────────────────────────────────────────────────────
+export const DATASET_COLONNE = ['assistito_id', 'imei', 'ts_utc', 'ts', 'hr', 'hr_q', 'spo2', 'spo2_q', 'temp', 'steps', 'steps_tot', 'pressure', 'sdnn', 'rmssd', 'resp', 'hr_rest', 'wear', 'fonte'] as const
+
+export interface DatasetOpzioni { da?: string; a?: string; assistitoId?: number; dopo?: string; limite?: number }
+/**
+ * Una pagina del dataset: una riga per (imei, istante), ordinata per imei e ts, con l'id dell'assistito ma SENZA nome o dati anagrafici.
+ * L'intestazione c'e' solo nella prima pagina; `prossimo` e' il cursore "imei:ts" per la pagina successiva (null = finito).
+ */
+export async function datasetMisure(db: any, o: DatasetOpzioni): Promise<{ ok: true; csv: string; righe: number; prossimo: string | null } | { ok: false; status: number; errore: string }> {
+  const limite = Math.max(1, Math.min(Math.round(o.limite ?? 20000), 50000))
+  const da = o.da ? dataToSec(o.da) : 0
+  const a = o.a ? dataToSec(o.a) : null
+  if (da === null || (o.a && a === null)) return { ok: false, status: 400, errore: 'Date non valide (formato AAAA-MM-GG)' }
+  const fine = a === null ? 4102444800 : a + 86400
+  const tab = await safeFirst(db, `SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name='sidly_misure'`)
+  if (!tab || Number(tab.n) < 1) return { ok: false, status: 404, errore: 'Nessuna misura: le tabelle non sono ancora state create (caricare prima lo storico o ricevere i frame)' }
+  const where = ['m.ts >= ?', 'm.ts < ?']
+  const par: any[] = [da, fine]
+  if (o.assistitoId !== undefined) {
+    const x = await safeFirst(db, 'SELECT imei FROM assistiti WHERE id = ?', o.assistitoId)
+    const imei = digits(x?.imei)
+    if (!IMEI_RE.test(imei)) return { ok: false, status: 404, errore: 'Assistito non trovato o senza IMEI' }
+    where.push('m.imei = ?'); par.push(imei)
+  }
+  if (o.dopo) {
+    const m = /^(\d{14,17}):(\d{1,12})$/.exec(o.dopo)
+    if (!m) return { ok: false, status: 400, errore: 'Cursore non valido' }
+    where.push('(m.imei > ? OR (m.imei = ? AND m.ts > ?))'); par.push(m[1], m[1], Number(m[2]))
+  }
+  let rows: any[]
+  try {
+    const r = await db.prepare(`SELECT a.id AS assistito_id, m.imei, m.ts, m.hr, m.hr_q, m.spo2, m.spo2_q, m.temp, m.steps, m.steps_tot, m.pressure, m.sdnn, m.rmssd, m.resp, m.hr_rest, m.wear, m.fonte
+      FROM sidly_misure m LEFT JOIN assistiti a ON a.imei = m.imei WHERE ${where.join(' AND ')} ORDER BY m.imei, m.ts LIMIT ?`).bind(...par, limite + 1).all()
+    rows = r?.results || []
+  } catch { return { ok: false, status: 500, errore: 'Lettura del dataset non riuscita' } }
+  const pagina = rows.slice(0, limite)
+  const v = (x: any) => (x === null || x === undefined ? '' : String(x))
+  const righe = pagina.map(r => [v(r.assistito_id), v(r.imei), new Date(Number(r.ts) * 1000).toISOString(), v(r.ts), v(r.hr), v(r.hr_q), v(r.spo2), v(r.spo2_q), v(r.temp), v(r.steps), v(r.steps_tot), v(r.pressure), v(r.sdnn), v(r.rmssd), v(r.resp), v(r.hr_rest), v(r.wear), v(r.fonte)].join(','))
+  const csv = (o.dopo ? '' : DATASET_COLONNE.join(',') + '\n') + righe.join('\n') + (righe.length ? '\n' : '')
+  const ultimo = pagina[pagina.length - 1]
+  return { ok: true, csv, righe: pagina.length, prossimo: rows.length > limite && ultimo ? `${ultimo.imei}:${ultimo.ts}` : null }
 }

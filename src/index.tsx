@@ -22054,6 +22054,20 @@ app.get('/api/sidly/telemetria/stato', async (c) => {
   return c.json({ esito: 'ok', ...st, configurazione: { frame_url: v.ok ? 'ok' : v.errore, cifratura: v.ok ? (v.cifrato ? 'attiva' : 'non attiva') : null, ingest_token: ((c.env as any)?.SIDLY_INGEST_TOKEN || '').length >= 16 ? 'ok' : 'mancante' } })
 })
 
+// GET /api/sidly/telemetria/dataset?da=&a=&assistito_id=&dopo=&limite= - dataset delle sole misure in CSV (una pagina; cursore in X-Prossimo-Cursore). Nessun nome: solo assistito_id e IMEI.
+app.get('/api/sidly/telemetria/dataset', async (c) => {
+  const guard = checkSessionOrKey(c.req.header('Cookie'), c.req.header('Authorization'), [c.env?.API_KEY, c.env?.ADMIN_SECRET_TOKEN])
+  if (!guard.ok) return c.json({ esito: 'errore', errore: guard.error }, guard.status)
+  if (!c.env?.DB) return c.json({ esito: 'errore', errore: 'Database non configurato' }, 500)
+  const aid = c.req.query('assistito_id') ? Number(c.req.query('assistito_id')) : undefined
+  if (aid !== undefined && (!Number.isInteger(aid) || aid <= 0)) return c.json({ esito: 'errore', errore: 'assistito_id non valido' }, 400)
+  const lim = c.req.query('limite') ? Number(c.req.query('limite')) : undefined
+  const { datasetMisure } = await import('./modules/sidly-telemetria')
+  const r = await datasetMisure(c.env.DB, { da: c.req.query('da') || undefined, a: c.req.query('a') || undefined, assistitoId: aid, dopo: c.req.query('dopo') || undefined, limite: lim !== undefined && Number.isFinite(lim) ? lim : undefined })
+  if (!r.ok) return c.json({ esito: 'errore', errore: r.errore }, r.status as any)
+  return new Response(r.csv, { status: 200, headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Cache-Control': 'no-store', 'X-Righe': String(r.righe), 'X-Prossimo-Cursore': r.prossimo || '' } })
+})
+
 // GET /api/sidly/telemetria/report?giorni=30&assistito_id= - medie per assistito e di coorte (FC, SpO2, HRV, FR, temperatura, passi). Sola lettura.
 app.get('/api/sidly/telemetria/report', async (c) => {
   const guard = checkSessionOrKey(c.req.header('Cookie'), c.req.header('Authorization'), [c.env?.API_KEY, c.env?.ADMIN_SECRET_TOKEN])
