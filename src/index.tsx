@@ -21994,6 +21994,24 @@ app.post('/api/sidly/sync-assistito', async (c) => {
   return c.json(result, httpStatus as any)
 })
 
+// POST /api/sidly/crea-scheda - crea la scheda di configurazione mancante di un assistito ATTIVO (dati dal lead collegato).
+// Body: { assistito_id, conferma_scrittura? }. Senza conferma_scrittura:true restituisce solo l'anteprima (nessuna scrittura).
+app.post('/api/sidly/crea-scheda', async (c) => {
+  const guard = checkSessionOrKey(c.req.header('Cookie'), c.req.header('Authorization'), [c.env?.API_KEY, c.env?.ADMIN_SECRET_TOKEN])
+  if (!guard.ok) return c.json({ esito: 'errore', errore: guard.error }, guard.status)
+  if (!c.env?.DB) return c.json({ esito: 'errore', errore: 'Database non configurato' }, 500)
+  let body: any = null
+  try { body = await c.req.json() } catch { body = null }
+  const assistitoId = Number(body?.assistito_id)
+  if (!Number.isInteger(assistitoId) || assistitoId <= 0) {
+    return c.json({ esito: 'errore', errore: 'assistito_id mancante o non valido' }, 400)
+  }
+  const { creaScheda } = await import('./modules/sidly-sync')
+  const { httpStatus, result } = await creaScheda(c.env.DB, assistitoId, { conferma: body?.conferma_scrittura === true })
+  console.log('[SIDLY-SCHEDA]', JSON.stringify({ assistito_id: assistitoId, esito: result.esito, conferma: body?.conferma_scrittura === true }))
+  return c.json(result, httpStatus as any)
+})
+
 // ========================================
 // SiDLY TELEMETRIA: ricevitore frame, storico, registrazione frame, report medie
 // ========================================

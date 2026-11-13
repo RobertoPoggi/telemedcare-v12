@@ -49,7 +49,9 @@ export function richiestaLeggibile(body: any): string {
 }
 const rispostaBreve = (t: string) => { const x = toStr(t).replace(/\s+/g, ' ').trim(); return x.length > 600 ? x.slice(0, 600) + '…' : x }
 export interface CampoInviato { campo: string; valore: any; /** Testi per l'operatore (solo visualizzazione): nome leggibile e valori su piu' righe. */ etichetta?: string; mostra_prima?: string; mostra_dopo?: string; /** Valore attualmente su SiDLY (solo campi user.*; '' se vuoto): serve all'operatore per capire cosa verrebbe sovrascritto. */ precedente?: any }
-export interface Candidato { user_id: string; first_name: string; last_name: string }
+export interface Candidato { user_id: string; first_name: string; last_name: string; /** IMEI che l'assistito ha su SiDLY (letto da /patient/{user_id}). */ imei?: string }
+/** Scheda di configurazione assente nel CRM: si puo' creare (con anteprima e conferma) se c'e' una richiesta collegata. */
+export interface SchedaMancante { possibile: boolean; lead_id?: string; collegamento?: string; motivo?: string }
 
 export interface SyncResult {
   esito: Esito
@@ -65,6 +67,11 @@ export interface SyncResult {
   url_for_band: { registrato: boolean; url?: string; motivo?: string }
   candidati?: Candidato[]
   motivo_conferma?: string
+  /** Gli omonimi si possono solo associare (mai creare un nuovo assistito): l'IMEI del CRM non e' accessibile su SiDLY. */
+  solo_associa?: boolean
+  /** IMEI registrato nel CRM (mostrato accanto a quello degli omonimi su SiDLY). */
+  imei_crm?: string
+  scheda_mancante?: SchedaMancante
   errore?: string
   /** Modifiche scritte (o, in anteprima, previste) nel CRM per le righe in cui l'operatore ha scelto SiDLY. Non salvato nel DB. */
   crm_scritture?: CampoCrm[]
@@ -412,6 +419,7 @@ export function normalizePlatformPatient(resp: any): PlatformPatient {
 const squash = (v: any) => toStr(v).toLowerCase().replace(/\s+/g, ' ')
 const eqStr = (a: any, b: any) => squash(a) === squash(b)
 const eqDigits = (a: any, b: any) => digits(a) === digits(b)
+const IMEI_OK = /^\d{14,17}$/
 const eqNum = (a: any, b: any) => Math.abs(Number(a) - Number(b)) < 0.05
 const eqDate = (a: any, b: any) => !!a && !!b && Number(a.year) === Number(b.year) && Number(a.month) === Number(b.month) && Number(a.day) === Number(b.day)
 /** Indirizzo: stesso insieme di parole, ignorando maiuscole, punteggiatura e ordine ("Via X 1, Genova, GE, 16166" == "Via X 1, 16166 Genova (GE)"). */
@@ -533,6 +541,8 @@ export interface SyncOptions {
   scelte?: SceltaRiga[]
   /** Esegue le scritture nel CRM (fornita da runSidlySync; mai chiamata in anteprima). */
   applyCrm?: (ops: CrmOp[]) => Promise<void>
+  /** Nome dell'assistito del CRM che ha gia' questo IMEI (null = libero). Serve a non offrire un IMEI che violerebbe l'unicita'. */
+  imeiInUso?: (imei: string) => Promise<string | null>
 }
 
 const ok2xx = (s: number) => s >= 200 && s < 300
@@ -651,7 +661,7 @@ const newPlan = (): Plan => ({ user: {}, band: {}, contacts: {}, diseases: {}, o
 const planHasSidly = (w: Plan) => !!(Object.keys(w.user).length || Object.keys(w.band).length || Object.keys(w.contacts).length || Object.keys(w.diseases).length)
 
 interface RigaInt extends RigaConfronto { toSidly?: (w: Plan) => void; toCrm?: (w: Plan) => void; /** Altre voci scritte insieme a questa riga (es. i nomi dei numeri ammessi): mostrate in "prima / dopo" salvo che siano gia' scelte come riga propria. */ extra?: { copertoDa: string; campi: CampoInviato[] } }
-interface Raw { nuovo?: boolean; plat?: PlatformPatient; brief?: any; full?: any; contacts?: any; diseases?: any; card?: any }
+interface Raw { assoc?: boolean; nuovo?: boolean; plat?: PlatformPatient; brief?: any; full?: any; contacts?: any; diseases?: any; card?: any }
 
 interface Def {
   g: string; campo: string; chiave: string; s: unknown; c: unknown
@@ -724,7 +734,7 @@ export function buildRows(crm: CrmPatient, raw: Raw): RigaInt[] {
       const prova = newPlan(); orig(prova)   // prova a secco: quali tabelle del CRM verrebbero scritte
       const utili = prova.ops.filter(o => ha(tabDi(o)))
       if ((d.needs && d.needs.some(t => !ha(t))) || (prova.ops.length > 0 && utili.length === 0)) {
-        d = { ...d, toCrm: undefined, notaCrm: 'Per questo assistito il CRM non ha la scheda di configurazione (richiesta collegata): qui non si può salvare questo dato.' }
+        d = { ...d, toCrm: undefined, notaCrm: 'Per questo assistito il CRM non ha la scheda di configurazione: usa «Crea scheda di configurazione» in alto, poi riapri il confronto.' }
       } else if (utili.length < prova.ops.length) {
         d = { ...d, toCrm: (w: Plan) => { const t = newPlan(); orig(t); w.ops.push(...t.ops.filter(o => ha(tabDi(o)))) } }
       }
@@ -835,7 +845,15 @@ export function buildRows(crm: CrmPatient, raw: Raw): RigaInt[] {
   def({ g: B, campo: 'Numero SIM', chiave: 'band.simNumber', s: plat.band.simNumber, c: crm.band.simNumber, eq: eqDigits,
     toSidly: w => { w.band.simNumber = crm.band.simNumber },
     toCrm: w => colOp(w, 'band.simNumber', 'ddts', 'sim_number', toStr(plat.band.simNumber)) })
-  push({ gruppo: B, campo: 'IMEI', sidly: toStr(brief.imei ?? (nuovo ? '' : crm.imei)), crm: crm.imei, stato: 'uguale' })
+  // IMEI: confronto vero. Se il braccialetto e' stato sostituito, quello giusto e' sempre quello di SiDLY: si corregge solo nel CRM.
+  const imeiBrief = digits(brief.imei)
+  const imeiS = nuovo ? '' : (imeiBrief || (raw.assoc ? '' : digits(crm.imei)))
+  if (nuovo) push({ gruppo: B, campo: 'IMEI', sidly: '', crm: crm.imei, stato: 'uguale' })
+  else if (!imeiS) push({ gruppo: B, campo: 'IMEI', sidly: '', crm: crm.imei, stato: 'non_verificato' })
+  else def({ g: B, campo: 'IMEI', chiave: 'band.imei', s: imeiS, c: crm.imei, eq: eqDigits,
+    toCrm: IMEI_OK.test(imeiS) ? (w => colOp(w, 'band.imei', 'assistiti', 'imei', imeiS)) : undefined,
+    notaSidly: 'L\'IMEI giusto è quello di SiDLY: si corregge nel CRM, non su SiDLY.',
+    notaCrm: 'L\'IMEI di SiDLY non ha un formato valido: non lo scrivo nel CRM.' })
   if (letto && !nuovo) {
     for (const [k, lab] of BAND_SOLO_SIDLY) if (fb[k] !== undefined) solo(B, lab, fb[k])
     if (brief.batteryLevel !== undefined) solo(B, 'Livello batteria', brief.batteryLevel)
@@ -1104,7 +1122,7 @@ async function scriviSidly(client: SidlyClient, crm: CrmPatient, id: string, ass
   if (body.user || body.band) chiamate.push({
     azione: assoc ? 'PATCH /manager/patient/{user_id}' : 'PATCH /manager/patient/{imei}', metodo: 'PATCH', path: `/manager/patient/${enc(id)}`, body,
     // Se SiDLY rifiuta la richiesta parziale (HTTP 400), si ritenta come il portale (payload verificato dal vivo).
-    riprove: body.band ? riproveComePortale(raw, plan, crm.imei) : undefined,
+    riprove: body.band ? riproveComePortale(raw, plan, imeiBraccialetto(raw, crm, !!assoc)) : undefined,
     campi: [...Object.keys(plan.user).map(k => 'user.' + k), ...Object.keys(plan.band).map(k => 'band.' + k)], errore: 'Aggiornamento assistito su SiDLY non riuscito',
   })
   if (Object.keys(plan.contacts).length) chiamate.push({
@@ -1139,6 +1157,24 @@ async function scriviSidly(client: SidlyClient, crm: CrmPatient, id: string, ass
   return null
 }
 
+/** IMEI del braccialetto su SiDLY: se l'assistito e' stato associato a mano puo' essere diverso da quello del CRM (dispositivo sostituito). */
+function imeiBraccialetto(raw: Raw, crm: CrmPatient, associato: boolean): string {
+  const j = rootOf(raw.brief), f = rootOf(raw.full)
+  const x = digits(j.imei ?? j.band?.imei ?? f.band?.imei)
+  return x && IMEI_OK.test(x) ? x : (associato ? '' : crm.imei)
+}
+
+/** Se l'IMEI di SiDLY e' gia' assegnato a un altro assistito del CRM, la correzione non viene offerta (l'IMEI e' univoco nel CRM). */
+async function bloccaImeiInUso(rows: RigaInt[], f: (imei: string) => Promise<string | null>): Promise<void> {
+  const r = rows.find(x => x.chiave === 'band.imei' && x.verso && x.verso.includes('sidly'))
+  if (!r) return
+  let altro: string | null = null
+  try { altro = await f(digits(r.sidly)) } catch { altro = null }
+  if (!altro) return
+  r.verso = r.verso!.filter(v => v !== 'sidly'); r.toCrm = undefined
+  r.nota = [r.nota, `Questo IMEI è già assegnato nel CRM a ${altro}: sistema prima quell'assegnazione.`].filter(Boolean).join(' ')
+}
+
 function decora(out: SyncResult, crm: CrmPatient, rows: RigaInt[]): void {
   out.assistito = `${crm.user.firstName} ${crm.user.lastName}`.trim()
   out.campi_inviati = out.campi_inviati.map(c => {
@@ -1165,6 +1201,7 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
     let identifier = crm.imei
     const assoc = opts.associaUserId ? digits(opts.associaUserId) : ''
     if (assoc) identifier = assoc
+    raw.assoc = !!assoc
 
     let res = await client.request('GET', `/patient/${enc(identifier)}`)
     out.azioni.push({ azione: assoc ? 'GET /patient/{user_id}' : 'GET /patient/{imei}', risultato: String(res.status) })
@@ -1173,13 +1210,18 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
     let rows: RigaInt[] = []
     let creato = false
 
-    if (res.status === 404 && !assoc) {
+    // 403 = l'IMEI esiste ma non e' accessibile al nostro account (tipico di un braccialetto sostituito o con IMEI errato nel CRM):
+    // si cerca l'assistito per nome, ma non se ne crea mai uno nuovo.
+    const negato = res.status === 403 && !assoc
+    if ((res.status === 404 || negato) && !assoc) {
+      if (negato && opts.confermaCrea) return fail(`Creazione bloccata: SiDLY non consente l'accesso al braccialetto con IMEI ${crm.imei} (HTTP 403). Probabilmente l'IMEI nel CRM non è più quello giusto: cerca l'assistito per nome e associalo.`)
       // Deduplica: omonimi gia' presenti in piattaforma -> decide l'operatore.
       if (!opts.confermaCrea) {
         const q = `first_name=${enc(crm.user.firstName)}&last_name=${enc(crm.user.lastName)}`
         const s = await client.request('GET', `/patient/myShortInfo?${q}`)
         out.azioni.push({ azione: 'GET /patient/myShortInfo (ricerca omonimi)', risultato: String(s.status) })
         if (!ok2xx(s.status)) {
+          if (negato) return fail(`SiDLY non consente l'accesso al braccialetto con IMEI ${crm.imei} (HTTP 403) e la ricerca per nome non è riuscita (HTTP ${s.status}): riprova più tardi o controlla l'IMEI sull'etichetta del braccialetto.`)
           out.esito = 'conferma_richiesta'
           out.candidati = []
           out.motivo_conferma = 'Ricerca omonimi non riuscita: non si puo\' escludere che l\'assistito esista gia\'. Creare comunque un nuovo assistito?'
@@ -1193,11 +1235,21 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
           }))
           .filter(x => x.user_id && eqStr(x.first_name, crm.user.firstName) && eqStr(x.last_name, crm.user.lastName))
         if (cands.length) {
+          // IMEI che ciascun omonimo ha su SiDLY: se e' diverso da quello del CRM il braccialetto e' stato probabilmente sostituito.
+          for (const c of cands.slice(0, 5)) {
+            try { const g = await client.request('GET', `/patient/${enc(c.user_id)}`); if (ok2xx(g.status)) { const jj = rootOf(g.json); const im = digits(jj.imei ?? jj.band?.imei); if (im) c.imei = im } } catch { /* l'IMEI resta non mostrato */ }
+          }
+          out.azioni.push({ azione: 'GET /patient/{user_id} (IMEI degli omonimi)', risultato: String(cands.filter(c => c.imei).length) + '/' + String(Math.min(cands.length, 5)) })
           out.esito = 'conferma_richiesta'
           out.candidati = cands
-          out.motivo_conferma = 'Trovato un assistito omonimo su SiDLY: associare o creare nuovo?'
+          out.imei_crm = crm.imei
+          if (negato) out.solo_associa = true
+          out.motivo_conferma = negato
+            ? `L'IMEI del CRM (${crm.imei}) non è accessibile su SiDLY (HTTP 403), ma esiste un assistito con lo stesso nome. Se è lui, associalo: nel confronto potrai aggiornare l'IMEI nel CRM.`
+            : `Nessun braccialetto con l'IMEI del CRM (${crm.imei}) su SiDLY, ma esiste un assistito con lo stesso nome. Se il dispositivo è stato sostituito, associalo: nel confronto potrai aggiornare l'IMEI nel CRM. Altrimenti crea un nuovo assistito.`
           return out
         }
+        if (negato) return fail(`SiDLY non consente l'accesso al braccialetto con IMEI ${crm.imei} (HTTP 403) e non c'è nessun assistito con lo stesso nome (${crm.user.firstName} ${crm.user.lastName}). L'IMEI nel CRM potrebbe essere errato: controllalo sull'etichetta del braccialetto.`)
       }
 
       // CREAZIONE (assistito inesistente su SiDLY: l'operatore l'ha richiesta e confermata esplicitamente)
@@ -1241,6 +1293,7 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
       await leggiScheda(client, crm, res.json, assoc, out, raw, dry)
       await leggiDettagli(client, crm, assoc || crm.imei, raw, out, dry)
       rows = buildRows(crm, raw)
+      if (opts.imeiInUso) await bloccaImeiInUso(rows, opts.imeiInUso)
       previsto = 'invariato' // senza scelte dell'operatore non si scrive nulla
       const scelte = opts.scelte || []
       if (scelte.length) {
@@ -1248,6 +1301,7 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
         if (p.errore) return fail(p.errore)
         out.campi_inviati = p.campi
         out.crm_scritture = p.crm
+        if (scelte.some(x => x.chiave === 'band.imei' && x.verso === 'sidly')) out.warning.push('Cambio IMEI: viene aggiornato solo l\'IMEI dell\'assistito nel CRM; dispositivi, DDT e contratti restano come sono (e la SIM si legge dal DDT collegato al vecchio IMEI).')
         const e1 = await scriviSidly(client, crm, assoc || crm.imei, assoc, raw, p.plan, out, dry)
         if (e1) return fail(e1)
         if (p.plan.ops.length) {
@@ -1276,7 +1330,7 @@ export async function syncAssistito(opts: SyncOptions): Promise<SyncResult> {
       out.url_for_band = { registrato: false, url: frameUrl, motivo: 'non eseguito (anteprima)' }
       out.azioni.push({ azione: 'POST /manager/set-url-for-band', risultato: 'non eseguito (anteprima)' })
     } else {
-      const u = await client.request('POST', '/manager/set-url-for-band', { imei: crm.imei, url: frameUrl })
+      const u = await client.request('POST', '/manager/set-url-for-band', { imei: imeiBraccialetto(raw, crm, !!assoc), url: frameUrl })
       out.azioni.push({ azione: 'POST /manager/set-url-for-band', risultato: String(u.status) })
       if (ok2xx(u.status)) out.url_for_band = { registrato: true, url: frameUrl }
       else {
@@ -1329,6 +1383,95 @@ export async function loadCrmSources(db: any, assistitoId: number): Promise<CrmS
   return { assistito, lead, leadId, config, simNumber: ddt?.sim_number || null, extra }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Scheda di configurazione mancante: rilevamento e creazione (anteprima + conferma)
+// ─────────────────────────────────────────────────────────────────────────────
+interface PianoScheda { insert: boolean; link: boolean; leadId: string; valori: Array<{ campo: string; valore: string }>; riga: any[] }
+
+async function pianoScheda(db: any, assistitoId: number): Promise<{ info: SchedaMancante; piano?: PianoScheda }> {
+  const a = await safeFirst(db, 'SELECT * FROM assistiti WHERE id = ?', assistitoId)
+  if (!a) return { info: { possibile: false, motivo: 'Assistito non trovato' } }
+  let leadId: string | null = a.lead_id ? String(a.lead_id) : null
+  let collegamento: SchedaMancante['collegamento'] = leadId ? 'assistito' : undefined
+  if (!leadId && a.imei) {
+    const c = await safeFirst(db, 'SELECT leadId FROM contracts WHERE imei_dispositivo = ? ORDER BY created_at DESC LIMIT 1', a.imei)
+    if (c?.leadId) { leadId = String(c.leadId); collegamento = 'contratto' }
+  }
+  let nome = toStr(a.nome_assistito), cognome = toStr(a.cognome_assistito)
+  if (!nome || !cognome) { const sp = splitNome(a.nome); nome = nome || sp.nome; cognome = cognome || sp.cognome }
+  if (!leadId) {
+    if (!nome || !cognome) return { info: { possibile: false, motivo: 'L\'assistito non è collegato a nessuna richiesta e nome/cognome mancano: non posso cercarla.' } }
+    // Ultima possibilita': la richiesta con lo stesso nome e cognome dell'assistito (accettata solo se UNICA).
+    let n = 0, id = ''
+    try {
+      const r = await db.prepare('SELECT id FROM leads WHERE LOWER(TRIM(nomeAssistito)) = ? AND LOWER(TRIM(cognomeAssistito)) = ? LIMIT 3').bind(nome.toLowerCase(), cognome.toLowerCase()).all()
+      const rows = (r?.results || []).filter((x: any) => x && x.id)
+      n = rows.length; id = rows[0] ? String(rows[0].id) : ''
+    } catch { n = 0 }
+    if (n === 0) return { info: { possibile: false, motivo: 'Nessuna richiesta (lead) collegata a questo assistito né con lo stesso nome: la scheda nasce da una richiesta, non posso inventarla.' } }
+    if (n > 1) return { info: { possibile: false, motivo: 'Più richieste con lo stesso nome e cognome: non so quale collegare. Collega a mano l\'assistito alla richiesta giusta.' } }
+    leadId = id; collegamento = 'nome'
+  }
+  const esiste = await safeFirst(db, 'SELECT id FROM configurations WHERE leadId = ? ORDER BY id DESC LIMIT 1', leadId)
+  const lead = await safeFirst(db, 'SELECT nomeAssistito, cognomeAssistito, dataNascitaAssistito, indirizzoAssistito, cittaAssistito, provinciaAssistito, capAssistito FROM leads WHERE id = ?', leadId)
+  if (!lead && !esiste) return { info: { possibile: false, lead_id: leadId, collegamento, motivo: `La richiesta ${leadId} collegata all'assistito non esiste più nel CRM.` } }
+  const link = !a.lead_id
+  const insert = !esiste
+  if (!insert && !link) return { info: { possibile: false, lead_id: leadId, collegamento, motivo: 'La scheda esiste già e l\'assistito è già collegato: riapri il confronto.' } }
+  const L = lead || {}
+  const valori = [
+    { campo: 'Nome', valore: toStr(L.nomeAssistito) || nome },
+    { campo: 'Cognome', valore: toStr(L.cognomeAssistito) || cognome },
+    { campo: 'Data di nascita', valore: toStr(L.dataNascitaAssistito) },
+    { campo: 'Indirizzo', valore: [L.indirizzoAssistito, L.cittaAssistito, L.provinciaAssistito, L.capAssistito].map(toStr).filter(Boolean).join(', ') },
+  ]
+  const info: SchedaMancante = { possibile: true, lead_id: leadId, collegamento }
+  return { info, piano: { insert, link, leadId, valori, riga: [leadId, valori[0].valore, valori[1].valore, valori[2].valore, valori[3].valore] } }
+}
+
+/** Per la Dashboard: l'assistito non ha la scheda di configurazione; dice se e come si puo' creare. */
+export async function schedaMancante(db: any, assistitoId: number): Promise<SchedaMancante> {
+  return (await pianoScheda(db, assistitoId)).info
+}
+
+export interface CreaSchedaRisultato {
+  esito: 'anteprima' | 'creata' | 'errore'; errore?: string; lead_id?: string; collegamento?: string
+  /** Cosa verra' scritto (o e' stato scritto) nel CRM. */
+  scritture?: Array<{ tabella: string; operazione: string; dettaglio: string }>
+  valori?: Array<{ campo: string; valore: string }>
+  avvisi?: string[]
+}
+
+/** Crea la scheda di configurazione mancante (e, se serve, collega l'assistito alla sua richiesta). Senza conferma e' solo un'anteprima. */
+export async function creaScheda(db: any, assistitoId: number, o: { conferma: boolean }): Promise<{ httpStatus: number; result: CreaSchedaRisultato }> {
+  const a = await safeFirst(db, 'SELECT id, status FROM assistiti WHERE id = ?', assistitoId)
+  if (!a) return { httpStatus: 404, result: { esito: 'errore', errore: 'Assistito non trovato' } }
+  if (String(a.status || '').toUpperCase() !== 'ATTIVO') return { httpStatus: 422, result: { esito: 'errore', errore: 'Consentito solo per assistiti con stato ATTIVO' } }
+  const { info, piano } = await pianoScheda(db, assistitoId)
+  if (!info.possibile || !piano) return { httpStatus: 409, result: { esito: 'errore', errore: info.motivo || 'Scheda non creabile', lead_id: info.lead_id, collegamento: info.collegamento } }
+  const scritture: NonNullable<CreaSchedaRisultato['scritture']> = []
+  if (piano.insert) scritture.push({ tabella: 'configurations', operazione: 'crea la scheda di configurazione', dettaglio: `collegata alla richiesta ${piano.leadId}; stato SIDLY_SYNC; solo nome, cognome, data di nascita e indirizzo presi dalla richiesta` })
+  if (piano.link) scritture.push({ tabella: 'assistiti', operazione: 'collega l\'assistito alla richiesta', dettaglio: `lead_id = ${piano.leadId} (${info.collegamento === 'nome' ? 'trovata per nome e cognome: unica corrispondenza' : 'ricavata dal contratto'})` })
+  const avvisi: string[] = []
+  if (info.collegamento === 'nome') avvisi.push('La richiesta è stata trovata solo per nome e cognome (nessun collegamento diretto): controlla che sia quella giusta.')
+  avvisi.push('Referenti, telefono, e-mail e dati medici non vengono inventati: dopo la creazione riapri il confronto e scegli «vale SiDLY» riga per riga.')
+  const base = { lead_id: piano.leadId, collegamento: info.collegamento, scritture, valori: piano.valori, avvisi }
+  if (!o.conferma) return { httpStatus: 200, result: { esito: 'anteprima', ...base } }
+  const now = new Date().toISOString()
+  const stmts: any[] = []
+  if (piano.insert) stmts.push(db.prepare(`INSERT INTO configurations (leadId, nome_assistito, cognome_assistito, data_nascita, indirizzo, status, form_inviato, created_at, updated_at)
+      SELECT ?, ?, ?, ?, ?, 'SIDLY_SYNC', 0, ?, ? WHERE NOT EXISTS (SELECT 1 FROM configurations WHERE leadId = ?)`).bind(...piano.riga, now, now, piano.leadId))
+  if (piano.link) stmts.push(db.prepare(`UPDATE assistiti SET lead_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND (lead_id IS NULL OR lead_id = '')`).bind(piano.leadId, assistitoId))
+  try {
+    if (typeof db.batch === 'function') await db.batch(stmts); else for (const x of stmts) await x.run()
+  } catch (e: any) {
+    return { httpStatus: 500, result: { esito: 'errore', errore: 'Scrittura non riuscita, nulla è stato modificato: ' + String(e?.message || e).slice(0, 120), ...base } }
+  }
+  const verifica = await safeFirst(db, 'SELECT id FROM configurations WHERE leadId = ? ORDER BY id DESC LIMIT 1', piano.leadId)
+  if (!verifica) return { httpStatus: 500, result: { esito: 'errore', errore: 'La scheda non risulta creata: controlla nel CRM', ...base } }
+  return { httpStatus: 200, result: { esito: 'creata', ...base } }
+}
+
 export interface RunOptions {
   db: any
   env: SidlyEnv
@@ -1344,7 +1487,7 @@ export interface RunOptions {
 const COLONNE_OK: Record<Tabella, RegExp> = {
   configurations: /^(nome_assistito|cognome_assistito|data_nascita|telefono|peso|altezza|email|allergie|note_mediche|centro_medico_riferimento|contatto[123]_(nome|cognome|telefono|email))$/,
   leads: /^(nomeAssistito|cognomeAssistito|dataNascitaAssistito|indirizzoAssistito|cittaAssistito|provinciaAssistito|capAssistito)$/,
-  assistiti: /^(nome_assistito|cognome_assistito|peso|altezza)$/,
+  assistiti: /^(nome_assistito|cognome_assistito|peso|altezza|imei)$/,
   ddts: /^sim_number$/,
 }
 
@@ -1391,8 +1534,17 @@ export async function runSidlySync(o: RunOptions): Promise<{ httpStatus: number;
   const crm = buildCrmPatient(src, o.env)
   if ('error' in crm) return { httpStatus: 422, result: { esito: 'errore', errore: crm.error } }
 
-  const result = await syncAssistito({ crm, env: o.env, fetchImpl: o.fetchImpl, dryRun: o.dryRun, associaUserId: o.associaUserId, confermaCrea: o.confermaCrea, scelte: o.scelte,
+  const imeiInUso = async (imei: string): Promise<string | null> => {
+    const x = await safeFirst(o.db, 'SELECT nome, nome_assistito, cognome_assistito FROM assistiti WHERE imei = ? AND id != ?', imei, o.assistitoId)
+    return x ? ([x.nome_assistito, x.cognome_assistito].filter(Boolean).join(' ').trim() || toStr(x.nome) || 'un altro assistito') : null
+  }
+  const result = await syncAssistito({ crm, env: o.env, fetchImpl: o.fetchImpl, dryRun: o.dryRun, associaUserId: o.associaUserId, confermaCrea: o.confermaCrea, scelte: o.scelte, imeiInUso,
     applyCrm: o.dryRun ? undefined : (ops) => applyCrmOps(o.db, ops, { assistitoId: o.assistitoId, leadId: src.leadId || null, configId: src.config?.id ?? null, imei: crm.imei, cronicheRaw: toStr(src.config?.patologie_croniche) }) })
+
+  // Senza scheda di configurazione: la Dashboard propone di crearla (sola lettura qui).
+  if (!crm.fonti.config && (result.esito === 'anteprima' || result.esito === 'invariato' || result.esito === 'aggiornato')) {
+    try { result.scheda_mancante = await schedaMancante(o.db, o.assistitoId) } catch { /* la proposta e' solo un aiuto */ }
+  }
 
   // Registrazione dell'esito nel CRM (tabella laterale: nessun ALTER su assistiti). Mai in anteprima.
   const persistable = result.esito === 'creato' || result.esito === 'aggiornato' || result.esito === 'invariato' || result.esito === 'errore'

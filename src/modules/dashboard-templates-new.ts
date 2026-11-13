@@ -3550,6 +3550,47 @@ export const dashboard = `<!DOCTYPE html>
             var p = window.__sidlyBase;
             if (p) syncSidly(p.id, p.opts);
         };
+        // Scheda di configurazione mancante: avviso + pulsante (anteprima -> conferma -> si riapre il confronto).
+        function sidlySchedaBox(r, id) {
+            var m = r.scheda_mancante;
+            if (!m) return '';
+            if (!m.possibile) {
+                return '<div style="margin:8px 0;padding:10px 12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;color:#92400e;font-size:13px"><b>Manca la scheda di configurazione.</b> Non posso crearla in automatico: ' + escapeHtml(m.motivo || 'dati insufficienti') + '</div>';
+            }
+            return '<div style="margin:8px 0;padding:10px 12px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;color:#92400e;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:10px">' +
+                '<span><b>Manca la scheda di configurazione.</b> Senza scheda alcuni campi (contatti, whitelist, SOS) non sono modificabili da qui. Si può creare dai dati della richiesta collegata' + (m.collegamento ? ' (' + escapeHtml(m.collegamento) + ')' : '') + '.</span>' +
+                '<button onclick="window.sidlyCreaScheda(' + id + ', false)" style="' + SIDLY_BTN + '#d97706">Crea scheda di configurazione (anteprima)</button></div>';
+        }
+        window.sidlyCreaScheda = async function (id, conferma) {
+            sidlyPanel('<p style="margin:0"><i class="fas fa-spinner fa-spin"></i> ' + (conferma ? 'Creazione della scheda' : 'Preparazione anteprima (nulla viene scritto)') + '&hellip;</p>');
+            try {
+                var payload = { assistito_id: id };
+                if (conferma) payload.conferma_scrittura = true; else payload.dry_run = true;
+                var res = await fetch('/api/sidly/crea-scheda', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+                var r = await res.json();
+                var h;
+                if (r.esito === 'errore') {
+                    h = '<h3 style="font-weight:700;font-size:16px;margin:0 0 6px;color:#b91c1c">Scheda non creata</h3><div style="margin:8px 0;padding:10px 12px;background:#fee2e2;border:1px solid #fca5a5;border-radius:8px;color:#991b1b;font-weight:600">&#10007; ' + escapeHtml(r.errore || 'errore') + '</div>' +
+                        '<div style="' + SIDLY_BARRA + '"><button onclick="window.syncSidly(' + id + ')" style="' + SIDLY_BTN + '#6b7280">Torna al confronto</button></div>';
+                } else {
+                    var creata = r.esito === 'creata';
+                    h = '<h3 style="font-weight:700;font-size:16px;margin:0 0 6px;color:' + (creata ? '#15803d' : '#92400e') + '">' + (creata ? 'Scheda di configurazione creata' : 'Anteprima: crea la scheda di configurazione') + '</h3>';
+                    if (!creata) h += '<div style="color:#92400e;font-size:13px;margin-bottom:6px">Anteprima: non è stato scritto nulla.</div>';
+                    h += sidlyList(creata ? 'Scritto nel CRM' : 'Verrà scritto nel CRM', (r.scritture || []).map(function (x) { return '<b>' + escapeHtml(x.tabella) + '</b> &middot; ' + escapeHtml(x.operazione) + ': ' + escapeHtml(x.dettaglio); }));
+                    h += sidlyList('Dati copiati dalla richiesta', (r.valori || []).map(function (x) { return escapeHtml(x.campo) + ': <b>' + escapeHtml(x.valore || '—') + '</b>'; }));
+                    h += sidlyList('Da sapere', (r.avvisi || []).map(function (w) { return escapeHtml(w); }));
+                    if (creata) {
+                        h += '<div style="margin:8px 0;padding:10px 12px;background:#dcfce7;border:1px solid #86efac;border-radius:8px;color:#166534;font-weight:600">&#10003; Scheda creata. Riapri il confronto per completare i campi.</div>' +
+                            '<div style="' + SIDLY_BARRA + '"><button onclick="window.syncSidly(' + id + ')" style="' + SIDLY_BTN + '#2563eb">Riapri il confronto</button></div>';
+                    } else {
+                        h += '<div style="' + SIDLY_BARRA + '"><button onclick="window.sidlyCreaScheda(' + id + ', true)" style="' + SIDLY_BTN + '#15803d">Conferma e crea la scheda</button> <button onclick="window.syncSidly(' + id + ')" style="' + SIDLY_BTN + '#6b7280">Annulla</button></div>';
+                    }
+                }
+                sidlyPanel(h);
+            } catch (e) {
+                sidlyPanel('<h3 style="font-weight:700;color:#b91c1c;margin:0 0 6px">Errore di comunicazione</h3><p style="margin:0">' + escapeHtml(e.message) + '</p>');
+            }
+        };
         async function syncSidly(id, opts) {
             opts = opts || {};
             window.__sidlyLastId = id;
@@ -3573,18 +3614,26 @@ export const dashboard = `<!DOCTYPE html>
                 if (r.esito === 'conferma_richiesta') {
                     var cands = r.candidati || [];
                     var h = '<h3 style="font-weight:700;font-size:16px;margin:0 0 6px;color:#92400e">Serve la tua scelta</h3><p style="margin:0 0 8px">' + escapeHtml(r.motivo_conferma || '') + '</p>';
+                    var imeiCrm = String(r.imei_crm || '').replace(/[^0-9]/g, '');
                     cands.forEach(function (c) {
-                        h += '<div style="border:1px solid #ddd;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">' +
-                            '<span>' + escapeHtml(c.first_name + ' ' + c.last_name) + ' &middot; ID SiDLY ' + escapeHtml(String(c.user_id)) + '</span>' +
+                        var imeiS = String(c.imei || '').replace(/[^0-9]/g, '');
+                        var nota = !imeiS ? '<span style="color:#6b7280">IMEI su SiDLY non disponibile: lo vedrai nel confronto.</span>'
+                            : (imeiCrm && imeiS === imeiCrm) ? '<span style="color:#15803d">IMEI uguale a quello del CRM.</span>'
+                            : '<span style="color:#b45309;font-weight:600">IMEI diverso: dispositivo sostituito? Associando, nel confronto potrai salvare nel CRM l’IMEI di SiDLY.</span>';
+                        h += '<div style="border:1px solid #ddd;border-radius:8px;padding:8px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:10px">' +
+                            '<span><b>' + escapeHtml(c.first_name + ' ' + c.last_name) + '</b> &middot; ID SiDLY ' + escapeHtml(String(c.user_id)) +
+                            '<br><span style="font-size:13px">IMEI su SiDLY (giusto): <b>' + escapeHtml(imeiS || '—') + '</b> &middot; IMEI nel CRM: <b>' + escapeHtml(imeiCrm || '—') + '</b></span>' +
+                            '<br><span style="font-size:12px">' + nota + '</span></span>' +
                             '<button onclick="window.syncSidly(' + id + ', {associa: \\'' + String(c.user_id).replace(/[^0-9]/g, '') + '\\'})" style="' + SIDLY_BTN + '#0d9488">Associa questo (mostra il confronto)</button></div>';
                     });
-                    h += '<div style="margin-top:8px"><button onclick="window.syncSidly(' + id + ', {confermaCrea: true})" style="' + SIDLY_BTN + '#2563eb">Crea un nuovo assistito (mostra anteprima)</button></div>';
+                    if (!r.solo_associa) h += '<div style="margin-top:8px"><button onclick="window.syncSidly(' + id + ', {confermaCrea: true})" style="' + SIDLY_BTN + '#2563eb">Crea un nuovo assistito (mostra anteprima)</button></div>';
+                    else h += '<div style="margin-top:8px;font-size:12px;color:#6b7280">La creazione di un nuovo assistito è disattivata: l’IMEI esiste su SiDLY ma il nostro account non vi accede.</div>';
                     sidlyPanel(h);
                 } else {
                     var anteprima = r.esito === 'anteprima';
                     var base = { associa: opts.associa, confermaCrea: opts.confermaCrea };
                     r.scelte_in_anteprima = !!(opts.scelte && opts.scelte.length);
-                    var out = renderSidlyResult(r);
+                    var out = (anteprima && !r.scelte_in_anteprima ? sidlySchedaBox(r, id) : '') + renderSidlyResult(r);
                     var daScrivere = anteprima && ((r.campi_inviati || []).length || (r.crm_scritture || []).length);
                     window.__sidlyPending = null;
                     if (anteprima && !r.scelte_in_anteprima) {

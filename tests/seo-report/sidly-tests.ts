@@ -12,7 +12,7 @@ const IMEI = '868298061208378'
 interface Call { method: string; path: string; body: any; token?: string }
 
 /** Piattaforma SiDLY finta e con stato: GET/POST/PATCH paziente, myShortInfo, set-url-for-band, login. */
-function makePlatform(opts: { patients?: Record<string, any>; tokenExpiresOnce?: boolean; alwaysFail?: number; searchResults?: any[]; searchStatus?: number; noFullRecord?: boolean; contacts?: any[]; diseases?: any; card?: any; detailStatus?: number; patchDetailStatus?: number; patchPatient?: { status: number; body: any }; patchNeedsFullBand?: boolean; rejectAlias?: boolean } = {}) {
+function makePlatform(opts: { patients?: Record<string, any>; tokenExpiresOnce?: boolean; alwaysFail?: number; searchResults?: any[]; searchStatus?: number; noFullRecord?: boolean; contacts?: any[]; diseases?: any; card?: any; detailStatus?: number; patchDetailStatus?: number; patchPatient?: { status: number; body: any }; patchNeedsFullBand?: boolean; rejectAlias?: boolean; forbidImei?: string } = {}) {
   const patients: Record<string, any> = opts.patients || {}
   const calls: Call[] = []
   let logins = 0
@@ -33,6 +33,7 @@ function makePlatform(opts: { patients?: Record<string, any>; tokenExpiresOnce?:
     if (opts.alwaysFail) return reply(opts.alwaysFail, {})
     if (path.startsWith('/patient/myShortInfo')) return reply(opts.searchStatus || 200, { items: opts.searchResults || [] })
     let m = path.match(/^\/patient\/(\d+)$/)
+    if (method === 'GET' && m && opts.forbidImei === m[1]) return reply(403, {})
     if (method === 'GET' && m) { const p = patients[m[1]]; return p ? reply(200, p) : reply(404, {}) }
     m = path.match(/^\/manager\/patient-edit-initial-data\/(\d+)$/)
     if (method === 'GET' && m) {
@@ -971,4 +972,204 @@ export async function runSidlyTests(ok: Ok, section: Section) {
       ok(r2.esito === 'anteprima' && r2.previsto === 'creato' && !P2.calls.some(c => c.path.startsWith('/getContacts')), 'anteprima di creazione: nessuna lettura dettagli su assistito inesistente')
     }
   }
+
+  // ── IMEI sostituito: confronto vero, correzione nel CRM, 403, scheda mancante ──
+  {
+    const IMEI_NEW = '862246079762205'
+    const IMEI_OLD = '862246076276621'
+    const assistitoVecchio = { assistito: { imei: IMEI_OLD } }
+    // a) IMEI diverso: riga «diverso», correggibile SOLO nel CRM (mai su SiDLY)
+    {
+      S.resetSidlyTokenCache()
+      const crm = crmOf(assistitoVecchio)
+      const P = makePlatform({ patients: { '96504': { user_id: 96504, imei: IMEI_NEW, user: { firstName: 'Anna', lastName: 'Rossi' }, band: { imei: IMEI_NEW } } } })
+      const d = await preview(crm, P, { associaUserId: '96504' })
+      const r = rowOf(d, 'IMEI')
+      ok(!!r && r.stato === 'diverso' && r.sidly === IMEI_NEW && r.crm === IMEI_OLD, 'IMEI: con braccialetto sostituito la riga è «diverso» (non più «uguale» fisso)')
+      ok(!!r && (r.verso || []).includes('sidly') && !(r.verso || []).includes('crm'), 'IMEI: si può salvare nel CRM quello di SiDLY, mai scrivere l\'IMEI del CRM su SiDLY')
+      const { r: w, ops } = await scrivi(crm, P, [['IMEI', 'sidly']], { associaUserId: '96504' })
+      ok(w.esito === 'aggiornato' && ops.length === 1 && ops[0].t === 'col' && (ops[0] as any).tabella === 'assistiti' && (ops[0] as any).col === 'imei' && (ops[0] as any).val === IMEI_NEW, 'IMEI: scelta «vale SiDLY» → una sola scrittura: assistiti.imei = IMEI di SiDLY')
+      const scrSidly = scrittureGET(P)
+      ok(!scrSidly.some(c => c.method === 'PATCH' || (c.method === 'POST' && c.path === '/manager/patient')) && scrSidly.every(c => c.path === '/manager/set-url-for-band' && c.body.imei === IMEI_NEW), 'IMEI: la correzione nel CRM non modifica l\'assistito su SiDLY (solo la registrazione dell\'URL frame, con l\'IMEI nuovo)')
+      ok(w.warning.some(x => /Cambio IMEI/.test(x)), 'IMEI: avviso che dispositivi, DDT e contratti restano come sono')
+    }
+    // b) IMEI uguale: nessuna proposta
+    {
+      S.resetSidlyTokenCache()
+      const crm = crmOf()
+      const P = makePlatform({ patients: { [IMEI]: platformFrom(crm) } })
+      const r = rowOf(await preview(crm, P), 'IMEI')
+      ok(!!r && r.stato === 'uguale', 'IMEI uguale: riga «uguale»')
+    }
+    // c) IMEI di SiDLY con formato non valido: non viene offerto
+    {
+      S.resetSidlyTokenCache()
+      const crm = crmOf(assistitoVecchio)
+      const P = makePlatform({ patients: { '96504': { user_id: 96504, imei: '12ab', user: { firstName: 'Anna', lastName: 'Rossi' }, band: { imei: '12ab' } } } })
+      const r = rowOf(await preview(crm, P, { associaUserId: '96504' }), 'IMEI')
+      ok(!r || !(r.verso || []).includes('sidly'), 'IMEI di SiDLY non valido: non si offre la scrittura nel CRM')
+    }
+    // d) IMEI già assegnato a un altro assistito del CRM: scrittura bloccata con spiegazione
+    {
+      S.resetSidlyTokenCache()
+      const crm = crmOf(assistitoVecchio)
+      const P = makePlatform({ patients: { '96504': { user_id: 96504, imei: IMEI_NEW, user: { firstName: 'Anna', lastName: 'Rossi' }, band: { imei: IMEI_NEW } } } })
+      const d = await preview(crm, P, { associaUserId: '96504', imeiInUso: async (i: string) => (i === IMEI_NEW ? 'Mario Bianchi' : null) })
+      const r = rowOf(d, 'IMEI')
+      ok(!!r && !(r.verso || []).includes('sidly') && /già assegnato nel CRM a Mario Bianchi/.test(r.nota || ''), 'IMEI già usato da un altro assistito: correzione non offerta, con il nome dell\'altro assistito')
+      const d2 = await preview(crm, P, { associaUserId: '96504', imeiInUso: async () => null })
+      ok((rowOf(d2, 'IMEI')?.verso || []).includes('sidly'), 'IMEI libero: correzione offerta')
+    }
+    // e) 404 sull'IMEI del CRM + omonimo: il candidato mostra il suo IMEI e quello del CRM
+    {
+      S.resetSidlyTokenCache()
+      const crm = crmOf(assistitoVecchio)
+      const P = makePlatform({ patients: { '555': { user_id: 555, imei: IMEI_NEW, user: { firstName: 'Anna', lastName: 'Rossi' }, band: { imei: IMEI_NEW } } }, searchResults: [{ user_id: 555, first_name: 'Anna', last_name: 'Rossi' }] })
+      const r = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl })
+      ok(r.esito === 'conferma_richiesta' && r.candidati?.[0]?.imei === IMEI_NEW && r.imei_crm === IMEI_OLD && !r.solo_associa, '404 + omonimo: il candidato porta l\'IMEI di SiDLY e si vede quello del CRM (dispositivo sostituito?)')
+      ok(/associalo/.test(r.motivo_conferma || '') && /aggiornare l'IMEI nel CRM/.test(r.motivo_conferma || ''), '404 + omonimo: il testo propone di aggiornare l\'IMEI nel CRM')
+    }
+    // f) 403 sull'IMEI del CRM: ricerca per nome, mai creare un nuovo assistito
+    {
+      S.resetSidlyTokenCache()
+      const crm = crmOf(assistitoVecchio)
+      const P = makePlatform({ forbidImei: IMEI_OLD, patients: { '555': { user_id: 555, imei: IMEI_NEW, user: { firstName: 'Anna', lastName: 'Rossi' }, band: { imei: IMEI_NEW } } }, searchResults: [{ user_id: 555, first_name: 'Anna', last_name: 'Rossi' }] })
+      const r = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl })
+      ok(r.esito === 'conferma_richiesta' && r.solo_associa === true && r.candidati?.length === 1 && r.candidati[0].imei === IMEI_NEW, '403: ricerca per nome, candidato con il suo IMEI, solo «associa» (niente creazione)')
+      const rc = await S.syncAssistito({ crm, env: ENV, fetchImpl: P.fetchImpl, confermaCrea: true })
+      ok(rc.esito === 'errore' && /Creazione bloccata/.test(rc.errore || '') && !P.calls.some(c => c.method === 'POST' && c.path === '/manager/patient'), '403: «crea nuovo» rifiutato lato server, nessun POST /manager/patient')
+      const ra = await preview(crm, P, { associaUserId: '555' })
+      ok(ra.esito === 'anteprima' && rowOf(ra, 'IMEI')?.stato === 'diverso', '403: dopo l\'associazione il confronto mostra l\'IMEI diverso, correggibile nel CRM')
+    }
+    // g) 403 senza omonimi / ricerca fallita: errore chiaro, niente creazione
+    {
+      S.resetSidlyTokenCache()
+      const crm = crmOf(assistitoVecchio)
+      const P1 = makePlatform({ forbidImei: IMEI_OLD, searchResults: [] })
+      const r1 = await S.syncAssistito({ crm, env: ENV, fetchImpl: P1.fetchImpl })
+      ok(r1.esito === 'errore' && /HTTP 403/.test(r1.errore || '') && /nessun assistito con lo stesso nome/.test(r1.errore || '') && !P1.calls.some(c => c.method === 'POST'), '403 senza omonimi: errore chiaro, nessuna creazione')
+      const P2 = makePlatform({ forbidImei: IMEI_OLD, searchStatus: 500 })
+      const r2 = await S.syncAssistito({ crm, env: ENV, fetchImpl: P2.fetchImpl })
+      ok(r2.esito === 'errore' && /ricerca per nome non è riuscita/.test(r2.errore || '') && !P2.calls.some(c => c.method === 'POST'), '403 con ricerca per nome fallita: errore, mai «crea nuovo»')
+    }
+    // h) frame URL: con assistito associato si usa l'IMEI di SiDLY, non quello vecchio del CRM
+    {
+      S.resetSidlyTokenCache()
+      const crm = crmOf(assistitoVecchio)
+      const P = makePlatform({ patients: { '96504': { user_id: 96504, imei: IMEI_NEW, user: { firstName: 'Anna', lastName: 'Rossi' }, band: { imei: IMEI_NEW } } } })
+      const { r } = await scrivi(crm, P, [["Telefono dell'assistito", 'crm']], { associaUserId: '96504' })
+      const u = P.calls.find(c => c.path === '/manager/set-url-for-band')
+      ok(r.esito === 'aggiornato' && (!u || u.body.imei === IMEI_NEW), 'frame URL: per un assistito associato si usa l\'IMEI di SiDLY, non quello obsoleto del CRM')
+    }
+  }
+
+  // ── scheda di configurazione mancante: rilevamento e creazione (SQLite vero) ──
+  {
+    const { createRequire } = await import('node:module')
+    const { join } = await import('node:path')
+    const initSqlJs = createRequire(join(process.cwd(), 'package.json'))('sql.js')
+    const SQLJS = await initSqlJs({ locateFile: (f: string) => join(process.cwd(), 'node_modules', 'sql.js', 'dist', f) })
+    const nuovoDb = (seed: (raw: any) => void) => {
+      const raw = new SQLJS.Database()
+      raw.run(`CREATE TABLE assistiti (id INTEGER PRIMARY KEY, nome TEXT, imei TEXT, status TEXT, lead_id TEXT, nome_assistito TEXT, cognome_assistito TEXT, updated_at TEXT)`)
+      raw.run(`CREATE TABLE contracts (id INTEGER PRIMARY KEY, leadId TEXT, imei_dispositivo TEXT, created_at TEXT)`)
+      raw.run(`CREATE TABLE leads (id TEXT PRIMARY KEY, nomeAssistito TEXT, cognomeAssistito TEXT, dataNascitaAssistito TEXT, indirizzoAssistito TEXT, cittaAssistito TEXT, provinciaAssistito TEXT, capAssistito TEXT)`)
+      raw.run(`CREATE TABLE configurations (id INTEGER PRIMARY KEY AUTOINCREMENT, leadId TEXT NOT NULL, nome_assistito TEXT, cognome_assistito TEXT, data_nascita TEXT, indirizzo TEXT, status TEXT DEFAULT 'PENDING', form_inviato INTEGER, created_at TEXT, updated_at TEXT)`)
+      seed(raw)
+      const all = (sql: string, p: any[]) => { const st = raw.prepare(sql); st.bind(p.map(x => (x === undefined ? null : x))); const out: any[] = []; while (st.step()) out.push(st.getAsObject()); st.free(); return out }
+      const stats = { batches: 0, stmts: 0, writes: [] as string[] }
+      const stmt = (sql: string, p: any[] = []): any => ({
+        _sql: sql, _p: p, bind: (...b: any[]) => stmt(sql, b),
+        run: async () => { stats.stmts++; if (!/^\s*SELECT/i.test(sql)) stats.writes.push(sql); raw.run(sql, p.map(x => (x === undefined ? null : x))); return { success: true } },
+        first: async () => all(sql, p)[0] ?? null,
+        all: async () => ({ results: all(sql, p) }),
+      })
+      const db = { prepare: (sql: string) => stmt(sql), batch: async (list: any[]) => { stats.batches++; raw.run('BEGIN'); try { for (const x of list) { stats.writes.push(x._sql); raw.run(x._sql, x._p.map((v: any) => (v === undefined ? null : v))) } raw.run('COMMIT') } catch (e) { raw.run('ROLLBACK'); throw e } return [] } }
+      return { db, q: (sql: string, ...p: any[]) => all(sql, p), stats }
+    }
+    const seedBase = (opt: { leadIdAssistito?: string | null; contratto?: boolean; leadsExtra?: number; status?: string; conScheda?: boolean; senzaLead?: boolean } = {}) => (raw: any) => {
+      raw.run(`INSERT INTO assistiti (id, nome, imei, status, lead_id, nome_assistito, cognome_assistito) VALUES (7, 'Anna Rossi', '868298061208378', ?, ?, 'Anna', 'Rossi')`, [opt.status || 'ATTIVO', opt.leadIdAssistito === undefined ? null : opt.leadIdAssistito])
+      if (!opt.senzaLead) raw.run(`INSERT INTO leads VALUES ('L9', 'Anna', 'Rossi', '1944-03-09', 'Via Roma 1', 'Milano', 'MI', '20100')`)
+      for (let i = 0; i < (opt.leadsExtra || 0); i++) raw.run(`INSERT INTO leads VALUES ('LX${i}', 'Anna', 'Rossi', '1950-01-01', 'Via X', 'Roma', 'RM', '00100')`)
+      if (opt.contratto) raw.run(`INSERT INTO contracts (leadId, imei_dispositivo, created_at) VALUES ('L9', '868298061208378', '2026-01-01')`)
+      if (opt.conScheda) raw.run(`INSERT INTO configurations (leadId, nome_assistito) VALUES ('L9', 'Anna')`)
+    }
+
+    // anteprima: nessuna scrittura
+    {
+      const d = nuovoDb(seedBase({ leadIdAssistito: 'L9' }))
+      const m = await S.schedaMancante(d.db, 7)
+      ok(m.possibile === true && m.lead_id === 'L9' && m.collegamento === 'assistito', 'scheda mancante: lead trovato dal collegamento dell\'assistito')
+      const { httpStatus, result } = await S.creaScheda(d.db, 7, { conferma: false })
+      ok(httpStatus === 200 && result.esito === 'anteprima' && d.stats.writes.length === 0 && d.q('SELECT COUNT(*) AS n FROM configurations')[0].n === 0, 'crea scheda: l\'anteprima non scrive nulla')
+      ok((result.scritture || []).length === 1 && result.scritture![0].tabella === 'configurations' && (result.valori || []).some(v => v.campo === 'Indirizzo' && /Via Roma 1/.test(v.valore)), 'crea scheda: l\'anteprima elenca cosa verrà scritto e i valori copiati')
+    }
+    // conferma: crea la scheda, solo i 4 campi, collegata alla richiesta
+    {
+      const d = nuovoDb(seedBase({ leadIdAssistito: 'L9' }))
+      const { httpStatus, result } = await S.creaScheda(d.db, 7, { conferma: true })
+      const row = d.q('SELECT * FROM configurations')[0]
+      ok(httpStatus === 200 && result.esito === 'creata' && d.q('SELECT COUNT(*) AS n FROM configurations')[0].n === 1, 'crea scheda: con conferma la scheda viene creata')
+      ok(row.leadId === 'L9' && row.nome_assistito === 'Anna' && row.cognome_assistito === 'Rossi' && row.data_nascita === '1944-03-09' && /Via Roma 1/.test(row.indirizzo) && row.status === 'SIDLY_SYNC' && row.form_inviato === 0, 'crea scheda: solo nome, cognome, nascita e indirizzo dalla richiesta; stato SIDLY_SYNC')
+      ok(d.stats.writes.length === 1 && /INSERT INTO configurations/.test(d.stats.writes[0]) && /WHERE NOT EXISTS/.test(d.stats.writes[0]), 'crea scheda: una sola scrittura (assistito già collegato), protetta da NOT EXISTS')
+      const again = await S.creaScheda(d.db, 7, { conferma: true })
+      ok(again.httpStatus === 409 && again.result.esito === 'errore' && d.q('SELECT COUNT(*) AS n FROM configurations')[0].n === 1, 'crea scheda: ripetuta → rifiutata, nessun doppione')
+      const m = await S.schedaMancante(d.db, 7)
+      ok(m.possibile === false, 'scheda mancante: dopo la creazione non viene più proposta')
+    }
+    // collegamento via contratto: scrive anche assistiti.lead_id (in batch)
+    {
+      const d = nuovoDb(seedBase({ contratto: true }))
+      const { result } = await S.creaScheda(d.db, 7, { conferma: true })
+      ok(result.esito === 'creata' && result.collegamento === 'contratto' && d.q('SELECT lead_id FROM assistiti WHERE id = 7')[0].lead_id === 'L9' && d.stats.batches === 1 && d.stats.writes.length === 2, 'crea scheda: lead ricavato dal contratto → scheda + collegamento assistito in un unico batch')
+    }
+    // per nome e cognome: solo se unica
+    {
+      const d = nuovoDb(seedBase())
+      const { result } = await S.creaScheda(d.db, 7, { conferma: true })
+      ok(result.esito === 'creata' && result.collegamento === 'nome' && (result.avvisi || []).some(a => /solo per nome e cognome/.test(a)), 'crea scheda: richiesta trovata per nome (unica) → creata con avviso di controllo')
+      const d2 = nuovoDb(seedBase({ leadsExtra: 1 }))
+      const r2 = await S.creaScheda(d2.db, 7, { conferma: true })
+      ok(r2.httpStatus === 409 && /stesso nome e cognome/.test(r2.result.errore || '') && d2.stats.writes.length === 0, 'crea scheda: più richieste con lo stesso nome → errore, nessuna scrittura')
+      const d3 = nuovoDb(seedBase({ senzaLead: true }))
+      const r3 = await S.creaScheda(d3.db, 7, { conferma: true })
+      ok(r3.httpStatus === 409 && r3.result.esito === 'errore' && d3.stats.writes.length === 0, 'crea scheda: nessuna richiesta collegabile → errore chiaro, nessuna scrittura')
+    }
+    // solo ATTIVO / assistito inesistente
+    {
+      const d = nuovoDb(seedBase({ leadIdAssistito: 'L9', status: 'SOSPESO' }))
+      const r = await S.creaScheda(d.db, 7, { conferma: true })
+      ok(r.httpStatus === 422 && d.stats.writes.length === 0, 'crea scheda: consentita solo per assistiti ATTIVI')
+      const r2 = await S.creaScheda(d.db, 99, { conferma: true })
+      ok(r2.httpStatus === 404, 'crea scheda: assistito inesistente → 404')
+    }
+    // runSidlySync: scheda_mancante + blocco IMEI in uso con DB vero
+    {
+      S.resetSidlyTokenCache()
+      const d = nuovoDb((raw: any) => {
+        seedBase({ leadIdAssistito: 'L9' })(raw)
+        raw.run(`UPDATE assistiti SET imei = '862246076276621' WHERE id = 7`)
+        raw.run(`INSERT INTO assistiti (id, nome, imei, status, nome_assistito, cognome_assistito) VALUES (8, 'Mario Bianchi', '862246079762205', 'ATTIVO', 'Mario', 'Bianchi')`)
+      })
+      const P = makePlatform({ patients: { '96504': { user_id: 96504, imei: '862246079762205', user: { firstName: 'Anna', lastName: 'Rossi' }, band: { imei: '862246079762205' } } } })
+      const { result } = await S.runSidlySync({ db: d.db, env: ENV, fetchImpl: P.fetchImpl, assistitoId: 7, dryRun: true, associaUserId: '96504' })
+      const r = rowOf(result, 'IMEI')
+      ok(result.esito === 'anteprima' && !!r && !(r.verso || []).includes('sidly') && /Mario Bianchi/.test(r.nota || ''), 'runSidlySync: IMEI di SiDLY già di un altro assistito del CRM → correzione bloccata, nome indicato')
+      ok(result.scheda_mancante?.possibile === true && result.scheda_mancante.lead_id === 'L9', 'runSidlySync: senza scheda il risultato porta «scheda_mancante» con la richiesta collegata')
+      ok(d.stats.writes.length === 0, 'runSidlySync: l\'anteprima non scrive nel CRM')
+    }
+  }
+
+  // ── cablaggio endpoint e Dashboard della nuova funzione ────────────────────
+  {
+    const idx = readFileSync('src/index.tsx', 'utf8')
+    ok(/app\.post\('\/api\/sidly\/crea-scheda', async \(c\) => \{\s+const guard = checkSessionOrKey\([\s\S]{0,300}if \(!guard\.ok\)[\s\S]{0,200}if \(!c\.env\?\.DB\)/.test(idx), 'endpoint crea-scheda: il controllo accessi è la prima istruzione')
+    ok(/creaScheda\(c\.env\.DB, assistitoId, \{ conferma: body\?\.conferma_scrittura === true \}\)/.test(idx), 'endpoint crea-scheda: si scrive solo con conferma_scrittura === true (altrimenti anteprima)')
+    ok(/'\[SIDLY-SCHEDA\]', JSON\.stringify\(\{ assistito_id: assistitoId, esito: result\.esito/.test(idx), 'endpoint crea-scheda: log senza dati personali')
+    const dash = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
+    ok(/fetch\('\/api\/sidly\/crea-scheda'/.test(dash) && /Conferma e crea la scheda/.test(dash) && /scheda_mancante/.test(dash), 'dashboard: pulsante «Crea scheda di configurazione» con anteprima e conferma')
+    ok(/if \(!r\.solo_associa\) h \+= [^\n]*Crea un nuovo assistito/.test(dash), 'dashboard: «Crea un nuovo assistito» nascosto quando SiDLY risponde 403')
+    ok(/IMEI su SiDLY \(giusto\)/.test(dash) && /IMEI diverso: dispositivo sostituito\?/.test(dash), 'dashboard: tra gli omonimi si vede l\'IMEI di SiDLY accanto a quello del CRM')
+  }
+
 }
