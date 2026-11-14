@@ -58,3 +58,28 @@ Storico completo (dopo la prova):
 ## Note
 - Passi: si usano solo quelli di `/stats`.
 - Privacy: DB identificato (IMEI -> assistito), accesso solo con sessione/chiave; nessun log di token o misure.
+
+## Indice di stress (stima del CRM dall'HRV)
+
+SiDLY **non espone** l'indice di stress via API: il CRM lo calcola dall'RMSSD gia' scaricato in `sidly_misure`. E' una **stima orientativa**
+calibrata sul report dell'app SiDLY (RMSSD medio 64 ms → indice 10, «Basso»), non la formula ufficiale e non serve per la diagnosi.
+
+- **Modulo unico**: `src/modules/stressModel.js` (funzioni pure, nessun accesso a DB). Costanti in cima: `PENDENZA = 1.4`, `ANCORAGGIO = 10`, `SOGLIE_FASCE = [40, 60, 80]`
+  (+ `MIN_GIORNI_STORICO = 7`, `AFFIDABILITA = 3`). Per usare coefficienti ufficiali basta cambiarle: query, rotta e UI non hanno numeri propri.
+- **Algoritmo** (solo misure con `affid = 3` e `rmssd` valorizzato):
+  - `baseline` = media delle misure RMSSD dell'intero storico (`baseline=full`, predefinito) oppure degli ultimi 60 giorni (`rolling60`);
+  - `rmssd_3gg(g)` = media dei valori RMSSD giornalieri delle ultime ≤ 3 date **disponibili** (media mobile adattiva: i giorni senza HRV sono esclusi, mai interpolati);
+  - `indice(g) = clamp(0, 100, round(10 + 1,4 × (baseline − rmssd_3gg)))`; fasce: <40 Basso, <60 Moderato, <80 Alto, ≥80 Molto alto;
+  - **platea** = media degli indici individuali del giorno (mai la formula applicata alla media RMSSD, che e' non lineare);
+  - **guardia**: meno di 7 giorni con HRV → `indice_attuale: null`, motivo «storico HRV insufficiente», assistito escluso dall'aggregato.
+- **Endpoint** `GET /api/analisi/stress?imei=<imei|id assistito|platea>&window=90&baseline=full|rolling60` (sola lettura, stessa autenticazione delle altre rotte telemetria).
+  Risposta: `serie [{giorno, indice, fascia, rmssd_3gg, n_assistiti}]`, `indice_attuale`, `fascia`, `baseline`, `indice_medio_30gg`, `picco_90gg`, `data_picco`,
+  `dispositivo` (modello reale da `dispositivi.modello` per l'assistito; `null` in platea o se non registrato), `motivo`, `distribuzione_30gg`, `esclusi`, `testi`, `fasce`.
+  Le misure dei braccialetti precedenti (IMEI precedenti) si sommano all'assistito. Gli assistiti non ATTIVI non entrano.
+- **Query D1 equivalente** (`SQL_STRESS_WINDOW` in `src/modules/stress-analisi.ts`): `AVG(rmssd_g) OVER (PARTITION BY imei ORDER BY giorno ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)`
+  sui valori giornalieri; i test verificano che coincide con il modello giorno per giorno.
+- **Dashboard Telemetria**: sezione «Analisi · Indice di stress (HRV)» sotto le Medie, con selettore Media platea / assistito e baseline; 4 card, grafico a barre 90 giorni,
+  badge (platea: «Telemetria · Media platea»; individuale: dispositivo reale), formula e nota sui limiti. Screenshot: `docs/sidly-sync/screenshot/stress-*.png`.
+- **Test**: `tests/seo-report/stress-tests.ts`. Le fixture golden (`tests/seo-report/fixtures/stress-golden.json`, generate da `gen-stress-fixture.mjs`) sono **sintetiche**:
+  costruite per riprodurre i valori di accettazione (Lavarini 9 «Basso», baseline 150,7, picco 63 il 2026-11-05; platea 23 / 14 / picco 44 il 2026-09-03; distribuzione 168/13/2/1).
+  Non sono dati reali di produzione: la verifica sui dati veri va fatta aprendo la Dashboard dopo il caricamento dello storico.

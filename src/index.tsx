@@ -22116,6 +22116,25 @@ app.get('/api/sidly/telemetria/report', async (c) => {
   return c.json({ esito: 'ok', ...(await reportMedie(c.env.DB, { giorni, assistitoId: aid, affidMin: affMin })) })
 })
 
+// GET /api/analisi/stress?imei=<imei|id|platea>&window=90&baseline=full|rolling60 - indice di stress (0-100) calcolato dall'HRV (RMSSD, affidabilita' 3) dello storico SiDLY.
+// Non e' un dato di SiDLY (le API non lo espongono): stima del CRM, modello in src/modules/stressModel.js. Sola lettura.
+app.get('/api/analisi/stress', async (c) => {
+  const guard = checkSessionOrKey(c.req.header('Cookie'), c.req.header('Authorization'), [c.env?.API_KEY, c.env?.ADMIN_SECRET_TOKEN])
+  if (!guard.ok) return c.json({ esito: 'errore', errore: guard.error }, guard.status)
+  if (!c.env?.DB) return c.json({ esito: 'errore', errore: 'Database non configurato' }, 500)
+  const imeiQ = String(c.req.query('imei') ?? 'platea').trim()
+  if (imeiQ !== '' && imeiQ.toLowerCase() !== 'platea' && !/^\d{1,17}$/.test(imeiQ)) return c.json({ esito: 'errore', errore: 'imei deve essere «platea», un IMEI (14-17 cifre) o l\'id di un assistito' }, 400)
+  const winRaw = c.req.query('window')
+  const win = winRaw === undefined || winRaw === '' ? 90 : Number(winRaw)
+  if (!Number.isInteger(win) || win < 1 || win > 3650) return c.json({ esito: 'errore', errore: 'window deve essere un intero tra 1 e 3650 (giorni)' }, 400)
+  const base = String(c.req.query('baseline') ?? 'full')
+  if (base !== 'full' && base !== 'rolling60') return c.json({ esito: 'errore', errore: 'baseline deve essere full o rolling60' }, 400)
+  const { analisiStress } = await import('./modules/stress-analisi')
+  const r = await analisiStress(c.env.DB, { imei: imeiQ, window: win, baseline: base })
+  if (r.stato) return c.json({ esito: r.esito, errore: r.errore }, r.stato)
+  return c.json(r)
+})
+
 // GET /api/sidly/telemetria/imei-precedenti?assistito_id= - braccialetti PRECEDENTI registrati (cambio di IMEI). Sola lettura.
 // POST (assistito_id, imei, rimuovi?) - registra o toglie un braccialetto precedente: non tocca le misure ne' SiDLY, serve solo ad attribuire le misure al giusto assistito.
 app.get('/api/sidly/telemetria/imei-precedenti', async (c) => {

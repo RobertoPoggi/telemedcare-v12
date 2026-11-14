@@ -17,7 +17,7 @@ const IMEI_B = '868298066718967'
 const IMEI_X = '868298060000001'
 
 /** D1 minimale sopra sql.js: prepare/bind/first/all/run e batch transazionale. Conta batch e istruzioni per verificare il raggruppamento delle scritture. */
-async function makeD1() {
+export async function makeD1() {
   const req = createRequire(join(process.cwd(), 'package.json'))
   const initSqlJs = req('sql.js')
   const SQL = await initSqlJs({ locateFile: (f: string) => join(process.cwd(), 'node_modules', 'sql.js', 'dist', f) })

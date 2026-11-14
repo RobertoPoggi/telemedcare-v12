@@ -323,7 +323,7 @@ export async function imeiPrecedenti(db: any, assistitoId?: number): Promise<Map
   return m
 }
 /** Tutti gli IMEI di un assistito: l'attuale per primo, poi i precedenti. */
-const tuttiImei = (attuale: string, prec: Map<number, string[]>, id: number) => [attuale, ...(prec.get(id) || []).filter(x => x !== attuale)]
+export const tuttiImei = (attuale: string, prec: Map<number, string[]>, id: number) => [attuale, ...(prec.get(id) || []).filter(x => x !== attuale)]
 
 /** Assistiti ATTIVI con il loro IMEI attuale e, dopo tutti gli attuali, i braccialetti precedenti (le misure vanno comunque all'assistito). */
 export async function assistitiConPrecedenti(db: any): Promise<AssistitoTel[]> {

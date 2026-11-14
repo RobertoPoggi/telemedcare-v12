@@ -3730,6 +3730,64 @@ export const dashboard = `<!DOCTYPE html>
         function telBox(titolo, corpo, colore) {
             return '<div style="border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:10px"><div style="font-weight:700;margin-bottom:6px;color:' + (colore || '#111827') + '">' + titolo + '</div>' + corpo + '</div>';
         }
+        // ── Indice di stress (stima del CRM dall'HRV: le API SiDLY non lo espongono) ──
+        function telStressBarre(r) {
+            var W = 720, H = 220, L = 34, R = 8, T = 10, B = 26, pw = W - L - R, ph = H - T - B;
+            var n = r.finestra_giorni, fine = Date.parse(r.oggi + 'T00:00:00Z');
+            var col = {}; (r.fasce || []).forEach(function (f) { col[f.nome] = f.colore_barra; });
+            var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;max-width:760px;height:auto;display:block" role="img" aria-label="Indice di stress, ultimi ' + n + ' giorni">';
+            [0, 25, 50, 75, 100].forEach(function (v) { var y = T + ph - ph * v / 100; svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '" stroke="#e5e7eb"/><text x="' + (L - 4) + '" y="' + (y + 3) + '" font-size="10" fill="#6b7280" text-anchor="end">' + v + '</text>'; });
+            var bw = Math.max(1, pw / n - (n > 120 ? 0 : 1));
+            var mesi = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'], ultimoMese = -1;
+            for (var i = 0; i < n; i++) {
+                var d = new Date(fine - (n - 1 - i) * 86400000), x = L + pw * i / n;
+                if (d.getUTCDate() === 1 || i === 0) { var mm = d.getUTCMonth(); if (mm !== ultimoMese) { ultimoMese = mm; svg += '<text x="' + x + '" y="' + (H - 8) + '" font-size="10" fill="#6b7280">' + mesi[mm] + (mm === 0 ? ' ' + d.getUTCFullYear() : '') + '</text>'; } }
+            }
+            (r.serie || []).forEach(function (p) {
+                var i = Math.round((Date.parse(p.giorno + 'T00:00:00Z') - (fine - (n - 1) * 86400000)) / 86400000);
+                if (i < 0 || i >= n || p.indice === null) return;
+                var h = ph * p.indice / 100, x = L + pw * i / n;
+                svg += '<rect x="' + x.toFixed(2) + '" y="' + (T + ph - Math.max(h, 1)).toFixed(2) + '" width="' + bw.toFixed(2) + '" height="' + Math.max(h, 1).toFixed(2) + '" fill="' + (col[p.fascia] || '#9ca3af') + '"><title>' + p.giorno + ': ' + p.indice + ' (' + p.fascia + ')' + (r.vista === 'platea' ? ', ' + p.n_assistiti + ' assistiti' : '') + '</title></rect>';
+            });
+            return svg + '</svg>';
+        }
+        window.sidlyStress = async function (sel) {
+            window.__telStressSel = sel || 'platea';
+            var base = (document.getElementById('telStressBase') || {}).value || window.__telStressBase || 'full';
+            window.__telStressBase = base;
+            var el = document.getElementById('telStressBody'); if (!el) return;
+            el.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calcolo dell&rsquo;indice&hellip;';
+            try {
+                var r = await telApi('GET', '/api/analisi/stress?imei=' + encodeURIComponent(window.__telStressSel) + '&window=90&baseline=' + base);
+                el = document.getElementById('telStressBody'); if (!el) return;
+                if (r.esito !== 'ok') { el.innerHTML = '<span style="color:#b91c1c">' + escapeHtml(r.errore || 'Errore') + '</span>'; return; }
+                var fasce = r.fasce || [], colCard = {}; fasce.forEach(function (f) { colCard[f.nome] = f.colore_card; });
+                var t = r.testi || {};
+                var badge = r.vista === 'platea' ? 'Telemetria &middot; Media platea' : 'Telemetria &middot; ' + escapeHtml(r.dispositivo || 'dispositivo non registrato');
+                var h = '<div style="font-size:12px;color:#374151;margin-bottom:6px">' + escapeHtml(t.descrizione || '') + '</div>';
+                h += '<div style="display:inline-block;background:#e0f2fe;color:#075985;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;margin-bottom:8px">' + badge + '</div>';
+                if (r.indice_attuale === null || r.indice_attuale === undefined) {
+                    h += '<div style="color:#92400e;font-size:13px;margin:6px 0">Indice non disponibile: ' + escapeHtml(r.motivo || 'nessun dato HRV affidabile recente') + '.' + (r.vista === 'platea' && r.assistiti_esclusi ? ' Assistiti esclusi: ' + r.assistiti_esclusi + '.' : '') + '</div>';
+                } else {
+                    var c1 = colCard[r.fascia] || '#374151', cp = colCard[r.fascia_picco] || '#374151';
+                    var card = function (tit, val, sub, colore) { return '<div style="flex:1;min-width:150px;border:1px solid #e5e7eb;border-radius:8px;padding:8px 10px"><div style="font-size:11px;color:#6b7280">' + tit + '</div><div style="font-size:24px;font-weight:700;color:' + (colore || '#111827') + '">' + val + '</div><div style="font-size:12px;color:#6b7280">' + sub + '</div></div>'; };
+                    var fMed = null; fasce.forEach(function (f) { if (r.indice_medio_30gg >= f.da && r.indice_medio_30gg <= f.a) fMed = f.nome; });
+                    h += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin:6px 0">' +
+                        card('Indice attuale', r.indice_attuale, '<b style="color:' + c1 + '">' + escapeHtml(r.fascia) + '</b> &middot; al ' + escapeHtml(r.giorno_attuale), c1) +
+                        card('RMSSD 3gg', telFmt(r.rmssd_3gg, 1) + ' <span style="font-size:13px;font-weight:400">ms</span>', 'baseline ' + telFmt(r.baseline, 1) + ' ms') +
+                        card('Indice medio 30gg', r.indice_medio_30gg === null ? '&mdash;' : r.indice_medio_30gg, fMed ? escapeHtml(fMed) : '&nbsp;', colCard[fMed]) +
+                        card('Picco 90gg', r.picco_90gg === null ? '&mdash;' : r.picco_90gg, r.data_picco ? escapeHtml(r.fascia_picco) + ' &middot; ' + escapeHtml(r.data_picco) : '&nbsp;', cp) + '</div>';
+                    h += '<div style="overflow-x:auto">' + telStressBarre(r) + '</div>';
+                    if (r.vista === 'platea') {
+                        var d = r.distribuzione_30gg || {};
+                        h += '<div style="font-size:12px;color:#374151;margin-top:4px">Platea: ' + r.assistiti_inclusi + ' assistiti con almeno 7 giorni di HRV' + (r.assistiti_esclusi ? ' (' + r.assistiti_esclusi + ' esclusi: storico HRV insufficiente)' : '') + '. Indici individuali degli ultimi 30 giorni: ' + fasce.map(function (f) { return '<b style="color:' + f.colore_card + '">' + (d[f.nome] || 0) + '</b> ' + escapeHtml(f.nome); }).join(' &middot; ') + '.</div>';
+                    }
+                }
+                h += '<div style="font-size:11px;color:#6b7280;margin-top:6px">' + escapeHtml(t.formula || '') + '</div>';
+                h += '<div style="font-size:11px;color:#92400e;margin-top:4px">' + escapeHtml(t.limiti || '') + '</div>';
+                el.innerHTML = h;
+            } catch (e) { el = document.getElementById('telStressBody'); if (el) el.innerHTML = '<span style="color:#b91c1c">Errore di comunicazione: ' + escapeHtml(e.message) + '</span>'; }
+        };
         window.sidlyTelemetria = async function (giorni, affMin) {
             // Periodo delle medie: 0 = TUTTO lo storico presente nel DB (predefinito); altrimenti ultimi N giorni.
             giorni = giorni === undefined || giorni === null ? (window.__telGiorni || 0) : (parseInt(giorni, 10) || 0);
@@ -3799,6 +3857,13 @@ export const dashboard = `<!DOCTYPE html>
                         '<div style="margin-top:6px;font-size:11px;color:#6b7280">Stress, sonno e indice di attivit&agrave; non sono forniti da SiDLY. HRV e passi arrivano solo dallo storico: se vuoti, caricare o aggiornare lo storico.</div>';
                 } else { m = filtroHtml + '<span style="color:#6b7280;font-size:13px">Nessuna misura nel DB per il periodo' + (affMin > 0 ? ' con questa affidabilit&agrave; minima' : '') + '.</span>'; }
                 h += telBox(giorni ? 'Medie (ultimi ' + giorni + ' giorni)' : 'Medie (tutto lo storico)', m);
+                // Analisi: indice di stress calcolato dal CRM (HRV), individuale o media platea
+                var selStress = window.__telStressSel || 'platea';
+                var optStress = '<option value="platea"' + (selStress === 'platea' ? ' selected' : '') + '>Media platea</option>' + (st.assistiti || []).map(function (a) { return '<option value="' + a.assistito_id + '"' + (String(a.assistito_id) === String(selStress) ? ' selected' : '') + '>' + escapeHtml(a.nome || a.imei) + '</option>'; }).join('');
+                h += telBox('Analisi &middot; Indice di stress (HRV)',
+                    '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;margin-bottom:6px"><b>Vista</b> <select id="telStressSel" onchange="window.sidlyStress(this.value)" style="border:1px solid #9ca3af;border-radius:4px;padding:3px;max-width:260px">' + optStress + '</select>' +
+                    '<b>Baseline</b> <select id="telStressBase" onchange="window.sidlyStress(document.getElementById(\\'telStressSel\\').value)" style="border:1px solid #9ca3af;border-radius:4px;padding:3px"><option value="full"' + (window.__telStressBase === 'rolling60' ? '' : ' selected') + '>Intero storico</option><option value="rolling60"' + (window.__telStressBase === 'rolling60' ? ' selected' : '') + '>Ultimi 60 giorni</option></select></div>' +
+                    '<div id="telStressBody" style="font-size:13px;color:#6b7280"><i class="fas fa-spinner fa-spin"></i> Calcolo dell&rsquo;indice&hellip;</div>');
                 // Azioni
                 h += telBox('1. Carica lo storico delle misure da SiDLY (prima sempre un\\'anteprima: nulla viene scritto finch&eacute; non confermi)',
                     '<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:13px">' +
@@ -3830,6 +3895,7 @@ export const dashboard = `<!DOCTYPE html>
                     '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><button id="telDatasetBtn" onclick="window.sidlyDataset()" style="' + SIDLY_BTN + '#0f766e"><i class="fas fa-download"></i> Scarica dataset misure (CSV)</button></div><div id="telDatasetEsito" style="margin-top:6px;font-size:12px"></div>');
                 h += '<div id="telEsito" style="margin-top:10px"></div>';
                 sidlyPanel(h);
+                window.sidlyStress(selStress);
             } catch (e) { sidlyPanel('<p style="color:#b91c1c;margin:0">Errore di comunicazione: ' + escapeHtml(e.message) + '</p>'); }
         };
         function telEsito(html) { var el = document.getElementById('telEsito'); if (el) el.innerHTML = html; }
