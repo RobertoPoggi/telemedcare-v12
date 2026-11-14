@@ -22049,6 +22049,16 @@ app.post('/api/sidly/storico', async (c) => {
     console.log('[SIDLY-ULTIME]', JSON.stringify({ esito: ru.result.esito, scrive, righe: (ru.result as any).righe_scritte, completato: (ru.result as any).completato }))
     return c.json(ru.result, ru.httpStatus as any)
   }
+  // Modalita' «aggiorna»: da adesso a ritroso fino alle misure gia' caricate (solo righe nuove), un assistito per richiesta
+  if (body?.aggiorna === true) {
+    if (id === undefined) return c.json({ esito: 'errore', errore: 'Con aggiorna serve assistito_id (una richiesta per assistito)' }, 400)
+    if (imeiPrec !== undefined) return c.json({ esito: 'errore', errore: 'Aggiorna vale solo per il braccialetto attuale' }, 400)
+    const { eseguiAggiorna } = await import('./modules/sidly-telemetria')
+    const rg = await eseguiAggiorna({ db: c.env.DB, env: c.env as any, assistitoId: id, dryRun: !scrive,
+      primaDi: body?.prima_di !== undefined && body?.prima_di !== null ? Number(body.prima_di) : undefined })
+    console.log('[SIDLY-AGGIORNA]', JSON.stringify({ esito: rg.result.esito, scrive, righe: (rg.result as any).righe_scritte, completato: (rg.result as any).completato }))
+    return c.json(rg.result, rg.httpStatus as any)
+  }
   // Modalita' «aggiorna affidabilita'»: completa hr_q/spo2_q/affid delle misure GIA' nel DB (nessuna riga nuova), un assistito per richiesta
   if (body?.affidabilita === true) {
     if (id === undefined) return c.json({ esito: 'errore', errore: 'Con \"affidabilita\" serve assistito_id (una richiesta per assistito)' }, 400)

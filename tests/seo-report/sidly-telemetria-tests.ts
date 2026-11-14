@@ -52,7 +52,7 @@ async function makeD1() {
 
 interface Call { method: string; path: string; body: any }
 /** SiDLY finta: login, /stats con punti orari, allarmi. Le chiamate verso i dispositivi (set/delete-url-for-band) rispondono 200 ma i test verificano che NON partano mai. */
-function makeSidly(opts: { statsStatus?: number; alarms?: any[]; urlStatus?: number; registerDate?: any; registerWrap?: boolean; vuotoDopo?: number; senzaTrust?: boolean; failImei?: string } = {}) {
+function makeSidly(opts: { statsStatus?: number; alarms?: any[]; urlStatus?: number; registerDate?: any; registerWrap?: boolean; vuotoDopo?: number; senzaTrust?: boolean; failImei?: string; pressione?: boolean; soloPressione?: boolean } = {}) {
   const calls: Call[] = []
   const fetchImpl: Fetch = async (url, init) => {
     const method = init?.method || 'GET'
@@ -73,7 +73,10 @@ function makeSidly(opts: { statsStatus?: number; alarms?: any[]; urlStatus?: num
         for (let x = Math.ceil(f / step) * step; x <= t; x += step) { if (opts.vuotoDopo !== undefined && x > opts.vuotoDopo) continue; chart.push({ x, y: typeof y === 'function' ? y(x) : y, total: null, trust_lvl: opts.senzaTrust ? null : 'HR=3,SpO2=2', ...extra }) }
         return { chart, stats: { min: 1, max: 2, mean: 1.5 } }
       }
-      return reply(200, { pulse: pts(3600, 70), sat: pts(3600, 97), sdnn: pts(86400, 42), rmssd: pts(86400, 35), respiration: pts(3600, 15), steps: { dailyTarget: 5000, ...pts(3600, 100), total: 2400, totalKm: 1.8 }, lastMeasurements: [] })
+      // pressione = valore barometrico (~1013 hPa) ogni mezz'ora: meta' dei punti cade tra due misure vere e NON e' una misura della persona
+      const press = opts.pressione || opts.soloPressione ? { pressure: pts(1800, (x: number) => 1010 + (x % 7)) } : {}
+      if (opts.soloPressione) return reply(200, { ...press, lastMeasurements: [] })
+      return reply(200, { pulse: pts(3600, 70), sat: pts(3600, 97), sdnn: pts(86400, 42), rmssd: pts(86400, 35), respiration: pts(3600, 15), steps: { dailyTarget: 5000, ...pts(3600, 100), total: 2400, totalKm: 1.8 }, ...press, lastMeasurements: [] })
     }
     if (method === 'GET' && /^\/patientIntegrate\/\d+$/.test(path)) {
       const rd = 'registerDate' in opts ? opts.registerDate : Date.UTC(2026, 10, 3, 10, 0, 0) / 1000
@@ -538,7 +541,8 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
     ok(A.metriche.hr.n === 3 && Math.abs((A.metriche.hr.media as number) - (60 + 71 + 80) / 3) < 1e-9, 'FC: frame e storico dello stesso istante contano una volta (media 71) → media 70,33')
     ok(A.metriche.hr.min === 60 && A.metriche.hr.max === 80 && Math.abs((A.metriche.hr.sd as number) - Math.sqrt(((60 - 70.3333) ** 2 + (71 - 70.3333) ** 2 + (80 - 70.3333) ** 2) / 3)) < 1e-6, 'FC: min, max e deviazione standard')
     ok(A.metriche.spo2.n === 2 && A.metriche.spo2.media === 97 && A.metriche.sdnn.n === 2 && A.metriche.sdnn.media === 45 && A.metriche.rmssd.media === 30 && A.metriche.resp.media === 15, 'SpO2, HRV (SDNN, RMSSD) e frequenza respiratoria')
-    ok(A.passi_medi_giorno === 400 && A.giorni_con_dati === 2 && A.punti === 4, 'passi: somma per giorno poi media dei giorni (300 e 500 → 400)')
+    ok(A.passi_medi_giorno === 400 && A.giorni_con_dati === 2, 'passi: somma per giorno poi media dei giorni (300 e 500 → 400); i giorni con soli passi contano come giorni con dati')
+    ok(A.punti === 3, 'punti = solo misurazioni vere (3 istanti con un valore fisiologico): la riga con i soli passi non e\' una misurazione')
     ok(B.metriche.hr.media === 90 && B.metriche.sdnn.n === 0 && B.metriche.sdnn.media === null && B.passi_medi_giorno === null, 'metrica senza dati: n 0 e media assente (non zero)')
     ok(!A.metriche.hr.max || (A.metriche.hr.max as number) < 200, 'la misura fuori periodo (200 bpm di 100 giorni fa) non entra')
     ok(r.coorte.metriche.hr.assistiti === 2 && Math.abs((r.coorte.metriche.hr.media as number) - ((60 + 71 + 80) / 3 + 90) / 2) < 1e-9, 'coorte: media delle medie (ogni assistito pesa uno)')
@@ -552,7 +556,7 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
     const s = await T.statoTelemetria(d.db, NOW)
     const sa = s.assistiti.find(x => x.imei === IMEI_A)!
     ok(s.tabelle_presenti === true && sa.righe_storico === 276 && sa.misure_dal !== null && sa.storico_fino_a !== null, 'stato: righe di storico, copertura e data fino a cui lo storico è stato letto da SiDLY')
-    ok(sa.misure_totali === d.q(`SELECT COUNT(*) AS n FROM sidly_misure WHERE imei = ?`, IMEI_A)[0].n && sa.misure_totali > 0, 'stato: «misure_totali» = misurazioni realmente nel DB (non dipende dal contatore dello storico completo)')
+    ok(sa.misure_totali === d.q(`SELECT COUNT(*) AS n FROM sidly_misure WHERE imei = ? AND ${T.VITALE_SQL}`, IMEI_A)[0].n && sa.misure_totali > 0, 'stato: «misure_totali» = misurazioni vere (con un valore fisiologico) realmente nel DB, non dipende dal contatore dello storico completo')
     ok(s.assistiti.filter(x => x.imei !== IMEI_A && x.imei !== IMEI_B).every(x => x.misure_totali === 0), 'stato: chi non ha misure risulta a 0')
     {
       const dsh = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
@@ -731,6 +735,106 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
     ok(/affid_min/.test(blk) && /affid_min deve essere 0, 1, 2 o 3/.test(blk) && /Number\.isInteger\(affMin\)/.test(blk) && /checkSessionOrKey\(/.test(blk), 'rotta report: affid_min accettato solo 0-3 (altrimenti 400) e rotta protetta')
     ok(/id="telAffMin"/.test(dash) && /affid_min=/.test(dash) && /tutte le misure/.test(dash) && /solo affidabilit&agrave; 3/.test(dash), 'Dashboard: selettore dell\'affidabilita\' minima (0-3) per le medie')
     ok(/Misure usate/.test(dash) && /non hanno ancora l&rsquo;indice/.test(dash), 'Dashboard: mostra quante misure sono usate e avvisa se mancano gli indici')
+  }
+
+  // ───────────────────────────────────────────────────────────────────
+  section('SiDLY telemetria 11d: misurazioni VERE (la pressione atmosferica non conta), N nuove e modalita\' «aggiorna»')
+  {
+    const nuovoDb = async () => {
+      const d = await makeD1(); T.dimenticaTabelle()
+      d.raw.run(`INSERT INTO assistiti (id, imei, status, nome_assistito, cognome_assistito) VALUES (1, '${IMEI_A}', 'ATTIVO', 'Giorgia', 'Origoni'), (2, '${IMEI_B}', 'ATTIVO', 'Laura', 'Calvi')`)
+      return d
+    }
+    const base = (d: any, P: any, extra: any = {}) => ({ db: d.db, env: ENV, ultime: 100, assistitoId: 1, dryRun: false, nowSec: NOW, fetchImpl: P.fetchImpl, ...extra })
+    const vere = (d: any, imei = IMEI_A) => Number(d.q(`SELECT COUNT(*) AS n FROM sidly_misure WHERE imei = ? AND ${T.VITALE_SQL}`, imei)[0].n)
+
+    // parseStats: i valori di pressione (~1013) sono pressione atmosferica, non una misura della persona
+    const pp = T.parseStats({ pulse: { chart: [{ x: 1781241600, y: 70 }] }, pressure: { chart: [{ x: 1781241600, y: 1013 }, { x: 1781243400, y: 1012 }] } }, IMEI_A)
+    ok(pp.righe.length === 1 && pp.righe[0].hr === 70 && pp.righe[0].pressure === 1013, 'parse: la pressione sullo stesso istante di una misura vera resta sulla riga, quella da sola viene scartata')
+    ok(pp.vitali === 1 && pp.a_vitale === 1781241600, 'parse: «vitali» e «a_vitale» contano solo le misurazioni con un valore fisiologico')
+    const soloP = T.parseStats({ pressure: { chart: [{ x: 1781241600, y: 1013 }] } }, IMEI_A)
+    ok(soloP.righe.length === 0 && soloP.vitali === 0 && soloP.a_vitale === null, 'parse: solo pressione atmosferica = nessuna misurazione, nessuna ultima misura')
+    const soloPassi = T.parseStats({ steps: { total: 50, chart: [{ x: 1781241600, y: 50 }] } }, IMEI_A)
+    ok(soloPassi.righe.length === 1 && soloPassi.vitali === 0, 'parse: i soli passi si tengono (servono ai passi/giorno) ma non sono una misurazione')
+    ok(T.ETICHETTE_STATS.pressure.unita === 'hPa' && /atmosferica/i.test(T.ETICHETTE_STATS.pressure.nome) && /NON la pressione arteriosa/.test(T.ETICHETTE_STATS.pressure.nome), 'etichetta: «Pressione atmosferica ... NON la pressione arteriosa» in hPa')
+
+    // N nuove VERE: con la pressione mezz\'ora-per-mezz\'ora, 100 richieste = 100 misurazioni vere, non 100 righe di cui meta' di pressione
+    const d = await nuovoDb(); const P = makeSidly({ pressione: true })
+    const r1 = await T.eseguiUltime(base(d, P, { ultime: 100 }))
+    const a1 = r1.result.assistiti![0]
+    ok(vere(d) === 100 && a1.misurazioni === 100 && a1.motivo_fine === 'richieste', `ultime 100 con pressione: esattamente 100 misurazioni VERE (trovate ${vere(d)}), motivo «richieste»`)
+    ok(Number(d.q(`SELECT COUNT(*) AS n FROM sidly_misure WHERE NOT ${T.VITALE_SQL} AND steps IS NULL`)[0].n) === 0, 'nessuna riga di sola pressione scritta nel DB')
+    const r2 = await T.eseguiUltime(base(d, P, { ultime: 100 }))
+    ok(vere(d) === 200 && r2.result.assistiti![0].misurazioni === 100, `rilancio: altre 100 misurazioni NUOVE (totale ${vere(d)}), le prime 100 saltate`)
+    // righe di sola pressione GIA' nel DB (importate prima di questa regola) non contano come «gia' caricate»
+    const dL = await nuovoDb(); const PL = makeSidly({ pressione: true })
+    T.dimenticaTabelle(); await T.assicuraTabelle(dL.db)
+    await dL.db.batch(T.istruzioniMisure(dL.db, [{ imei: IMEI_A, ts: NOW - 1800, fonte: 'stats', pressure: 1013 }, { imei: IMEI_A, ts: NOW - 5400, fonte: 'stats', pressure: 1012 }]))
+    const rL = await T.eseguiUltime(base(dL, PL, { ultime: 50 }))
+    ok(vere(dL) === 50 && rL.result.assistiti![0].misurazioni === 50, 'righe di sola pressione gia\' nel DB: non contano come misurazioni caricate, le 50 nuove arrivano comunque')
+    const stL = await T.statoTelemetria(dL.db, NOW)
+    ok(stL.assistiti.find(x => x.assistito_id === 1)!.misure_totali === 50, 'stato: «misure_totali» ignora le righe di sola pressione')
+    // motivo «inizio»: meno misure disponibili di N
+    const dI = await nuovoDb(); const PI = makeSidly({ pressione: true })
+    const rI = await T.eseguiUltime(base(dI, PI, { ultime: 5000 }))
+    ok(rI.result.completato === true && rI.result.assistiti![0].motivo_fine === 'inizio' && vere(dI) < 5000 && vere(dI) > 100, `N maggiore del disponibile: prende tutte (${vere(dI)}) e dice che e' arrivato all'attivazione («inizio»)`)
+    // Braccialetto che manda solo pressione: nessuna ultima misura
+    const dS = await nuovoDb(); const PS = makeSidly({ soloPressione: true })
+    const rS = await T.eseguiUltime(base(dS, PS, { dryRun: true, ultime: 1000 }))
+    const aS = rS.result.assistiti![0]
+    ok(!aS.anteprima?.ultima_misura && (rS.result.avvisi || []).some(x => /nessuna misura trovata/.test(x)), 'braccialetto che manda solo pressione atmosferica: l\'anteprima dice «nessuna misura trovata», non una falsa ultima misura')
+
+    // Report: la pressione non gonfia misure usate ne' giorni con dati
+    const dR = await nuovoDb(); T.dimenticaTabelle(); await T.assicuraTabelle(dR.db)
+    const G = Math.floor((NOW - 2 * 86400) / 86400) * 86400 + 10 * 3600
+    await dR.db.batch(T.istruzioniMisure(dR.db, [{ imei: IMEI_A, ts: G, fonte: 'stats', hr: 70 }, { imei: IMEI_A, ts: G + 1800, fonte: 'stats', pressure: 1013 }, { imei: IMEI_A, ts: G - 86400, fonte: 'stats', pressure: 1012 }, { imei: IMEI_B, ts: G, fonte: 'stats', pressure: 1010 }]))
+    const rep0 = await T.reportMedie(dR.db, { giorni: 30, nowSec: NOW })
+    const RA = rep0.assistiti.find(x => x.assistito_id === 1)!, RB = rep0.assistiti.find(x => x.assistito_id === 2)!
+    ok(RA.misure_periodo === 1 && RA.giorni_con_dati === 1 && RA.punti === 1, 'report: una misura vera + due righe di sola pressione = 1 misura, 1 giorno con dati')
+    ok(RB.misure_periodo === 0 && RB.giorni_con_dati === 0 && RB.punti === 0 && rep0.coorte.assistiti_con_dati === 1, 'report: chi ha solo pressione atmosferica non risulta con dati')
+
+    // «Aggiorna»: da adesso a ritroso fino alle misure gia' caricate
+    const dU = await nuovoDb(); const PU = makeSidly({ pressione: true })
+    const ie = await T.eseguiAggiorna({ db: dU.db, env: ENV, assistitoId: 1, dryRun: true, nowSec: NOW, fetchImpl: PU.fetchImpl })
+    ok(ie.httpStatus === 200 && /Nessuna misura nel DB/.test(ie.result.assistiti![0].errore || '') && PU.calls.filter(c => c.path.includes('/stats')).length === 0, 'aggiorna: assistito senza misure nel DB -> messaggio chiaro e nessuna chiamata a SiDLY')
+    const TRE = 3 * 86400
+    await T.eseguiUltime(base(dU, PU, { ultime: 100, nowSec: NOW - TRE }))
+    const prima = vere(dU), maxPrima = Number(dU.q(`SELECT MAX(ts) AS m FROM sidly_misure`)[0].m)
+    ok(prima === 100 && maxPrima <= NOW - TRE, 'aggiorna: preparazione = 100 misurazioni fino a 3 giorni fa')
+    const calls0 = PU.calls.length, scr0 = dU.stats.singles + dU.stats.stmtsInBatches
+    const dry = await T.eseguiAggiorna({ db: dU.db, env: ENV, assistitoId: 1, dryRun: true, nowSec: NOW, fetchImpl: PU.fetchImpl })
+    const an = dry.result.assistiti![0].anteprima!
+    ok(dry.result.esito === 'anteprima' && !!an.ultima_nel_db && (an.giorni_scoperti || 0) >= 2.9 && (an.giorni_scoperti || 0) <= 3.1 && (an.nuove_settimana || 0) > 0, `aggiorna: anteprima con ultima misura nel DB e giorni da coprire (${an.giorni_scoperti})`)
+    ok(dU.stats.singles + dU.stats.stmtsInBatches === scr0 && PU.calls.slice(calls0).every(c => c.method === 'GET'), 'aggiorna: l\'anteprima non scrive nulla e usa solo GET')
+    const ru = await T.eseguiAggiorna({ db: dU.db, env: ENV, assistitoId: 1, dryRun: false, nowSec: NOW, fetchImpl: PU.fetchImpl })
+    const au = ru.result.assistiti![0]
+    // la finestra arriva fino a NOW-1 secondo: l'ora esatta di NOW non c'e' ancora
+    const attese = Math.floor((NOW - 1) / 3600) - Math.floor(maxPrima / 3600)
+    ok(ru.result.completato === true && au.motivo_fine === 'gia_caricate' && au.misurazioni === attese && vere(dU) === prima + attese, `aggiorna: aggiunge solo le misure mancanti (${au.misurazioni} = ${attese}) e si ferma quando trova quelle gia' caricate`)
+    ok(PU.calls.slice(calls0).filter(c => c.path.includes('/stats')).length === 1 + 1 /* anteprima */, 'aggiorna: una sola finestra letta da SiDLY (non rilegge l\'archivio)')
+    ok(Number(dU.q(`SELECT COUNT(*) AS n FROM sidly_misure WHERE NOT ${T.VITALE_SQL} AND steps IS NULL`)[0].n) === 0, 'aggiorna: nessuna riga di sola pressione scritta')
+    const dopo = vere(dU)
+    const ru2 = await T.eseguiAggiorna({ db: dU.db, env: ENV, assistitoId: 1, dryRun: false, nowSec: NOW, fetchImpl: PU.fetchImpl })
+    ok(ru2.result.completato === true && ru2.result.assistiti![0].misurazioni === 0 && vere(dU) === dopo, 'aggiorna: rilancio subito dopo = 0 misure nuove, nessun duplicato')
+    ok(PU.calls.every(c => c.method === 'GET'), 'aggiorna: nessuna scrittura su SiDLY (solo GET)')
+    const stU = dU.q('SELECT backfill_fino_ts, backfill_da_ts, completo_ts FROM sidly_stato WHERE imei = ?', IMEI_A)[0]
+    ok(stU && stU.backfill_fino_ts === null && stU.backfill_da_ts === null && stU.completo_ts === null, 'aggiorna: il cursore dello storico completo non viene toccato')
+    // Errore di SiDLY: nessuna riga, errore riportato
+    const dX = await nuovoDb(); await T.eseguiUltime(base(dX, makeSidly(), { ultime: 50, nowSec: NOW - TRE }))
+    const nX = dX.count('sidly_misure')
+    const rX = await T.eseguiAggiorna({ db: dX.db, env: ENV, assistitoId: 1, dryRun: false, nowSec: NOW, fetchImpl: makeSidly({ statsStatus: 500 }).fetchImpl })
+    ok(/HTTP 500/.test(rX.result.assistiti![0].errore || '') && dX.count('sidly_misure') === nX && rX.result.completato === false, 'aggiorna: errore 500 di SiDLY: niente scritto, errore riportato')
+    ok((await T.eseguiAggiorna({ db: dX.db, env: {}, assistitoId: 1, dryRun: true, nowSec: NOW, fetchImpl: makeSidly().fetchImpl })).httpStatus === 503, 'aggiorna: senza credenziali SiDLY: 503')
+    ok((await T.eseguiAggiorna({ db: dX.db, env: ENV, assistitoId: 99, dryRun: true, nowSec: NOW, fetchImpl: makeSidly().fetchImpl })).httpStatus === 404, 'aggiorna: assistito inesistente: 404')
+    ok((await T.eseguiAggiorna({ db: dX.db, env: ENV, assistitoId: 1, dryRun: true, primaDi: NOW + 100, nowSec: NOW, fetchImpl: makeSidly().fetchImpl })).httpStatus === 400, 'aggiorna: prima_di nel futuro: 400')
+
+    // Sorgente: rotta protetta e Dashboard
+    const idx = readFileSync('src/index.tsx', 'utf8'), dash = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
+    const i0 = idx.search(/app\.post\('\/api\/sidly\/storico'/)
+    const blk = idx.slice(i0, i0 + 9000)
+    ok(/body\?\.aggiorna === true/.test(blk) && /eseguiAggiorna\(/.test(blk) && /checkSessionOrKey\(/.test(blk) && /dryRun: !scrive/.test(blk), 'rotta storico: «aggiorna» protetta da sessione/chiave, senza conferma_scrittura e\' sempre anteprima')
+    ok(/sidlyAggiornaAnteprima/.test(dash) && /sidlyAggiornaScrivi/.test(dash) && /aggiorna:\s*true/.test(dash) && /Aggiorna con le misure nuove/.test(dash), 'Dashboard: riquadro «Aggiorna con le misure nuove» con anteprima e conferma')
+    ok(/Misurazioni nuove aggiunte/.test(dash) && /telEsitiHtml/.test(dash) && /motivo_fine/.test(dash), 'Dashboard: dopo l\'importazione si vede, per ogni assistito, quante misurazioni nuove e perche\' si e\' fermato')
   }
 
   // ───────────────────────────────────────────────────────────────────

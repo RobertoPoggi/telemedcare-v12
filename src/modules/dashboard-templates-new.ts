@@ -3800,6 +3800,9 @@ export const dashboard = `<!DOCTYPE html>
                     '<label><input type="radio" name="telModo" id="telModoInizio" value="inizio" onchange="document.getElementById(\\'telDa\\').disabled = true"> <b>Dall&rsquo;inizio</b> (data di attivazione di ogni braccialetto: tutti i dati)</label>' +
                     '<label><input type="radio" name="telModo" id="telModoData" value="data" onchange="document.getElementById(\\'telDa\\').disabled = false"> Da una data <input id="telDa" type="date" disabled style="border:1px solid #9ca3af;border-radius:4px;padding:3px"></label></div>' +
                     '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px"><button onclick="window.sidlyStoricoAnteprima()" style="' + SIDLY_BTN + '#0d9488">Anteprima storico</button></div>');
+                h += telBox('1b. Aggiorna con le misure nuove (da oggi a ritroso, senza rileggere l&rsquo;archivio)',
+                    '<div style="font-size:12px;color:#6b7280;margin-bottom:6px">Per ogni assistito legge da SiDLY (solo lettura) a partire da oggi e va indietro finch&eacute; trova misure gi&agrave; caricate, poi si ferma: aggiunge solo quelle mancanti. Si usa dopo il primo caricamento, anche periodicamente. Prima un&rsquo;anteprima: nulla viene scritto finch&eacute; non confermi.</div>' +
+                    '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><button onclick="window.sidlyAggiornaAnteprima()" style="' + SIDLY_BTN + '#0d9488">Anteprima aggiornamento</button></div>');
                 h += telBox('3. Aggiorna l&rsquo;affidabilit&agrave; sulle misure gi&agrave; presenti (nessuna misura nuova)',
                     '<div style=\"font-size:12px;color:#6b7280;margin-bottom:6px\">Per le misure gi&agrave; nel DB che non hanno l&rsquo;indice di affidabilit&agrave; (0-3), lo rilegge da SiDLY (solo lettura) e lo aggiunge a quelle righe. Non inserisce righe nuove, non cambia i valori misurati e non sovrascrive indici gi&agrave; presenti. Prima un&rsquo;anteprima: nulla viene scritto finch&eacute; non confermi.</div>' +
                     '<div style=\"display:flex;flex-wrap:wrap;gap:8px;align-items:center\"><button onclick=\"window.sidlyAffidAnteprima()\" style=\"' + SIDLY_BTN + '#0d9488\">Anteprima aggiornamento affidabilit&agrave;</button></div>');
@@ -3867,7 +3870,7 @@ export const dashboard = `<!DOCTYPE html>
             var lista = window.__telAssistiti || [];
             if (!lista.length) { telEsito('<span style="color:#b91c1c">Nessun assistito attivo con IMEI.</span>'); return; }
             var h = '<div style="font-size:13px;margin-bottom:6px">Anteprima delle <b>ultime ' + n + ' misurazioni</b> per ognuno dei ' + lista.length + ' assistiti. Solo lettura da SiDLY, nulla viene scritto.</div>';
-            var okIds = [], ko = 0, stimaTot = 0;
+            var okIds = [], ko = 0;
             for (var i = 0; i < lista.length; i++) {
                 telEsito('<i class="fas fa-spinner fa-spin"></i> Lettura da SiDLY ' + (i + 1) + ' di ' + lista.length + ': ' + escapeHtml(lista[i].nome) + ' (solo lettura)&hellip;');
                 var r = await telApi('POST', '/api/sidly/storico', telConImei({ ultime: n, assistito_id: lista[i].assistito_id, dry_run: true }, lista[i]));
@@ -3875,13 +3878,13 @@ export const dashboard = `<!DOCTYPE html>
                 var errore = r.esito !== 'anteprima' ? (r.errore || 'Errore') : a.errore;
                 if (errore || !a.anteprima) { ko++; h += '<div style="color:#b91c1c;font-size:13px">' + escapeHtml(lista[i].nome) + ': ' + escapeHtml(errore || 'nessun dato letto') + ' &mdash; verr&agrave; saltato</div>'; continue; }
                 var an = a.anteprima; var pt = an.punti || {};
-                var prev = typeof an.ultime_stima === 'number' ? an.ultime_stima : Math.min(n, an.stima_righe_totali || 0);
-                stimaTot += prev; okIds.push(lista[i]);
-                h += '<div style="font-size:13px;margin-bottom:3px"><b>' + escapeHtml(lista[i].nome) + '</b>: attivo da ' + escapeHtml(an.inizio_da || 'data non disponibile (ultimi 12 mesi)') + ' &middot; gi&agrave; nel DB ' + (an.gia_nel_db || 0) + ' &middot; ' + (an.ultima_misura ? 'ultima misura: <b>' + escapeHtml(an.ultima_misura) + '</b>' + (an.silenzio_giorni >= 2 ? ' <span style=\"color:#b45309\">(ferma da ' + an.silenzio_giorni + ' giorni: si parte da l&igrave; e si va indietro)</span>' : '') : 'nessuna misura trovata') + ' &middot; settimana letta: ' + (an.righe || 0) + ' istanti con almeno una misura &middot; nuove da importare circa <b>' + prev + '</b></div>' + telRiepilogoHtml(an);
+                var nuoveSett = an.nuove_settimana || 0;
+                okIds.push(lista[i]);
+                h += '<div style="font-size:13px;margin-bottom:3px"><b>' + escapeHtml(lista[i].nome) + '</b>: attivo da ' + escapeHtml(an.inizio_da || 'data non disponibile (ultimi 12 mesi)') + ' &middot; gi&agrave; nel DB ' + (an.gia_nel_db || 0) + ' &middot; ' + (an.ultima_misura ? 'ultima misura: <b>' + escapeHtml(an.ultima_misura) + '</b>' + (an.silenzio_giorni >= 2 ? ' <span style=\"color:#b45309\">(ferma da ' + an.silenzio_giorni + ' giorni: si parte da l&igrave; e si va indietro)</span>' : '') : 'nessuna misura trovata') + ' &middot; settimana letta: ' + (an.righe || 0) + ' misurazioni, di cui <b>' + nuoveSett + '</b> non ancora nel DB &middot; l&rsquo;importazione cerca di aggiungerne fino a <b>' + n + '</b></div>' + telRiepilogoHtml(an);
             }
             if (ko) h += '<div style="font-size:12px;color:#92400e;margin-top:4px">Gli assistiti con errore (di solito IMEI non trovato su SiDLY) non vengono importati.</div>';
             window.__telUltimeOk = okIds; window.__telUltimeN = n;
-            h += '<div style="font-size:12px;color:#6b7280;margin-top:6px">Totale stimato: circa ' + stimaTot + ' righe per ' + okIds.length + ' assistiti. Le misurazioni gi&agrave; nel DB non vengono rilette n&eacute; riscritte.</div>';
+            h += '<div style="font-size:12px;color:#6b7280;margin-top:6px">L&rsquo;importazione parte dalla misurazione pi&ugrave; recente non ancora nel DB e va indietro finch&eacute; ne ha aggiunte ' + n + ' per assistito (o finch&eacute; arriva all&rsquo;attivazione del braccialetto). Quante ne ha aggiunte davvero, e perch&eacute; si &egrave; fermata, lo vedi per ogni assistito al termine. Le misurazioni gi&agrave; nel DB non vengono rilette n&eacute; riscritte.</div>';
             if (okIds.length) h += '<div style="margin-top:8px"><button onclick="window.sidlyUltimeScrivi()" style="' + SIDLY_BTN + '#dc2626">Conferma e importa le ultime ' + n + ' misurazioni di ' + okIds.length + ' assistiti nel DB del CRM</button></div>';
             telEsito(h);
         }
@@ -3889,9 +3892,9 @@ export const dashboard = `<!DOCTYPE html>
             var ids = window.__telUltimeOk || [], n = window.__telUltimeN || 0;
             if (!ids.length || !(n >= 1 && n <= 5000)) { telEsito('<span style="color:#b91c1c">Rifai prima l&rsquo;anteprima.</span>'); return; }
             var nomi = {}; (window.__telAssistiti || []).forEach(function (a) { nomi[a.assistito_id] = a.nome; });
-            var tot = 0, fatti = 0, falliti = [];
+            var tot = 0, fatti = 0, falliti = [], esiti = [];
             for (var i = 0; i < ids.length; i++) {
-                var tg = ids[i], id = tg.assistito_id, primaDi = null, raccolte = 0, giri = 0, r = null, err = '';
+                var tg = ids[i], id = tg.assistito_id, primaDi = null, raccolte = 0, giri = 0, r = null, err = '', agg = 0, motivo = '';
                 do {
                     giri++;
                     telEsito('<i class="fas fa-spinner fa-spin"></i> Importo ' + (i + 1) + ' di ' + ids.length + ': ' + escapeHtml(tg.nome) + ' (passaggio ' + giri + ', righe scritte finora ' + tot + ')&hellip;');
@@ -3902,11 +3905,77 @@ export const dashboard = `<!DOCTYPE html>
                     if (r.esito !== 'eseguito') { err = r.errore || 'Errore'; break; }
                     if (a.errore) { err = a.errore; break; }
                     tot += r.righe_scritte || 0;
+                    agg += a.misurazioni || 0;
+                    motivo = a.motivo_fine || motivo;
                     if (a.continua) { primaDi = a.continua.prima_di; raccolte = a.continua.raccolte; }
                 } while (!r.completato && giri < 20);
                 if (err) falliti.push(tg.nome + ': ' + err); else fatti++;
+                esiti.push({ nome: tg.nome, agg: agg, motivo: err ? 'errore' : (giri >= 20 && !r.completato ? 'limite' : motivo) });
             }
-            var out = '<span style="color:' + (falliti.length ? '#92400e' : '#15803d') + ';font-weight:700">Importati ' + fatti + ' assistiti su ' + ids.length + '.</span> Righe scritte: ' + tot + '.';
+            var tot_m = 0; esiti.forEach(function (e) { tot_m += e.agg; });
+            var out = '<span style="color:' + (falliti.length ? '#92400e' : '#15803d') + ';font-weight:700">Importati ' + fatti + ' assistiti su ' + ids.length + '.</span> Misurazioni nuove aggiunte: <b>' + tot_m + '</b> (righe scritte in totale, con i soli passi: ' + tot + ').' + telEsitiHtml(esiti, n);
+            if (falliti.length) out += '<div style="color:#b91c1c;font-size:12px;margin-top:4px">Non riusciti (rilancia: le righe gi&agrave; scritte non si duplicano): ' + falliti.map(escapeHtml).join('; ') + '</div>';
+            out += ' <button onclick="window.sidlyTelemetria()" style="' + SIDLY_BTN + '#0d9488">Aggiorna il quadro</button>';
+            telEsito(out);
+        };
+        // Esito per assistito: quante misurazioni nuove sono state aggiunte e perche' la ricerca si e' fermata.
+        function telEsitiHtml(esiti, n) {
+            var etich = { richieste: 'raggiunte le ' + n + ' richieste', inizio: 'non c&rsquo;&egrave; altro da caricare: arrivato all&rsquo;attivazione del braccialetto', gia_caricate: 'trovate misure gi&agrave; caricate', limite: 'da riprendere: rilancia', errore: 'errore' };
+            var h = '<div style="overflow-x:auto;margin-top:6px"><table style="border-collapse:collapse"><tr><th style="' + TEL_TH + '">Assistito</th><th style="' + TEL_TH + ';text-align:right">Nuove</th><th style="' + TEL_TH + '">Esito</th></tr>';
+            esiti.forEach(function (e) {
+                var corto = e.motivo !== 'richieste' && e.motivo !== 'gia_caricate' && e.agg < n;
+                h += '<tr><td style="' + TEL_TD + '">' + escapeHtml(e.nome) + '</td><td style="' + TEL_TD + ';text-align:right"><b>' + e.agg + '</b></td><td style="' + TEL_TD + ';color:' + (corto ? '#92400e' : '#374151') + '">' + (etich[e.motivo] || '') + '</td></tr>';
+            });
+            return h + '</table></div>';
+        }
+        // Aggiorna con le misure nuove: da oggi a ritroso fino alle misure gia' caricate. Una richiesta per assistito (solo braccialetto attuale).
+        window.sidlyAggiornaAnteprima = async function () {
+            var lista = (window.__telAssistiti || []).filter(function (x) { return !x.imei; });
+            if (!lista.length) { telEsito('<span style="color:#b91c1c">Nessun assistito attivo con IMEI.</span>'); return; }
+            var h = '<div style="font-size:13px;margin-bottom:6px">Anteprima dell&rsquo;<b>aggiornamento con le misure nuove</b> per ' + lista.length + ' assistiti. Solo lettura da SiDLY, nulla viene scritto.</div>';
+            var okIds = [], stimaTot = 0, senza = 0;
+            for (var i = 0; i < lista.length; i++) {
+                telEsito('<i class="fas fa-spinner fa-spin"></i> Controllo ' + (i + 1) + ' di ' + lista.length + ': ' + escapeHtml(lista[i].nome) + ' (solo lettura)&hellip;');
+                var r = await telApi('POST', '/api/sidly/storico', { aggiorna: true, assistito_id: lista[i].assistito_id, dry_run: true });
+                var a = (r.assistiti || [])[0] || {};
+                var errore = r.esito !== 'anteprima' ? (r.errore || 'Errore') : a.errore;
+                var an = a.anteprima;
+                if (errore || !an) {
+                    if (/Nessuna misura nel DB/.test(errore || '')) { senza++; continue; }
+                    h += '<div style="color:#b91c1c;font-size:13px">' + escapeHtml(lista[i].nome) + ': ' + escapeHtml(errore || 'nessun dato letto') + ' &mdash; saltato</div>'; continue;
+                }
+                okIds.push(lista[i]); stimaTot += an.ultime_stima || 0;
+                h += '<div style="font-size:13px;margin-bottom:2px"><b>' + escapeHtml(lista[i].nome) + '</b>: ultima misura nel DB <b>' + escapeHtml(an.ultima_nel_db || '-') + '</b> (' + telFmt(an.giorni_scoperti, 1) + ' giorni fa) &middot; nuove da aggiungere circa <b>' + (an.ultime_stima || 0) + '</b></div>';
+            }
+            if (senza) h += '<div style="font-size:12px;color:#92400e">' + senza + ' assistiti senza misure nel DB: per loro serve prima il primo caricamento (riquadro 1).</div>';
+            window.__telAggiornaOk = okIds;
+            h += '<div style="font-size:12px;color:#6b7280;margin-top:6px">Totale stimato: circa ' + stimaTot + ' misurazioni nuove in ' + okIds.length + ' assistiti. Le misure gi&agrave; nel DB non vengono riscritte.</div>';
+            if (okIds.length) h += '<div style="margin-top:8px"><button onclick="window.sidlyAggiornaScrivi()" style="' + SIDLY_BTN + '#dc2626">Conferma e aggiorna ' + okIds.length + ' assistiti nel DB del CRM</button></div>';
+            telEsito(h);
+        };
+        window.sidlyAggiornaScrivi = async function () {
+            var ids = window.__telAggiornaOk || [];
+            if (!ids.length) { telEsito('<span style="color:#b91c1c">Rifai prima l&rsquo;anteprima.</span>'); return; }
+            var fatti = 0, falliti = [], esiti = [], tot = 0;
+            for (var i = 0; i < ids.length; i++) {
+                var tg = ids[i], primaDi = null, giri = 0, r = null, err = '', agg = 0, motivo = '';
+                do {
+                    giri++;
+                    telEsito('<i class="fas fa-spinner fa-spin"></i> Aggiorno ' + (i + 1) + ' di ' + ids.length + ': ' + escapeHtml(tg.nome) + ' (passaggio ' + giri + ', misurazioni nuove finora ' + tot + ')&hellip;');
+                    var body = { aggiorna: true, assistito_id: tg.assistito_id, conferma_scrittura: true };
+                    if (primaDi) { body.prima_di = primaDi; }
+                    r = await telApi('POST', '/api/sidly/storico', body);
+                    var a = (r.assistiti || [])[0] || {};
+                    if (r.esito !== 'eseguito') { err = r.errore || 'Errore'; break; }
+                    if (a.errore) { err = a.errore; break; }
+                    agg += a.misurazioni || 0; tot += a.misurazioni || 0;
+                    motivo = a.motivo_fine || motivo;
+                    if (a.continua) { primaDi = a.continua.prima_di; }
+                } while (!r.completato && giri < 30);
+                if (err) falliti.push(tg.nome + ': ' + err); else fatti++;
+                esiti.push({ nome: tg.nome, agg: agg, motivo: err ? 'errore' : motivo });
+            }
+            var out = '<span style="color:' + (falliti.length ? '#92400e' : '#15803d') + ';font-weight:700">Aggiornati ' + fatti + ' assistiti su ' + ids.length + '.</span> Misurazioni nuove aggiunte: <b>' + tot + '</b>.' + telEsitiHtml(esiti, 0);
             if (falliti.length) out += '<div style="color:#b91c1c;font-size:12px;margin-top:4px">Non riusciti (rilancia: le righe gi&agrave; scritte non si duplicano): ' + falliti.map(escapeHtml).join('; ') + '</div>';
             out += ' <button onclick="window.sidlyTelemetria()" style="' + SIDLY_BTN + '#0d9488">Aggiorna il quadro</button>';
             telEsito(out);
