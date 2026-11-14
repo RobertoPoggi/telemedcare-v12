@@ -3783,6 +3783,9 @@ export const dashboard = `<!DOCTYPE html>
                     '<label><input type="radio" name="telModo" id="telModoInizio" value="inizio" onchange="document.getElementById(\\'telDa\\').disabled = true"> <b>Dall&rsquo;inizio</b> (data di attivazione di ogni braccialetto: tutti i dati)</label>' +
                     '<label><input type="radio" name="telModo" id="telModoData" value="data" onchange="document.getElementById(\\'telDa\\').disabled = false"> Da una data <input id="telDa" type="date" disabled style="border:1px solid #9ca3af;border-radius:4px;padding:3px"></label></div>' +
                     '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px"><button onclick="window.sidlyStoricoAnteprima()" style="' + SIDLY_BTN + '#0d9488">Anteprima storico</button></div>');
+                h += telBox('3. Aggiorna l&rsquo;affidabilit&agrave; sulle misure gi&agrave; presenti (nessuna misura nuova)',
+                    '<div style=\"font-size:12px;color:#6b7280;margin-bottom:6px\">Per le misure gi&agrave; nel DB che non hanno l&rsquo;indice di affidabilit&agrave; (0-3), lo rilegge da SiDLY (solo lettura) e lo aggiunge a quelle righe. Non inserisce righe nuove, non cambia i valori misurati e non sovrascrive indici gi&agrave; presenti. Prima un&rsquo;anteprima: nulla viene scritto finch&eacute; non confermi.</div>' +
+                    '<div style=\"display:flex;flex-wrap:wrap;gap:8px;align-items:center\"><button onclick=\"window.sidlyAffidAnteprima()\" style=\"' + SIDLY_BTN + '#0d9488\">Anteprima aggiornamento affidabilit&agrave;</button></div>');
                 h += telBox('2. Dataset delle sole misure (per le analisi statistiche)',
                     '<div style="font-size:12px;color:#6b7280;margin-bottom:6px">File CSV con una riga per assistito e istante: FC, SpO2, temperatura, passi, HRV, FR, qualit&agrave; del segnale. Solo id assistito e IMEI, nessun nome.</div>' +
                     '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><button id="telDatasetBtn" onclick="window.sidlyDataset()" style="' + SIDLY_BTN + '#0f766e"><i class="fas fa-download"></i> Scarica dataset misure (CSV)</button></div><div id="telDatasetEsito" style="margin-top:6px;font-size:12px"></div>');
@@ -3844,7 +3847,7 @@ export const dashboard = `<!DOCTYPE html>
                 var an = a.anteprima; var pt = an.punti || {};
                 var prev = typeof an.ultime_stima === 'number' ? an.ultime_stima : Math.min(n, an.stima_righe_totali || 0);
                 stimaTot += prev; okIds.push(lista[i].assistito_id);
-                h += '<div style="font-size:13px;margin-bottom:3px"><b>' + escapeHtml(lista[i].nome) + '</b>: attivo da ' + escapeHtml(an.inizio_da || 'data non disponibile (ultimi 12 mesi)') + ' &middot; gi&agrave; nel DB ' + (an.gia_nel_db || 0) + ' &middot; ultima settimana: ' + (an.righe || 0) + ' istanti con almeno una misura &middot; nuove da importare circa <b>' + prev + '</b></div>' + telRiepilogoHtml(an);
+                h += '<div style="font-size:13px;margin-bottom:3px"><b>' + escapeHtml(lista[i].nome) + '</b>: attivo da ' + escapeHtml(an.inizio_da || 'data non disponibile (ultimi 12 mesi)') + ' &middot; gi&agrave; nel DB ' + (an.gia_nel_db || 0) + ' &middot; ' + (an.ultima_misura ? 'ultima misura: <b>' + escapeHtml(an.ultima_misura) + '</b>' + (an.silenzio_giorni >= 2 ? ' <span style=\"color:#b45309\">(ferma da ' + an.silenzio_giorni + ' giorni: si parte da l&igrave; e si va indietro)</span>' : '') : 'nessuna misura trovata') + ' &middot; settimana letta: ' + (an.righe || 0) + ' istanti con almeno una misura &middot; nuove da importare circa <b>' + prev + '</b></div>' + telRiepilogoHtml(an);
             }
             if (ko) h += '<div style="font-size:12px;color:#92400e;margin-top:4px">Gli assistiti con errore (di solito IMEI non trovato su SiDLY) non vengono importati.</div>';
             window.__telUltimeOk = okIds; window.__telUltimeN = n;
@@ -3876,6 +3879,56 @@ export const dashboard = `<!DOCTYPE html>
             var out = '<span style="color:' + (falliti.length ? '#92400e' : '#15803d') + ';font-weight:700">Importati ' + fatti + ' assistiti su ' + ids.length + '.</span> Righe scritte: ' + tot + '.';
             if (falliti.length) out += '<div style="color:#b91c1c;font-size:12px;margin-top:4px">Non riusciti (rilancia: le righe gi&agrave; scritte non si duplicano): ' + falliti.map(escapeHtml).join('; ') + '</div>';
             out += ' <button onclick="window.sidlyTelemetria()" style="' + SIDLY_BTN + '#0d9488">Aggiorna il quadro</button>';
+            telEsito(out);
+        };
+        // Aggiorna l'affidabilita' sulle misure gia' nel DB: una richiesta per assistito (e per gruppo di settimane), mai righe nuove.
+        window.sidlyAffidAnteprima = async function () {
+            var lista = window.__telAssistiti || [];
+            if (!lista.length) { telEsito('<span style=\"color:#b91c1c\">Nessun assistito attivo con IMEI.</span>'); return; }
+            var h = '<div style=\"font-size:13px;margin-bottom:6px\">Anteprima dell&rsquo;<b>aggiornamento dell&rsquo;affidabilit&agrave;</b> sulle misure gi&agrave; nel DB. Solo lettura da SiDLY, nulla viene scritto.</div>';
+            var okIds = [], daAgg = 0;
+            for (var i = 0; i < lista.length; i++) {
+                telEsito('<i class=\"fas fa-spinner fa-spin\"></i> Controllo ' + (i + 1) + ' di ' + lista.length + ': ' + escapeHtml(lista[i].nome) + ' (solo lettura)&hellip;');
+                var r = await telApi('POST', '/api/sidly/storico', { affidabilita: true, assistito_id: lista[i].assistito_id, dry_run: true });
+                var a = (r.assistiti || [])[0] || {};
+                var errore = r.esito !== 'anteprima' ? (r.errore || 'Errore') : a.errore;
+                var an = a.anteprima;
+                if (errore || !an || !an.affid_db) { h += '<div style=\"color:#6b7280;font-size:13px\">' + escapeHtml(lista[i].nome) + ': ' + escapeHtml(errore || 'niente da fare') + ' &mdash; saltato</div>'; continue; }
+                var db = an.affid_db, fi = an.affid_finestra || {};
+                if (!db.senza_affidabilita) { h += '<div style=\"font-size:13px;margin-bottom:3px\"><b>' + escapeHtml(lista[i].nome) + '</b>: ' + db.righe + ' misure nel DB, tutte gi&agrave; con affidabilit&agrave; &mdash; niente da aggiornare</div>'; continue; }
+                okIds.push(lista[i].assistito_id); daAgg += db.senza_affidabilita;
+                h += '<div style=\"font-size:13px;margin-bottom:3px\"><b>' + escapeHtml(lista[i].nome) + '</b>: ' + db.righe + ' misure nel DB (dal ' + escapeHtml(db.dal) + ' al ' + escapeHtml(db.al) + ') &middot; senza affidabilit&agrave;: <b>' + db.senza_affidabilita + '</b>' +
+                    (fi.da_sidly !== undefined ? ' &middot; settimana di prova: ' + fi.righe_db + ' misure da aggiornare, SiDLY ne ha indicate ' + fi.da_aggiornare : '') + '</div>' + telRiepilogoHtml(an);
+            }
+            window.__telAffidOk = okIds;
+            h += '<div style=\"font-size:12px;color:#6b7280;margin-top:6px\">Totale: circa ' + daAgg + ' misure da aggiornare in ' + okIds.length + ' assistiti. Ogni misura aggiornata &egrave; una scrittura nel DB: se sono molte, conviene farlo in una volta sola. Se SiDLY non indica l&rsquo;affidabilit&agrave; per un istante, quella riga resta com&rsquo;&egrave;.</div>';
+            if (okIds.length) h += '<div style=\"margin-top:8px\"><button onclick=\"window.sidlyAffidScrivi()\" style=\"' + SIDLY_BTN + '#dc2626\">Conferma e aggiorna l&rsquo;affidabilit&agrave; di ' + okIds.length + ' assistiti nel DB del CRM</button></div>';
+            telEsito(h);
+        };
+        window.sidlyAffidScrivi = async function () {
+            var ids = window.__telAffidOk || [];
+            if (!ids.length) { telEsito('<span style=\"color:#b91c1c\">Rifai prima l&rsquo;anteprima.</span>'); return; }
+            var nomi = {}; (window.__telAssistiti || []).forEach(function (a) { nomi[a.assistito_id] = a.nome; });
+            var tot = 0, fatti = 0, falliti = [];
+            for (var i = 0; i < ids.length; i++) {
+                var id = ids[i], primaDi = null, giri = 0, r = null, err = '';
+                do {
+                    giri++;
+                    telEsito('<i class=\"fas fa-spinner fa-spin\"></i> Aggiorno ' + (i + 1) + ' di ' + ids.length + ': ' + escapeHtml(nomi[id] || id) + ' (passaggio ' + giri + ', misure aggiornate finora ' + tot + ')&hellip;');
+                    var body = { affidabilita: true, assistito_id: id, conferma_scrittura: true };
+                    if (primaDi) { body.prima_di = primaDi; }
+                    r = await telApi('POST', '/api/sidly/storico', body);
+                    var a = (r.assistiti || [])[0] || {};
+                    if (r.esito !== 'eseguito') { err = r.errore || 'Errore'; break; }
+                    if (a.errore) { err = a.errore; break; }
+                    tot += r.righe_scritte || 0;
+                    if (a.continua) { primaDi = a.continua.prima_di; }
+                } while (!r.completato && giri < 60);
+                if (err) falliti.push((nomi[id] || id) + ': ' + err); else fatti++;
+            }
+            var out = '<span style=\"color:' + (falliti.length ? '#92400e' : '#15803d') + ';font-weight:700\">Affidabilit&agrave; aggiornata per ' + fatti + ' assistiti su ' + ids.length + '.</span> Misure aggiornate: ' + tot + '.';
+            if (falliti.length) out += '<div style=\"color:#b91c1c;font-size:12px;margin-top:4px\">Non riusciti (rilancia: riparte solo dalle misure ancora senza affidabilit&agrave;): ' + falliti.map(escapeHtml).join('; ') + '</div>';
+            out += ' <button onclick=\"window.sidlyTelemetria()\" style=\"' + SIDLY_BTN + '#0d9488\">Aggiorna il quadro</button>';
             telEsito(out);
         };
         window.sidlyStoricoAnteprima = async function () {

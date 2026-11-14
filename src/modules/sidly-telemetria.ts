@@ -96,7 +96,7 @@ export function fondiMisure(righe: Misura[]): Misura[] {
     const k = r.imei + ':' + r.ts
     const o = m.get(k)
     if (!o) { m.set(k, { ...r }); continue }
-    for (const c of COLS) if (r[c] !== null && r[c] !== undefined) (o as any)[c] = r[c]
+    for (const c of COLS) if (r[c] !== null && r[c] !== undefined) (o as any)[c] = (c === 'affid' && typeof o.affid === 'number') ? Math.min(o.affid, r[c] as number) : r[c]
     o.fonte = r.fonte
   }
   return [...m.values()]
@@ -304,7 +304,7 @@ export interface StoricoAssistito {
   /** Modalita' «ultime N»: dove riprendere se non e' finito, righe raccolte in tutto, periodo delle righe di questa richiesta. */
   continua?: { prima_di: number; raccolte: number }
   raccolte_totali?: number; dal?: string; al?: string
-  anteprima?: { finestra: string; ultime_stima?: number; gia_nel_db?: number; punti: Record<string, number>; righe: number; da?: string; a?: string; passi: StatsParsed['passi']; eventi_trovati?: number; stima_righe_totali?: number; inizio_da?: string; finestre_totali?: number; esempio?: any[]; /** Valori veri letti nella settimana (min/media/max/ultimo) e affidabilita' (0-3). */ riepilogo?: RiepilogoMetrica[]; affidabilita?: AffidabilitaStats }
+  anteprima?: { finestra: string; ultime_stima?: number; gia_nel_db?: number; punti: Record<string, number>; righe: number; da?: string; a?: string; passi: StatsParsed['passi']; eventi_trovati?: number; stima_righe_totali?: number; inizio_da?: string; finestre_totali?: number; esempio?: any[]; /** Valori veri letti nella settimana (min/media/max/ultimo) e affidabilita' (0-3). */ riepilogo?: RiepilogoMetrica[]; affidabilita?: AffidabilitaStats; /** Ultima misura trovata su SiDLY (anche se vecchia) e giorni di silenzio. */ ultima_misura?: string; silenzio_giorni?: number; /** Solo modalita' «aggiorna affidabilita'»: stato del DB e quanto SiDLY puo' completare. */ affid_db?: { righe: number; senza_affidabilita: number; dal?: string; al?: string; finestre_totali: number; colonna_presente: boolean }; affid_finestra?: { righe_db: number; da_sidly: number; da_aggiornare: number } }
 }
 export interface StoricoRisultato { httpStatus: number; result: { esito: 'anteprima' | 'eseguito' | 'errore'; completato?: boolean; errore?: string; assistiti?: StoricoAssistito[]; righe_scritte?: number; finestre_eseguite?: number; avvisi?: string[]; limiti?: { max_finestre: number; max_righe: number } } }
 
@@ -461,6 +461,8 @@ export async function eseguiStorico(o: StoricoOpzioni): Promise<StoricoRisultato
 export const ULTIME_MAX = 5000
 /** Senza data di registrazione la ricerca all'indietro si ferma a questo periodo. */
 export const ULTIME_SENZA_REGISTRAZIONE_S = 365 * 86400
+/** Anteprima: finestre settimanali sondate all'indietro per trovare l'ULTIMA misura dell'assistito (anche se ferma da settimane o mesi). */
+export const ULTIME_SONDA_MAX = 20
 
 export interface UltimeOpzioni {
   db: any; env: SidlyEnv; ultime: number; assistitoId: number; dryRun: boolean
@@ -494,7 +496,8 @@ export async function eseguiUltime(o: UltimeOpzioni): Promise<StoricoRisultato> 
   const client = new SidlyClient(o.env, o.fetchImpl)
   const avvisi: string[] = []
   const r: StoricoAssistito = { assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, finestre: 0, righe: 0, fino_a: null, completato: false }
-  const maxFinestre = o.dryRun ? 1 : Math.max(1, Math.min(o.maxFinestre ?? 8, 20))
+  // Anteprima: si va indietro finche' si trova la prima settimana con misure (l'ultima misura vera dell'assistito), senza scrivere nulla.
+  const maxFinestre = o.dryRun ? ULTIME_SONDA_MAX : Math.max(1, Math.min(o.maxFinestre ?? 8, 20))
   const adesso = new Date(nowSec * 1000).toISOString()
   if (!o.dryRun) { try { await assicuraTabelle(o.db) } catch { return err(500, 'Impossibile preparare le tabelle della telemetria') } }
 
@@ -511,6 +514,8 @@ export async function eseguiUltime(o: UltimeOpzioni): Promise<StoricoRisultato> 
   let errore = ''
   let p0: StatsParsed | null = null
   let inizioPrima = fine
+  let finePrima = fine
+  let ultimaVuota: { p: StatsParsed; inizio: number; fine: number } | null = null
   let giaNelDb = 0
   while (fine - pavimento >= MIN_FINESTRA_S && raccolte < N && r.finestre < maxFinestre) {
     const inizio = Math.max(pavimento, fine - FINESTRA_S)
@@ -520,16 +525,20 @@ export async function eseguiUltime(o: UltimeOpzioni): Promise<StoricoRisultato> 
     r.finestre++
     if (g.status < 200 || g.status >= 300) { errore = `SiDLY ha risposto HTTP ${g.status}${g.motivo ? ': ' + g.motivo : ''}`; break }
     const p = parseStats(g.json, a.imei)
-    if (!p0) { p0 = p; inizioPrima = inizio }
+    // Anteprima: una settimana senza misure non e' un risultato, si prosegue all'indietro fino all'ultima misura.
+    if (o.dryRun && !p.righe.length) { ultimaVuota = { p, inizio, fine }; fine = inizio; continue }
+    if (!p0) { p0 = p; inizioPrima = inizio; finePrima = fine }
     // Si contano solo le misurazioni NON ancora nel DB: un rilancio aggiunge le N successive (le piu' nuove non presenti), senza rileggere quelle gia' caricate.
-    const presenti = new Set<number>((await safeAll(o.db, 'SELECT ts FROM sidly_misure WHERE imei = ? AND ts >= ? AND ts < ?', a.imei, inizio, fine)).map((x: any) => Number(x.ts)))
+    const presenti = new Set<number>(p.righe.length ? (await safeAll(o.db, 'SELECT ts FROM sidly_misure WHERE imei = ? AND ts >= ? AND ts < ?', a.imei, inizio, fine)).map((x: any) => Number(x.ts)) : [])
     giaNelDb += p.righe.filter(x => presenti.has(x.ts)).length
     // dal piu' recente al piu' vecchio: si tengono solo le righe nuove che servono per arrivare a N
     const prese = p.righe.filter(x => !presenti.has(x.ts)).sort((x, y) => y.ts - x.ts).slice(0, N - raccolte)
     nuove.push(...prese)
     raccolte += prese.length
     fine = inizio
+    if (o.dryRun) break
   }
+  if (o.dryRun && !p0 && ultimaVuota) { p0 = ultimaVuota.p; inizioPrima = ultimaVuota.inizio; finePrima = ultimaVuota.fine }
   const completato = !errore && (raccolte >= N || fine - pavimento < MIN_FINESTRA_S)
   r.raccolte_totali = raccolte
   r.righe = nuove.length
@@ -542,11 +551,15 @@ export async function eseguiUltime(o: UltimeOpzioni): Promise<StoricoRisultato> 
         const ev = await client.request('GET', `/patientIntegrateAlarm/${a.imei}`)
         if (ev.status >= 200 && ev.status < 300) eventi = parseAllarmi(ev.json, a.imei).filter(e => e.ts >= pavimento).length
       } catch { /* l'anteprima resta valida senza allarmi */ }
-      const giorni = Math.max(1, (nowSec - pavimento) / 86400)
-      const giorniCamp = Math.max(1, (fineIniziale - inizioPrima) / 86400)
+      // Stima del disponibile: dalla settimana con dati (non da oggi) fino all'attivazione del braccialetto.
+      const giorni = Math.max(1, (finePrima - pavimento) / 86400)
+      const giorniCamp = Math.max(1, (finePrima - inizioPrima) / 86400)
       const stima = Math.round(p0.righe.length / giorniCamp * giorni)
+      const silenzio = p0.a ? Math.max(0, Math.floor((nowSec - p0.a) / 86400)) : undefined
+      if (!p0.righe.length) avvisi.push(`${a.nome || a.imei}: nessuna misura trovata su SiDLY nelle ultime ${r.finestre} settimane controllate.`)
       const nelDb = Number((await safeFirst(o.db, 'SELECT COUNT(*) AS n FROM sidly_misure WHERE imei = ?', a.imei))?.n) || 0
-      r.anteprima = { finestra: `${fmtSidlyData(inizioPrima)} - ${fmtSidlyData(fineIniziale)} (UTC, ultima settimana)`, punti: p0.punti, righe: p0.righe.length,
+      r.anteprima = { finestra: `${fmtSidlyData(inizioPrima)} - ${fmtSidlyData(finePrima)} (UTC, ${finePrima < fineIniziale ? 'ultima settimana con misure' : 'ultima settimana'})`, punti: p0.punti, righe: p0.righe.length,
+        ultima_misura: p0.a ? fmtSidlyData(p0.a) + ' UTC' : undefined, silenzio_giorni: silenzio,
         da: p0.da ? fmtSidlyData(p0.da) : undefined, a: p0.a ? fmtSidlyData(p0.a) : undefined, passi: p0.passi, riepilogo: p0.riepilogo, affidabilita: p0.affidabilita, eventi_trovati: eventi,
         inizio_da: registrato !== null ? fmtSidlyData(registrato) + ' UTC' : undefined, stima_righe_totali: stima, gia_nel_db: nelDb, ultime_stima: Math.min(N, Math.max(0, stima - nelDb)) }
     }
@@ -583,6 +596,102 @@ export async function eseguiUltime(o: UltimeOpzioni): Promise<StoricoRisultato> 
   r.completato = completato
   if (!completato && !errore) r.continua = { prima_di: fine, raccolte }
   return { httpStatus: 200, result: { esito: 'eseguito', completato, assistiti: [r], righe_scritte: errore ? 0 : nuove.length, finestre_eseguite: r.finestre, avvisi, limiti: { max_finestre: maxFinestre, max_righe: N } } }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// «Aggiorna l'affidabilita'» sulle misure GIA' presenti nel DB (nessuna riga nuova)
+// ─────────────────────────────────────────────────────────────────────────────
+export interface AffidOpzioni {
+  db: any; env: SidlyEnv; assistitoId: number; dryRun: boolean
+  /** Ripresa: la ricerca continua sotto questo istante (restituito dalla richiesta precedente). */
+  primaDi?: number
+  nowSec?: number; fetchImpl?: Fetch; maxFinestre?: number
+}
+
+/**
+ * Per UN assistito: rilegge da SiDLY (solo GET /stats) le settimane in cui ci sono misure nel DB senza indice di affidabilita'
+ * e aggiorna SOLO quelle righe (hr_q, spo2_q, affid). Non inserisce righe nuove, non sovrascrive valori gia' presenti
+ * (UPDATE ... WHERE affid IS NULL, hr_q/spo2_q solo se vuoti) e non tocca il cursore dello storico. Le settimane senza righe da
+ * aggiornare non vengono nemmeno richieste a SiDLY, quindi un rilancio e' economico. Se SiDLY non indica l'affidabilita' per un
+ * istante, la riga resta com'e' (mai inventata).
+ * Anteprima (dryRun): una sola settimana (la piu' recente con righe da aggiornare), nessuna scrittura, nemmeno la migrazione della colonna.
+ */
+export async function eseguiAffidabilita(o: AffidOpzioni): Promise<StoricoRisultato> {
+  const err = (httpStatus: number, errore: string): StoricoRisultato => ({ httpStatus, result: { esito: 'errore', errore } })
+  const cfg = sidlyConfigError(o.env)
+  if (cfg) return err(503, cfg)
+  const nowSec = o.nowSec ?? Math.floor(Date.now() / 1000)
+  const lista = await assistitiAttivi(o.db, o.assistitoId)
+  if (!lista.length) return err(404, 'Assistito non trovato, non ATTIVO o senza IMEI')
+  const a = lista[0]
+  const avvisi: string[] = []
+  const r: StoricoAssistito = { assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, finestre: 0, righe: 0, fino_a: null, completato: false }
+  const esito = o.dryRun ? 'anteprima' : 'eseguito'
+  const fine_ = (): StoricoRisultato => ({ httpStatus: 200, result: { esito, completato: r.completato, assistiti: [r], righe_scritte: o.dryRun ? undefined : r.righe, finestre_eseguite: r.finestre, avvisi, limiti: { max_finestre: maxFinestre, max_righe: 0 } } })
+  const maxFinestre = o.dryRun ? 1 : Math.max(1, Math.min(o.maxFinestre ?? 8, 20))
+  if (!o.dryRun) { try { await assicuraTabelle(o.db) } catch { return err(500, 'Impossibile preparare le tabelle della telemetria') } }
+
+  const tab = await safeFirst(o.db, `SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name='sidly_misure'`)
+  if (!tab || Number(tab.n) < 1) { r.errore = 'Nessuna misura nel DB per questo assistito: importa prima le misure.'; return fine_() }
+  const colonna = Number((await safeFirst(o.db, `SELECT COUNT(*) AS n FROM pragma_table_info('sidly_misure') WHERE name = 'affid'`))?.n) >= 1
+  const rg = await safeFirst(o.db, 'SELECT MIN(ts) AS dal, MAX(ts) AS al, COUNT(*) AS n FROM sidly_misure WHERE imei = ?', a.imei)
+  const nTot = Number(rg?.n) || 0
+  if (!nTot) { r.errore = 'Nessuna misura nel DB per questo assistito: importa prima le misure.'; r.completato = true; return fine_() }
+  const dal = Number(rg.dal), al = Number(rg.al)
+  // Prima della migrazione (anteprima) la colonna puo' non esistere: tutte le righe risultano senza affidabilita'.
+  const condNull = colonna ? ' AND affid IS NULL' : ''
+  const senza = colonna ? Number((await safeFirst(o.db, 'SELECT COUNT(*) AS n FROM sidly_misure WHERE imei = ? AND affid IS NULL', a.imei))?.n) || 0 : nTot
+  const finestreTot = Math.max(1, Math.ceil((al - dal + 1) / FINESTRA_S))
+  const client = new SidlyClient(o.env, o.fetchImpl)
+
+  let fine = o.primaDi ?? (al + 1)
+  if (!Number.isInteger(fine) || fine <= 0 || fine > al + 1) return err(400, 'Valore "prima_di" non valido')
+  let errore = ''
+  let aggiornate = 0
+  while (r.finestre < maxFinestre && fine > dal) {
+    // salta i periodi senza righe da aggiornare: niente chiamate inutili a SiDLY
+    const m = await safeFirst(o.db, `SELECT MAX(ts) AS m FROM sidly_misure WHERE imei = ? AND ts >= ? AND ts < ?${condNull}`, a.imei, dal, fine)
+    if (!m || m.m === null || m.m === undefined) { fine = dal; break }
+    const top = Number(m.m) + 1
+    const inizio = Math.max(dal, top - FINESTRA_S)
+    let g
+    try { g = await client.request('GET', `/patient/${a.imei}/stats?fromDate=${encodeURIComponent(fmtSidlyData(inizio))}&toDate=${encodeURIComponent(fmtSidlyData(top - 1))}`) }
+    catch (e: any) { errore = String(e?.message || e).slice(0, 160); break }
+    r.finestre++
+    if (g.status < 200 || g.status >= 300) { errore = `SiDLY ha risposto HTTP ${g.status}${g.motivo ? ': ' + g.motivo : ''}`; break }
+    const p = parseStats(g.json, a.imei)
+    const presenti = new Set<number>((await safeAll(o.db, `SELECT ts FROM sidly_misure WHERE imei = ? AND ts >= ? AND ts < ?${condNull}`, a.imei, inizio, top)).map((x: any) => Number(x.ts)))
+    const ups = p.righe.filter(x => presenti.has(x.ts) && typeof x.affid === 'number' && Number.isInteger(x.ts))
+    if (o.dryRun) {
+      r.anteprima = { finestra: `${fmtSidlyData(inizio)} - ${fmtSidlyData(top)} (UTC, settimana piu' recente con misure da aggiornare)`, punti: p.punti, righe: p.righe.length, passi: p.passi,
+        affidabilita: p.affidabilita, riepilogo: p.riepilogo,
+        affid_db: { righe: nTot, senza_affidabilita: senza, dal: fmtSidlyData(dal) + ' UTC', al: fmtSidlyData(al) + ' UTC', finestre_totali: finestreTot, colonna_presente: colonna },
+        affid_finestra: { righe_db: presenti.size, da_sidly: p.righe.length, da_aggiornare: ups.length } }
+      return fine_()
+    }
+    if (ups.length) {
+      try {
+        const st = ups.map(u => o.db.prepare(`UPDATE sidly_misure SET affid=${sqlNum(u.affid)}, hr_q=COALESCE(hr_q,${sqlNum(u.hr_q)}), spo2_q=COALESCE(spo2_q,${sqlNum(u.spo2_q)}) WHERE imei='${a.imei}' AND ts=${u.ts} AND affid IS NULL`))
+        for (let i = 0; i < st.length; i += 50) await o.db.batch(st.slice(i, i + 50))
+        aggiornate += ups.length
+      } catch { errore = 'Scrittura nel DB non riuscita'; break }
+    }
+    fine = inizio
+  }
+  if (o.dryRun) {
+    // nessuna riga da aggiornare (o errore): anteprima senza finestra
+    r.anteprima = { finestra: '-', punti: {}, righe: 0, passi: { dichiarato: null, somma_punti: 0, dailyTarget: null },
+      affid_db: { righe: nTot, senza_affidabilita: senza, dal: fmtSidlyData(dal) + ' UTC', al: fmtSidlyData(al) + ' UTC', finestre_totali: finestreTot, colonna_presente: colonna } }
+    if (errore) r.errore = errore
+    else r.completato = true
+    return fine_()
+  }
+  const resto = !errore && fine > dal ? await safeFirst(o.db, 'SELECT MAX(ts) AS m FROM sidly_misure WHERE imei = ? AND ts >= ? AND ts < ? AND affid IS NULL', a.imei, dal, fine) : null
+  r.completato = !errore && !(resto && resto.m !== null && resto.m !== undefined)
+  r.righe = errore ? 0 : aggiornate
+  if (errore) r.errore = errore
+  else if (!r.completato) r.continua = { prima_di: fine, raccolte: aggiornate }
+  return fine_()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -52,7 +52,7 @@ async function makeD1() {
 
 interface Call { method: string; path: string; body: any }
 /** SiDLY finta: login, /stats con punti orari, allarmi. Le chiamate verso i dispositivi (set/delete-url-for-band) rispondono 200 ma i test verificano che NON partano mai. */
-function makeSidly(opts: { statsStatus?: number; alarms?: any[]; urlStatus?: number; registerDate?: any; registerWrap?: boolean } = {}) {
+function makeSidly(opts: { statsStatus?: number; alarms?: any[]; urlStatus?: number; registerDate?: any; registerWrap?: boolean; vuotoDopo?: number; senzaTrust?: boolean } = {}) {
   const calls: Call[] = []
   const fetchImpl: Fetch = async (url, init) => {
     const method = init?.method || 'GET'
@@ -69,7 +69,7 @@ function makeSidly(opts: { statsStatus?: number; alarms?: any[]; urlStatus?: num
       const t = Date.parse(decodeURIComponent(m[3]).replace(' ', 'T') + 'Z') / 1000
       const pts = (step: number, y: number | ((x: number) => number), extra: any = {}) => {
         const chart: any[] = []
-        for (let x = Math.ceil(f / step) * step; x <= t; x += step) chart.push({ x, y: typeof y === 'function' ? y(x) : y, total: null, trust_lvl: 'HR=3,SpO2=2', ...extra })
+        for (let x = Math.ceil(f / step) * step; x <= t; x += step) { if (opts.vuotoDopo !== undefined && x > opts.vuotoDopo) continue; chart.push({ x, y: typeof y === 'function' ? y(x) : y, total: null, trust_lvl: opts.senzaTrust ? null : 'HR=3,SpO2=2', ...extra }) }
         return { chart, stats: { min: 1, max: 2, mean: 1.5 } }
       }
       return reply(200, { pulse: pts(3600, 70), sat: pts(3600, 97), sdnn: pts(86400, 42), rmssd: pts(86400, 35), respiration: pts(3600, 15), steps: { dailyTarget: 5000, ...pts(3600, 100), total: 2400, totalKm: 1.8 }, lastMeasurements: [] })
@@ -345,6 +345,147 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
     ok(/body\?\.ultime/.test(blk) && /Con "ultime" serve assistito_id/.test(blk) && /checkSessionOrKey\(/.test(blk) && /conferma_scrittura === true/.test(blk), 'rotta storico: «ultime» richiede assistito_id, resta protetta e scrive solo con conferma_scrittura')
     ok(/telModoUltime/.test(dash) && /ultime:\s*n,\s*assistito_id/.test(dash) && /dry_run:\s*true/.test(dash), 'Dashboard: modalita\' «Ultime N» con anteprima in sola lettura prima della conferma')
     ok(/id="telN"[^>]*value="1000"/.test(dash), 'Dashboard: valore predefinito 1000 misurazioni per assistito')
+  }
+
+  // ───────────────────────────────────────────────────────────────────
+  section('SiDLY telemetria 8c: ultime N partendo dall\'ULTIMA misura (anche se il braccialetto e\' fermo da settimane)')
+  {
+    const nuovoDb = async () => {
+      const d = await makeD1(); T.dimenticaTabelle()
+      d.raw.run(`INSERT INTO assistiti (id, imei, status, nome_assistito, cognome_assistito) VALUES (1, '${IMEI_A}', 'ATTIVO', 'Mario', 'Silenzioso')`)
+      return d
+    }
+    const ultimaMisura = NOW - 30 * 86400
+    const reg = Date.UTC(2026, 5, 1) / 1000
+    const mk = () => makeSidly({ vuotoDopo: ultimaMisura, registerDate: reg })
+    const base = (d: any, P: any, extra: any = {}) => ({ db: d.db, env: ENV, ultime: 100, assistitoId: 1, dryRun: false, nowSec: NOW, fetchImpl: P.fetchImpl, ...extra })
+
+    const d0 = await nuovoDb(); const P0 = mk()
+    const rp = await T.eseguiUltime(base(d0, P0, { dryRun: true }))
+    const an = rp.result.assistiti![0].anteprima!
+    ok(rp.result.esito === 'anteprima' && (an.righe || 0) > 0, 'silenzioso: l\'anteprima non si ferma alle settimane vuote e trova la settimana con misure')
+    ok(typeof an.silenzio_giorni === 'number' && an.silenzio_giorni >= 29 && an.silenzio_giorni <= 31, `silenzioso: l'anteprima dice da quanti giorni non misura (${an.silenzio_giorni})`)
+    ok(!!an.ultima_misura && Date.parse(an.ultima_misura.replace(' UTC', '').replace(' ', 'T') + 'Z') / 1000 <= ultimaMisura, 'silenzioso: «ultima_misura» e\' quella vera, non oggi')
+    ok(P0.calls.every(c => c.method === 'GET') && !d0.hasTable('sidly_misure') && d0.stats.batches === 0 && d0.stats.singles === 0, 'silenzioso: anteprima solo GET e nessuna scrittura')
+    ok(P0.calls.filter(c => c.path.includes('/stats')).length <= T.ULTIME_SONDA_MAX, 'silenzioso: le settimane sondate sono limitate')
+
+    // Esecuzione: parte dalla sua ultima misura e va indietro di N, a pezzi come fa la Dashboard
+    const d = await nuovoDb(); const P = mk()
+    let r = await T.eseguiUltime(base(d, P, { maxFinestre: 8 }))
+    let giri = 1
+    while (!r.result.completato && giri < 20) {
+      const c = r.result.assistiti![0].continua!
+      r = await T.eseguiUltime(base(d, P, { maxFinestre: 8, primaDi: c.prima_di, raccolte: c.raccolte })); giri++
+    }
+    const mx = Number(d.q('SELECT MAX(ts) AS m FROM sidly_misure')[0].m)
+    ok(r.result.completato === true && d.count('sidly_misure') === 100, `silenzioso: importa esattamente 100 misure (trovate ${d.count('sidly_misure')}) in ${giri} richieste`)
+    ok(mx <= ultimaMisura && mx > ultimaMisura - 3600, 'silenzioso: la prima misura importata e\' la sua ultima, di 30 giorni fa')
+    ok(P.calls.every(c => c.method === 'GET'), 'silenzioso: nessuna scrittura su SiDLY')
+  }
+
+  // ───────────────────────────────────────────────────────────────────
+  section('SiDLY telemetria 8d: «aggiorna l\'affidabilita\'» sulle misure gia\' presenti')
+  {
+    const nuovoDb = async () => {
+      const d = await makeD1(); T.dimenticaTabelle()
+      d.raw.run(`INSERT INTO assistiti (id, imei, status, nome_assistito, cognome_assistito) VALUES (1, '${IMEI_A}', 'ATTIVO', 'Giorgia', 'Origoni'), (2, '${IMEI_B}', 'ATTIVO', 'Laura', 'Calvi'), (3, '${IMEI_X}', 'CESSATO', 'Non', 'Attivo')`)
+      return d
+    }
+    const base = (d: any, P: any, extra: any = {}) => ({ db: d.db, env: ENV, assistitoId: 1, dryRun: false, nowSec: NOW, fetchImpl: P.fetchImpl, ...extra })
+    // DB "vecchio": misure importate PRIMA della colonna affid (senza affid/hr_q/spo2_q), 400 istanti orari consecutivi
+    const preparaVecchio = async (d: any, n = 400) => {
+      await T.assicuraTabelle(d.db)
+      const t0 = Math.floor(NOW / 3600) * 3600 - 3600
+      const righe: any[] = []
+      for (let i = 0; i < n; i++) righe.push({ imei: IMEI_A, ts: t0 - i * 3600, fonte: 'stats', hr: 70, spo2: 97 })
+      await d.db.batch(T.istruzioniMisure(d.db, righe))
+      d.raw.run('UPDATE sidly_misure SET affid = NULL, hr_q = NULL, spo2_q = NULL')
+      return t0
+    }
+
+    // Anteprima: solo GET, nessuna scrittura, spiega quanto manca
+    {
+      const d = await nuovoDb(); await preparaVecchio(d); const P = makeSidly()
+      const prima = d.stats.singles + d.stats.stmtsInBatches
+      const r = await T.eseguiAffidabilita(base(d, P, { dryRun: true }))
+      const an = r.result.assistiti![0].anteprima!
+      ok(r.httpStatus === 200 && r.result.esito === 'anteprima', 'affidabilita: anteprima per un solo assistito')
+      ok(d.stats.singles + d.stats.stmtsInBatches === prima && d.q('SELECT COUNT(*) AS n FROM sidly_misure WHERE affid IS NOT NULL')[0].n === 0, 'affidabilita: anteprima senza NESSUNA scrittura nel DB')
+      ok(P.calls.every(c => c.method === 'GET') && P.calls.filter(c => c.path.includes('/stats')).length === 1, 'affidabilita: anteprima = solo GET, una sola settimana')
+      ok(an.affid_db?.righe === 400 && an.affid_db?.senza_affidabilita === 400 && (an.affid_finestra?.da_aggiornare || 0) > 0, 'affidabilita: anteprima dice quante misure nel DB sono senza affidabilita\' e quante si aggiornerebbero')
+      ok((an.affidabilita?.valori_grezzi || []).some(g => g.testo === 'HR=3,SpO2=2'), 'affidabilita: anteprima mostra il testo grezzo di SiDLY per verificarne il formato')
+    }
+
+    // Esecuzione: aggiorna solo righe esistenti, nessuna nuova, nessun valore sovrascritto
+    const d = await nuovoDb(); const t0 = await preparaVecchio(d); const P = makeSidly()
+    const vecchieRighe = d.q('SELECT imei, ts, hr, spo2, fonte FROM sidly_misure ORDER BY ts')
+    // una riga gia' con affid: non si tocca nemmeno se SiDLY dice altro
+    d.raw.run('UPDATE sidly_misure SET affid = 1, hr_q = 1, spo2_q = 1 WHERE ts = ?', [t0])
+    // una riga con hr_q gia' valorizzato ma affid NULL: hr_q resta
+    d.raw.run('UPDATE sidly_misure SET hr_q = 0 WHERE ts = ?', [t0 - 3600])
+    d.raw.run(`INSERT INTO sidly_stato (imei, assistito_id, backfill_da_ts, backfill_fino_ts, backfill_righe) VALUES ('${IMEI_A}', 1, 111, 222, 5)`)
+    const statoPrima = d.q('SELECT * FROM sidly_stato WHERE imei = ?', IMEI_A)[0]
+    let r = await T.eseguiAffidabilita(base(d, P, { maxFinestre: 1 }))
+    let giri = 1, tot = r.result.righe_scritte || 0
+    while (!r.result.completato && giri < 20) {
+      const c = r.result.assistiti![0].continua!
+      r = await T.eseguiAffidabilita(base(d, P, { maxFinestre: 1, primaDi: c.prima_di })); tot += r.result.righe_scritte || 0; giri++
+    }
+    ok(r.result.completato === true && d.count('sidly_misure') === 400, 'affidabilita: nessuna riga nuova, ne\' cancellata')
+    ok(d.q('SELECT COUNT(*) AS n FROM sidly_misure WHERE affid IS NULL')[0].n === 0 && tot === 399, `affidabilita: tutte le misure hanno ora l'indice (aggiornate ${tot}, la riga gia' valorizzata esclusa)`)
+    ok(d.q('SELECT affid, hr_q, spo2_q FROM sidly_misure WHERE ts = ?', t0)[0].affid === 1 && d.q('SELECT hr_q FROM sidly_misure WHERE ts = ?', t0)[0].hr_q === 1, 'affidabilita: un indice gia\' presente non viene sovrascritto')
+    const rr = d.q('SELECT affid, hr_q, spo2_q FROM sidly_misure WHERE ts = ?', t0 - 3600)[0]
+    ok(rr.affid === 2 && rr.hr_q === 0 && rr.spo2_q === 2, 'affidabilita: l\'indice complessivo e\' il livello piu\' basso dichiarato; hr_q gia\' presente non si sovrascrive')
+    const dopo = d.q('SELECT imei, ts, hr, spo2, fonte FROM sidly_misure ORDER BY ts')
+    ok(JSON.stringify(dopo) === JSON.stringify(vecchieRighe), 'affidabilita: i valori misurati (FC, SpO2, fonte) non cambiano')
+    const statoDopo = d.q('SELECT * FROM sidly_stato WHERE imei = ?', IMEI_A)[0]
+    ok(statoDopo.backfill_da_ts === statoPrima.backfill_da_ts && statoDopo.backfill_fino_ts === 222 && statoDopo.backfill_righe === 5, 'affidabilita: il cursore dello storico completo non viene toccato')
+    ok(P.calls.every(c => c.method === 'GET' && !/url-for-band/.test(c.path)), 'affidabilita: solo GET su SiDLY, nessuna scrittura ne\' sui braccialetti')
+    ok(giri === 3, `affidabilita: 400 misure orarie = 3 settimane, una per richiesta con ripresa da prima_di (${giri} richieste)`)
+    const dU = await nuovoDb(); await preparaVecchio(dU); const PU = makeSidly()
+    const rU = await T.eseguiAffidabilita(base(dU, PU))
+    ok(rU.result.completato === true && dU.q('SELECT COUNT(*) AS n FROM sidly_misure WHERE affid IS NULL')[0].n === 0, 'affidabilita: con il budget normale (8 settimane) 400 misure si aggiornano in una sola richiesta')
+
+    // Rilancio: niente da aggiornare = nessuna chiamata a SiDLY
+    const P2 = makeSidly()
+    const rRil = await T.eseguiAffidabilita(base(d, P2))
+    ok(rRil.result.completato === true && rRil.result.righe_scritte === 0 && P2.calls.filter(c => c.path.includes('/stats')).length === 0, 'affidabilita: rilancio senza righe da aggiornare = zero chiamate a SiDLY e zero scritture')
+
+    // SiDLY non indica l'affidabilita': le righe restano NULL, mai inventate, e la procedura termina
+    const dN = await nuovoDb(); await preparaVecchio(dN, 50)
+    let rN = await T.eseguiAffidabilita(base(dN, makeSidly({ senzaTrust: true })))
+    let gN = 1
+    while (!rN.result.completato && gN < 10) { const c = rN.result.assistiti![0].continua!; rN = await T.eseguiAffidabilita(base(dN, makeSidly({ senzaTrust: true }), { primaDi: c.prima_di })); gN++ }
+    ok(rN.result.completato === true && dN.q('SELECT COUNT(*) AS n FROM sidly_misure WHERE affid IS NOT NULL')[0].n === 0, 'affidabilita: se SiDLY non da l\'affidabilita\' le righe restano senza (nessun valore inventato) e la procedura termina')
+
+    // Tabella creata prima della colonna: la migrazione avviene alla prima scrittura, non in anteprima
+    const dM = await nuovoDb()
+    dM.raw.run(`CREATE TABLE sidly_misure (imei TEXT NOT NULL, ts INTEGER NOT NULL, hr REAL, hr_q INTEGER, spo2 REAL, spo2_q INTEGER, temp REAL, steps REAL, steps_tot REAL, pressure REAL, sdnn REAL, rmssd REAL, resp REAL, hr_rest REAL, wear INTEGER, fonte TEXT, PRIMARY KEY (imei, ts)) WITHOUT ROWID`)
+    const tm = Math.floor(NOW / 3600) * 3600 - 3600
+    dM.raw.run(`INSERT INTO sidly_misure (imei, ts, hr, spo2, fonte) VALUES ('${IMEI_A}', ${tm}, 70, 97, 'stats'), ('${IMEI_A}', ${tm - 3600}, 71, 96, 'stats')`)
+    const anM = await T.eseguiAffidabilita(base(dM, makeSidly(), { dryRun: true }))
+    ok(anM.result.assistiti![0].anteprima?.affid_db?.colonna_presente === false && anM.result.assistiti![0].anteprima?.affid_db?.senza_affidabilita === 2, 'affidabilita: anteprima su tabella vecchia (senza colonna) = tutte le righe da aggiornare')
+    ok(dM.q(`SELECT COUNT(*) AS n FROM pragma_table_info('sidly_misure') WHERE name='affid'`)[0].n === 0, 'affidabilita: l\'anteprima non modifica lo schema')
+    const rM = await T.eseguiAffidabilita(base(dM, makeSidly()))
+    ok(rM.result.completato === true && dM.q('SELECT COUNT(*) AS n FROM sidly_misure WHERE affid = 2')[0].n === 2, 'affidabilita: la prima scrittura aggiunge la colonna e aggiorna le righe esistenti')
+
+    // Errori e validazioni
+    const dE = await nuovoDb(); await preparaVecchio(dE, 20)
+    const rE = await T.eseguiAffidabilita(base(dE, makeSidly({ statsStatus: 500 })))
+    ok(rE.result.assistiti![0].errore!.includes('HTTP 500') && rE.result.completato === false && dE.q('SELECT COUNT(*) AS n FROM sidly_misure WHERE affid IS NOT NULL')[0].n === 0, 'affidabilita: errore 500 di SiDLY: nessuna riga modificata, errore riportato')
+    ok((await T.eseguiAffidabilita(base(dE, makeSidly(), { assistitoId: 3, dryRun: true }))).httpStatus === 404, 'affidabilita: assistito non ATTIVO: 404')
+    ok((await T.eseguiAffidabilita({ ...base(dE, makeSidly()), env: {} })).httpStatus === 503, 'affidabilita: senza credenziali SiDLY: 503')
+    ok((await T.eseguiAffidabilita(base(dE, makeSidly(), { primaDi: NOW * 2, dryRun: true }))).httpStatus === 400, 'affidabilita: \"prima_di\" non valido: 400')
+    const rV = await T.eseguiAffidabilita(base(dE, makeSidly(), { assistitoId: 2, dryRun: true }))
+    ok(rV.httpStatus === 200 && !!rV.result.assistiti![0].errore && /importa prima/.test(rV.result.assistiti![0].errore!), 'affidabilita: assistito senza misure: messaggio chiaro, nessuna chiamata inutile')
+
+    // Sorgente: rotta e Dashboard
+    const idx = readFileSync('src/index.tsx', 'utf8'), dash = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
+    const i = idx.search(/app\.post\('\/api\/sidly\/storico'/)
+    const blk = idx.slice(i, i + 6000)
+    ok(/body\?\.affidabilita === true/.test(blk) && /eseguiAffidabilita\(/.test(blk) && /checkSessionOrKey\(/.test(blk) && /dryRun: !scrive/.test(blk), 'rotta storico: «affidabilita» resta protetta e scrive solo con conferma_scrittura')
+    ok(/sidlyAffidAnteprima/.test(dash) && /sidlyAffidScrivi/.test(dash) && /affidabilita:\s*true/.test(dash) && /Aggiorna l&rsquo;affidabilit/.test(dash), 'Dashboard: box «Aggiorna l\'affidabilita\'» con anteprima e conferma')
+    ok(/ultima_misura/.test(dash) && /silenzio_giorni/.test(dash), 'Dashboard: l\'anteprima «ultime» mostra la data dell\'ultima misura e i giorni di silenzio')
   }
 
   // ───────────────────────────────────────────────────────────────────
