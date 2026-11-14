@@ -598,7 +598,7 @@ export async function statoTelemetria(db: any, nowSec: number = Math.floor(Date.
     for (let i = 0; i < lista.length; i += 40) {
       const part = lista.slice(i, i + 40)
       try {
-        const rs = await db.batch(part.map(a => db.prepare('SELECT MIN(ts) AS dal, MAX(ts) AS al FROM sidly_misure WHERE imei = ?').bind(a.imei)))
+        const rs = await db.batch(part.map(a => db.prepare('SELECT MIN(ts) AS dal, MAX(ts) AS al, COUNT(*) AS n FROM sidly_misure WHERE imei = ?').bind(a.imei)))
         part.forEach((a, j) => ranges.push({ imei: a.imei, ...((rs[j]?.results || [])[0] || {}) }))
       } catch { /* senza range */ }
     }
@@ -613,7 +613,7 @@ export async function statoTelemetria(db: any, nowSec: number = Math.floor(Date.
       return {
         assistito_id: a.assistito_id, imei: a.imei, nome: a.nome,
         // nessun dato arriva dai braccialetti: tutto e' letto da SiDLY con le API
-        misure_dal: fm(r.dal), misure_al: fm(r.al), storico_fino_a: fm(s.backfill_fino_ts), righe_storico: s.backfill_righe ?? 0, errore: s.ultimo_errore || null,
+        misure_totali: Number(r.n) || 0, misure_dal: fm(r.dal), misure_al: fm(r.al), storico_fino_a: fm(s.backfill_fino_ts), righe_storico: s.backfill_righe ?? 0, errore: s.ultimo_errore || null,
       }
     }),
   }

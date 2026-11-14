@@ -410,6 +410,12 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
     const s = await T.statoTelemetria(d.db, NOW)
     const sa = s.assistiti.find(x => x.imei === IMEI_A)!
     ok(s.tabelle_presenti === true && sa.righe_storico === 276 && sa.misure_dal !== null && sa.storico_fino_a !== null, 'stato: righe di storico, copertura e data fino a cui lo storico è stato letto da SiDLY')
+    ok(sa.misure_totali === d.q(`SELECT COUNT(*) AS n FROM sidly_misure WHERE imei = ?`, IMEI_A)[0].n && sa.misure_totali > 0, 'stato: «misure_totali» = misurazioni realmente nel DB (non dipende dal contatore dello storico completo)')
+    ok(s.assistiti.filter(x => x.imei !== IMEI_A && x.imei !== IMEI_B).every(x => x.misure_totali === 0), 'stato: chi non ha misure risulta a 0')
+    {
+      const dsh = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
+      ok(/misure_totali/.test(dsh) && /Misurazioni nel DB/.test(dsh) && /Nessun dato da /.test(dsh) && /Nessuna misura scaricata/.test(dsh), 'Dashboard: stato con conteggio reale e motivo (nessuna misura / fermo da N giorni)')
+    }
     ok(!('frame_registrato' in sa) && !('ultimo_frame' in sa) && !('n_frame' in sa), 'stato: nessun concetto di frame ricevuti/registrati (i dati arrivano solo da SiDLY via API)')
   }
 

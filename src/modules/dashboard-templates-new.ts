@@ -3742,11 +3742,22 @@ export const dashboard = `<!DOCTYPE html>
                 h += telBox('Come funziona', '<div style="font-size:13px">I dati passano <b>sempre da SiDLY</b>: il CRM li <b>legge</b> con le API di SiDLY (storico misure e allarmi). Non riceve dati dai braccialetti e <b>non modifica nessuna impostazione dei dispositivi</b>. Uso solo statistico, non gestionale: assistiti e caregiver continuano a usare la piattaforma SiDLY.' +
                     (st.tabelle_presenti ? '' : '<br><span style="color:#92400e">Le tabelle delle misure non esistono ancora: si creano al primo caricamento dello storico confermato.</span>') + '</div>', '#0f766e');
                 // Stato per assistito
-                var t = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr>' + ['Assistito', 'Misure dal', 'Misure al', 'Storico letto fino a', 'Righe storico', 'Errore'].map(function (x) { return '<th style="' + TEL_TH + '">' + x + '</th>'; }).join('') + '</tr></thead><tbody>';
+                var t = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr>' + ['Assistito', 'Misurazioni nel DB', 'Misure dal', 'Misure al', 'Situazione', 'Storico completo', 'Errore'].map(function (x) { return '<th style="' + TEL_TH + '">' + x + '</th>'; }).join('') + '</tr></thead><tbody>';
                 (st.assistiti || []).forEach(function (a) {
+                    var sit = '', col = '#374151';
+                    if (!a.misure_totali) { sit = 'Nessuna misura scaricata: nell&rsquo;anteprima compare il motivo (IMEI non trovato o accesso negato su SiDLY)'; col = '#b91c1c'; }
+                    else {
+                        var ult = Date.parse(String(a.misure_al || '').replace(' UTC', 'Z').replace(' ', 'T'));
+                        var gg = isFinite(ult) ? Math.floor((Date.now() - ult) / 86400000) : null;
+                        if (gg !== null && gg > 7) { sit = 'Nessun dato da ' + gg + ' giorni: braccialetto spento, non indossato o scollegato'; col = '#92400e'; }
+                        else sit = 'Aggiornato';
+                    }
                     t += '<tr><td style="' + TEL_TD + '">' + escapeHtml(a.nome || a.imei) + '</td>' +
-                        '<td style="' + TEL_TD + '">' + escapeHtml(a.misure_dal || '-') + '</td><td style="' + TEL_TD + '">' + escapeHtml(a.misure_al || '-') + '</td><td style="' + TEL_TD + '">' + escapeHtml(a.storico_fino_a || '-') + '</td>' +
-                        '<td style="' + TEL_TD + '">' + (a.righe_storico || 0) + '</td><td style="' + TEL_TD + ';color:#b91c1c">' + escapeHtml(a.errore || '') + '</td></tr>';
+                        '<td style="' + TEL_TD + ';text-align:right"><b>' + (a.misure_totali || 0) + '</b></td>' +
+                        '<td style="' + TEL_TD + '">' + escapeHtml(a.misure_dal || '-') + '</td><td style="' + TEL_TD + '">' + escapeHtml(a.misure_al || '-') + '</td>' +
+                        '<td style="' + TEL_TD + ';color:' + col + '">' + sit + '</td>' +
+                        '<td style="' + TEL_TD + '">' + (a.righe_storico ? escapeHtml(a.storico_fino_a || '-') + ' (' + a.righe_storico + ' righe)' : '-') + '</td>' +
+                        '<td style="' + TEL_TD + ';color:#b91c1c">' + escapeHtml(a.errore || '') + '</td></tr>';
                 });
                 t += '</tbody></table></div>';
                 h += telBox('Stato per assistito', t);
