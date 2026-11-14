@@ -3731,7 +3731,9 @@ export const dashboard = `<!DOCTYPE html>
             return '<div style="border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:10px"><div style="font-weight:700;margin-bottom:6px;color:' + (colore || '#111827') + '">' + titolo + '</div>' + corpo + '</div>';
         }
         window.sidlyTelemetria = async function (giorni, affMin) {
-            giorni = giorni || 30;
+            // Periodo delle medie: 0 = TUTTO lo storico presente nel DB (predefinito); altrimenti ultimi N giorni.
+            giorni = giorni === undefined || giorni === null ? (window.__telGiorni || 0) : (parseInt(giorni, 10) || 0);
+            window.__telGiorni = giorni;
             affMin = affMin === undefined ? (window.__telAffMin || 0) : affMin;
             window.__telAffMin = affMin;
             sidlyPanel('<p style="margin:0"><i class="fas fa-spinner fa-spin"></i> Lettura dello stato (nessuna scrittura)&hellip;</p>');
@@ -3773,7 +3775,11 @@ export const dashboard = `<!DOCTYPE html>
                 var c = (rp && rp.coorte) || null;
                 var m = '';
                 var opz = [[0, '0 &mdash; tutte le misure'], [1, '1 &mdash; solo affidabilit&agrave; 1, 2 e 3'], [2, '2 &mdash; solo affidabilit&agrave; 2 e 3'], [3, '3 &mdash; solo affidabilit&agrave; 3 (massima)']];
-                var filtroHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;margin-bottom:6px"><b>Affidabilit&agrave; minima delle misure</b> <select id="telAffMin" onchange="window.sidlyTelemetria(' + giorni + ', parseInt(this.value, 10))" style="border:1px solid #9ca3af;border-radius:4px;padding:3px">' +
+                var periodi = [[0, 'Tutto lo storico'], [365, 'Ultimi 365 giorni'], [90, 'Ultimi 90 giorni'], [30, 'Ultimi 30 giorni'], [7, 'Ultimi 7 giorni']];
+                var periodoHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;margin-bottom:6px"><b>Periodo delle medie</b> <select id="telGiorni" onchange="window.sidlyTelemetria(parseInt(this.value, 10), window.__telAffMin)" style="border:1px solid #9ca3af;border-radius:4px;padding:3px">' +
+                    periodi.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === giorni ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>' +
+                    '<span style="font-size:11px;color:#6b7280">Predefinito: tutti i dati storici presenti nel DB.</span></div>';
+                var filtroHtml = periodoHtml + '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;margin-bottom:6px"><b>Affidabilit&agrave; minima delle misure</b> <select id="telAffMin" onchange="window.sidlyTelemetria(window.__telGiorni, parseInt(this.value, 10))" style="border:1px solid #9ca3af;border-radius:4px;padding:3px">' +
                     opz.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === affMin ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>' +
                     '<span style="font-size:11px;color:#6b7280">0 = nessun filtro. Con 1, 2 o 3 le medie usano solo le misure con indice almeno pari alla soglia; una misura senza indice non viene contata. L&rsquo;indice di una misura &egrave; il pi&ugrave; basso fra quelli dichiarati da SiDLY (FC e SpO2). I passi non sono filtrati.</span></div>';
                 if (affMin > 0 && rp && rp.esito === 'ok') {
@@ -3783,16 +3789,16 @@ export const dashboard = `<!DOCTYPE html>
                 }
                 if (rp && rp.esito === 'ok' && rp.assistiti && rp.assistiti.length) {
                     var cols = [['hr', 'FC', 0], ['spo2', 'SpO2', 1], ['sdnn', 'SDNN', 0], ['rmssd', 'RMSSD', 0], ['resp', 'FR', 1]];
-                    m = filtroHtml + '<div style="font-size:12px;color:#6b7280;margin-bottom:6px">Ultimi ' + giorni + ' giorni. FC bpm &middot; SpO2 % &middot; HRV (SDNN, RMSSD) ms &middot; FR atti/min &middot; passi per giorno. Misure di un assistito entro 2 minuti contano una volta.</div>' +
-                        '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + TEL_TH + '">Assistito</th>' + cols.map(function (x) { return '<th style="' + TEL_TH + '">' + x[1] + ' (media)</th>'; }).join('') + '<th style="' + TEL_TH + '">Passi/giorno</th><th style="' + TEL_TH + '">Giorni con dati</th><th style="' + TEL_TH + '">Misure usate</th></tr></thead><tbody>';
+                    m = filtroHtml + '<div style="font-size:12px;color:#6b7280;margin-bottom:6px">' + (giorni ? 'Ultimi ' + giorni + ' giorni' : 'Tutto lo storico presente nel DB (dalla prima all&rsquo;ultima misura di ogni assistito)') + '. FC bpm &middot; SpO2 % &middot; HRV (SDNN, RMSSD) ms &middot; FR atti/min &middot; passi per giorno. Misure di un assistito entro 2 minuti contano una volta.</div>' +
+                        '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + TEL_TH + '">Assistito</th>' + cols.map(function (x) { return '<th style="' + TEL_TH + '">' + x[1] + ' (media)</th>'; }).join('') + '<th style="' + TEL_TH + '">Passi/giorno</th><th style="' + TEL_TH + '">Giorni con dati</th><th style="' + TEL_TH + '">Misure usate</th><th style="' + TEL_TH + '">Periodo coperto</th></tr></thead><tbody>';
                     rp.assistiti.forEach(function (a) {
                         m += '<tr><td style="' + TEL_TD + '">' + escapeHtml(a.nome || a.imei) + '</td>' + cols.map(function (x) { var v = a.metriche[x[0]]; return '<td style="' + TEL_TD + '">' + telFmt(v.media, x[2]) + (v.n ? ' <span style="color:#9ca3af">(' + v.n + ')</span>' : '') + '</td>'; }).join('') +
-                            '<td style="' + TEL_TD + '">' + telFmt(a.passi_medi_giorno, 0) + '</td><td style="' + TEL_TD + '">' + a.giorni_con_dati + '</td><td style="' + TEL_TD + '">' + (a.misure_incluse || 0) + ' di ' + (a.misure_periodo || 0) + '</td></tr>';
+                            '<td style="' + TEL_TD + '">' + telFmt(a.passi_medi_giorno, 0) + '</td><td style="' + TEL_TD + '">' + a.giorni_con_dati + '</td><td style="' + TEL_TD + '">' + (a.misure_incluse || 0) + ' di ' + (a.misure_periodo || 0) + '</td><td style="' + TEL_TD + ';font-size:11px;white-space:nowrap">' + (a.misure_dal ? escapeHtml(String(a.misure_dal).slice(0, 10)) + ' &rarr; ' + escapeHtml(String(a.misure_al || '').slice(0, 10)) : '&mdash;') + '</td></tr>';
                     });
-                    m += '<tr style="background:#f0fdfa;font-weight:700"><td style="' + TEL_TD + '">Coorte (' + c.assistiti_con_dati + ' di ' + c.assistiti_totali + ')</td>' + cols.map(function (x) { return '<td style="' + TEL_TD + '">' + telFmt(c.metriche[x[0]].media, x[2]) + '</td>'; }).join('') + '<td style="' + TEL_TD + '">' + telFmt(c.passi_medi_giorno, 0) + '</td><td style="' + TEL_TD + '"></td><td style="' + TEL_TD + '"></td></tr></tbody></table></div>' +
+                    m += '<tr style="background:#f0fdfa;font-weight:700"><td style="' + TEL_TD + '">Coorte (' + c.assistiti_con_dati + ' di ' + c.assistiti_totali + ')</td>' + cols.map(function (x) { return '<td style="' + TEL_TD + '">' + telFmt(c.metriche[x[0]].media, x[2]) + '</td>'; }).join('') + '<td style="' + TEL_TD + '">' + telFmt(c.passi_medi_giorno, 0) + '</td><td style="' + TEL_TD + '"></td><td style="' + TEL_TD + '"></td><td style="' + TEL_TD + '"></td></tr></tbody></table></div>' +
                         '<div style="margin-top:6px;font-size:11px;color:#6b7280">Stress, sonno e indice di attivit&agrave; non sono forniti da SiDLY. HRV e passi arrivano solo dallo storico: se vuoti, caricare o aggiornare lo storico.</div>';
                 } else { m = filtroHtml + '<span style="color:#6b7280;font-size:13px">Nessuna misura nel DB per il periodo' + (affMin > 0 ? ' con questa affidabilit&agrave; minima' : '') + '.</span>'; }
-                h += telBox('Medie (ultimi ' + giorni + ' giorni)', m);
+                h += telBox(giorni ? 'Medie (ultimi ' + giorni + ' giorni)' : 'Medie (tutto lo storico)', m);
                 // Azioni
                 h += telBox('1. Carica lo storico delle misure da SiDLY (prima sempre un\\'anteprima: nulla viene scritto finch&eacute; non confermi)',
                     '<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:13px">' +

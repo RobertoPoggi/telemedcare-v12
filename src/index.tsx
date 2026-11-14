@@ -22097,14 +22097,16 @@ app.get('/api/sidly/telemetria/dataset', async (c) => {
   return new Response(r.csv, { status: 200, headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Cache-Control': 'no-store', 'X-Righe': String(r.righe), 'X-Prossimo-Cursore': r.prossimo || '' } })
 })
 
-// GET /api/sidly/telemetria/report?giorni=30&assistito_id= - medie per assistito e di coorte (FC, SpO2, HRV, FR, temperatura, passi). Sola lettura.
+// GET /api/sidly/telemetria/report?giorni=0|N&assistito_id= (giorni assente o 0 = tutto lo storico) - medie per assistito e di coorte (FC, SpO2, HRV, FR, temperatura, passi). Sola lettura.
 app.get('/api/sidly/telemetria/report', async (c) => {
   const guard = checkSessionOrKey(c.req.header('Cookie'), c.req.header('Authorization'), [c.env?.API_KEY, c.env?.ADMIN_SECRET_TOKEN])
   if (!guard.ok) return c.json({ esito: 'errore', errore: guard.error }, guard.status)
   if (!c.env?.DB) return c.json({ esito: 'errore', errore: 'Database non configurato' }, 500)
-  const giorni = Number(c.req.query('giorni') || 30)
+  // giorni assente, 0 o «tutto» = TUTTO lo storico nel DB (predefinito); altrimenti gli ultimi N giorni
+  const giorniRaw = String(c.req.query('giorni') ?? '').trim().toLowerCase()
+  const giorni = giorniRaw === '' || giorniRaw === 'tutto' ? 0 : Number(giorniRaw)
   const aid = c.req.query('assistito_id') ? Number(c.req.query('assistito_id')) : undefined
-  if (!Number.isFinite(giorni) || giorni < 1 || giorni > 400) return c.json({ esito: 'errore', errore: 'giorni deve essere tra 1 e 400' }, 400)
+  if (!Number.isFinite(giorni) || !Number.isInteger(giorni) || giorni < 0 || giorni > 3650) return c.json({ esito: 'errore', errore: 'giorni deve essere 0 (tutto lo storico) oppure tra 1 e 3650' }, 400)
   if (aid !== undefined && (!Number.isInteger(aid) || aid <= 0)) return c.json({ esito: 'errore', errore: 'assistito_id non valido' }, 400)
   // Soglia minima dell'indice di affidabilita' (0 = tutte le misure, 1 = solo 1-3, 2 = solo 2-3, 3 = solo 3). Valori diversi da 0-3 sono rifiutati, non arrotondati.
   const affRaw = c.req.query('affid_min')

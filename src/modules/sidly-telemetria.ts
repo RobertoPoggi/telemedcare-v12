@@ -975,7 +975,7 @@ const METRICHE = [['hr', 'Frequenza cardiaca (bpm)'], ['spo2', 'SpO2 (%)'], ['sd
 const OFFSET_GIORNO_S = 7200 // giorno "italiano" approssimato (UTC+2): serve solo a raggruppare i passi per giorno
 
 export interface StatMetrica { n: number; media: number | null; min: number | null; max: number | null; sd: number | null }
-export interface RigaReport { assistito_id: number; imei: string; nome: string; /** braccialetti sommati (attuale + precedenti) e misure del periodo prima del filtro di affidabilita' */ imei_considerati?: number; misure_periodo?: number; misure_incluse?: number; misure_senza_affid?: number; giorni_con_dati: number; punti: number; passi_medi_giorno: number | null; metriche: Record<string, StatMetrica> }
+export interface RigaReport { assistito_id: number; imei: string; nome: string; /** braccialetti sommati (attuale + precedenti) e misure del periodo prima del filtro di affidabilita' */ imei_considerati?: number; misure_periodo?: number; misure_incluse?: number; misure_senza_affid?: number; /** primo e ultimo istante delle misure del periodo */ misure_dal?: string; misure_al?: string; giorni_con_dati: number; punti: number; passi_medi_giorno: number | null; metriche: Record<string, StatMetrica> }
 
 /**
  * Medie per assistito e di coorte. `affidMin` (0-3) e' la soglia minima dell'indice di affidabilita' della misura:
@@ -986,8 +986,10 @@ export interface RigaReport { assistito_id: number; imei: string; nome: string; 
  */
 export async function reportMedie(db: any, o: { giorni: number; assistitoId?: number; nowSec?: number; affidMin?: number }) {
   const nowSec = o.nowSec ?? Math.floor(Date.now() / 1000)
-  const giorni = Math.max(1, Math.min(Math.round(o.giorni || 30), 400))
-  const dal = nowSec - giorni * 86400
+  // giorni = 0 (o non indicato) = TUTTO lo storico presente nel DB; altrimenti ultimi N giorni (1-3650).
+  const tutto = !(Number(o.giorni) >= 1)
+  const giorni = tutto ? 0 : Math.min(Math.round(Number(o.giorni)), 3650)
+  const dal = tutto ? 0 : nowSec - giorni * 86400
   const affidMin = Math.max(0, Math.min(3, Math.round(Number(o.affidMin ?? 0)) || 0))
   const lista = await assistitiAttivi(db, o.assistitoId)
   const prec = await imeiPrecedenti(db, o.assistitoId)
@@ -1012,7 +1014,7 @@ export async function reportMedie(db: any, o: { giorni: number; assistitoId?: nu
     // I passi (contatore, non una misura di segnale) non dipendono dall'affidabilita': stessi parametri senza soglia.
     const parS = (ims: string[]) => [...ims, dal, nowSec]
     // Per assistito: misure del periodo, quante hanno almeno la soglia e quante non hanno alcun indice (per spiegare cosa scarta il filtro)
-    const sqlN = (n: number) => `SELECT COUNT(*) AS n${colAffid ? ', COALESCE(SUM(affid >= ?),0) AS ok, COALESCE(SUM(affid IS NULL),0) AS senza' : ''} FROM sidly_misure WHERE imei IN (${Array(n).fill('?').join(',')}) AND ts >= ? AND ts < ? AND ${VITALE_SQL}`
+    const sqlN = (n: number) => `SELECT COUNT(*) AS n, MIN(ts) AS t0, MAX(ts) AS t1${colAffid ? ', COALESCE(SUM(affid >= ?),0) AS ok, COALESCE(SUM(affid IS NULL),0) AS senza' : ''} FROM sidly_misure WHERE imei IN (${Array(n).fill('?').join(',')}) AND ts >= ? AND ts < ? AND ${VITALE_SQL}`
     try { rs = await db.batch(part.flatMap((a, j) => [db.prepare(sql(sqlM, conImei[j].length)).bind(...par(conImei[j])), db.prepare(sql(sqlS, conImei[j].length)).bind(...parS(conImei[j])), db.prepare(sqlN(conImei[j].length)).bind(...(colAffid ? [affidMin] : []), ...conImei[j], dal, nowSec)])) } catch { tabelle = false; break }
     part.forEach((a, j) => {
       const m = (rs[j * 3]?.results || [])[0] || {}
@@ -1029,7 +1031,7 @@ export async function reportMedie(db: any, o: { giorni: number; assistitoId?: nu
         metriche[c] = { n, media, min: n ? Number(m[`${c}_min`]) : null, max: n ? Number(m[`${c}_max`]) : null, sd }
       }
       const conPassi = gg.filter(x => Number(x.s) > 0)
-      righe.push({ assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, giorni_con_dati: gg.filter(x => Number(x.nv) > 0 || Number(x.s) > 0).length, punti: Number(m.punti || 0), imei_considerati: conImei[j].length, misure_periodo: nPeriodo, misure_incluse: nOk, misure_senza_affid: nSenza,
+      righe.push({ assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, giorni_con_dati: gg.filter(x => Number(x.nv) > 0 || Number(x.s) > 0).length, punti: Number(m.punti || 0), imei_considerati: conImei[j].length, misure_periodo: nPeriodo, misure_incluse: nOk, misure_senza_affid: nSenza, misure_dal: nPeriodo && cnt.t0 ? fmtSidlyData(Number(cnt.t0)) + ' UTC' : undefined, misure_al: nPeriodo && cnt.t1 ? fmtSidlyData(Number(cnt.t1)) + ' UTC' : undefined,
         passi_medi_giorno: conPassi.length ? conPassi.reduce((t, x) => t + Number(x.s), 0) / conPassi.length : null, metriche })
     })
   }
@@ -1044,7 +1046,7 @@ export async function reportMedie(db: any, o: { giorni: number; assistitoId?: nu
   }
   const pm = righe.map(r => r.passi_medi_giorno).filter((x): x is number => x !== null)
   return {
-    tabelle_presenti: tabelle, affid_min: affidMin, affid_colonna: colAffid, periodo: { giorni, dal: fmtSidlyData(dal) + ' UTC', al: fmtSidlyData(nowSec) + ' UTC' },
+    tabelle_presenti: tabelle, affid_min: affidMin, affid_colonna: colAffid, periodo: { giorni, tutto, dal: tutto ? null : fmtSidlyData(dal) + ' UTC', al: fmtSidlyData(nowSec) + ' UTC' },
     etichette: Object.fromEntries(METRICHE.map(([c, e]) => [c, e])), assistiti: righe,
     coorte: { assistiti_con_dati: righe.filter(r => r.punti > 0).length, assistiti_totali: righe.length, metriche: coorte, passi_medi_giorno: pm.length ? pm.reduce((t, x) => t + x, 0) / pm.length : null, passi_assistiti: pm.length },
     passi_modo: PASSI_MODO,

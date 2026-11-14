@@ -52,6 +52,7 @@ async function makeD1() {
 
 interface Call { method: string; path: string; body: any }
 /** SiDLY finta: login, /stats con punti orari, allarmi. Le chiamate verso i dispositivi (set/delete-url-for-band) rispondono 200 ma i test verificano che NON partano mai. */
+const fmtDay = (t: number) => new Date(t * 1000).toISOString().slice(0, 10)
 function makeSidly(opts: { statsStatus?: number; alarms?: any[]; urlStatus?: number; registerDate?: any; registerWrap?: boolean; vuotoDopo?: number; senzaTrust?: boolean; failImei?: string; pressione?: boolean; soloPressione?: boolean } = {}) {
   const calls: Call[] = []
   const fetchImpl: Fetch = async (url, init) => {
@@ -835,6 +836,48 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
     ok(/body\?\.aggiorna === true/.test(blk) && /eseguiAggiorna\(/.test(blk) && /checkSessionOrKey\(/.test(blk) && /dryRun: !scrive/.test(blk), 'rotta storico: «aggiorna» protetta da sessione/chiave, senza conferma_scrittura e\' sempre anteprima')
     ok(/sidlyAggiornaAnteprima/.test(dash) && /sidlyAggiornaScrivi/.test(dash) && /aggiorna:\s*true/.test(dash) && /Aggiorna con le misure nuove/.test(dash), 'Dashboard: riquadro «Aggiorna con le misure nuove» con anteprima e conferma')
     ok(/Misurazioni nuove aggiunte/.test(dash) && /telEsitiHtml/.test(dash) && /motivo_fine/.test(dash), 'Dashboard: dopo l\'importazione si vede, per ogni assistito, quante misurazioni nuove e perche\' si e\' fermato')
+  }
+
+  // ───────────────────────────────────────────────────────────────────
+  section('SiDLY telemetria 11e: le medie sono calcolate su TUTTO lo storico (non solo ultimi 30 giorni)')
+  {
+    const d = await makeD1(); T.dimenticaTabelle()
+    d.raw.run(`INSERT INTO assistiti (id, imei, status, nome_assistito, cognome_assistito) VALUES (1, '${IMEI_A}', 'ATTIVO', 'Maria', 'Silenziosa'), (2, '${IMEI_B}', 'ATTIVO', 'Laura', 'Attiva'), (3, '868298060000077', 'ATTIVO', 'Senza', 'Misure')`)
+    await T.assicuraTabelle(d.db)
+    const G = 86400
+    await d.db.batch(T.istruzioniMisure(d.db, [
+      { imei: IMEI_A, ts: NOW - 60 * G, fonte: 'stats', hr: 60, spo2: 95, steps: 1000 },
+      { imei: IMEI_A, ts: NOW - 59 * G, fonte: 'stats', hr: 80, spo2: 97, steps: 3000 },
+      { imei: IMEI_A, ts: NOW - 500 * G, fonte: 'stats', hr: 100 },
+      { imei: IMEI_B, ts: NOW - 2 * G, fonte: 'stats', hr: 70 },
+    ]))
+    const t30 = await T.reportMedie(d.db, { giorni: 30, nowSec: NOW })
+    const a30 = t30.assistiti.find(x => x.imei === IMEI_A)!
+    ok(a30.metriche.hr.media === null && a30.misure_periodo === 0 && a30.giorni_con_dati === 0, 'ultimi 30 giorni: l\'assistito silenzioso per oltre 30 giorni risulta senza media (il difetto segnalato)')
+    ok(t30.periodo.tutto === false && t30.periodo.giorni === 30 && t30.periodo.dal !== null, 'periodo a 30 giorni: tutto=false e data di inizio indicata')
+    for (const g of [0, undefined as any]) {
+      const tt = await T.reportMedie(d.db, { giorni: g, nowSec: NOW })
+      const a = tt.assistiti.find(x => x.imei === IMEI_A)!
+      ok(tt.periodo.tutto === true && tt.periodo.giorni === 0 && tt.periodo.dal === null, `giorni ${g === undefined ? 'non indicato' : g}: periodo.tutto=true, nessuna data di inizio`)
+      ok(a.metriche.hr.n === 3 && Math.abs((a.metriche.hr.media as number) - 80) < 1e-9 && a.metriche.hr.max === 100 && a.metriche.hr.min === 60, `giorni ${g === undefined ? 'non indicato' : g}: la media FC usa anche le misure di 60 e 500 giorni fa (media 80)`)
+      ok(a.metriche.spo2.n === 2 && a.metriche.spo2.media === 96 && a.misure_periodo === 3 && a.misure_incluse === 3, 'tutto lo storico: SpO2 e conteggio «misure usate» su tutto il periodo')
+      ok(a.passi_medi_giorno === 2000 && a.giorni_con_dati === 3, 'tutto lo storico: passi/giorno e giorni con dati calcolati su tutto lo storico')
+      ok(typeof a.misure_dal === 'string' && a.misure_dal!.startsWith(fmtDay(NOW - 500 * G)) && a.misure_al!.startsWith(fmtDay(NOW - 59 * G)), 'tutto lo storico: periodo coperto (prima e ultima misura) indicato per assistito')
+      ok(tt.coorte.metriche.hr.assistiti === 2 && tt.coorte.assistiti_con_dati === 2 && tt.coorte.assistiti_totali === 3, 'coorte su tutto lo storico: gli assistiti silenziosi da oltre 30 giorni ora contano')
+    }
+    const senza = (await T.reportMedie(d.db, { giorni: 0, nowSec: NOW })).assistiti.find(x => x.nome.includes('Misure'))!
+    ok(senza.metriche.hr.media === null && senza.misure_periodo === 0 && senza.misure_dal === undefined, 'chi non ha nessuna misura vera nel DB resta senza media (non zero) e senza periodo')
+    const neg = await T.reportMedie(d.db, { giorni: -5, nowSec: NOW })
+    ok(neg.periodo.tutto === true, 'giorni non valido a livello di modulo: considerato tutto lo storico (la rotta lo rifiuta prima)')
+    const aff = await T.reportMedie(d.db, { giorni: 0, assistitoId: 1, nowSec: NOW, affidMin: 1 })
+    ok(aff.assistiti[0].misure_periodo === 3 && aff.assistiti[0].misure_incluse === 0, 'tutto lo storico + filtro affidabilita\': il filtro continua a funzionare (misure senza indice escluse)')
+
+    const idx = readFileSync('src/index.tsx', 'utf8'), dash = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
+    const rotta = idx.slice(idx.indexOf("app.get('/api/sidly/telemetria/report'"), idx.indexOf("app.get('/api/sidly/telemetria/report'") + 1800)
+    ok(/giorniRaw === '' \|\| giorniRaw === 'tutto' \? 0/.test(rotta) && /giorni < 0 \|\| giorni > 3650/.test(rotta) && /Number\.isInteger\(giorni\)/.test(rotta), 'rotta report: giorni assente/0/«tutto» = tutto lo storico; negativi, decimali e oltre 3650 rifiutati (400)')
+    ok(/giorni === undefined \|\| giorni === null \? \(window\.__telGiorni \|\| 0\)/.test(dash) && !/giorni = giorni \|\| 30/.test(dash), 'Dashboard: il periodo predefinito delle medie e\' tutto lo storico (non piu\' 30 giorni)')
+    ok(/id="telGiorni"/.test(dash) && /Tutto lo storico/.test(dash) && /Medie \(tutto lo storico\)/.test(dash), 'Dashboard: selettore del periodo (Tutto lo storico / 365 / 90 / 30 / 7) e titolo «Medie (tutto lo storico)»')
+    ok(/window\.sidlyTelemetria\(window\.__telGiorni, parseInt\(this\.value, 10\)\)/.test(dash), 'Dashboard: cambiando l\'affidabilita\' si mantiene il periodo scelto')
   }
 
   // ───────────────────────────────────────────────────────────────────
