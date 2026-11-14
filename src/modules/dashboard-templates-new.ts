@@ -3730,14 +3730,22 @@ export const dashboard = `<!DOCTYPE html>
         function telBox(titolo, corpo, colore) {
             return '<div style="border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:10px"><div style="font-weight:700;margin-bottom:6px;color:' + (colore || '#111827') + '">' + titolo + '</div>' + corpo + '</div>';
         }
-        window.sidlyTelemetria = async function (giorni) {
+        window.sidlyTelemetria = async function (giorni, affMin) {
             giorni = giorni || 30;
+            affMin = affMin === undefined ? (window.__telAffMin || 0) : affMin;
+            window.__telAffMin = affMin;
             sidlyPanel('<p style="margin:0"><i class="fas fa-spinner fa-spin"></i> Lettura dello stato (nessuna scrittura)&hellip;</p>');
             try {
                 var st = await telApi('GET', '/api/sidly/telemetria/stato');
                 if (st.esito !== 'ok') { sidlyPanel('<p style="color:#b91c1c;margin:0">' + escapeHtml(st.errore || 'Errore') + '</p>'); return; }
-                window.__telAssistiti = (st.assistiti || []).map(function (a) { return { assistito_id: a.assistito_id, nome: a.nome || a.imei }; });
-                var rp = await telApi('GET', '/api/sidly/telemetria/report?giorni=' + giorni);
+                // Un elemento per assistito (braccialetto attuale) e uno per ogni braccialetto PRECEDENTE: le misure restano comunque dell'assistito.
+                window.__telAssistiti = [];
+                (st.assistiti || []).forEach(function (a) {
+                    window.__telAssistiti.push({ assistito_id: a.assistito_id, nome: a.nome || a.imei });
+                    (a.imei_precedenti || []).forEach(function (im) { window.__telAssistiti.push({ assistito_id: a.assistito_id, imei: im, nome: (a.nome || a.imei) + ' (braccialetto precedente ...' + String(im).slice(-4) + ')' }); });
+                });
+                window.__telStato = st.assistiti || [];
+                var rp = await telApi('GET', '/api/sidly/telemetria/report?giorni=' + giorni + '&affid_min=' + affMin);
                 var h = '<h3 style="font-weight:700;font-size:17px;margin:0 0 10px">Telemetria SiDLY &middot; misure degli assistiti</h3>';
                 h += telBox('Come funziona', '<div style="font-size:13px">I dati passano <b>sempre da SiDLY</b>: il CRM li <b>legge</b> con le API di SiDLY (storico misure e allarmi). Non riceve dati dai braccialetti e <b>non modifica nessuna impostazione dei dispositivi</b>. Uso solo statistico, non gestionale: assistiti e caregiver continuano a usare la piattaforma SiDLY.' +
                     (st.tabelle_presenti ? '' : '<br><span style="color:#92400e">Le tabelle delle misure non esistono ancora: si creano al primo caricamento dello storico confermato.</span>') + '</div>', '#0f766e');
@@ -3752,7 +3760,7 @@ export const dashboard = `<!DOCTYPE html>
                         if (gg !== null && gg > 7) { sit = 'Nessun dato da ' + gg + ' giorni: braccialetto spento, non indossato o scollegato'; col = '#92400e'; }
                         else sit = 'Aggiornato';
                     }
-                    t += '<tr><td style="' + TEL_TD + '">' + escapeHtml(a.nome || a.imei) + '</td>' +
+                    t += '<tr><td style="' + TEL_TD + '">' + escapeHtml(a.nome || a.imei) + ((a.imei_precedenti || []).length ? '<br><span style="font-size:11px;color:#6b7280">+ ' + a.imei_precedenti.length + ' braccialetto/i precedente/i: misure sommate</span>' : '') + '</td>' +
                         '<td style="' + TEL_TD + ';text-align:right"><b>' + (a.misure_totali || 0) + '</b></td>' +
                         '<td style="' + TEL_TD + '">' + escapeHtml(a.misure_dal || '-') + '</td><td style="' + TEL_TD + '">' + escapeHtml(a.misure_al || '-') + '</td>' +
                         '<td style="' + TEL_TD + ';color:' + col + '">' + sit + '</td>' +
@@ -3764,17 +3772,26 @@ export const dashboard = `<!DOCTYPE html>
                 // Medie
                 var c = (rp && rp.coorte) || null;
                 var m = '';
+                var opz = [[0, '0 &mdash; tutte le misure'], [1, '1 &mdash; solo affidabilit&agrave; 1, 2 e 3'], [2, '2 &mdash; solo affidabilit&agrave; 2 e 3'], [3, '3 &mdash; solo affidabilit&agrave; 3 (massima)']];
+                var filtroHtml = '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;margin-bottom:6px"><b>Affidabilit&agrave; minima delle misure</b> <select id="telAffMin" onchange="window.sidlyTelemetria(' + giorni + ', parseInt(this.value, 10))" style="border:1px solid #9ca3af;border-radius:4px;padding:3px">' +
+                    opz.map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === affMin ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>' +
+                    '<span style="font-size:11px;color:#6b7280">0 = nessun filtro. Con 1, 2 o 3 le medie usano solo le misure con indice almeno pari alla soglia; una misura senza indice non viene contata. L&rsquo;indice di una misura &egrave; il pi&ugrave; basso fra quelli dichiarati da SiDLY (FC e SpO2). I passi non sono filtrati.</span></div>';
+                if (affMin > 0 && rp && rp.esito === 'ok') {
+                    var senzaTot = 0, perio = 0, incl = 0;
+                    (rp.assistiti || []).forEach(function (a) { senzaTot += a.misure_senza_affid || 0; perio += a.misure_periodo || 0; incl += a.misure_incluse || 0; });
+                    filtroHtml += '<div style="font-size:12px;margin-bottom:6px;color:' + (senzaTot ? '#92400e' : '#374151') + '">Filtro attivo (affidabilit&agrave; &ge; ' + affMin + '): usate ' + incl + ' misure su ' + perio + ' del periodo' + (senzaTot ? '; <b>' + senzaTot + '</b> non hanno ancora l&rsquo;indice (usa il riquadro 3 per aggiungerlo)' : '') + '.</div>';
+                }
                 if (rp && rp.esito === 'ok' && rp.assistiti && rp.assistiti.length) {
                     var cols = [['hr', 'FC', 0], ['spo2', 'SpO2', 1], ['sdnn', 'SDNN', 0], ['rmssd', 'RMSSD', 0], ['resp', 'FR', 1]];
-                    m = '<div style="font-size:12px;color:#6b7280;margin-bottom:6px">Ultimi ' + giorni + ' giorni. FC bpm &middot; SpO2 % &middot; HRV (SDNN, RMSSD) ms &middot; FR atti/min &middot; passi per giorno. Misure di un assistito entro 2 minuti contano una volta.</div>' +
-                        '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + TEL_TH + '">Assistito</th>' + cols.map(function (x) { return '<th style="' + TEL_TH + '">' + x[1] + ' (media)</th>'; }).join('') + '<th style="' + TEL_TH + '">Passi/giorno</th><th style="' + TEL_TH + '">Giorni con dati</th></tr></thead><tbody>';
+                    m = filtroHtml + '<div style="font-size:12px;color:#6b7280;margin-bottom:6px">Ultimi ' + giorni + ' giorni. FC bpm &middot; SpO2 % &middot; HRV (SDNN, RMSSD) ms &middot; FR atti/min &middot; passi per giorno. Misure di un assistito entro 2 minuti contano una volta.</div>' +
+                        '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th style="' + TEL_TH + '">Assistito</th>' + cols.map(function (x) { return '<th style="' + TEL_TH + '">' + x[1] + ' (media)</th>'; }).join('') + '<th style="' + TEL_TH + '">Passi/giorno</th><th style="' + TEL_TH + '">Giorni con dati</th><th style="' + TEL_TH + '">Misure usate</th></tr></thead><tbody>';
                     rp.assistiti.forEach(function (a) {
                         m += '<tr><td style="' + TEL_TD + '">' + escapeHtml(a.nome || a.imei) + '</td>' + cols.map(function (x) { var v = a.metriche[x[0]]; return '<td style="' + TEL_TD + '">' + telFmt(v.media, x[2]) + (v.n ? ' <span style="color:#9ca3af">(' + v.n + ')</span>' : '') + '</td>'; }).join('') +
-                            '<td style="' + TEL_TD + '">' + telFmt(a.passi_medi_giorno, 0) + '</td><td style="' + TEL_TD + '">' + a.giorni_con_dati + '</td></tr>';
+                            '<td style="' + TEL_TD + '">' + telFmt(a.passi_medi_giorno, 0) + '</td><td style="' + TEL_TD + '">' + a.giorni_con_dati + '</td><td style="' + TEL_TD + '">' + (a.misure_incluse || 0) + ' di ' + (a.misure_periodo || 0) + '</td></tr>';
                     });
-                    m += '<tr style="background:#f0fdfa;font-weight:700"><td style="' + TEL_TD + '">Coorte (' + c.assistiti_con_dati + ' di ' + c.assistiti_totali + ')</td>' + cols.map(function (x) { return '<td style="' + TEL_TD + '">' + telFmt(c.metriche[x[0]].media, x[2]) + '</td>'; }).join('') + '<td style="' + TEL_TD + '">' + telFmt(c.passi_medi_giorno, 0) + '</td><td style="' + TEL_TD + '"></td></tr></tbody></table></div>' +
+                    m += '<tr style="background:#f0fdfa;font-weight:700"><td style="' + TEL_TD + '">Coorte (' + c.assistiti_con_dati + ' di ' + c.assistiti_totali + ')</td>' + cols.map(function (x) { return '<td style="' + TEL_TD + '">' + telFmt(c.metriche[x[0]].media, x[2]) + '</td>'; }).join('') + '<td style="' + TEL_TD + '">' + telFmt(c.passi_medi_giorno, 0) + '</td><td style="' + TEL_TD + '"></td><td style="' + TEL_TD + '"></td></tr></tbody></table></div>' +
                         '<div style="margin-top:6px;font-size:11px;color:#6b7280">Stress, sonno e indice di attivit&agrave; non sono forniti da SiDLY. HRV e passi arrivano solo dallo storico: se vuoti, caricare o aggiornare lo storico.</div>';
-                } else { m = '<span style="color:#6b7280;font-size:13px">Nessuna misura nel DB per il periodo.</span>'; }
+                } else { m = filtroHtml + '<span style="color:#6b7280;font-size:13px">Nessuna misura nel DB per il periodo' + (affMin > 0 ? ' con questa affidabilit&agrave; minima' : '') + '.</span>'; }
                 h += telBox('Medie (ultimi ' + giorni + ' giorni)', m);
                 // Azioni
                 h += telBox('1. Carica lo storico delle misure da SiDLY (prima sempre un\\'anteprima: nulla viene scritto finch&eacute; non confermi)',
@@ -3786,6 +3803,19 @@ export const dashboard = `<!DOCTYPE html>
                 h += telBox('3. Aggiorna l&rsquo;affidabilit&agrave; sulle misure gi&agrave; presenti (nessuna misura nuova)',
                     '<div style=\"font-size:12px;color:#6b7280;margin-bottom:6px\">Per le misure gi&agrave; nel DB che non hanno l&rsquo;indice di affidabilit&agrave; (0-3), lo rilegge da SiDLY (solo lettura) e lo aggiunge a quelle righe. Non inserisce righe nuove, non cambia i valori misurati e non sovrascrive indici gi&agrave; presenti. Prima un&rsquo;anteprima: nulla viene scritto finch&eacute; non confermi.</div>' +
                     '<div style=\"display:flex;flex-wrap:wrap;gap:8px;align-items:center\"><button onclick=\"window.sidlyAffidAnteprima()\" style=\"' + SIDLY_BTN + '#0d9488\">Anteprima aggiornamento affidabilit&agrave;</button></div>');
+                var optA = (st.assistiti || []).map(function (a) { return '<option value="' + a.assistito_id + '">' + escapeHtml(a.nome || a.imei) + '</option>'; }).join('');
+                var elenco = '';
+                (st.assistiti || []).forEach(function (a) {
+                    (a.imei_precedenti || []).forEach(function (im) {
+                        elenco += '<div style="font-size:13px;margin-bottom:2px">' + escapeHtml(a.nome || a.imei) + ': <b>' + escapeHtml(im) + '</b> <button onclick="window.sidlyImeiPrecRimuovi(' + a.assistito_id + ',&quot;' + escapeHtml(im) + '&quot;)" style="border:1px solid #9ca3af;border-radius:4px;background:#fff;cursor:pointer;font-size:11px;padding:1px 6px">togli</button></div>';
+                    });
+                });
+                h += telBox('4. Braccialetti precedenti (assistiti che hanno cambiato IMEI)',
+                    '<div style="font-size:12px;color:#6b7280;margin-bottom:6px">Le misure di un vecchio IMEI restano dell&rsquo;assistito: stato, medie, dataset e importazione sommano tutti i suoi braccialetti. Quando cambi l&rsquo;IMEI da &laquo;Modifica assistito&raquo; o dal confronto con SiDLY il vecchio viene registrato in automatico; qui puoi aggiungere quelli cambiati in passato. Registrare un IMEI non scrive nulla su SiDLY.</div>' +
+                    (elenco || '<div style="font-size:13px;color:#6b7280;margin-bottom:6px">Nessun braccialetto precedente registrato.</div>') +
+                    '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><select id="telImeiAss" style="border:1px solid #9ca3af;border-radius:4px;padding:3px">' + optA + '</select>' +
+                    '<input id="telImeiPrec" type="text" inputmode="numeric" maxlength="17" placeholder="vecchio IMEI (15 cifre)" style="border:1px solid #9ca3af;border-radius:4px;padding:3px;width:200px">' +
+                    '<button onclick="window.sidlyImeiPrecAggiungi()" style="' + SIDLY_BTN + '#0d9488">Registra braccialetto precedente</button></div>');
                 h += telBox('2. Dataset delle sole misure (per le analisi statistiche)',
                     '<div style="font-size:12px;color:#6b7280;margin-bottom:6px">File CSV con una riga per assistito e istante: FC, SpO2, temperatura, passi, HRV, FR, qualit&agrave; del segnale. Solo id assistito e IMEI, nessun nome.</div>' +
                     '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><button id="telDatasetBtn" onclick="window.sidlyDataset()" style="' + SIDLY_BTN + '#0f766e"><i class="fas fa-download"></i> Scarica dataset misure (CSV)</button></div><div id="telDatasetEsito" style="margin-top:6px;font-size:12px"></div>');
@@ -3840,13 +3870,13 @@ export const dashboard = `<!DOCTYPE html>
             var okIds = [], ko = 0, stimaTot = 0;
             for (var i = 0; i < lista.length; i++) {
                 telEsito('<i class="fas fa-spinner fa-spin"></i> Lettura da SiDLY ' + (i + 1) + ' di ' + lista.length + ': ' + escapeHtml(lista[i].nome) + ' (solo lettura)&hellip;');
-                var r = await telApi('POST', '/api/sidly/storico', { ultime: n, assistito_id: lista[i].assistito_id, dry_run: true });
+                var r = await telApi('POST', '/api/sidly/storico', telConImei({ ultime: n, assistito_id: lista[i].assistito_id, dry_run: true }, lista[i]));
                 var a = (r.assistiti || [])[0] || {};
                 var errore = r.esito !== 'anteprima' ? (r.errore || 'Errore') : a.errore;
                 if (errore || !a.anteprima) { ko++; h += '<div style="color:#b91c1c;font-size:13px">' + escapeHtml(lista[i].nome) + ': ' + escapeHtml(errore || 'nessun dato letto') + ' &mdash; verr&agrave; saltato</div>'; continue; }
                 var an = a.anteprima; var pt = an.punti || {};
                 var prev = typeof an.ultime_stima === 'number' ? an.ultime_stima : Math.min(n, an.stima_righe_totali || 0);
-                stimaTot += prev; okIds.push(lista[i].assistito_id);
+                stimaTot += prev; okIds.push(lista[i]);
                 h += '<div style="font-size:13px;margin-bottom:3px"><b>' + escapeHtml(lista[i].nome) + '</b>: attivo da ' + escapeHtml(an.inizio_da || 'data non disponibile (ultimi 12 mesi)') + ' &middot; gi&agrave; nel DB ' + (an.gia_nel_db || 0) + ' &middot; ' + (an.ultima_misura ? 'ultima misura: <b>' + escapeHtml(an.ultima_misura) + '</b>' + (an.silenzio_giorni >= 2 ? ' <span style=\"color:#b45309\">(ferma da ' + an.silenzio_giorni + ' giorni: si parte da l&igrave; e si va indietro)</span>' : '') : 'nessuna misura trovata') + ' &middot; settimana letta: ' + (an.righe || 0) + ' istanti con almeno una misura &middot; nuove da importare circa <b>' + prev + '</b></div>' + telRiepilogoHtml(an);
             }
             if (ko) h += '<div style="font-size:12px;color:#92400e;margin-top:4px">Gli assistiti con errore (di solito IMEI non trovato su SiDLY) non vengono importati.</div>';
@@ -3861,11 +3891,11 @@ export const dashboard = `<!DOCTYPE html>
             var nomi = {}; (window.__telAssistiti || []).forEach(function (a) { nomi[a.assistito_id] = a.nome; });
             var tot = 0, fatti = 0, falliti = [];
             for (var i = 0; i < ids.length; i++) {
-                var id = ids[i], primaDi = null, raccolte = 0, giri = 0, r = null, err = '';
+                var tg = ids[i], id = tg.assistito_id, primaDi = null, raccolte = 0, giri = 0, r = null, err = '';
                 do {
                     giri++;
-                    telEsito('<i class="fas fa-spinner fa-spin"></i> Importo ' + (i + 1) + ' di ' + ids.length + ': ' + escapeHtml(nomi[id] || id) + ' (passaggio ' + giri + ', righe scritte finora ' + tot + ')&hellip;');
-                    var body = { ultime: n, assistito_id: id, conferma_scrittura: true };
+                    telEsito('<i class="fas fa-spinner fa-spin"></i> Importo ' + (i + 1) + ' di ' + ids.length + ': ' + escapeHtml(tg.nome) + ' (passaggio ' + giri + ', righe scritte finora ' + tot + ')&hellip;');
+                    var body = telConImei({ ultime: n, assistito_id: id, conferma_scrittura: true }, tg);
                     if (primaDi) { body.prima_di = primaDi; body.raccolte = raccolte; }
                     r = await telApi('POST', '/api/sidly/storico', body);
                     var a = (r.assistiti || [])[0] || {};
@@ -3874,7 +3904,7 @@ export const dashboard = `<!DOCTYPE html>
                     tot += r.righe_scritte || 0;
                     if (a.continua) { primaDi = a.continua.prima_di; raccolte = a.continua.raccolte; }
                 } while (!r.completato && giri < 20);
-                if (err) falliti.push((nomi[id] || id) + ': ' + err); else fatti++;
+                if (err) falliti.push(tg.nome + ': ' + err); else fatti++;
             }
             var out = '<span style="color:' + (falliti.length ? '#92400e' : '#15803d') + ';font-weight:700">Importati ' + fatti + ' assistiti su ' + ids.length + '.</span> Righe scritte: ' + tot + '.';
             if (falliti.length) out += '<div style="color:#b91c1c;font-size:12px;margin-top:4px">Non riusciti (rilancia: le righe gi&agrave; scritte non si duplicano): ' + falliti.map(escapeHtml).join('; ') + '</div>';
@@ -3889,14 +3919,14 @@ export const dashboard = `<!DOCTYPE html>
             var okIds = [], daAgg = 0;
             for (var i = 0; i < lista.length; i++) {
                 telEsito('<i class=\"fas fa-spinner fa-spin\"></i> Controllo ' + (i + 1) + ' di ' + lista.length + ': ' + escapeHtml(lista[i].nome) + ' (solo lettura)&hellip;');
-                var r = await telApi('POST', '/api/sidly/storico', { affidabilita: true, assistito_id: lista[i].assistito_id, dry_run: true });
+                var r = await telApi('POST', '/api/sidly/storico', telConImei({ affidabilita: true, assistito_id: lista[i].assistito_id, dry_run: true }, lista[i]));
                 var a = (r.assistiti || [])[0] || {};
                 var errore = r.esito !== 'anteprima' ? (r.errore || 'Errore') : a.errore;
                 var an = a.anteprima;
                 if (errore || !an || !an.affid_db) { h += '<div style=\"color:#6b7280;font-size:13px\">' + escapeHtml(lista[i].nome) + ': ' + escapeHtml(errore || 'niente da fare') + ' &mdash; saltato</div>'; continue; }
                 var db = an.affid_db, fi = an.affid_finestra || {};
                 if (!db.senza_affidabilita) { h += '<div style=\"font-size:13px;margin-bottom:3px\"><b>' + escapeHtml(lista[i].nome) + '</b>: ' + db.righe + ' misure nel DB, tutte gi&agrave; con affidabilit&agrave; &mdash; niente da aggiornare</div>'; continue; }
-                okIds.push(lista[i].assistito_id); daAgg += db.senza_affidabilita;
+                okIds.push(lista[i]); daAgg += db.senza_affidabilita;
                 h += '<div style=\"font-size:13px;margin-bottom:3px\"><b>' + escapeHtml(lista[i].nome) + '</b>: ' + db.righe + ' misure nel DB (dal ' + escapeHtml(db.dal) + ' al ' + escapeHtml(db.al) + ') &middot; senza affidabilit&agrave;: <b>' + db.senza_affidabilita + '</b>' +
                     (fi.da_sidly !== undefined ? ' &middot; settimana di prova: ' + fi.righe_db + ' misure da aggiornare, SiDLY ne ha indicate ' + fi.da_aggiornare : '') + '</div>' + telRiepilogoHtml(an);
             }
@@ -3911,11 +3941,11 @@ export const dashboard = `<!DOCTYPE html>
             var nomi = {}; (window.__telAssistiti || []).forEach(function (a) { nomi[a.assistito_id] = a.nome; });
             var tot = 0, fatti = 0, falliti = [];
             for (var i = 0; i < ids.length; i++) {
-                var id = ids[i], primaDi = null, giri = 0, r = null, err = '';
+                var tg = ids[i], id = tg.assistito_id, primaDi = null, giri = 0, r = null, err = '';
                 do {
                     giri++;
-                    telEsito('<i class=\"fas fa-spinner fa-spin\"></i> Aggiorno ' + (i + 1) + ' di ' + ids.length + ': ' + escapeHtml(nomi[id] || id) + ' (passaggio ' + giri + ', misure aggiornate finora ' + tot + ')&hellip;');
-                    var body = { affidabilita: true, assistito_id: id, conferma_scrittura: true };
+                    telEsito('<i class=\"fas fa-spinner fa-spin\"></i> Aggiorno ' + (i + 1) + ' di ' + ids.length + ': ' + escapeHtml(tg.nome) + ' (passaggio ' + giri + ', misure aggiornate finora ' + tot + ')&hellip;');
+                    var body = telConImei({ affidabilita: true, assistito_id: id, conferma_scrittura: true }, tg);
                     if (primaDi) { body.prima_di = primaDi; }
                     r = await telApi('POST', '/api/sidly/storico', body);
                     var a = (r.assistiti || [])[0] || {};
@@ -3924,12 +3954,29 @@ export const dashboard = `<!DOCTYPE html>
                     tot += r.righe_scritte || 0;
                     if (a.continua) { primaDi = a.continua.prima_di; }
                 } while (!r.completato && giri < 60);
-                if (err) falliti.push((nomi[id] || id) + ': ' + err); else fatti++;
+                if (err) falliti.push(tg.nome + ': ' + err); else fatti++;
             }
             var out = '<span style=\"color:' + (falliti.length ? '#92400e' : '#15803d') + ';font-weight:700\">Affidabilit&agrave; aggiornata per ' + fatti + ' assistiti su ' + ids.length + '.</span> Misure aggiornate: ' + tot + '.';
             if (falliti.length) out += '<div style=\"color:#b91c1c;font-size:12px;margin-top:4px\">Non riusciti (rilancia: riparte solo dalle misure ancora senza affidabilit&agrave;): ' + falliti.map(escapeHtml).join('; ') + '</div>';
             out += ' <button onclick=\"window.sidlyTelemetria()\" style=\"' + SIDLY_BTN + '#0d9488\">Aggiorna il quadro</button>';
             telEsito(out);
+        };
+        function telConImei(body, t) { if (t && t.imei) { body.imei = t.imei; } return body; }
+        window.sidlyImeiPrecAggiungi = async function () {
+            var sel = document.getElementById('telImeiAss'), inp = document.getElementById('telImeiPrec');
+            var imei = String((inp && inp.value) || '').replace(/\\D/g, '');
+            if (!sel || !sel.value) { telEsito('<span style="color:#b91c1c">Scegli l&rsquo;assistito.</span>'); return; }
+            if (!/^\\d{14,17}$/.test(imei)) { telEsito('<span style="color:#b91c1c">IMEI non valido: servono da 14 a 17 cifre.</span>'); return; }
+            if (!window.confirm('Registrare ' + imei + ' come braccialetto precedente di ' + sel.options[sel.selectedIndex].text + '? Non viene scritto nulla su SiDLY.')) { return; }
+            var r = await telApi('POST', '/api/sidly/telemetria/imei-precedenti', { assistito_id: Number(sel.value), imei: imei });
+            if (r.esito !== 'ok') { telEsito('<span style="color:#b91c1c">' + escapeHtml(r.errore || 'Errore') + '</span>'); return; }
+            window.sidlyTelemetria();
+        };
+        window.sidlyImeiPrecRimuovi = async function (id, imei) {
+            if (!window.confirm('Togliere ' + imei + ' dai braccialetti precedenti? Le misure gi\\u00e0 scaricate restano nel DB.')) { return; }
+            var r = await telApi('POST', '/api/sidly/telemetria/imei-precedenti', { assistito_id: Number(id), imei: String(imei), rimuovi: true });
+            if (r.esito !== 'ok') { telEsito('<span style="color:#b91c1c">' + escapeHtml(r.errore || 'Errore') + '</span>'); return; }
+            window.sidlyTelemetria();
         };
         window.sidlyStoricoAnteprima = async function () {
             var nUl = telModoUltime();

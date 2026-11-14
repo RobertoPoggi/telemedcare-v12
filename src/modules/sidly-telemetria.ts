@@ -18,7 +18,7 @@
  * HRV (SDNN/RMSSD), passi e le altre metriche arrivano da /stats, quindi servono aggiornamenti periodici dello storico (riletture degli ultimi giorni).
  * Tutti i timestamp di /stats e degli allarmi di SiDLY sono UTC.
  */
-import { SidlyClient, sidlyConfigError, type SidlyEnv, type Fetch } from './sidly-sync'
+import { SidlyClient, sidlyConfigError, IMEI_PRECEDENTI_SQL, type SidlyEnv, type Fetch } from './sidly-sync'
 
 export const MISURE_SQL = `CREATE TABLE IF NOT EXISTS sidly_misure (
   imei TEXT NOT NULL, ts INTEGER NOT NULL,
@@ -38,7 +38,7 @@ let tabelleOk: any = null
 /** Crea le tabelle (una volta per istanza). Chiamata SOLO da percorsi di scrittura. */
 export async function assicuraTabelle(db: any): Promise<void> {
   if (tabelleOk === db) return
-  await db.batch([db.prepare(MISURE_SQL), db.prepare(EVENTI_SQL), db.prepare(STATO_SQL)])
+  await db.batch([db.prepare(MISURE_SQL), db.prepare(EVENTI_SQL), db.prepare(STATO_SQL), db.prepare(IMEI_PRECEDENTI_SQL)])
   // Tabella creata da una versione precedente: aggiunge le due colonne nuove (solo sidly_stato, piccola).
   try {
     const c = await db.prepare(`SELECT COUNT(*) AS n FROM pragma_table_info('sidly_stato') WHERE name IN ('registrato_ts','completo_ts')`).first()
@@ -273,7 +273,7 @@ export function dataToSec(d: unknown): number | null {
   return Number.isFinite(t) ? Math.floor(t / 1000) : null
 }
 
-export interface AssistitoTel { assistito_id: number; imei: string; nome: string }
+export interface AssistitoTel { assistito_id: number; imei: string; nome: string; /** true = braccialetto PRECEDENTE dello stesso assistito (cambio di IMEI) */ precedente?: boolean }
 
 async function safeAll(db: any, sql: string, ...b: any[]): Promise<any[]> { try { const r = await db.prepare(sql).bind(...b).all(); return r?.results || [] } catch { return [] } }
 async function safeFirst(db: any, sql: string, ...b: any[]): Promise<any | null> { try { return (await db.prepare(sql).bind(...b).first()) || null } catch { return null } }
@@ -293,12 +293,85 @@ export async function assistitiAttivi(db: any, assistitoId?: number): Promise<As
   return out
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Braccialetti PRECEDENTI (cambio di IMEI): le misure restano dell'assistito
+// ─────────────────────────────────────────────────────────────────────────────
+/** IMEI precedenti per assistito. Un IMEI che oggi e' l'IMEI attuale di UN ALTRO assistito non conta come precedente (vince il proprietario attuale). */
+export async function imeiPrecedenti(db: any, assistitoId?: number): Promise<Map<number, string[]>> {
+  const rows = await safeAll(db, `SELECT p.imei, p.assistito_id FROM sidly_imei p WHERE ${assistitoId ? 'p.assistito_id = ? AND ' : ''}NOT EXISTS (SELECT 1 FROM assistiti a WHERE a.imei = p.imei AND a.id != p.assistito_id) ORDER BY p.creato_il, p.imei`, ...(assistitoId ? [assistitoId] : []))
+  const m = new Map<number, string[]>()
+  for (const r of rows) {
+    const imei = digits(r.imei)
+    if (!IMEI_RE.test(imei)) continue
+    const id = Number(r.assistito_id)
+    const l = m.get(id) || []
+    if (!l.includes(imei)) l.push(imei)
+    m.set(id, l)
+  }
+  return m
+}
+/** Tutti gli IMEI di un assistito: l'attuale per primo, poi i precedenti. */
+const tuttiImei = (attuale: string, prec: Map<number, string[]>, id: number) => [attuale, ...(prec.get(id) || []).filter(x => x !== attuale)]
+
+/** Assistiti ATTIVI con il loro IMEI attuale e, dopo tutti gli attuali, i braccialetti precedenti (le misure vanno comunque all'assistito). */
+export async function assistitiConPrecedenti(db: any): Promise<AssistitoTel[]> {
+  const lista = await assistitiAttivi(db)
+  const prec = await imeiPrecedenti(db)
+  const visti = new Set(lista.map(x => x.imei))
+  const out = [...lista]
+  for (const a of lista) for (const im of (prec.get(a.assistito_id) || [])) {
+    if (visti.has(im)) continue
+    visti.add(im)
+    out.push({ assistito_id: a.assistito_id, imei: im, nome: `${a.nome} (braccialetto precedente ...${im.slice(-4)})`, precedente: true })
+  }
+  return out
+}
+
+/** Un assistito ATTIVO, con il suo IMEI attuale oppure (se richiesto) uno dei suoi IMEI precedenti registrati. Vuoto se non esiste o l'IMEI non e' suo. */
+export async function assistitoTarget(db: any, assistitoId: number, imeiScelto?: string): Promise<AssistitoTel[]> {
+  const lista = await assistitiAttivi(db, assistitoId)
+  if (!imeiScelto) return lista
+  const a = lista[0]
+  if (!a) return []
+  const im = digits(imeiScelto)
+  if (im === a.imei) return lista
+  const prec = (await imeiPrecedenti(db, assistitoId)).get(assistitoId) || []
+  if (!prec.includes(im)) return []
+  return [{ assistito_id: a.assistito_id, imei: im, nome: `${a.nome} (braccialetto precedente ...${im.slice(-4)})`, precedente: true }]
+}
+
+/** Registra (o toglie) un braccialetto PRECEDENTE di un assistito. Non tocca le misure: serve solo ad attribuirle all'assistito e a leggerle da SiDLY. */
+export async function gestisciImeiPrecedente(db: any, o: { assistitoId: number; imei: unknown; rimuovi?: boolean; origine?: string }): Promise<{ httpStatus: number; result: { esito: 'ok' | 'errore'; errore?: string; imei_precedenti?: string[] } }> {
+  const err = (httpStatus: number, errore: string) => ({ httpStatus, result: { esito: 'errore' as const, errore } })
+  const imei = digits(o.imei)
+  if (!IMEI_RE.test(imei)) return err(400, 'IMEI non valido (servono da 14 a 17 cifre)')
+  const a = await safeFirst(db, 'SELECT id, imei FROM assistiti WHERE id = ?', o.assistitoId)
+  if (!a) return err(404, 'Assistito non trovato')
+  try {
+    if (o.rimuovi) {
+      await db.prepare('DELETE FROM sidly_imei WHERE imei = ? AND assistito_id = ?').bind(imei, o.assistitoId).run().catch(() => {})
+    } else {
+      if (digits(a.imei) === imei) return err(400, 'Questo e\' gia\' l\'IMEI attuale dell\'assistito')
+      const altro = await safeFirst(db, 'SELECT id FROM assistiti WHERE imei = ? AND id != ?', imei, o.assistitoId)
+      if (altro) return err(409, 'Questo IMEI e\' l\'IMEI attuale di un altro assistito')
+      const altroPrec = await safeFirst(db, 'SELECT assistito_id FROM sidly_imei WHERE imei = ?', imei)
+      if (altroPrec && Number(altroPrec.assistito_id) !== o.assistitoId) return err(409, 'Questo IMEI e\' gia\' registrato come precedente di un altro assistito')
+      await db.batch([db.prepare(IMEI_PRECEDENTI_SQL), db.prepare('INSERT OR IGNORE INTO sidly_imei (imei, assistito_id, origine, creato_il) VALUES (?,?,?,?)').bind(imei, o.assistitoId, o.origine || 'inserito dall\'operatore', new Date().toISOString())])
+    }
+  } catch { return err(500, 'Scrittura non riuscita') }
+  return { httpStatus: 200, result: { esito: 'ok', imei_precedenti: (await imeiPrecedenti(db, o.assistitoId)).get(o.assistitoId) || [] } }
+}
+
 export interface StoricoOpzioni {
   db: any; env: SidlyEnv; da: string; dryRun: boolean; assistitoId?: number
+  /** Con assistitoId: legge questo braccialetto PRECEDENTE dell'assistito invece dell'attuale. */
+  imei?: string
   nowSec?: number; fetchImpl?: Fetch; maxFinestre?: number; maxRighe?: number
 }
 export interface StoricoAssistito {
   assistito_id: number; imei: string; nome: string; finestre: number; righe: number; fino_a: string | null; completato: boolean
+  /** true = braccialetto PRECEDENTE dell'assistito (cambio di IMEI) */
+  precedente?: boolean
   eventi?: number; errore?: string
   inizio_da?: string; aggiornato?: boolean
   /** Modalita' «ultime N»: dove riprendere se non e' finito, righe raccolte in tutto, periodo delle righe di questa richiesta. */
@@ -340,7 +413,8 @@ export async function eseguiStorico(o: StoricoOpzioni): Promise<StoricoRisultato
   }
   const maxFinestre = Math.max(1, Math.min(o.maxFinestre ?? 6, 20))
   const maxRighe = Math.max(100, Math.min(o.maxRighe ?? 4000, 20000))
-  const lista = await assistitiAttivi(o.db, o.assistitoId)
+  // Senza assistito: tutti gli attuali e poi i loro braccialetti precedenti (le misure di un vecchio IMEI restano dell'assistito)
+  const lista = o.assistitoId ? await assistitoTarget(o.db, o.assistitoId, o.imei) : await assistitiConPrecedenti(o.db)
   if (!lista.length) return { httpStatus: 404, result: { esito: 'errore', errore: o.assistitoId ? 'Assistito non trovato, non ATTIVO o senza IMEI' : 'Nessun assistito ATTIVO con IMEI' } }
   const client = new SidlyClient(o.env, o.fetchImpl)
   const avvisi: string[] = []
@@ -352,7 +426,7 @@ export async function eseguiStorico(o: StoricoOpzioni): Promise<StoricoRisultato
     const campione = lista.slice(0, 3)
     if (lista.length > campione.length) avvisi.push(`Anteprima su ${campione.length} assistiti su ${lista.length} (le chiamate a SiDLY sono limitate per richiesta)`)
     for (const a of campione) {
-      const r: StoricoAssistito = { assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, finestre: 0, righe: 0, fino_a: null, completato: false }
+      const r: StoricoAssistito = { assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, finestre: 0, righe: 0, fino_a: null, completato: false, precedente: a.precedente }
       try {
         let daA = daSec
         if (inizio) {
@@ -384,7 +458,7 @@ export async function eseguiStorico(o: StoricoOpzioni): Promise<StoricoRisultato
   let tuttiCompleti = true
   const adesso = new Date(nowSec * 1000).toISOString()
   for (const a of lista) {
-    const r: StoricoAssistito = { assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, finestre: 0, righe: 0, fino_a: null, completato: false, eventi: 0 }
+    const r: StoricoAssistito = { assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, finestre: 0, righe: 0, fino_a: null, completato: false, eventi: 0, precedente: a.precedente }
     res.push(r)
     const st = await safeFirst(o.db, 'SELECT backfill_da_ts, backfill_fino_ts, registrato_ts, completo_ts FROM sidly_stato WHERE imei = ?', a.imei)
     let daA: number | null = inizio ? (st?.registrato_ts != null ? Number(st.registrato_ts) : null) : daSec
@@ -451,6 +525,9 @@ export async function eseguiStorico(o: StoricoOpzioni): Promise<StoricoRisultato
     }
     if (!r.completato) tuttiCompleti = false
   }
+  // Un braccialetto PRECEDENTE che SiDLY non riconosce (dispositivo sostituito/rimosso) non deve bloccare gli altri: avviso e si va avanti.
+  for (const r of res) if (r.precedente && r.errore) { avvisi.push(`${r.nome}: ${r.errore} (braccialetto precedente, saltato)`); delete r.errore; r.completato = true }
+  tuttiCompleti = res.every(r => r.completato)
   return { httpStatus: 200, result: { esito: 'eseguito', completato: tuttiCompleti, assistiti: res, righe_scritte: righeTot, finestre_eseguite: finestreTot, avvisi, limiti: { max_finestre: maxFinestre, max_righe: maxRighe } } }
 }
 
@@ -468,6 +545,8 @@ export interface UltimeOpzioni {
   db: any; env: SidlyEnv; ultime: number; assistitoId: number; dryRun: boolean
   /** Ripresa: inizio della finestra piu' vecchia gia' letta e righe gia' raccolte (restituiti dalla richiesta precedente). */
   primaDi?: number; raccolte?: number
+  /** Braccialetto PRECEDENTE dell'assistito da leggere invece dell'attuale. */
+  imei?: string
   nowSec?: number; fetchImpl?: Fetch; maxFinestre?: number
 }
 
@@ -490,12 +569,12 @@ export async function eseguiUltime(o: UltimeOpzioni): Promise<StoricoRisultato> 
   if (!Number.isInteger(gia) || gia < 0 || gia >= N) return err(400, 'Valore "raccolte" non valido')
   const fineIniziale = o.primaDi ?? nowSec
   if (!Number.isInteger(fineIniziale) || fineIniziale <= 0 || fineIniziale > nowSec || nowSec - fineIniziale > MAX_STORICO_S) return err(400, 'Valore "prima_di" non valido')
-  const lista = await assistitiAttivi(o.db, o.assistitoId)
-  if (!lista.length) return err(404, 'Assistito non trovato, non ATTIVO o senza IMEI')
+  const lista = await assistitoTarget(o.db, o.assistitoId, o.imei)
+  if (!lista.length) return err(404, o.imei ? 'Assistito non trovato, non ATTIVO o IMEI non registrato come braccialetto precedente' : 'Assistito non trovato, non ATTIVO o senza IMEI')
   const a = lista[0]
   const client = new SidlyClient(o.env, o.fetchImpl)
   const avvisi: string[] = []
-  const r: StoricoAssistito = { assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, finestre: 0, righe: 0, fino_a: null, completato: false }
+  const r: StoricoAssistito = { assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, finestre: 0, righe: 0, fino_a: null, completato: false, precedente: a.precedente }
   // Anteprima: si va indietro finche' si trova la prima settimana con misure (l'ultima misura vera dell'assistito), senza scrivere nulla.
   const maxFinestre = o.dryRun ? ULTIME_SONDA_MAX : Math.max(1, Math.min(o.maxFinestre ?? 8, 20))
   const adesso = new Date(nowSec * 1000).toISOString()
@@ -605,6 +684,8 @@ export interface AffidOpzioni {
   db: any; env: SidlyEnv; assistitoId: number; dryRun: boolean
   /** Ripresa: la ricerca continua sotto questo istante (restituito dalla richiesta precedente). */
   primaDi?: number
+  /** Braccialetto PRECEDENTE dell'assistito da aggiornare invece dell'attuale. */
+  imei?: string
   nowSec?: number; fetchImpl?: Fetch; maxFinestre?: number
 }
 
@@ -621,11 +702,11 @@ export async function eseguiAffidabilita(o: AffidOpzioni): Promise<StoricoRisult
   const cfg = sidlyConfigError(o.env)
   if (cfg) return err(503, cfg)
   const nowSec = o.nowSec ?? Math.floor(Date.now() / 1000)
-  const lista = await assistitiAttivi(o.db, o.assistitoId)
-  if (!lista.length) return err(404, 'Assistito non trovato, non ATTIVO o senza IMEI')
+  const lista = await assistitoTarget(o.db, o.assistitoId, o.imei)
+  if (!lista.length) return err(404, o.imei ? 'Assistito non trovato, non ATTIVO o IMEI non registrato come braccialetto precedente' : 'Assistito non trovato, non ATTIVO o senza IMEI')
   const a = lista[0]
   const avvisi: string[] = []
-  const r: StoricoAssistito = { assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, finestre: 0, righe: 0, fino_a: null, completato: false }
+  const r: StoricoAssistito = { assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, finestre: 0, righe: 0, fino_a: null, completato: false, precedente: a.precedente }
   const esito = o.dryRun ? 'anteprima' : 'eseguito'
   const fine_ = (): StoricoRisultato => ({ httpStatus: 200, result: { esito, completato: r.completato, assistiti: [r], righe_scritte: o.dryRun ? undefined : r.righe, finestre_eseguite: r.finestre, avvisi, limiti: { max_finestre: maxFinestre, max_righe: 0 } } })
   const maxFinestre = o.dryRun ? 1 : Math.max(1, Math.min(o.maxFinestre ?? 8, 20))
@@ -698,7 +779,10 @@ export async function eseguiAffidabilita(o: AffidOpzioni): Promise<StoricoRisult
 // Stato e report (sola lettura)
 // ─────────────────────────────────────────────────────────────────────────────
 export async function statoTelemetria(db: any, nowSec: number = Math.floor(Date.now() / 1000)) {
-  const lista = await assistitiAttivi(db)
+  const attivi = await assistitiAttivi(db)
+  const prec = await imeiPrecedenti(db)
+  const lista: Array<AssistitoTel & { id_ass: number }> = []
+  for (const a of attivi) for (const im of tuttiImei(a.imei, prec, a.assistito_id)) lista.push({ ...a, imei: im, id_ass: a.assistito_id })
   const stati = await safeAll(db, 'SELECT * FROM sidly_stato')
   const byImei = new Map<string, any>(stati.map((s: any) => [String(s.imei), s]))
   const tabelle = (await safeFirst(db, `SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name IN ('sidly_misure','sidly_eventi','sidly_stato')`))?.n === 3
@@ -716,13 +800,18 @@ export async function statoTelemetria(db: any, nowSec: number = Math.floor(Date.
   const fm = (s: any) => (s ? fmtSidlyData(Number(s)) + ' UTC' : null)
   return {
     tabelle_presenti: tabelle,
-    assistiti: lista.map(a => {
+    assistiti: attivi.map(a => {
+      const ims = tuttiImei(a.imei, prec, a.assistito_id)
       const s = byImei.get(a.imei) || {}
-      const r = rg.get(a.imei) || {}
+      // Le misure dell'assistito sono la somma di tutti i suoi braccialetti (attuale + precedenti).
+      const rr = ims.map(i => rg.get(i)).filter(Boolean)
+      const dal = rr.map(x => Number(x.dal)).filter(x => x > 0), al = rr.map(x => Number(x.al)).filter(x => x > 0)
       return {
         assistito_id: a.assistito_id, imei: a.imei, nome: a.nome,
+        imei_precedenti: ims.slice(1),
         // nessun dato arriva dai braccialetti: tutto e' letto da SiDLY con le API
-        misure_totali: Number(r.n) || 0, misure_dal: fm(r.dal), misure_al: fm(r.al), storico_fino_a: fm(s.backfill_fino_ts), righe_storico: s.backfill_righe ?? 0, errore: s.ultimo_errore || null,
+        misure_totali: rr.reduce((t, x) => t + (Number(x.n) || 0), 0), misure_dal: dal.length ? fm(Math.min(...dal)) : null, misure_al: al.length ? fm(Math.max(...al)) : null,
+        storico_fino_a: fm(s.backfill_fino_ts), righe_storico: s.backfill_righe ?? 0, errore: s.ultimo_errore || null,
       }
     }),
   }
@@ -734,28 +823,52 @@ const METRICHE = [['hr', 'Frequenza cardiaca (bpm)'], ['spo2', 'SpO2 (%)'], ['sd
 const OFFSET_GIORNO_S = 7200 // giorno "italiano" approssimato (UTC+2): serve solo a raggruppare i passi per giorno
 
 export interface StatMetrica { n: number; media: number | null; min: number | null; max: number | null; sd: number | null }
-export interface RigaReport { assistito_id: number; imei: string; nome: string; giorni_con_dati: number; punti: number; passi_medi_giorno: number | null; metriche: Record<string, StatMetrica> }
+export interface RigaReport { assistito_id: number; imei: string; nome: string; /** braccialetti sommati (attuale + precedenti) e misure del periodo prima del filtro di affidabilita' */ imei_considerati?: number; misure_periodo?: number; misure_incluse?: number; misure_senza_affid?: number; giorni_con_dati: number; punti: number; passi_medi_giorno: number | null; metriche: Record<string, StatMetrica> }
 
-export async function reportMedie(db: any, o: { giorni: number; assistitoId?: number; nowSec?: number }) {
+/**
+ * Medie per assistito e di coorte. `affidMin` (0-3) e' la soglia minima dell'indice di affidabilita' della misura:
+ *  0 = tutte le misure (anche quelle senza indice); 1 = solo indice 1, 2, 3; 2 = solo 2 e 3; 3 = solo 3 (ottima).
+ * L'indice di una misura e' il livello PIU' BASSO dichiarato da SiDLY per quell'istante (FC e SpO2): scelta prudente. I passi non sono filtrati.
+ * Con soglia > 0 una misura SENZA indice (non ancora aggiornata o non fornita da SiDLY) NON viene contata: non si assume che sia affidabile.
+ * Le misure di un assistito comprendono anche quelle dei suoi braccialetti precedenti (cambio di IMEI).
+ */
+export async function reportMedie(db: any, o: { giorni: number; assistitoId?: number; nowSec?: number; affidMin?: number }) {
   const nowSec = o.nowSec ?? Math.floor(Date.now() / 1000)
   const giorni = Math.max(1, Math.min(Math.round(o.giorni || 30), 400))
   const dal = nowSec - giorni * 86400
+  const affidMin = Math.max(0, Math.min(3, Math.round(Number(o.affidMin ?? 0)) || 0))
   const lista = await assistitiAttivi(db, o.assistitoId)
+  const prec = await imeiPrecedenti(db, o.assistitoId)
+  const colAffid = Number((await safeFirst(db, `SELECT COUNT(*) AS n FROM pragma_table_info('sidly_misure') WHERE name = 'affid'`))?.n) >= 1
+  const filtra = affidMin > 0
+  // Soglia > 0 ma colonna non ancora presente (nessuna misura ha un indice): nessuna misura soddisfa il filtro.
+  const cond = filtra ? (colAffid ? ' AND affid >= ?' : ' AND 0') : ''
   const aggr = METRICHE.map(([c]) => `AVG(${c}) AS ${c}_a, MIN(${c}) AS ${c}_mn, MAX(${c}) AS ${c}_mx`).join(', ')
   const outer = METRICHE.map(([c]) => `COUNT(${c}_a) AS ${c}_n, AVG(${c}_a) AS ${c}_m, AVG(${c}_a*${c}_a) AS ${c}_q, MIN(${c}_mn) AS ${c}_min, MAX(${c}_mx) AS ${c}_max`).join(', ')
   // I punti entro BUCKET_S (punti dello stesso istante) contano una volta sola.
-  const sqlM = `SELECT COUNT(*) AS punti, ${outer} FROM (SELECT ts/${BUCKET_S} AS b, ${aggr} FROM sidly_misure WHERE imei = ? AND ts >= ? AND ts < ? GROUP BY b)`
+  const sqlM = `SELECT COUNT(*) AS punti, ${outer} FROM (SELECT ts/${BUCKET_S} AS b, ${aggr} FROM sidly_misure WHERE imei IN (@IMEI@) AND ts >= ? AND ts < ?@COND@ GROUP BY b)`
   const passi = PASSI_MODO === 'max' ? 'MAX(steps)' : 'SUM(s)'
-  const sqlS = `SELECT d, COUNT(*) AS n, ${passi} AS s FROM (SELECT (ts+${OFFSET_GIORNO_S})/86400 AS d, ts/${BUCKET_S} AS b, MAX(steps) AS s FROM sidly_misure WHERE imei = ? AND ts >= ? AND ts < ? GROUP BY d, b) GROUP BY d`
+  const sqlS = `SELECT d, COUNT(*) AS n, ${passi} AS s FROM (SELECT (ts+${OFFSET_GIORNO_S})/86400 AS d, ts/${BUCKET_S} AS b, MAX(steps) AS s FROM sidly_misure WHERE imei IN (@IMEI@) AND ts >= ? AND ts < ? GROUP BY d, b) GROUP BY d`
   const righe: RigaReport[] = []
   let tabelle = true
   for (let i = 0; i < lista.length; i += 20) {
     const part = lista.slice(i, i + 20)
     let rs: any[] = []
-    try { rs = await db.batch(part.flatMap(a => [db.prepare(sqlM).bind(a.imei, dal, nowSec), db.prepare(sqlS).bind(a.imei, dal, nowSec)])) } catch { tabelle = false; break }
+    const conImei = part.map(a => tuttiImei(a.imei, prec, a.assistito_id))
+    const sql = (t: string, n: number) => t.replace('@IMEI@', Array(n).fill('?').join(',')).replace('@COND@', cond)
+    const par = (ims: string[]) => [...ims, dal, nowSec, ...(filtra && colAffid ? [affidMin] : [])]
+    // I passi (contatore, non una misura di segnale) non dipendono dall'affidabilita': stessi parametri senza soglia.
+    const parS = (ims: string[]) => [...ims, dal, nowSec]
+    // Per assistito: misure del periodo, quante hanno almeno la soglia e quante non hanno alcun indice (per spiegare cosa scarta il filtro)
+    const sqlN = (n: number) => `SELECT COUNT(*) AS n${colAffid ? ', COALESCE(SUM(affid >= ?),0) AS ok, COALESCE(SUM(affid IS NULL),0) AS senza' : ''} FROM sidly_misure WHERE imei IN (${Array(n).fill('?').join(',')}) AND ts >= ? AND ts < ?`
+    try { rs = await db.batch(part.flatMap((a, j) => [db.prepare(sql(sqlM, conImei[j].length)).bind(...par(conImei[j])), db.prepare(sql(sqlS, conImei[j].length)).bind(...parS(conImei[j])), db.prepare(sqlN(conImei[j].length)).bind(...(colAffid ? [affidMin] : []), ...conImei[j], dal, nowSec)])) } catch { tabelle = false; break }
     part.forEach((a, j) => {
-      const m = (rs[j * 2]?.results || [])[0] || {}
-      const gg: any[] = rs[j * 2 + 1]?.results || []
+      const m = (rs[j * 3]?.results || [])[0] || {}
+      const gg: any[] = rs[j * 3 + 1]?.results || []
+      const cnt = (rs[j * 3 + 2]?.results || [])[0] || {}
+      const nPeriodo = Number(cnt.n) || 0
+      const nOk = filtra ? (colAffid ? Number(cnt.ok) || 0 : 0) : nPeriodo
+      const nSenza = colAffid ? Number(cnt.senza) || 0 : nPeriodo
       const metriche: Record<string, StatMetrica> = {}
       for (const [c] of METRICHE) {
         const n = Number(m[`${c}_n`] || 0)
@@ -764,7 +877,7 @@ export async function reportMedie(db: any, o: { giorni: number; assistitoId?: nu
         metriche[c] = { n, media, min: n ? Number(m[`${c}_min`]) : null, max: n ? Number(m[`${c}_max`]) : null, sd }
       }
       const conPassi = gg.filter(x => Number(x.s) > 0)
-      righe.push({ assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, giorni_con_dati: gg.length, punti: Number(m.punti || 0),
+      righe.push({ assistito_id: a.assistito_id, imei: a.imei, nome: a.nome, giorni_con_dati: gg.length, punti: Number(m.punti || 0), imei_considerati: conImei[j].length, misure_periodo: nPeriodo, misure_incluse: nOk, misure_senza_affid: nSenza,
         passi_medi_giorno: conPassi.length ? conPassi.reduce((t, x) => t + Number(x.s), 0) / conPassi.length : null, metriche })
     })
   }
@@ -779,7 +892,7 @@ export async function reportMedie(db: any, o: { giorni: number; assistitoId?: nu
   }
   const pm = righe.map(r => r.passi_medi_giorno).filter((x): x is number => x !== null)
   return {
-    tabelle_presenti: tabelle, periodo: { giorni, dal: fmtSidlyData(dal) + ' UTC', al: fmtSidlyData(nowSec) + ' UTC' },
+    tabelle_presenti: tabelle, affid_min: affidMin, affid_colonna: colAffid, periodo: { giorni, dal: fmtSidlyData(dal) + ' UTC', al: fmtSidlyData(nowSec) + ' UTC' },
     etichette: Object.fromEntries(METRICHE.map(([c, e]) => [c, e])), assistiti: righe,
     coorte: { assistiti_con_dati: righe.filter(r => r.punti > 0).length, assistiti_totali: righe.length, metriche: coorte, passi_medi_giorno: pm.length ? pm.reduce((t, x) => t + x, 0) / pm.length : null, passi_assistiti: pm.length },
     passi_modo: PASSI_MODO,
@@ -810,7 +923,8 @@ export async function datasetMisure(db: any, o: DatasetOpzioni): Promise<{ ok: t
     const x = await safeFirst(db, 'SELECT imei FROM assistiti WHERE id = ?', o.assistitoId)
     const imei = digits(x?.imei)
     if (!IMEI_RE.test(imei)) return { ok: false, status: 404, errore: 'Assistito non trovato o senza IMEI' }
-    where.push('m.imei = ?'); par.push(imei)
+    const ims = tuttiImei(imei, await imeiPrecedenti(db, o.assistitoId), o.assistitoId)
+    where.push(`m.imei IN (${ims.map(() => '?').join(',')})`); par.push(...ims)
   }
   if (o.dopo) {
     const m = /^(\d{14,17}):(\d{1,12})$/.exec(o.dopo)
@@ -819,8 +933,9 @@ export async function datasetMisure(db: any, o: DatasetOpzioni): Promise<{ ok: t
   }
   let rows: any[]
   try {
-    const r = await db.prepare(`SELECT a.id AS assistito_id, m.imei, m.ts, m.hr, m.hr_q, m.spo2, m.spo2_q, m.affid, m.temp, m.steps, m.steps_tot, m.pressure, m.sdnn, m.rmssd, m.resp, m.hr_rest, m.wear, m.fonte
-      FROM sidly_misure m LEFT JOIN assistiti a ON a.imei = m.imei WHERE ${where.join(' AND ')} ORDER BY m.imei, m.ts LIMIT ?`).bind(...par, limite + 1).all()
+    const haPrec = Number((await safeFirst(db, `SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name='sidly_imei'`))?.n) >= 1
+    const r = await db.prepare(`SELECT ${haPrec ? 'COALESCE(a.id, p.assistito_id)' : 'a.id'} AS assistito_id, m.imei, m.ts, m.hr, m.hr_q, m.spo2, m.spo2_q, m.affid, m.temp, m.steps, m.steps_tot, m.pressure, m.sdnn, m.rmssd, m.resp, m.hr_rest, m.wear, m.fonte
+      FROM sidly_misure m LEFT JOIN assistiti a ON a.imei = m.imei${haPrec ? ' LEFT JOIN sidly_imei p ON p.imei = m.imei' : ''} WHERE ${where.join(' AND ')} ORDER BY m.imei, m.ts LIMIT ?`).bind(...par, limite + 1).all()
     rows = r?.results || []
   } catch { return { ok: false, status: 500, errore: 'Lettura del dataset non riuscita' } }
   const pagina = rows.slice(0, limite)

@@ -1597,6 +1597,9 @@ const COLONNE_OK: Record<Tabella, RegExp> = {
   ddts: /^sim_number$/,
 }
 
+/** Braccialetti PRECEDENTI di un assistito (cambio di IMEI): servono a tenere insieme le misure dello stesso assistito. Tabella laterale, nessun ALTER su assistiti/leads. */
+export const IMEI_PRECEDENTI_SQL = `CREATE TABLE IF NOT EXISTS sidly_imei (imei TEXT PRIMARY KEY, assistito_id INTEGER NOT NULL, origine TEXT, creato_il TEXT)`
+
 /** Scrive nel CRM le righe in cui l'operatore ha scelto "vale SiDLY". Tutto o niente (batch D1 quando disponibile). */
 export async function applyCrmOps(db: any, ops: CrmOp[], ctx: { assistitoId: number; leadId: string | null; configId: number | null; imei: string; cronicheRaw: string }): Promise<void> {
   const stmts: any[] = []
@@ -1623,6 +1626,13 @@ export async function applyCrmOps(db: any, ops: CrmOp[], ctx: { assistitoId: num
     const t = ctx.cronicheRaw.trim()
     const val = (!t || t.startsWith('[')) ? JSON.stringify(croniche) : croniche.join(',')
     stmts.push(db.prepare('UPDATE configurations SET patologie_croniche = ? WHERE id = ?').bind(val, ctx.configId))
+  }
+  // Se l'IMEI dell'assistito cambia, il vecchio resta registrato come braccialetto precedente (le sue misure restano dell'assistito).
+  const opImei = ops.find((x: any) => x.t !== 'croniche' && x.tabella === 'assistiti' && x.col === 'imei') as any
+  const vecchio = digits(ctx.imei)
+  if (opImei && IMEI_OK.test(vecchio) && digits(opImei.val) !== vecchio) {
+    stmts.push(db.prepare(IMEI_PRECEDENTI_SQL))
+    stmts.push(db.prepare(`INSERT OR IGNORE INTO sidly_imei (imei, assistito_id, origine, creato_il) VALUES (?,?,?,?)`).bind(vecchio, ctx.assistitoId, 'cambio IMEI (confronto SiDLY)', new Date().toISOString()))
   }
   if (typeof db.batch === 'function') await db.batch(stmts)
   else for (const s of stmts) await s.run()

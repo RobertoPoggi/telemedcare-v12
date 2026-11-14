@@ -22037,12 +22037,15 @@ app.post('/api/sidly/storico', async (c) => {
   const id = body?.assistito_id !== undefined && body?.assistito_id !== null ? Number(body.assistito_id) : undefined
   if (id !== undefined && (!Number.isInteger(id) || id <= 0)) return c.json({ esito: 'errore', errore: 'assistito_id non valido' }, 400)
   const { eseguiStorico, eseguiUltime } = await import('./modules/sidly-telemetria')
+  // Braccialetto PRECEDENTE dell'assistito (cambio di IMEI): richiede assistito_id; il modulo verifica che l'IMEI sia registrato per quell'assistito
+  const imeiPrec = body?.imei !== undefined && body?.imei !== null && String(body.imei).trim() !== '' ? String(body.imei).replace(/\D/g, '') : undefined
+  if (imeiPrec !== undefined && id === undefined) return c.json({ esito: 'errore', errore: 'Con \"imei\" serve assistito_id' }, 400)
   // Modalita' «ultime N misurazioni»: un assistito per richiesta (limite di chiamate per richiesta), ripresa con prima_di + raccolte
   if (body?.ultime !== undefined && body?.ultime !== null) {
     if (id === undefined) return c.json({ esito: 'errore', errore: 'Con "ultime" serve assistito_id (una richiesta per assistito)' }, 400)
     const ru = await eseguiUltime({ db: c.env.DB, env: c.env as any, ultime: Number(body.ultime), assistitoId: id, dryRun: !scrive,
       primaDi: body?.prima_di !== undefined && body?.prima_di !== null ? Number(body.prima_di) : undefined,
-      raccolte: body?.raccolte !== undefined && body?.raccolte !== null ? Number(body.raccolte) : undefined })
+      raccolte: body?.raccolte !== undefined && body?.raccolte !== null ? Number(body.raccolte) : undefined, imei: imeiPrec })
     console.log('[SIDLY-ULTIME]', JSON.stringify({ esito: ru.result.esito, scrive, righe: (ru.result as any).righe_scritte, completato: (ru.result as any).completato }))
     return c.json(ru.result, ru.httpStatus as any)
   }
@@ -22050,12 +22053,12 @@ app.post('/api/sidly/storico', async (c) => {
   if (body?.affidabilita === true) {
     if (id === undefined) return c.json({ esito: 'errore', errore: 'Con \"affidabilita\" serve assistito_id (una richiesta per assistito)' }, 400)
     const { eseguiAffidabilita } = await import('./modules/sidly-telemetria')
-    const ra = await eseguiAffidabilita({ db: c.env.DB, env: c.env as any, assistitoId: id, dryRun: !scrive,
+    const ra = await eseguiAffidabilita({ db: c.env.DB, env: c.env as any, assistitoId: id, dryRun: !scrive, imei: imeiPrec,
       primaDi: body?.prima_di !== undefined && body?.prima_di !== null ? Number(body.prima_di) : undefined })
     console.log('[SIDLY-AFFID]', JSON.stringify({ esito: ra.result.esito, scrive, righe: (ra.result as any).righe_scritte, completato: (ra.result as any).completato }))
     return c.json(ra.result, ra.httpStatus as any)
   }
-  const r = await eseguiStorico({ db: c.env.DB, env: c.env as any, da: String(body?.da || ''), dryRun: !scrive, assistitoId: id })
+  const r = await eseguiStorico({ db: c.env.DB, env: c.env as any, da: String(body?.da || ''), dryRun: !scrive, assistitoId: id, imei: imeiPrec })
   console.log('[SIDLY-STORICO]', JSON.stringify({ esito: r.result.esito, scrive, righe: (r.result as any).righe_scritte, completato: (r.result as any).completato }))
   return c.json(r.result, r.httpStatus as any)
 })
@@ -22093,8 +22096,38 @@ app.get('/api/sidly/telemetria/report', async (c) => {
   const aid = c.req.query('assistito_id') ? Number(c.req.query('assistito_id')) : undefined
   if (!Number.isFinite(giorni) || giorni < 1 || giorni > 400) return c.json({ esito: 'errore', errore: 'giorni deve essere tra 1 e 400' }, 400)
   if (aid !== undefined && (!Number.isInteger(aid) || aid <= 0)) return c.json({ esito: 'errore', errore: 'assistito_id non valido' }, 400)
+  // Soglia minima dell'indice di affidabilita' (0 = tutte le misure, 1 = solo 1-3, 2 = solo 2-3, 3 = solo 3). Valori diversi da 0-3 sono rifiutati, non arrotondati.
+  const affRaw = c.req.query('affid_min')
+  const affMin = affRaw === undefined || affRaw === '' ? 0 : Number(affRaw)
+  if (!Number.isInteger(affMin) || affMin < 0 || affMin > 3) return c.json({ esito: 'errore', errore: 'affid_min deve essere 0, 1, 2 o 3' }, 400)
   const { reportMedie } = await import('./modules/sidly-telemetria')
-  return c.json({ esito: 'ok', ...(await reportMedie(c.env.DB, { giorni, assistitoId: aid })) })
+  return c.json({ esito: 'ok', ...(await reportMedie(c.env.DB, { giorni, assistitoId: aid, affidMin: affMin })) })
+})
+
+// GET /api/sidly/telemetria/imei-precedenti?assistito_id= - braccialetti PRECEDENTI registrati (cambio di IMEI). Sola lettura.
+// POST (assistito_id, imei, rimuovi?) - registra o toglie un braccialetto precedente: non tocca le misure ne' SiDLY, serve solo ad attribuire le misure al giusto assistito.
+app.get('/api/sidly/telemetria/imei-precedenti', async (c) => {
+  const guard = checkSessionOrKey(c.req.header('Cookie'), c.req.header('Authorization'), [c.env?.API_KEY, c.env?.ADMIN_SECRET_TOKEN])
+  if (!guard.ok) return c.json({ esito: 'errore', errore: guard.error }, guard.status)
+  if (!c.env?.DB) return c.json({ esito: 'errore', errore: 'Database non configurato' }, 500)
+  const aid = c.req.query('assistito_id') ? Number(c.req.query('assistito_id')) : undefined
+  if (aid !== undefined && (!Number.isInteger(aid) || aid <= 0)) return c.json({ esito: 'errore', errore: 'assistito_id non valido' }, 400)
+  const { imeiPrecedenti } = await import('./modules/sidly-telemetria')
+  const m = await imeiPrecedenti(c.env.DB, aid)
+  return c.json({ esito: 'ok', assistiti: [...m.entries()].map(([assistito_id, imei]) => ({ assistito_id, imei_precedenti: imei })) })
+})
+app.post('/api/sidly/telemetria/imei-precedenti', async (c) => {
+  const guard = checkSessionOrKey(c.req.header('Cookie'), c.req.header('Authorization'), [c.env?.API_KEY, c.env?.ADMIN_SECRET_TOKEN])
+  if (!guard.ok) return c.json({ esito: 'errore', errore: guard.error }, guard.status)
+  if (!c.env?.DB) return c.json({ esito: 'errore', errore: 'Database non configurato' }, 500)
+  let body: any = null
+  try { body = await c.req.json() } catch { body = null }
+  const aid = Number(body?.assistito_id)
+  if (!Number.isInteger(aid) || aid <= 0) return c.json({ esito: 'errore', errore: 'assistito_id non valido' }, 400)
+  const { gestisciImeiPrecedente } = await import('./modules/sidly-telemetria')
+  const r = await gestisciImeiPrecedente(c.env.DB, { assistitoId: aid, imei: body?.imei, rimuovi: body?.rimuovi === true })
+  console.log('[SIDLY-IMEI-PREC]', JSON.stringify({ esito: r.result.esito, rimuovi: body?.rimuovi === true }))
+  return c.json(r.result, r.httpStatus as any)
 })
 
 // ========================================
@@ -27487,6 +27520,14 @@ app.put('/api/assistiti/:id', async (c) => {
     // IMEI è UNIQUE: se vuoto usa NULL per evitare UNIQUE constraint violation
     const imeiValue = data.imei && String(data.imei).trim() !== '' ? String(data.imei).trim() : null
 
+    // Se l'IMEI cambia, il vecchio resta registrato come braccialetto PRECEDENTE: le sue misure restano dell'assistito (statistiche)
+    let imeiVecchio: string | null = null
+    try {
+      const prima: any = await c.env.DB.prepare('SELECT imei FROM assistiti WHERE id = ?').bind(id).first()
+      const v = String(prima?.imei ?? '').replace(/\D/g, '')
+      if (/^\d{14,17}$/.test(v) && v !== String(imeiValue ?? '').replace(/\D/g, '')) imeiVecchio = v
+    } catch { /* solo informativo */ }
+
     // Controllo preventivo: IMEI già usato da altro assistito
     if (imeiValue) {
       const imeiConflict = await c.env.DB.prepare(
@@ -27534,6 +27575,13 @@ app.put('/api/assistiti/:id', async (c) => {
       data.lead_id || null,
       id
     ).run()
+
+    if (imeiVecchio) {
+      try {
+        const { gestisciImeiPrecedente } = await import('./modules/sidly-telemetria')
+        await gestisciImeiPrecedente(c.env.DB, { assistitoId: Number(id), imei: imeiVecchio, origine: 'cambio IMEI (modifica assistito)' })
+      } catch { /* la modifica dell'assistito e' gia' salvata: il vecchio IMEI si puo' registrare dalla Dashboard */ }
+    }
 
     return c.json({ 
       success: true, 

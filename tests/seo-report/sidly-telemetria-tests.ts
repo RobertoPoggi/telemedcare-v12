@@ -52,7 +52,7 @@ async function makeD1() {
 
 interface Call { method: string; path: string; body: any }
 /** SiDLY finta: login, /stats con punti orari, allarmi. Le chiamate verso i dispositivi (set/delete-url-for-band) rispondono 200 ma i test verificano che NON partano mai. */
-function makeSidly(opts: { statsStatus?: number; alarms?: any[]; urlStatus?: number; registerDate?: any; registerWrap?: boolean; vuotoDopo?: number; senzaTrust?: boolean } = {}) {
+function makeSidly(opts: { statsStatus?: number; alarms?: any[]; urlStatus?: number; registerDate?: any; registerWrap?: boolean; vuotoDopo?: number; senzaTrust?: boolean; failImei?: string } = {}) {
   const calls: Call[] = []
   const fetchImpl: Fetch = async (url, init) => {
     const method = init?.method || 'GET'
@@ -65,6 +65,7 @@ function makeSidly(opts: { statsStatus?: number; alarms?: any[]; urlStatus?: num
     let m = path.match(/^\/patient\/(\d+)\/stats\?fromDate=([^&]+)&toDate=(.+)$/)
     if (method === 'GET' && m) {
       if (opts.statsStatus) return reply(opts.statsStatus, { error: 'boom' })
+      if (opts.failImei && m[1] === opts.failImei) return reply(404, { error: 'imei sconosciuto' })
       const f = Date.parse(decodeURIComponent(m[2]).replace(' ', 'T') + 'Z') / 1000
       const t = Date.parse(decodeURIComponent(m[3]).replace(' ', 'T') + 'Z') / 1000
       const pts = (step: number, y: number | ((x: number) => number), extra: any = {}) => {
@@ -558,6 +559,178 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
       ok(/misure_totali/.test(dsh) && /Misurazioni nel DB/.test(dsh) && /Nessun dato da /.test(dsh) && /Nessuna misura scaricata/.test(dsh), 'Dashboard: stato con conteggio reale e motivo (nessuna misura / fermo da N giorni)')
     }
     ok(!('frame_registrato' in sa) && !('ultimo_frame' in sa) && !('n_frame' in sa), 'stato: nessun concetto di frame ricevuti/registrati (i dati arrivano solo da SiDLY via API)')
+  }
+
+  // ───────────────────────────────────────────────────────────────────
+  section('SiDLY telemetria 11b: assistiti con braccialetto cambiato (IMEI precedenti): le misure restano dell\'assistito')
+  {
+    const nuovoDb = async () => {
+      const d = await makeD1(); T.dimenticaTabelle()
+      d.raw.run(`INSERT INTO assistiti (id, imei, status, nome_assistito, cognome_assistito) VALUES (1, '${IMEI_A}', 'ATTIVO', 'Tommaso', 'Badano'), (2, '${IMEI_B}', 'ATTIVO', 'Laura', 'Calvi'), (3, '868298060000009', 'INATTIVO', 'Gianni', 'Pizzutto')`)
+      return d
+    }
+    const base = (d: any, P: any, extra: any = {}) => ({ db: d.db, env: ENV, ultime: 100, assistitoId: 1, dryRun: false, nowSec: NOW, fetchImpl: P.fetchImpl, ...extra })
+
+    // Registrazione: validazioni
+    const d = await nuovoDb(); await T.assicuraTabelle(d.db)
+    const g = (o: any) => T.gestisciImeiPrecedente(d.db, { assistitoId: 1, ...o })
+    ok((await g({ imei: '123' })).httpStatus === 400, 'IMEI precedente non valido: 400')
+    ok((await T.gestisciImeiPrecedente(d.db, { assistitoId: 99, imei: IMEI_X })).httpStatus === 404, 'IMEI precedente su assistito inesistente: 404')
+    ok((await g({ imei: IMEI_A })).httpStatus === 400, 'l\'IMEI attuale non puo\' essere registrato come precedente')
+    ok((await g({ imei: IMEI_B })).httpStatus === 409, 'l\'IMEI attuale di un altro assistito non puo\' essere registrato come precedente: 409')
+    const r1 = await g({ imei: IMEI_X })
+    ok(r1.httpStatus === 200 && JSON.stringify(r1.result.imei_precedenti) === JSON.stringify([IMEI_X]), 'IMEI precedente registrato')
+    ok((await g({ imei: IMEI_X })).httpStatus === 200 && d.count('sidly_imei') === 1, 'registrarlo di nuovo non duplica')
+    ok((await T.gestisciImeiPrecedente(d.db, { assistitoId: 2, imei: IMEI_X })).httpStatus === 409, 'un IMEI precedente di un assistito non si assegna a un altro: 409')
+
+    // Misure su entrambi i braccialetti
+    const T0 = Math.floor((NOW - 3 * 86400) / 86400) * 86400 + 12 * 3600
+    await d.db.batch(T.istruzioniMisure(d.db, [
+      { imei: IMEI_X, ts: T0, fonte: 'stats', hr: 60, spo2: 95, affid: 3 },
+      { imei: IMEI_X, ts: T0 + 3600, fonte: 'stats', hr: 70, affid: 3 },
+      { imei: IMEI_A, ts: T0 + 7200, fonte: 'stats', hr: 80, spo2: 99, affid: 3 },
+      { imei: IMEI_B, ts: T0, fonte: 'stats', hr: 90, affid: 3 },
+    ]))
+    const st = await T.statoTelemetria(d.db, NOW)
+    const sa = st.assistiti.find(x => x.assistito_id === 1)!
+    ok(st.assistiti.length === 2 && sa.misure_totali === 3 && JSON.stringify(sa.imei_precedenti) === JSON.stringify([IMEI_X]), 'stato: le misure dell\'assistito sommano braccialetto attuale e precedente (3), una sola riga per assistito')
+    ok(sa.misure_dal === T.fmtSidlyData(T0) + ' UTC' && sa.misure_al === T.fmtSidlyData(T0 + 7200) + ' UTC', 'stato: periodo coperto dal primo braccialetto all\'ultimo')
+    const rp = await T.reportMedie(d.db, { giorni: 30, nowSec: NOW })
+    const A = rp.assistiti.find(x => x.assistito_id === 1)!
+    ok(A.metriche.hr.n === 3 && A.metriche.hr.media === 70 && A.imei_considerati === 2, 'medie: includono le misure del braccialetto precedente (FC 60, 70, 80 → 70)')
+    ok(rp.assistiti.length === 2 && rp.assistiti.every(x => x.assistito_id !== 3), 'medie: un assistito INATTIVO (Pizzutto) non compare')
+    const ds: any = await T.datasetMisure(d.db, {})
+    const righe = ds.csv.trim().split('\n').slice(1).map((x: string) => x.split(','))
+    ok(righe.length === 4 && righe.filter((x: string[]) => x[1] === IMEI_X).every((x: string[]) => x[0] === '1'), 'dataset: le righe del vecchio IMEI portano l\'id dell\'assistito')
+    const ds1: any = await T.datasetMisure(d.db, { assistitoId: 1 })
+    ok(ds1.ok && ds1.csv.trim().split('\n').length === 4, 'dataset di un assistito: comprende tutti i suoi braccialetti (3 righe)')
+    ok(!/Tommaso|Badano/.test(ds.csv), 'dataset: nessun nome')
+
+    // Un IMEI che oggi e' attuale di un altro assistito non conta come precedente
+    d.raw.run(`UPDATE assistiti SET imei = '${IMEI_X}' WHERE id = 2`)
+    ok(((await T.imeiPrecedenti(d.db, 1)).get(1) || []).length === 0, 'se un vecchio IMEI diventa attuale di un altro assistito, non e\' piu\' contato come precedente')
+    d.raw.run(`UPDATE assistiti SET imei = '${IMEI_B}' WHERE id = 2`)
+
+    // Rimozione: nessuna misura cancellata
+    const rm = await g({ imei: IMEI_X, rimuovi: true })
+    ok(rm.httpStatus === 200 && (rm.result.imei_precedenti || []).length === 0 && d.count('sidly_misure') === 4, 'togliere un braccialetto precedente non cancella le misure')
+
+    // Importazione "ultime N" per il braccialetto precedente
+    const d2 = await nuovoDb(); const P2 = makeSidly()
+    ok((await T.eseguiUltime(base(d2, P2, { imei: IMEI_X, dryRun: true }))).httpStatus === 404, 'ultime: IMEI non registrato come precedente: 404, nessuna chiamata')
+    ok(P2.calls.length === 0, 'ultime: IMEI non registrato = zero chiamate a SiDLY')
+    await T.gestisciImeiPrecedente(d2.db, { assistitoId: 1, imei: IMEI_X })
+    const rU = await T.eseguiUltime(base(d2, P2, { imei: IMEI_X }))
+    ok(rU.result.completato === true && d2.count('sidly_misure') === 100 && d2.q('SELECT COUNT(*) AS n FROM sidly_misure WHERE imei = ?', IMEI_X)[0].n === 100, 'ultime sul braccialetto precedente: 100 misure salvate sotto il vecchio IMEI')
+    ok(P2.calls.every(c => c.method === 'GET' && (!/\/patient\/\d+\/stats/.test(c.path) || c.path.includes(IMEI_X))), 'ultime sul braccialetto precedente: legge solo l\'IMEI scelto, solo GET')
+    ok(rU.result.assistiti![0].precedente === true, 'ultime: risposta segnala che e\' un braccialetto precedente')
+    const aff = await T.eseguiAffidabilita(base(d2, makeSidly(), { imei: IMEI_X, dryRun: true }))
+    ok(aff.httpStatus === 200 && aff.result.assistiti![0].anteprima?.affid_db?.righe === 100, 'affidabilita: funziona anche sul braccialetto precedente')
+
+    // Storico completo di tutti: include i precedenti, e un precedente sconosciuto a SiDLY non blocca gli altri
+    const d3 = await nuovoDb(); await T.assicuraTabelle(d3.db)
+    await T.gestisciImeiPrecedente(d3.db, { assistitoId: 1, imei: IMEI_X })
+    const P3 = makeSidly({ failImei: IMEI_X })
+    let r3 = await T.eseguiStorico({ db: d3.db, env: ENV, da: 'inizio', dryRun: false, nowSec: NOW, fetchImpl: P3.fetchImpl, maxFinestre: 20, maxRighe: 20000 })
+    let g3 = 0
+    while (!r3.result.completato && g3++ < 10) r3 = await T.eseguiStorico({ db: d3.db, env: ENV, da: 'inizio', dryRun: false, nowSec: NOW, fetchImpl: P3.fetchImpl, maxFinestre: 20, maxRighe: 20000 })
+    ok(r3.result.completato === true && d3.q('SELECT COUNT(*) AS n FROM sidly_misure WHERE imei = ?', IMEI_A)[0].n > 0 && d3.q('SELECT COUNT(*) AS n FROM sidly_misure WHERE imei = ?', IMEI_B)[0].n > 0, 'storico di tutti: un braccialetto precedente non riconosciuto da SiDLY non blocca gli altri assistiti')
+    ok((r3.result.avvisi || []).some(x => /precedente/.test(x) && /saltato/.test(x)), 'storico di tutti: il braccialetto precedente in errore e\' segnalato come avviso')
+    const P4 = makeSidly(); const d4 = await nuovoDb(); await T.assicuraTabelle(d4.db)
+    await T.gestisciImeiPrecedente(d4.db, { assistitoId: 1, imei: IMEI_X })
+    let r4 = await T.eseguiStorico({ db: d4.db, env: ENV, da: 'inizio', dryRun: false, nowSec: NOW, fetchImpl: P4.fetchImpl, maxFinestre: 20, maxRighe: 20000 }), g4 = 0
+    while (!r4.result.completato && g4++ < 10) r4 = await T.eseguiStorico({ db: d4.db, env: ENV, da: 'inizio', dryRun: false, nowSec: NOW, fetchImpl: P4.fetchImpl, maxFinestre: 20, maxRighe: 20000 })
+    ok(d4.q('SELECT COUNT(*) AS n FROM sidly_misure WHERE imei = ?', IMEI_X)[0].n > 0 && P4.calls.every(c => c.method === 'GET'), 'storico di tutti: scarica anche le misure del braccialetto precedente (solo GET)')
+
+    // Cambio di IMEI dal confronto con SiDLY / da modifica assistito: il vecchio viene registrato
+    {
+      const S = await import('../../src/modules/sidly-sync')
+      const stm: Array<{ sql: string; b: any[] }> = []
+      const dbB: any = { prepare: (sql: string) => ({ sql, b: [] as any[], bind(...b: any[]) { return { sql, b } } }), batch: async (x: any[]) => { for (const y of x) stm.push({ sql: y.sql, b: y.b || [] }) } }
+      const ctx = { assistitoId: 7, leadId: 'L1', configId: 5, imei: IMEI_X, cronicheRaw: '' }
+      await S.applyCrmOps(dbB, [{ t: 'col', tabella: 'assistiti', col: 'imei', val: IMEI_A, chiave: 'band.imei' }], ctx)
+      const ins = stm.find(x => /INSERT OR IGNORE INTO sidly_imei/.test(x.sql))
+      ok(!!ins && ins.b[0] === IMEI_X && ins.b[1] === 7, 'confronto SiDLY: cambiando l\'IMEI nel CRM il vecchio viene registrato come precedente')
+      stm.length = 0
+      await S.applyCrmOps(dbB, [{ t: 'col', tabella: 'assistiti', col: 'imei', val: IMEI_X, chiave: 'band.imei' }], ctx)
+      ok(!stm.some(x => /sidly_imei/.test(x.sql)), 'confronto SiDLY: stesso IMEI = nessuna registrazione')
+      stm.length = 0
+      await S.applyCrmOps(dbB, [{ t: 'col', tabella: 'assistiti', col: 'peso', val: 70, chiave: 'x' }], ctx)
+      ok(!stm.some(x => /sidly_imei/.test(x.sql)), 'confronto SiDLY: altre colonne = nessuna registrazione')
+    }
+
+    // Sorgente
+    const idx = readFileSync('src/index.tsx', 'utf8'), dash = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
+    const ip = idx.search(/app\.put\('\/api\/assistiti\/:id'/)
+    ok(/gestisciImeiPrecedente/.test(idx.slice(ip, ip + 4500)), 'PUT assistito: se l\'IMEI cambia registra il vecchio come braccialetto precedente')
+    const ir = idx.search(/app\.post\('\/api\/sidly\/telemetria\/imei-precedenti'/)
+    ok(ir > 0 && /checkSessionOrKey\(/.test(idx.slice(ir, ir + 600)) && /checkSessionOrKey\(/.test(idx.slice(idx.search(/app\.get\('\/api\/sidly\/telemetria\/imei-precedenti'/), idx.search(/app\.get\('\/api\/sidly\/telemetria\/imei-precedenti'/) + 600)), 'rotte imei-precedenti: protette da sessione o chiave')
+    ok(/sidlyImeiPrecAggiungi/.test(dash) && /imei-precedenti/.test(dash) && /telConImei/.test(dash), 'Dashboard: riquadro braccialetti precedenti e importazione per IMEI')
+    ok(!/set-url-for-band|delete-url-for-band/.test(readFileSync('src/modules/sidly-telemetria.ts', 'utf8').replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '')), 'telemetria: ancora nessuna scrittura di URL sui braccialetti')
+  }
+
+  // ───────────────────────────────────────────────────────────────────
+  section('SiDLY telemetria 11c: medie filtrate per affidabilita\' minima (0 = tutte, 1 = 1-3, 2 = 2-3, 3 = solo 3)')
+  {
+    const d = await makeD1(); T.dimenticaTabelle()
+    d.raw.run(`INSERT INTO assistiti (id, imei, status, nome_assistito, cognome_assistito) VALUES (1, '${IMEI_A}', 'ATTIVO', 'Giorgia', 'Origoni'), (2, '${IMEI_B}', 'ATTIVO', 'Laura', 'Calvi')`)
+    await T.assicuraTabelle(d.db)
+    const T0 = Math.floor((NOW - 3 * 86400) / 86400) * 86400 + 12 * 3600
+    // FC = 10 * (affid + 1) per riconoscere quali misure entrano: indice 0 -> 10, 1 -> 20, 2 -> 30, 3 -> 40; una misura senza indice -> 500
+    await d.db.batch(T.istruzioniMisure(d.db, [
+      { imei: IMEI_A, ts: T0, fonte: 'stats', hr: 10, spo2: 90, affid: 0, steps: 100 },
+      { imei: IMEI_A, ts: T0 + 3600, fonte: 'stats', hr: 20, spo2: 91, affid: 1, steps: 100 },
+      { imei: IMEI_A, ts: T0 + 7200, fonte: 'stats', hr: 30, spo2: 92, affid: 2, steps: 100 },
+      { imei: IMEI_A, ts: T0 + 10800, fonte: 'stats', hr: 40, spo2: 93, affid: 3, steps: 100 },
+      { imei: IMEI_A, ts: T0 + 14400, fonte: 'stats', hr: 100, spo2: 99 },
+      { imei: IMEI_B, ts: T0, fonte: 'stats', hr: 50, affid: 3 },
+    ]))
+    const hr = async (aff: number | undefined, id = 1) => { const r = await T.reportMedie(d.db, { giorni: 30, assistitoId: id, nowSec: NOW, affidMin: aff }); return { r, m: r.assistiti[0].metriche.hr } }
+    const t0 = await hr(0), tU = await hr(undefined)
+    ok(t0.m.n === 5 && t0.m.media === (10 + 20 + 30 + 40 + 100) / 5, 'affidabilita 0: tutte le misure, anche quella senza indice (media 40)')
+    ok(tU.m.n === 5 && tU.r.affid_min === 0, 'senza filtro = soglia 0')
+    const t1 = await hr(1)
+    ok(t1.m.n === 3 && t1.m.media === 30 && t1.m.min === 20 && t1.m.max === 40, 'affidabilita 1: solo indice 1, 2 e 3 (20, 30, 40 → 30); lo 0 e la misura senza indice sono escluse')
+    const t2 = await hr(2)
+    ok(t2.m.n === 2 && t2.m.media === 35, 'affidabilita 2: solo indice 2 e 3 (30, 40 → 35)')
+    const t3 = await hr(3)
+    ok(t3.m.n === 1 && t3.m.media === 40 && t3.m.min === 40 && t3.m.max === 40, 'affidabilita 3: solo indice 3 (40)')
+    const sp = (await T.reportMedie(d.db, { giorni: 30, assistitoId: 1, nowSec: NOW, affidMin: 3 })).assistiti[0].metriche.spo2
+    ok(sp.n === 1 && sp.media === 93, 'il filtro vale anche per SpO2 (con soglia 3 resta solo 93)')
+    ok(t3.r.assistiti[0].misure_periodo === 5 && t3.r.assistiti[0].misure_incluse === 1 && t3.r.assistiti[0].misure_senza_affid === 1, 'il report dice quante misure usa su quante del periodo e quante non hanno l\'indice')
+    ok(t0.r.assistiti[0].misure_incluse === 5, 'soglia 0: tutte le misure risultano usate')
+    ok(t3.r.assistiti[0].passi_medi_giorno === t0.r.assistiti[0].passi_medi_giorno && t0.r.assistiti[0].passi_medi_giorno !== null, 'i passi non sono filtrati dall\'affidabilita\' (contatore, non misura di segnale)')
+    ok(t3.r.assistiti[0].punti === 1 && t0.r.assistiti[0].punti === 5, 'punti del periodo coerenti con il filtro')
+    const coorte = await T.reportMedie(d.db, { giorni: 30, nowSec: NOW, affidMin: 3 })
+    ok(coorte.coorte.metriche.hr.assistiti === 2 && coorte.coorte.metriche.hr.media === (40 + 50) / 2, 'coorte con soglia 3: media delle medie filtrate (40 e 50 → 45)')
+    const coorte2 = await T.reportMedie(d.db, { giorni: 30, nowSec: NOW, affidMin: 2 })
+    ok(coorte2.coorte.metriche.hr.media === (35 + 50) / 2, 'coorte con soglia 2: (35 e 50 → 42,5)')
+    // soglia fuori scala: il modulo non allarga mai il filtro (valori oltre 3 = 3, negativi = 0)
+    ok((await hr(7)).m.n === 1 && (await hr(-2)).m.n === 5, 'soglia fuori scala limitata a 0-3 dal modulo')
+    // assistito senza nessuna misura abbastanza affidabile: media assente, non zero
+    d.raw.run(`INSERT INTO assistiti (id, imei, status, nome_assistito, cognome_assistito) VALUES (4, '868298060000004', 'ATTIVO', 'Poca', 'Qualita')`)
+    await d.db.batch(T.istruzioniMisure(d.db, [{ imei: '868298060000004', ts: T0, fonte: 'stats', hr: 75, affid: 1 }]))
+    const pq = (await T.reportMedie(d.db, { giorni: 30, assistitoId: 4, nowSec: NOW, affidMin: 3 })).assistiti[0]
+    ok(pq.metriche.hr.n === 0 && pq.metriche.hr.media === null && pq.misure_incluse === 0, 'nessuna misura con l\'affidabilita\' richiesta: media assente (non zero) e 0 misure usate')
+
+    // Tabella creata prima della colonna affid: soglia 0 funziona, soglia > 0 non include nulla e non genera errori
+    const dv = await makeD1(); T.dimenticaTabelle()
+    dv.raw.run(`INSERT INTO assistiti (id, imei, status, nome_assistito, cognome_assistito) VALUES (1, '${IMEI_A}', 'ATTIVO', 'Vecchio', 'Db')`)
+    dv.raw.run(`CREATE TABLE sidly_misure (imei TEXT NOT NULL, ts INTEGER NOT NULL, hr REAL, hr_q INTEGER, spo2 REAL, spo2_q INTEGER, temp REAL, steps REAL, steps_tot REAL, pressure REAL, sdnn REAL, rmssd REAL, resp REAL, hr_rest REAL, wear INTEGER, fonte TEXT, PRIMARY KEY (imei, ts)) WITHOUT ROWID`)
+    dv.raw.run(`INSERT INTO sidly_misure (imei, ts, hr, fonte) VALUES ('${IMEI_A}', ${T0}, 70, 'stats'), ('${IMEI_A}', ${T0 + 3600}, 80, 'stats')`)
+    const v0 = await T.reportMedie(dv.db, { giorni: 30, nowSec: NOW, affidMin: 0 })
+    const v2 = await T.reportMedie(dv.db, { giorni: 30, nowSec: NOW, affidMin: 2 })
+    ok(v0.assistiti[0].metriche.hr.media === 75 && v0.affid_colonna === false, 'tabella senza colonna affid: soglia 0 = tutte le misure')
+    ok(v2.assistiti[0].metriche.hr.n === 0 && v2.assistiti[0].misure_senza_affid === 2 && v2.tabelle_presenti === true, 'tabella senza colonna affid: con soglia > 0 nessuna misura entra e il report spiega che non hanno l\'indice')
+    ok(dv.q(`SELECT COUNT(*) AS n FROM pragma_table_info('sidly_misure') WHERE name='affid'`)[0].n === 0, 'il report non modifica lo schema')
+
+    // Sorgente: rotta e Dashboard
+    const idx = readFileSync('src/index.tsx', 'utf8'), dash = readFileSync('src/modules/dashboard-templates-new.ts', 'utf8')
+    const i = idx.search(/app\.get\('\/api\/sidly\/telemetria\/report'/)
+    const blk = idx.slice(i, i + 2500)
+    ok(/affid_min/.test(blk) && /affid_min deve essere 0, 1, 2 o 3/.test(blk) && /Number\.isInteger\(affMin\)/.test(blk) && /checkSessionOrKey\(/.test(blk), 'rotta report: affid_min accettato solo 0-3 (altrimenti 400) e rotta protetta')
+    ok(/id="telAffMin"/.test(dash) && /affid_min=/.test(dash) && /tutte le misure/.test(dash) && /solo affidabilit&agrave; 3/.test(dash), 'Dashboard: selettore dell\'affidabilita\' minima (0-3) per le medie')
+    ok(/Misure usate/.test(dash) && /non hanno ancora l&rsquo;indice/.test(dash), 'Dashboard: mostra quante misure sono usate e avvisa se mancano gli indici')
   }
 
   // ───────────────────────────────────────────────────────────────────
