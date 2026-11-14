@@ -126,6 +126,40 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
     ok(p.punti.pulse === 1 && p.punti.sat === 1 && p.passi.dichiarato === 3420 && p.passi.somma_punti === 200 && p.passi.dailyTarget === 5000, 'conteggio punti per metrica e controllo passi (dichiarato vs somma) per la verifica')
     ok(T.parseStats(null, IMEI_A).righe.length === 0 && T.parseStats({ error: 'x' }, IMEI_A).righe.length === 0, 'risposta vuota o di errore: nessuna riga')
 
+    // ── indice di affidabilita' (trust_lvl) e valori veri dell'anteprima ──
+    {
+      ok(JSON.stringify(T.livelliTrust('HR=3,SpO2=2')) === JSON.stringify({ hr: 3, spo2: 2, min: 2 }), 'affidabilita\': «HR=3,SpO2=2» -> battito 3, SpO2 2, complessiva = la piu\' bassa (2)')
+      ok(T.livelliTrust('HR=0').min === 0 && T.livelliTrust('hr = 1 , spo2 = 3').spo2 === 3 && T.livelliTrust('2').min === 2, 'affidabilita\': livello 0 riconosciuto (non scambiato per assente), spazi e maiuscole tollerati, numero singolo = complessiva')
+      ok(Object.keys(T.livelliTrust('')).length === 0 && Object.keys(T.livelliTrust('HR=9,x=77')).length === 0 && Object.keys(T.livelliTrust('boh')).length === 0, 'affidabilita\': testo vuoto, sconosciuto o fuori scala 0-3 -> nessun valore inventato')
+      const q = T.parseStats({
+        pulse: { chart: [{ x: 1781241462, y: 70, trust_lvl: 'HR=3,SpO2=2' }, { x: 1781241762, y: 90, trust_lvl: 'HR=1' }, { x: 1781242062, y: 80, trust_lvl: 'HR=0' }, { x: 1781242362, y: 100 }] },
+        sat: { chart: [{ x: 1781241462, y: 96, trust_lvl: 'HR=3,SpO2=2' }, { x: 1781241762, y: 98, trust_lvl: 'HR=1,SpO2=3' }] },
+        steps: { total: 10, chart: [{ x: 1781241462, y: 10, total: 10 }] } }, IMEI_A)
+      const m1 = q.righe.find(r => r.ts === 1781241462)!, m2 = q.righe.find(r => r.ts === 1781241762)!, m3 = q.righe.find(r => r.ts === 1781242062)!, m4 = q.righe.find(r => r.ts === 1781242362)!
+      ok(m1.affid === 2 && m2.affid === 1 && m3.affid === 0 && (m4.affid === undefined || m4.affid === null), 'affidabilita\' per misurazione: la piu\' bassa tra i livelli dichiarati; senza testo nessun valore')
+      ok(m3.hr_q === 0 && m1.hr_q === 3 && m1.spo2_q === 2 && m2.spo2_q === 3, 'affidabilita\' separata per battito e SpO2')
+      ok(q.affidabilita.fc.n === 3 && q.affidabilita.fc.livelli['0'] === 1 && q.affidabilita.fc.buone_pct === 33 && q.affidabilita.complessiva.n === 3, 'riepilogo affidabilita\': conteggio per livello e % di letture buone (>=2); le letture senza indicazione non entrano nella media')
+      ok(q.affidabilita.valori_grezzi.some(g => g.testo === 'HR=3,SpO2=2' && g.n === 2), 'riepilogo: i testi grezzi di SiDLY si vedono a video per verificare la scala')
+      const fc = q.riepilogo.find(x => x.chiave === 'pulse')!
+      ok(fc.n === 4 && fc.min === 70 && fc.max === 100 && fc.media === 85 && fc.ultimo === 100 && fc.unita === 'bpm' && /Frequenza/.test(fc.nome), 'riepilogo: valori veri (letture, min, media, max, ultima) con unita\', non conteggi di punti')
+      ok(!q.riepilogo.some(x => x.chiave === 'steps'), 'riepilogo: i passi non sono nel riepilogo dei valori (hanno il confronto dichiarato/somma)')
+      ok(T.parseStats({ pulse: { chart: [{ x: 1781241462, y: 70 }] } }, IMEI_A).affidabilita.complessiva.n === 0, 'senza testo di affidabilita\': n = 0, nessun valore inventato')
+      // salvataggio: la colonna c'e' e un NULL non cancella il valore
+      const dq = await makeD1(); T.dimenticaTabelle(); await T.assicuraTabelle(dq.db)
+      await dq.db.batch(T.istruzioniMisure(dq.db, q.righe))
+      ok(dq.q(`SELECT affid FROM sidly_misure WHERE imei='${IMEI_A}' AND ts=1781241462`)[0].affid === 2 && dq.q(`SELECT affid FROM sidly_misure WHERE ts=1781242062`)[0].affid === 0, 'affidabilita\' salvata per ogni misurazione (anche il livello 0)')
+      await dq.db.batch(T.istruzioniMisure(dq.db, [{ imei: IMEI_A, ts: 1781241462, fonte: 'stats', hr: 70 }]))
+      ok(dq.q(`SELECT affid FROM sidly_misure WHERE ts=1781241462`)[0].affid === 2, 'una rilettura senza affidabilita\' non cancella quella gia\' salvata')
+      // migrazione di una tabella creata prima della colonna
+      const dm = await makeD1(); T.dimenticaTabelle()
+      dm.raw.run(`CREATE TABLE sidly_misure (imei TEXT NOT NULL, ts INTEGER NOT NULL, hr REAL, hr_q INTEGER, spo2 REAL, spo2_q INTEGER, temp REAL, steps REAL, steps_tot REAL, pressure REAL, sdnn REAL, rmssd REAL, resp REAL, hr_rest REAL, wear REAL, fonte TEXT, PRIMARY KEY (imei, ts)) WITHOUT ROWID`)
+      dm.raw.run(`INSERT INTO sidly_misure (imei, ts, hr, fonte) VALUES ('${IMEI_A}', 1700000000, 66, 'stats')`)
+      await T.assicuraTabelle(dm.db)
+      ok(dm.q(`SELECT COUNT(*) AS n FROM pragma_table_info('sidly_misure') WHERE name='affid'`)[0].n === 1 && dm.q(`SELECT hr FROM sidly_misure`)[0].hr === 66, 'migrazione: colonna affid aggiunta a una tabella esistente senza perdere le misure')
+      T.dimenticaTabelle(); await T.assicuraTabelle(dm.db)
+      ok(dm.q(`SELECT COUNT(*) AS n FROM pragma_table_info('sidly_misure') WHERE name='affid'`)[0].n === 1, 'migrazione ripetibile (nessun doppione di colonna)')
+      ok(T.DATASET_COLONNE.includes('affid' as any) && T.DATASET_COLONNE.indexOf('affid' as any) > T.DATASET_COLONNE.indexOf('spo2_q' as any), 'dataset CSV: colonna affid (indice di affidabilita\' 0-3) per ogni misurazione')
+    }
     const al = T.parseAllarmi([
       { id: 591109, type: 'sos', receivedDate: '2026-08-14T07:47:24+00:00', pulse: 0, batteryLevel: 46, sat: 0, temperature: 0, latitude: 45.480154, longitude: 9.199744, handledBy: 'Mario Rossi', handledTime: 0.132, description: { caseDescription: 'Falso allarme', takenActionDescription: 'x' } },
       { id: 2, type: 'leavezone', receivedDate: '2026-08-15T10:00:00+00:00', latitude: 0, longitude: 0 },
@@ -392,7 +426,7 @@ export async function runTelemetriaTests(ok: Ok, section: Section) {
     ok(/conferma_scrittura === true/.test(blocco(/app\.post\('\/api\/sidly\/storico'/)), 'storico: senza conferma_scrittura è sempre anteprima')
     ok(!/console\./.test(mod), 'il modulo non scrive log (nessun rischio di stampare token o chiavi)')
     ok(!/SELECT\s+(l\.)?\*\s+FROM\s+leads/i.test(mod) && !/ALTER\s+TABLE\s+leads/i.test(mod), 'nessun ALTER su leads e nessun SELECT * su leads (limite D1 di 100 colonne)')
-    ok((mod.match(/ALTER\s+TABLE\s+\w+/gi) || []).every(x => /sidly_stato$/i.test(x)), 'l\'unico ALTER e\' la migrazione di una tabella della telemetria (sidly_stato)')
+    ok((mod.match(/ALTER\s+TABLE\s+\w+/gi) || []).every(x => /(sidly_stato|sidly_misure)$/i.test(x)), 'gli unici ALTER sono migrazioni di tabelle della telemetria (sidly_stato, sidly_misure), mai di altre tabelle')
     ok(/app\.get\('\/api\/sidly\/telemetria\/dataset'/.test(idx) && /checkSessionOrKey\(/.test(blocco(/app\.get\('\/api\/sidly\/telemetria\/dataset'/)), 'endpoint dataset: protetto da sessione dashboard o chiave')
     // REGOLA DEL TITOLARE: i dati passano sempre da SiDLY (API in lettura); il CRM non riceve frame e non tocca gli URL dei braccialetti.
     const sync = readFileSync('src/modules/sidly-sync.ts', 'utf8')

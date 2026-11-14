@@ -22,7 +22,7 @@ import { SidlyClient, sidlyConfigError, type SidlyEnv, type Fetch } from './sidl
 
 export const MISURE_SQL = `CREATE TABLE IF NOT EXISTS sidly_misure (
   imei TEXT NOT NULL, ts INTEGER NOT NULL,
-  hr REAL, hr_q INTEGER, spo2 REAL, spo2_q INTEGER, temp REAL, steps REAL, steps_tot REAL, pressure REAL,
+  hr REAL, hr_q INTEGER, spo2 REAL, spo2_q INTEGER, affid INTEGER, temp REAL, steps REAL, steps_tot REAL, pressure REAL,
   sdnn REAL, rmssd REAL, resp REAL, hr_rest REAL, wear REAL, fonte TEXT,
   PRIMARY KEY (imei, ts)) WITHOUT ROWID`
 export const EVENTI_SQL = `CREATE TABLE IF NOT EXISTS sidly_eventi (
@@ -43,6 +43,11 @@ export async function assicuraTabelle(db: any): Promise<void> {
   try {
     const c = await db.prepare(`SELECT COUNT(*) AS n FROM pragma_table_info('sidly_stato') WHERE name IN ('registrato_ts','completo_ts')`).first()
     if (Number(c?.n) < 2) for (const col of ['registrato_ts', 'completo_ts']) { try { await db.prepare(`ALTER TABLE sidly_stato ADD COLUMN ${col} INTEGER`).run() } catch { /* gia' presente */ } }
+  } catch { /* solo migrazione */ }
+  // Tabella misure creata prima dell'indice di affidabilita': aggiunge la colonna (nessun dato perso).
+  try {
+    const c = await db.prepare(`SELECT COUNT(*) AS n FROM pragma_table_info('sidly_misure') WHERE name = 'affid'`).first()
+    if (Number(c?.n) < 1) { try { await db.prepare(`ALTER TABLE sidly_misure ADD COLUMN affid INTEGER`).run() } catch { /* gia' presente */ } }
   } catch { /* solo migrazione */ }
   tabelleOk = db
 }
@@ -74,8 +79,10 @@ export interface Misura {
   hr?: number | null; hr_q?: number | null; spo2?: number | null; spo2_q?: number | null; temp?: number | null
   steps?: number | null; steps_tot?: number | null; pressure?: number | null; sdnn?: number | null; rmssd?: number | null
   resp?: number | null; hr_rest?: number | null; wear?: number | null
+  /** Indice di affidabilita' della rilevazione (0-3: 0 inaffidabile ... 3 ottima) = il livello piu' basso tra quelli dichiarati da SiDLY per quell'istante. */
+  affid?: number | null
 }
-const COLS = ['hr', 'hr_q', 'spo2', 'spo2_q', 'temp', 'steps', 'steps_tot', 'pressure', 'sdnn', 'rmssd', 'resp', 'hr_rest', 'wear'] as const
+const COLS = ['hr', 'hr_q', 'spo2', 'spo2_q', 'affid', 'temp', 'steps', 'steps_tot', 'pressure', 'sdnn', 'rmssd', 'resp', 'hr_rest', 'wear'] as const
 export interface Evento {
   imei: string; ts: number; tipo: string; origine: 'api'; alarm_id?: number | null; batt?: number | null
   pulse?: number | null; spo2?: number | null; temp?: number | null; lat?: number | null; lon?: number | null; dettaglio?: string; gestito_da?: string
@@ -127,7 +134,45 @@ const STATS_MAP: Array<{ k: string; col: Colonna; lo: number; hi: number }> = [
   { k: 'respiration', col: 'resp', lo: 3, hi: 60 }, { k: 'restingPulse', col: 'hr_rest', lo: 25, hi: 200 }, { k: 'steps', col: 'steps', lo: 0, hi: 1e6 },
 ]
 
+/** Etichette leggibili delle metriche di /stats (per l'anteprima a video). */
+export const ETICHETTE_STATS: Record<string, { nome: string; unita: string }> = {
+  pulse: { nome: 'Frequenza cardiaca', unita: 'bpm' }, sat: { nome: 'SpO2', unita: '%' }, temperature: { nome: 'Temperatura cutanea', unita: '°C' },
+  pressure: { nome: 'Pressione (valore grezzo, unità da verificare)', unita: '' }, sdnn: { nome: 'HRV SDNN', unita: 'ms' }, rmssd: { nome: 'HRV RMSSD', unita: 'ms' },
+  respiration: { nome: 'Respiro', unita: 'atti/min' }, restingPulse: { nome: 'FC a riposo', unita: 'bpm' },
+}
+export interface RiepilogoMetrica { chiave: string; nome: string; unita: string; n: number; min: number; max: number; media: number; ultimo: number; ts_ultimo: string }
+export interface RiepilogoQualita { n: number; media: number | null; buone_pct: number | null; livelli: Record<string, number> }
+export interface AffidabilitaStats { fc: RiepilogoQualita; spo2: RiepilogoQualita; complessiva: RiepilogoQualita; /** Testi trust_lvl cosi' come arrivano da SiDLY (i piu' frequenti), per verificare la scala. */ valori_grezzi: Array<{ testo: string; n: number }> }
+
+/** Livelli di affidabilita' 0-3 contenuti nel testo trust_lvl di SiDLY (es. "HR=3,SpO2=2"); un numero solo vale come livello complessivo. */
+export function livelliTrust(testo: string): { hr?: number; spo2?: number; min?: number } {
+  const out: { hr?: number; spo2?: number; min?: number } = {}
+  const liv: number[] = []
+  const t = String(testo ?? '').trim()
+  if (/^\d$/.test(t) && Number(t) <= 3) liv.push(Number(t))
+  const re = /([A-Za-z][A-Za-z0-9_]*)\s*[=:]\s*(\d+)/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(t))) {
+    const v = Number(m[2]); if (!(v >= 0 && v <= 3)) continue
+    liv.push(v)
+    const k = m[1].toLowerCase().replace(/[^a-z0-9]/g, '')
+    if (k === 'hr' || k === 'pulse') out.hr = v
+    if (k === 'spo2' || k === 'sat') out.spo2 = v
+  }
+  if (liv.length) out.min = Math.min(...liv)
+  return out
+}
+function riepQualita(vals: Array<number | null | undefined>): RiepilogoQualita {
+  const v = vals.filter((x): x is number => typeof x === 'number' && Number.isFinite(x))
+  const livelli: Record<string, number> = { '0': 0, '1': 0, '2': 0, '3': 0 }
+  for (const x of v) livelli[String(Math.max(0, Math.min(3, Math.round(x))))]++
+  return { n: v.length, media: v.length ? v.reduce((t, x) => t + x, 0) / v.length : null, buone_pct: v.length ? Math.round(v.filter(x => x >= 2).length / v.length * 100) : null, livelli }
+}
+
 export interface StatsParsed {
+  /** Valori veri letti (min/media/max/ultimo per metrica) e affidabilita': servono solo all'anteprima. */
+  riepilogo: RiepilogoMetrica[]
+  affidabilita: AffidabilitaStats
   righe: Misura[]
   punti: Record<string, number>
   da: number | null; a: number | null
@@ -140,6 +185,8 @@ export function parseStats(json: any, imei: string): StatsParsed {
   const punti: Record<string, number> = {}
   let da: number | null = null, a: number | null = null
   let somma = 0
+  const acc: Record<string, { n: number; min: number; max: number; somma: number; ultimo: number; ts: number }> = {}
+  const grezzi = new Map<string, number>()
   const root = json && typeof json === 'object' ? (json.data && typeof json.data === 'object' && !Array.isArray(json.data) && !json.pulse ? json.data : json) : {}
   for (const mp of STATS_MAP) {
     const blocco = root[mp.k]
@@ -154,9 +201,19 @@ export function parseStats(json: any, imei: string): StatsParsed {
       if (x <= 0) continue
       const m: Misura = { imei, ts: x, fonte: 'stats' }
       ;(m as any)[mp.col] = y
-      const tr = String(pt?.trust_lvl ?? '')
-      if (mp.col === 'hr') { const q = /HR\s*=\s*(\d)/i.exec(tr); if (q) m.hr_q = Number(q[1]) }
-      if (mp.col === 'spo2') { const q = /SpO2\s*=\s*(\d)/i.exec(tr); if (q) m.spo2_q = Number(q[1]) }
+      const tr = String(pt?.trust_lvl ?? '').trim().slice(0, 120)
+      if (tr) {
+        if (grezzi.has(tr) || grezzi.size < 40) grezzi.set(tr, (grezzi.get(tr) || 0) + 1)
+        const lv = livelliTrust(tr)
+        if (mp.col === 'hr' && lv.hr !== undefined) m.hr_q = lv.hr
+        if (mp.col === 'spo2' && lv.spo2 !== undefined) m.spo2_q = lv.spo2
+        if (lv.min !== undefined) m.affid = lv.min
+      }
+      if (mp.col !== 'steps') {
+        const o = acc[mp.k] || (acc[mp.k] = { n: 0, min: y, max: y, somma: 0, ultimo: y, ts: 0 })
+        o.n++; o.somma += y; o.min = Math.min(o.min, y); o.max = Math.max(o.max, y)
+        if (x >= o.ts) { o.ts = x; o.ultimo = y }
+      }
       if (mp.col === 'steps') { m.steps_tot = inRange(num(pt?.total), 0, 1e7); somma += y }
       righe.push(m)
       n++
@@ -165,7 +222,19 @@ export function parseStats(json: any, imei: string): StatsParsed {
     if (n) punti[mp.k] = n
   }
   const st = root.steps
-  return { righe: fondiMisure(righe), punti, da, a, passi: { dichiarato: st ? num(st.total) : null, somma_punti: somma, dailyTarget: st ? num(st.dailyTarget) : null } }
+  const fuse = fondiMisure(righe)
+  const r1 = (x: number) => Math.round(x * 10) / 10
+  const riepilogo: RiepilogoMetrica[] = STATS_MAP.filter(mp => acc[mp.k]).map(mp => {
+    const o = acc[mp.k], e = ETICHETTE_STATS[mp.k] || { nome: mp.k, unita: '' }
+    return { chiave: mp.k, nome: e.nome, unita: e.unita, n: o.n, min: r1(o.min), max: r1(o.max), media: r1(o.somma / o.n), ultimo: r1(o.ultimo), ts_ultimo: fmtSidlyData(o.ts) + ' UTC' }
+  })
+  const affidabilita: AffidabilitaStats = {
+    fc: riepQualita(fuse.filter(r => r.hr !== null && r.hr !== undefined).map(r => r.hr_q)),
+    spo2: riepQualita(fuse.filter(r => r.spo2 !== null && r.spo2 !== undefined).map(r => r.spo2_q)),
+    complessiva: riepQualita(fuse.map(r => r.affid)),
+    valori_grezzi: [...grezzi.entries()].sort((x, y) => y[1] - x[1]).slice(0, 6).map(([testo, n]) => ({ testo, n })),
+  }
+  return { riepilogo, affidabilita, righe: fuse, punti, da, a, passi: { dichiarato: st ? num(st.total) : null, somma_punti: somma, dailyTarget: st ? num(st.dailyTarget) : null } }
 }
 
 const MAPPA_ALLARMI: Record<string, string> = { sos: 'sos', fall: 'fall', leavezone: 'zone', zone: 'zone', immo: 'immo', ocall: 'call', call: 'call' }
@@ -235,7 +304,7 @@ export interface StoricoAssistito {
   /** Modalita' «ultime N»: dove riprendere se non e' finito, righe raccolte in tutto, periodo delle righe di questa richiesta. */
   continua?: { prima_di: number; raccolte: number }
   raccolte_totali?: number; dal?: string; al?: string
-  anteprima?: { finestra: string; ultime_stima?: number; gia_nel_db?: number; punti: Record<string, number>; righe: number; da?: string; a?: string; passi: StatsParsed['passi']; eventi_trovati?: number; stima_righe_totali?: number; inizio_da?: string; finestre_totali?: number; esempio?: any[] }
+  anteprima?: { finestra: string; ultime_stima?: number; gia_nel_db?: number; punti: Record<string, number>; righe: number; da?: string; a?: string; passi: StatsParsed['passi']; eventi_trovati?: number; stima_righe_totali?: number; inizio_da?: string; finestre_totali?: number; esempio?: any[]; /** Valori veri letti nella settimana (min/media/max/ultimo) e affidabilita' (0-3). */ riepilogo?: RiepilogoMetrica[]; affidabilita?: AffidabilitaStats }
 }
 export interface StoricoRisultato { httpStatus: number; result: { esito: 'anteprima' | 'eseguito' | 'errore'; completato?: boolean; errore?: string; assistiti?: StoricoAssistito[]; righe_scritte?: number; finestre_eseguite?: number; avvisi?: string[]; limiti?: { max_finestre: number; max_righe: number } } }
 
@@ -301,6 +370,7 @@ export async function eseguiStorico(o: StoricoOpzioni): Promise<StoricoRisultato
         r.anteprima = { finestra: `${fmtSidlyData(campDa)} - ${fmtSidlyData(nowSec)} (UTC, ultima settimana)`, punti: p.punti, righe: p.righe.length, da: p.da ? fmtSidlyData(p.da) : undefined, a: p.a ? fmtSidlyData(p.a) : undefined, passi: p.passi,
           eventi_trovati: ev.status >= 200 && ev.status < 300 ? parseAllarmi(ev.json, a.imei).length : undefined,
           inizio_da: fmtSidlyData(daA) + ' UTC', finestre_totali: Math.ceil((nowSec - daA) / FINESTRA_S),
+          riepilogo: p.riepilogo, affidabilita: p.affidabilita,
           stima_righe_totali: Math.round(p.righe.length / giorniCamp * giorni), esempio: p.righe.slice(0, 3).map(x => ({ ts: fmtSidlyData(x.ts), hr: x.hr ?? null, spo2: x.spo2 ?? null, steps: x.steps ?? null, resp: x.resp ?? null })) }
         r.righe = p.righe.length
       } catch (e: any) { r.errore = String(e?.message || e).slice(0, 160) }
@@ -477,7 +547,7 @@ export async function eseguiUltime(o: UltimeOpzioni): Promise<StoricoRisultato> 
       const stima = Math.round(p0.righe.length / giorniCamp * giorni)
       const nelDb = Number((await safeFirst(o.db, 'SELECT COUNT(*) AS n FROM sidly_misure WHERE imei = ?', a.imei))?.n) || 0
       r.anteprima = { finestra: `${fmtSidlyData(inizioPrima)} - ${fmtSidlyData(fineIniziale)} (UTC, ultima settimana)`, punti: p0.punti, righe: p0.righe.length,
-        da: p0.da ? fmtSidlyData(p0.da) : undefined, a: p0.a ? fmtSidlyData(p0.a) : undefined, passi: p0.passi, eventi_trovati: eventi,
+        da: p0.da ? fmtSidlyData(p0.da) : undefined, a: p0.a ? fmtSidlyData(p0.a) : undefined, passi: p0.passi, riepilogo: p0.riepilogo, affidabilita: p0.affidabilita, eventi_trovati: eventi,
         inizio_da: registrato !== null ? fmtSidlyData(registrato) + ' UTC' : undefined, stima_righe_totali: stima, gia_nel_db: nelDb, ultime_stima: Math.min(N, Math.max(0, stima - nelDb)) }
     }
     if (errore) r.errore = errore
@@ -610,7 +680,7 @@ export async function reportMedie(db: any, o: { giorni: number; assistitoId?: nu
 // ─────────────────────────────────────────────────────────────────────────────
 // Dataset delle sole misure (CSV) per le analisi statistiche
 // ─────────────────────────────────────────────────────────────────────────────
-export const DATASET_COLONNE = ['assistito_id', 'imei', 'ts_utc', 'ts', 'hr', 'hr_q', 'spo2', 'spo2_q', 'temp', 'steps', 'steps_tot', 'pressure', 'sdnn', 'rmssd', 'resp', 'hr_rest', 'wear', 'fonte'] as const
+export const DATASET_COLONNE = ['assistito_id', 'imei', 'ts_utc', 'ts', 'hr', 'hr_q', 'spo2', 'spo2_q', 'affid', 'temp', 'steps', 'steps_tot', 'pressure', 'sdnn', 'rmssd', 'resp', 'hr_rest', 'wear', 'fonte'] as const
 
 export interface DatasetOpzioni { da?: string; a?: string; assistitoId?: number; dopo?: string; limite?: number }
 /**
@@ -640,13 +710,13 @@ export async function datasetMisure(db: any, o: DatasetOpzioni): Promise<{ ok: t
   }
   let rows: any[]
   try {
-    const r = await db.prepare(`SELECT a.id AS assistito_id, m.imei, m.ts, m.hr, m.hr_q, m.spo2, m.spo2_q, m.temp, m.steps, m.steps_tot, m.pressure, m.sdnn, m.rmssd, m.resp, m.hr_rest, m.wear, m.fonte
+    const r = await db.prepare(`SELECT a.id AS assistito_id, m.imei, m.ts, m.hr, m.hr_q, m.spo2, m.spo2_q, m.affid, m.temp, m.steps, m.steps_tot, m.pressure, m.sdnn, m.rmssd, m.resp, m.hr_rest, m.wear, m.fonte
       FROM sidly_misure m LEFT JOIN assistiti a ON a.imei = m.imei WHERE ${where.join(' AND ')} ORDER BY m.imei, m.ts LIMIT ?`).bind(...par, limite + 1).all()
     rows = r?.results || []
   } catch { return { ok: false, status: 500, errore: 'Lettura del dataset non riuscita' } }
   const pagina = rows.slice(0, limite)
   const v = (x: any) => (x === null || x === undefined ? '' : String(x))
-  const righe = pagina.map(r => [v(r.assistito_id), v(r.imei), new Date(Number(r.ts) * 1000).toISOString(), v(r.ts), v(r.hr), v(r.hr_q), v(r.spo2), v(r.spo2_q), v(r.temp), v(r.steps), v(r.steps_tot), v(r.pressure), v(r.sdnn), v(r.rmssd), v(r.resp), v(r.hr_rest), v(r.wear), v(r.fonte)].join(','))
+  const righe = pagina.map(r => [v(r.assistito_id), v(r.imei), new Date(Number(r.ts) * 1000).toISOString(), v(r.ts), v(r.hr), v(r.hr_q), v(r.spo2), v(r.spo2_q), v(r.affid), v(r.temp), v(r.steps), v(r.steps_tot), v(r.pressure), v(r.sdnn), v(r.rmssd), v(r.resp), v(r.hr_rest), v(r.wear), v(r.fonte)].join(','))
   const csv = (o.dopo ? '' : DATASET_COLONNE.join(',') + '\n') + righe.join('\n') + (righe.length ? '\n' : '')
   const ultimo = pagina[pagina.length - 1]
   return { ok: true, csv, righe: pagina.length, prossimo: rows.length > limite && ultimo ? `${ultimo.imei}:${ultimo.ts}` : null }

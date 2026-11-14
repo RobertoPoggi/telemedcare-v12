@@ -22,6 +22,9 @@ I test (sezione 12 di `sidly-telemetria-tests.ts` e test "regola titolare" in `s
 - `sidly_stato(imei)`: cursore dello storico, righe lette, ultimo errore, `registrato_ts` (data di attivazione del bracciale), `completo_ts` (ultimo aggiornamento completo).
 - Create con `CREATE TABLE IF NOT EXISTS` solo da percorsi di scrittura; le letture non creano nulla.
 
+**Indice di affidabilità**: ogni punto di `/stats` può portare un testo `trust_lvl` (es. `HR=3,SpO2=2`, scala 0 = inaffidabile … 3 = ottima). Per ogni misurazione si salvano `hr_q` (battito), `spo2_q` (SpO2) e `affid` = il livello più basso dichiarato per quell'istante. Se SiDLY non indica nulla il valore resta vuoto (mai inventato). Una rilettura senza affidabilità non cancella quella già salvata. `sidly_misure` creata prima di questa colonna viene migrata da sola (`ALTER TABLE ... ADD COLUMN affid`, nessun dato perso).
+**Anteprima**: mostra i valori veri della settimana letta (letture, min, media, max, ultima, con unità) e l'affidabilità (media 0-3, % di letture buone, conteggio per livello, testi grezzi di SiDLY per verificare la scala), non più i soli conteggi di punti.
+
 **Dataset delle misure**: `sidly_misure` si esporta in CSV con `GET /api/sidly/telemetria/dataset` per le analisi statistiche (solo id assistito e IMEI, nessun nome).
 
 ## Limite giornaliero D1

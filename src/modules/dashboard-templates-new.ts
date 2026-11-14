@@ -3792,6 +3792,32 @@ export const dashboard = `<!DOCTYPE html>
             return n;
         }
         // Ultime N misurazioni: una richiesta per assistito. Anteprima = solo lettura (ultima settimana), poi conferma.
+        // Valori veri letti da SiDLY (min / media / max / ultima) e affidabilita' 0-3: l'anteprima non mostra piu' solo conteggi di punti.
+        function telRiepilogoHtml(an) {
+            var h = '';
+            var rp = an.riepilogo || [];
+            var td = 'padding:0 8px;text-align:right';
+            if (rp.length) {
+                h += '<table style="border-collapse:collapse;font-size:12px;margin:3px 0 3px 10px"><tr style="color:#6b7280"><td style="padding:0 8px 0 0">Misura</td><td style="' + td + '">Letture</td><td style="' + td + '">Min</td><td style="' + td + '">Media</td><td style="' + td + '">Max</td><td style="' + td + '">Ultima</td></tr>';
+                rp.forEach(function (m) {
+                    var u = m.unita ? ' ' + escapeHtml(m.unita) : '';
+                    h += '<tr><td style="padding:0 8px 0 0">' + escapeHtml(m.nome) + '</td><td style="' + td + '">' + m.n + '</td><td style="' + td + '">' + telFmt(m.min, 1) + '</td><td style="' + td + '"><b>' + telFmt(m.media, 1) + '</b></td><td style="' + td + '">' + telFmt(m.max, 1) + '</td><td style="' + td + '">' + telFmt(m.ultimo, 1) + u + '</td></tr>';
+                });
+                h += '</table>';
+            }
+            var af = an.affidabilita;
+            if (af && af.complessiva && af.complessiva.n) {
+                var q = function (x) { return x && x.n ? telFmt(x.media, 2) + '/3 (' + x.buone_pct + '% buone)' : '&mdash;'; };
+                var lv = af.complessiva.livelli || {};
+                h += '<div style="font-size:12px;margin-left:10px;color:#374151">Affidabilit&agrave; (0 = inaffidabile, 3 = ottima): battito ' + q(af.fc) + ' &middot; SpO2 ' + q(af.spo2) + ' &middot; letture a livello 0/1/2/3 = ' + [0, 1, 2, 3].map(function (k) { return lv[k] || 0; }).join('/') + '</div>';
+            } else if (rp.length) {
+                h += '<div style="font-size:12px;margin-left:10px;color:#92400e">Affidabilit&agrave;: SiDLY non l&rsquo;ha indicata per questa settimana.</div>';
+            }
+            if (af && af.valori_grezzi && af.valori_grezzi.length) {
+                h += '<div style="font-size:11px;margin-left:10px;color:#6b7280">Testo di affidabilit&agrave; ricevuto da SiDLY: ' + af.valori_grezzi.map(function (g) { return '&laquo;' + escapeHtml(g.testo) + '&raquo; &times;' + g.n; }).join(', ') + '</div>';
+            }
+            return h;
+        }
         async function telAnteprimaUltime(n) {
             if (!(n >= 1 && n <= 5000)) { telEsito('<span style="color:#b91c1c">Indica un numero di misurazioni da 1 a 5000.</span>'); return; }
             var lista = window.__telAssistiti || [];
@@ -3807,7 +3833,7 @@ export const dashboard = `<!DOCTYPE html>
                 var an = a.anteprima; var pt = an.punti || {};
                 var prev = typeof an.ultime_stima === 'number' ? an.ultime_stima : Math.min(n, an.stima_righe_totali || 0);
                 stimaTot += prev; okIds.push(lista[i].assistito_id);
-                h += '<div style="font-size:13px;margin-bottom:3px"><b>' + escapeHtml(lista[i].nome) + '</b>: attivo da ' + escapeHtml(an.inizio_da || 'data non disponibile (ultimi 12 mesi)') + ' &middot; gi&agrave; nel DB ' + (an.gia_nel_db || 0) + ' &middot; ultima settimana ' + (an.righe || 0) + ' misurazioni &middot; nuove da importare circa <b>' + prev + '</b> &middot; ' + Object.keys(pt).map(function (k) { return escapeHtml(k) + ' ' + pt[k]; }).join(', ') + '</div>';
+                h += '<div style="font-size:13px;margin-bottom:3px"><b>' + escapeHtml(lista[i].nome) + '</b>: attivo da ' + escapeHtml(an.inizio_da || 'data non disponibile (ultimi 12 mesi)') + ' &middot; gi&agrave; nel DB ' + (an.gia_nel_db || 0) + ' &middot; ultima settimana: ' + (an.righe || 0) + ' istanti con almeno una misura &middot; nuove da importare circa <b>' + prev + '</b></div>' + telRiepilogoHtml(an);
             }
             if (ko) h += '<div style="font-size:12px;color:#92400e;margin-top:4px">Gli assistiti con errore (di solito IMEI non trovato su SiDLY) non vengono importati.</div>';
             window.__telUltimeOk = okIds; window.__telUltimeN = n;
@@ -3852,8 +3878,8 @@ export const dashboard = `<!DOCTYPE html>
             (r.assistiti || []).forEach(function (a) {
                 if (a.errore) { h += '<div style="color:#b91c1c;font-size:13px">' + escapeHtml(a.nome || a.imei) + ': ' + escapeHtml(a.errore) + '</div>'; return; }
                 var an = a.anteprima || {}; var pt = an.punti || {};
-                h += '<div style="font-size:13px;margin-bottom:4px"><b>' + escapeHtml(a.nome || a.imei) + '</b>: parte da ' + escapeHtml(an.inizio_da || '?') + ' (' + (an.finestre_totali || '?') + ' finestre da 7 giorni) &middot; ' + Object.keys(pt).map(function (k) { return escapeHtml(k) + ' ' + pt[k]; }).join(', ') + ' &middot; stima righe totali ' + (an.stima_righe_totali || 0) +
-                    ' &middot; passi dichiarati ' + telFmt(an.passi && an.passi.dichiarato, 0) + ' vs somma punti ' + telFmt(an.passi && an.passi.somma_punti, 0) + ' &middot; allarmi trovati ' + (an.eventi_trovati === undefined ? '?' : an.eventi_trovati) + '</div>';
+                h += '<div style="font-size:13px;margin-bottom:4px"><b>' + escapeHtml(a.nome || a.imei) + '</b>: parte da ' + escapeHtml(an.inizio_da || '?') + ' (' + (an.finestre_totali || '?') + ' finestre da 7 giorni) &middot; stima righe totali ' + (an.stima_righe_totali || 0) +
+                    ' &middot; passi dichiarati ' + telFmt(an.passi && an.passi.dichiarato, 0) + ' vs somma punti ' + telFmt(an.passi && an.passi.somma_punti, 0) + ' &middot; allarmi trovati ' + (an.eventi_trovati === undefined ? '?' : an.eventi_trovati) + '</div>' + telRiepilogoHtml(an);
             });
             (r.avvisi || []).forEach(function (x) { h += '<div style="font-size:12px;color:#92400e">' + escapeHtml(x) + '</div>'; });
             h += '<div style="margin-top:8px"><button onclick="window.sidlyStoricoScrivi()" style="' + SIDLY_BTN + '#dc2626">Conferma e carica lo storico nel DB del CRM</button></div>';
