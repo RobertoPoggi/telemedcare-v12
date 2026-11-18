@@ -22135,6 +22135,17 @@ app.get('/api/analisi/stress', async (c) => {
   return c.json(r)
 })
 
+// GET /api/analisi/spo2-mensili[?formato=tabella] - misurazioni SpO2 mensili: assistiti con SiDLY CARE PRO vs SiDLY VITAL CARE (storico sidly_misure). Sola lettura.
+app.get('/api/analisi/spo2-mensili', async (c) => {
+  const guard = checkSessionOrKey(c.req.header('Cookie'), c.req.header('Authorization'), [c.env?.API_KEY, c.env?.ADMIN_SECRET_TOKEN])
+  if (!guard.ok) return c.json({ esito: 'errore', errore: guard.error }, guard.status)
+  if (!c.env?.DB) return c.json({ esito: 'errore', errore: 'Database non configurato' }, 500)
+  const { spo2PerModello, spo2TabellaHtml } = await import('./modules/spo2-modelli')
+  const r = await spo2PerModello(c.env.DB)
+  if (String(c.req.query('formato') ?? '') === 'tabella') return c.html(spo2TabellaHtml(r))
+  return c.json(r)
+})
+
 // GET /api/sidly/telemetria/imei-precedenti?assistito_id= - braccialetti PRECEDENTI registrati (cambio di IMEI). Sola lettura.
 // POST (assistito_id, imei, rimuovi?) - registra o toglie un braccialetto precedente: non tocca le misure ne' SiDLY, serve solo ad attribuire le misure al giusto assistito.
 app.get('/api/sidly/telemetria/imei-precedenti', async (c) => {

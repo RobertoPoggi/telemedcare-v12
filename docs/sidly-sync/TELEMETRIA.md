@@ -83,3 +83,12 @@ calibrata sul report dell'app SiDLY (RMSSD medio 64 ms → indice 10, «Basso»)
 - **Test**: `tests/seo-report/stress-tests.ts`. Le fixture golden (`tests/seo-report/fixtures/stress-golden.json`, generate da `gen-stress-fixture.mjs`) sono **sintetiche**:
   costruite per riprodurre i valori di accettazione (Lavarini 9 «Basso», baseline 150,7, picco 63 il 2026-11-05; platea 23 / 14 / picco 44 il 2026-09-03; distribuzione 168/13/2/1).
   Non sono dati reali di produzione: la verifica sui dati veri va fatta aprendo la Dashboard dopo il caricamento dello storico.
+
+## SpO2 mensili: Care Pro vs Vital Care (elaborazione ad hoc)
+
+`GET /api/analisi/spo2-mensili` (JSON) oppure `?formato=tabella` (pagina HTML). Sessione o chiave API come gli altri endpoint `/api/analisi/*`. **Sola lettura**.
+
+- Misurazione SpO2 = riga di `sidly_misure` con `spo2` valorizzata. Mese = mese UTC.
+- Assistiti ATTIVI, con tutti i braccialetti (attuale + precedenti). Il modello e' quello del braccialetto attuale in `dispositivi` (con «VITAL» = Vital Care, altro = Care Pro; senza modello registrato = «non registrato», contato a parte).
+- `media_per_assistito` = misure del mese / assistiti del gruppo con almeno una misura SpO2 in quel mese. I totali usano solo i mesi completi (esclusi mese corrente e primo mese se iniziato a meta').
+- Test: `tests/seo-report/spo2-tests.ts` (dati sintetici).
