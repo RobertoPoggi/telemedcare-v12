@@ -192,8 +192,22 @@ export interface Ciclo {
   ricarica_iniziale_osservata: boolean; completo: boolean; in_corso: boolean
   /** Ore per scendere di 80 punti (100% → 20%), proporzionale alla caduta osservata; null se il ciclo non e' valutabile. */
   autonomia_ore_100_20: number | null
+  /** Ore (interpolate) per scendere da 80% a 40%: confronto indipendente da dove la persona ricarica. Null se il ciclo non copre tutta la fascia o ha buchi di dati > 12 h. */
+  ore_80_40: number | null
 }
 const r1 = (x: number) => Math.round(x * 10) / 10
+
+/** Primo istante (interpolato) in cui la percentuale scende a `liv` o sotto, cercando da `da` a `e`. */
+function scendeA(p: PuntoBatt[], da: number, e: number, liv: number): { ts: number; i: number } | null {
+  for (let k = da; k <= e; k++) {
+    if (p[k].pct > liv) continue
+    if (k === da) return { ts: p[k].ts, i: k }
+    const a = p[k - 1], b = p[k]
+    return { ts: a.ts + ((a.pct - liv) / (a.pct - b.pct)) * (b.ts - a.ts), i: k }
+  }
+  return null
+}
+const BUCO_MAX_80_40_ORE = 12
 
 /**
  * Ricariche = risalite (non decrescenti) di almeno 15 punti; due salite separate da un calo < 15 punti sono una sola ricarica.
@@ -228,11 +242,21 @@ export function cicliScarica(p: PuntoBatt[], nowSec: number): { ricariche: Array
     for (let i = t.s + 1; i <= t.e; i++) buco = Math.max(buco, p[i].ts - p[i - 1].ts)
     const durata = (b.ts - a.ts) / 3600, caduta = a.pct - b.pct
     const inCorso = t.ultimo && nowSec - b.ts < IN_CORSO_ORE * 3600
+    let ore8040: number | null = null
+    if (!inCorso && a.pct >= 80) {
+      const x80 = scendeA(p, t.s, t.e, 80), x40 = x80 ? scendeA(p, x80.i, t.e, 40) : null
+      if (x80 && x40 && x40.ts > x80.ts) {
+        let g = 0
+        for (let i = Math.max(x80.i, t.s + 1); i <= x40.i; i++) g = Math.max(g, p[i].ts - p[i - 1].ts)
+        if (g <= BUCO_MAX_80_40_ORE * 3600) ore8040 = r1((x40.ts - x80.ts) / 3600)
+      }
+    }
     cicli.push({
       n: cicli.length + 1, ts_inizio: a.ts, ts_fine: b.ts, pct_inizio: a.pct, pct_fine: b.pct,
       durata_ore: r1(durata), caduta, max_buco_ore: r1(buco / 3600),
       ricarica_iniziale_osservata: t.oss, completo: a.pct >= 90 && b.pct <= 25, in_corso: inCorso,
       autonomia_ore_100_20: !inCorso && caduta >= CADUTA_MIN_CICLO && durata > 0 ? r1((durata * 80) / caduta) : null,
+      ore_80_40: ore8040,
     })
   }
   return { ricariche: rc.map(e => ({ ts_da: p[e.m].ts, pct_da: p[e.m].pct, ts_a: p[e.p].ts, pct_a: p[e.p].pct })), cicli }
@@ -243,21 +267,23 @@ const meseDi = (sec: number) => new Date(sec * 1000).toISOString().slice(0, 7)
 
 /** Autonomia mese per mese (mese = quello in cui il ciclo finisce), per dispositivo e complessiva. */
 export function mensileCicli(dati: Array<{ imei: string; assistito_id: number; cicli: Ciclo[] }>) {
-  const perDisp = new Map<string, { imei: string; assistito_id: number; mese: string; v: number[] }>()
-  const tot = new Map<string, { v: number[]; imei: Set<string> }>()
+  const perDisp = new Map<string, { imei: string; assistito_id: number; mese: string; v: number[]; w: number[] }>()
+  const tot = new Map<string, { v: number[]; w: number[]; imei: Set<string> }>()
   for (const d of dati) for (const c of d.cicli) {
     if (c.autonomia_ore_100_20 === null) continue
     const mese = meseDi(c.ts_fine)
     const k = d.imei + '|' + mese
-    const e = perDisp.get(k) || { imei: d.imei, assistito_id: d.assistito_id, mese, v: [] }; e.v.push(c.autonomia_ore_100_20); perDisp.set(k, e)
-    const t = tot.get(mese) || { v: [], imei: new Set<string>() }; t.v.push(c.autonomia_ore_100_20); t.imei.add(d.imei); tot.set(mese, t)
+    const e = perDisp.get(k) || { imei: d.imei, assistito_id: d.assistito_id, mese, v: [], w: [] }; e.v.push(c.autonomia_ore_100_20); if (c.ore_80_40 !== null) e.w.push(c.ore_80_40); perDisp.set(k, e)
+    const t = tot.get(mese) || { v: [], w: [], imei: new Set<string>() }; t.v.push(c.autonomia_ore_100_20); if (c.ore_80_40 !== null) t.w.push(c.ore_80_40); t.imei.add(d.imei); tot.set(mese, t)
   }
   return {
     per_dispositivo: [...perDisp.values()].sort((a, b) => a.assistito_id - b.assistito_id || a.mese.localeCompare(b.mese)).map(e => ({
       imei: e.imei, assistito_id: e.assistito_id, mese: e.mese, n_cicli: e.v.length,
-      mediana_ore: quantile(e.v, 0.5), mediana_giorni: r1((quantile(e.v, 0.5) as number) / 24), min_ore: Math.min(...e.v), max_ore: Math.max(...e.v) })),
+      mediana_ore: quantile(e.v, 0.5), mediana_giorni: r1((quantile(e.v, 0.5) as number) / 24), min_ore: Math.min(...e.v), max_ore: Math.max(...e.v),
+      n_cicli_80_40: e.w.length, mediana_ore_80_40: quantile(e.w, 0.5) })),
     complessivo: [...tot.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([mese, t]) => ({
-      mese, n_dispositivi: t.imei.size, n_cicli: t.v.length, mediana_ore: quantile(t.v, 0.5), mediana_giorni: r1((quantile(t.v, 0.5) as number) / 24), p25_ore: quantile(t.v, 0.25), p75_ore: quantile(t.v, 0.75) })),
+      mese, n_dispositivi: t.imei.size, n_cicli: t.v.length, mediana_ore: quantile(t.v, 0.5), mediana_giorni: r1((quantile(t.v, 0.5) as number) / 24), p25_ore: quantile(t.v, 0.25), p75_ore: quantile(t.v, 0.75),
+      n_cicli_80_40: t.w.length, mediana_ore_80_40: quantile(t.w, 0.5) })),
   }
 }
 
@@ -291,7 +317,7 @@ export async function faseStorico(env: SidlyEnv, bersagli: Bersaglio[], o: { now
   return {
     esito: 'ok', sola_lettura: true, chiamate: stato.chiamate, interrotto_per_429: stato.bloccato429,
     completo: dati.every(d => d.stato === 'ok' || d.stato === 'nessun punto batteria'),
-    criteri: { salto_ricarica_punti: SALTO_RICARICA, caduta_minima_ciclo_punti: CADUTA_MIN_CICLO, autonomia: 'ore per scendere da 100% a 20% (80 punti), proporzionale alla caduta osservata nel ciclo', mese: 'mese in cui il ciclo finisce', ciclo_in_corso_escluso: true },
+    criteri: { salto_ricarica_punti: SALTO_RICARICA, caduta_minima_ciclo_punti: CADUTA_MIN_CICLO, autonomia: 'ore per scendere da 100% a 20% (80 punti), proporzionale alla caduta osservata nel ciclo', mese: 'mese in cui il ciclo finisce', ciclo_in_corso_escluso: true, ore_80_40: 'ore (interpolate) per scendere da 80% a 40%, solo cicli che partono da >=80% e arrivano a <=40%, senza buchi di dati > 12 h: non dipende da quando la persona ricarica' },
     dispositivi, mensile: mensileCicli(dati), dati, grezzo: o.grezzo ? grezzo : undefined,
   }
 }
@@ -301,7 +327,7 @@ const iso = (s: number) => new Date(s * 1000).toISOString()
 export const storicoCsv = (dati: DatiStorico[]) =>
   ['ts_utc,imei,assistito_id,batt_percent,batt_mv', ...dati.flatMap(d => d.punti.map(p => `${iso(p.ts)},${d.imei},${d.assistito_id},${p.pct},`))].join('\n') + '\n'
 export const cicliCsv = (dati: DatiStorico[]) =>
-  ['imei,assistito_id,n_ciclo,inizio_utc,fine_utc,pct_inizio,pct_fine,durata_ore,caduta_punti,autonomia_ore_100_20,ciclo_completo,ricarica_iniziale_osservata,in_corso,max_buco_ore',
-    ...dati.flatMap(d => d.cicli.map(c => [d.imei, d.assistito_id, c.n, iso(c.ts_inizio), iso(c.ts_fine), c.pct_inizio, c.pct_fine, c.durata_ore, c.caduta, c.autonomia_ore_100_20 ?? '', c.completo ? 1 : 0, c.ricarica_iniziale_osservata ? 1 : 0, c.in_corso ? 1 : 0, c.max_buco_ore].join(',')))].join('\n') + '\n'
+  ['imei,assistito_id,n_ciclo,inizio_utc,fine_utc,pct_inizio,pct_fine,durata_ore,caduta_punti,autonomia_ore_100_20,ciclo_completo,ricarica_iniziale_osservata,in_corso,max_buco_ore,ore_80_40',
+    ...dati.flatMap(d => d.cicli.map(c => [d.imei, d.assistito_id, c.n, iso(c.ts_inizio), iso(c.ts_fine), c.pct_inizio, c.pct_fine, c.durata_ore, c.caduta, c.autonomia_ore_100_20 ?? '', c.completo ? 1 : 0, c.ricarica_iniziale_osservata ? 1 : 0, c.in_corso ? 1 : 0, c.max_buco_ore, c.ore_80_40 ?? ''].join(',')))].join('\n') + '\n'
 export const mensileCsv = (m: ReturnType<typeof mensileCicli>) =>
-  ['imei,assistito_id,mese,n_cicli,mediana_ore,mediana_giorni,min_ore,max_ore', ...m.per_dispositivo.map(e => [e.imei, e.assistito_id, e.mese, e.n_cicli, e.mediana_ore, e.mediana_giorni, e.min_ore, e.max_ore].join(','))].join('\n') + '\n'
+  ['imei,assistito_id,mese,n_cicli,mediana_ore,mediana_giorni,min_ore,max_ore,n_cicli_80_40,mediana_ore_80_40', ...m.per_dispositivo.map(e => [e.imei, e.assistito_id, e.mese, e.n_cicli, e.mediana_ore, e.mediana_giorni, e.min_ore, e.max_ore, e.n_cicli_80_40, e.mediana_ore_80_40 ?? ''].join(','))].join('\n') + '\n'

@@ -150,9 +150,17 @@ export async function runBatteriaTests(ok: Ok, section: Section) {
     const piu = cicliScarica([{ ts: 0, pct: 100 }, { ts: 10 * H, pct: 50 }, { ts: 12 * H, pct: 70 }, { ts: 13 * H, pct: 65 }, { ts: 14 * H, pct: 100 }, { ts: 60 * H, pct: 40 }], 400 * 86400)
     ok(piu.ricariche.length === 1 && piu.ricariche[0].pct_da === 50 && piu.ricariche[0].pct_a === 100, 'cicli: salite separate da un calo piccolo = una sola ricarica')
     ok(cicliScarica([], 0).cicli.length === 0 && cicliScarica([{ ts: 1, pct: 5 }], 0).cicli.length === 0, 'cicli: serie vuota o di un punto senza errori')
+    ok(r.cicli[0].ore_80_40 === 120 && r.cicli[1].ore_80_40 === 96, 'cicli: ore da 80% a 40% (120 h e 96 h) interpolate, indipendenti dal punto di arrivo')
+    ok(cicliScarica(pts(T0, 100, 60, 5), T0 + 90 * 86400).cicli[0].ore_80_40 === null && cicliScarica(pts(T0, 70, 10, 5), T0 + 90 * 86400).cicli[0].ore_80_40 === null, 'cicli: ore_80_40 nulla se il ciclo non arriva a 40% o non parte da almeno 80%')
+    // stessa pendenza (1/3 di punto all'ora): una persona ricarica a 40%, l'altra scende a 20%
+    const corto = cicliScarica([...pts(T0, 100, 40, 7.5), ...pts(T0 + 7.5 * 86400 + 6 * H, 100, 40, 7.5)], T0 + 90 * 86400).cicli[0]
+    const lungo = cicliScarica(pts(T0, 100, 20, 10), T0 + 90 * 86400).cicli[0]
+    ok(corto.ore_80_40 === lungo.ore_80_40 && corto.autonomia_ore_100_20 === lungo.autonomia_ore_100_20, 'cicli: scarica con la stessa pendenza ricaricando a 40% o a 20% → stessa ore_80_40 e stessa autonomia')
+    const buco = cicliScarica([{ ts: 0, pct: 100 }, { ts: 6 * H, pct: 85 }, { ts: 30 * H, pct: 30 }, { ts: 36 * H, pct: 20 }], 400 * 86400).cicli[0]
+    ok(buco.ore_80_40 === null, 'cicli: buco di dati > 12 h dentro la fascia 80-40 → ore_80_40 non valutata')
     ok(puntiBatteria({ battery: { chart: [{ x: 5, y: 50 }, { x: 5, y: 51 }, { x: 3, y: 60 }, { x: 4, y: null }, { x: 6, y: 140 }, { x: 'a', y: 1 }] } }).map(p => `${p.ts}:${p.pct}`).join() === '3:60,5:51', 'puntiBatteria: ordina, toglie duplicati, null, valori fuori 0-100 e x non numerici')
     const m = mensileCicli([{ imei: '1', assistito_id: 1, cicli: r.cicli }, { imei: '2', assistito_id: 2, cicli: r.cicli }])
-    ok(m.per_dispositivo.length === 2 && m.per_dispositivo[0].mese === '2026-01' && m.per_dispositivo[0].n_cicli === 2 && m.per_dispositivo[0].mediana_ore === 216 && m.complessivo[0].n_dispositivi === 2 && m.complessivo[0].n_cicli === 4, 'mensile: mediana per dispositivo e complessiva, mese = quello di fine ciclo')
+    ok(m.per_dispositivo.length === 2 && m.per_dispositivo[0].mese === '2026-01' && m.per_dispositivo[0].n_cicli === 2 && m.per_dispositivo[0].mediana_ore === 216 && m.per_dispositivo[0].mediana_ore_80_40 === 108 && m.per_dispositivo[0].n_cicli_80_40 === 2 && m.complessivo[0].n_dispositivi === 2 && m.complessivo[0].n_cicli === 4, 'mensile: mediana per dispositivo e complessiva, mese = quello di fine ciclo')
     // faseStorico con SiDLY simulata: una sola GET per IMEI, 1 al secondo, CSV
     const BASE2 = BASE
     const calls: string[] = []
