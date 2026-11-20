@@ -162,3 +162,146 @@ export async function faseSnapshot(env: SidlyEnv, bersagli: Bersaglio[], o: { no
 
 export const snapshotCsv = (righe: RigaSnapshot[]) =>
   ['ts_utc,imei,assistito_id,batteryLevel,ultima_misura_utc,stato', ...righe.map(r => [r.ts_utc, r.imei, r.assistito_id, r.batteryLevel ?? '', r.ultima_misura_utc, r.stato].join(','))].join('\n') + '\n'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FASE 2 (CASO A) - storico della serie «battery» di /stats e cicli di scarica. SOLA LETTURA.
+// Una sola GET /patient/{imei}/stats per dispositivo, dal 2025-05-01 a oggi (la risposta non e' paginata: la sonda ha letto 12.844 punti in una chiamata).
+// ─────────────────────────────────────────────────────────────────────────────
+export interface PuntoBatt { ts: number; pct: number }
+
+/** Punti (secondi UTC, percentuale 0-100) della serie «battery» di /stats: ordinati, senza duplicati di istante. */
+export function puntiBatteria(json: any): PuntoBatt[] {
+  const chiavi = Object.keys(json || {}).filter(k => /batt/i.test(k) && Array.isArray(json[k]?.chart))
+  const chiave = chiavi.includes('battery') ? 'battery' : chiavi[0]
+  if (!chiave) return []
+  const perTs = new Map<number, number>()
+  for (const p of json[chiave].chart) {
+    const x = Number(p?.x), y = p?.y === null || p?.y === undefined ? NaN : Number(p.y)
+    if (Number.isFinite(x) && Number.isFinite(y) && y >= 0 && y <= 100) perTs.set(x, y)
+  }
+  return [...perTs.entries()].sort((a, b) => a[0] - b[0]).map(([ts, pct]) => ({ ts, pct }))
+}
+
+export const SALTO_RICARICA = 15      // punti percentuali di risalita per riconoscere una ricarica (sotto: rumore di lettura)
+export const CADUTA_MIN_CICLO = 40    // un ciclo entra nelle statistiche solo se la batteria e' scesa di almeno 40 punti
+const IN_CORSO_ORE = 36
+
+export interface Ciclo {
+  n: number; ts_inizio: number; ts_fine: number; pct_inizio: number; pct_fine: number
+  durata_ore: number; caduta: number; max_buco_ore: number
+  ricarica_iniziale_osservata: boolean; completo: boolean; in_corso: boolean
+  /** Ore per scendere di 80 punti (100% → 20%), proporzionale alla caduta osservata; null se il ciclo non e' valutabile. */
+  autonomia_ore_100_20: number | null
+}
+const r1 = (x: number) => Math.round(x * 10) / 10
+
+/**
+ * Ricariche = risalite (non decrescenti) di almeno 15 punti; due salite separate da un calo < 15 punti sono una sola ricarica.
+ * Ciclo = scarica dal picco dopo una ricarica fino al minimo prima della successiva. Il primo parte dal primo punto (ricarica non osservata);
+ * l'ultimo e' «in corso» se l'ultimo punto ha meno di 36 ore.
+ */
+export function cicliScarica(p: PuntoBatt[], nowSec: number): { ricariche: Array<{ ts_da: number; pct_da: number; ts_a: number; pct_a: number }>; cicli: Ciclo[] } {
+  const n = p.length
+  if (n < 2) return { ricariche: [], cicli: [] }
+  const ev: Array<{ m: number; p: number }> = []
+  for (let i = 0; i < n - 1;) {
+    if (p[i + 1].pct > p[i].pct) {
+      let j = i + 1
+      while (j + 1 < n && p[j + 1].pct >= p[j].pct) j++
+      if (p[j].pct - p[i].pct >= SALTO_RICARICA) ev.push({ m: i, p: j })
+      i = j
+    } else i++
+  }
+  const rc: Array<{ m: number; p: number }> = []
+  for (const e of ev) {
+    const l = rc[rc.length - 1]
+    if (l && p[l.p].pct - p[e.m].pct < SALTO_RICARICA) l.p = e.p; else rc.push({ ...e })
+  }
+  const tratti: Array<{ s: number; e: number; oss: boolean; ultimo: boolean }> = []
+  tratti.push({ s: 0, e: rc.length ? rc[0].m : n - 1, oss: false, ultimo: rc.length === 0 })
+  for (let k = 0; k < rc.length; k++) tratti.push({ s: rc[k].p, e: k + 1 < rc.length ? rc[k + 1].m : n - 1, oss: true, ultimo: k + 1 === rc.length })
+  const cicli: Ciclo[] = []
+  for (const t of tratti) {
+    if (t.e <= t.s) continue
+    const a = p[t.s], b = p[t.e]
+    let buco = 0
+    for (let i = t.s + 1; i <= t.e; i++) buco = Math.max(buco, p[i].ts - p[i - 1].ts)
+    const durata = (b.ts - a.ts) / 3600, caduta = a.pct - b.pct
+    const inCorso = t.ultimo && nowSec - b.ts < IN_CORSO_ORE * 3600
+    cicli.push({
+      n: cicli.length + 1, ts_inizio: a.ts, ts_fine: b.ts, pct_inizio: a.pct, pct_fine: b.pct,
+      durata_ore: r1(durata), caduta, max_buco_ore: r1(buco / 3600),
+      ricarica_iniziale_osservata: t.oss, completo: a.pct >= 90 && b.pct <= 25, in_corso: inCorso,
+      autonomia_ore_100_20: !inCorso && caduta >= CADUTA_MIN_CICLO && durata > 0 ? r1((durata * 80) / caduta) : null,
+    })
+  }
+  return { ricariche: rc.map(e => ({ ts_da: p[e.m].ts, pct_da: p[e.m].pct, ts_a: p[e.p].ts, pct_a: p[e.p].pct })), cicli }
+}
+
+const quantile = (v: number[], q: number) => { const s = [...v].sort((a, b) => a - b); if (!s.length) return null; const i = (s.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i); return r1(s[lo] + (s[hi] - s[lo]) * (i - lo)) }
+const meseDi = (sec: number) => new Date(sec * 1000).toISOString().slice(0, 7)
+
+/** Autonomia mese per mese (mese = quello in cui il ciclo finisce), per dispositivo e complessiva. */
+export function mensileCicli(dati: Array<{ imei: string; assistito_id: number; cicli: Ciclo[] }>) {
+  const perDisp = new Map<string, { imei: string; assistito_id: number; mese: string; v: number[] }>()
+  const tot = new Map<string, { v: number[]; imei: Set<string> }>()
+  for (const d of dati) for (const c of d.cicli) {
+    if (c.autonomia_ore_100_20 === null) continue
+    const mese = meseDi(c.ts_fine)
+    const k = d.imei + '|' + mese
+    const e = perDisp.get(k) || { imei: d.imei, assistito_id: d.assistito_id, mese, v: [] }; e.v.push(c.autonomia_ore_100_20); perDisp.set(k, e)
+    const t = tot.get(mese) || { v: [], imei: new Set<string>() }; t.v.push(c.autonomia_ore_100_20); t.imei.add(d.imei); tot.set(mese, t)
+  }
+  return {
+    per_dispositivo: [...perDisp.values()].sort((a, b) => a.assistito_id - b.assistito_id || a.mese.localeCompare(b.mese)).map(e => ({
+      imei: e.imei, assistito_id: e.assistito_id, mese: e.mese, n_cicli: e.v.length,
+      mediana_ore: quantile(e.v, 0.5), mediana_giorni: r1((quantile(e.v, 0.5) as number) / 24), min_ore: Math.min(...e.v), max_ore: Math.max(...e.v) })),
+    complessivo: [...tot.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([mese, t]) => ({
+      mese, n_dispositivi: t.imei.size, n_cicli: t.v.length, mediana_ore: quantile(t.v, 0.5), mediana_giorni: r1((quantile(t.v, 0.5) as number) / 24), p25_ore: quantile(t.v, 0.25), p75_ore: quantile(t.v, 0.75) })),
+  }
+}
+
+export interface DatiStorico { imei: string; assistito_id: number; stato: string; punti: PuntoBatt[]; ricariche: ReturnType<typeof cicliScarica>['ricariche']; cicli: Ciclo[] }
+
+/** FASE 2: per ogni dispositivo UNA GET /stats dal 2025-05-01 a oggi; punti, ricariche, cicli e autonomia mensile. Con `grezzo` conserva la risposta intera. */
+export async function faseStorico(env: SidlyEnv, bersagli: Bersaglio[], o: { nowSec?: number; fetchImpl?: Fetch; pausa?: Pausa; grezzo?: boolean } = {}): Promise<any> {
+  const err = sidlyConfigError(env)
+  if (err) return { esito: 'errore', errore: err }
+  const nowSec = o.nowSec ?? Math.floor(Date.now() / 1000)
+  const inizioSec = Math.floor(Date.parse(INIZIO_STORICO.replace(' ', 'T') + 'Z') / 1000)
+  const { get, stato } = chiamante(new SidlyClient(env, o.fetchImpl), o.pausa)
+  const dati: DatiStorico[] = []
+  const grezzo: Record<string, any> = {}
+  for (const b of bersagli) {
+    const r = await get(`/patient/${b.imei}/stats?fromDate=${encodeURIComponent(fmtSidlyData(inizioSec))}&toDate=${encodeURIComponent(fmtSidlyData(nowSec - 1))}`)
+    if (r.status < 200 || r.status >= 300) { dati.push({ imei: b.imei, assistito_id: b.assistito_id, stato: `HTTP ${r.status}${r.motivo ? ' ' + r.motivo : ''}`, punti: [], ricariche: [], cicli: [] }); continue }
+    if (o.grezzo) grezzo[b.imei] = r.json
+    const punti = puntiBatteria(r.json)
+    const { ricariche, cicli } = cicliScarica(punti, nowSec)
+    dati.push({ imei: b.imei, assistito_id: b.assistito_id, stato: punti.length ? 'ok' : 'nessun punto batteria', punti, ricariche, cicli })
+  }
+  const dispositivi = dati.map(d => {
+    const v = d.cicli.map(c => c.autonomia_ore_100_20).filter((x): x is number => x !== null)
+    return { imei: d.imei, assistito_id: d.assistito_id, stato: d.stato, punti: d.punti.length,
+      dal: d.punti.length ? new Date(d.punti[0].ts * 1000).toISOString() : null, al: d.punti.length ? new Date(d.punti[d.punti.length - 1].ts * 1000).toISOString() : null,
+      ricariche: d.ricariche.length, cicli_validi: v.length, cicli_completi: d.cicli.filter(c => c.completo && c.autonomia_ore_100_20 !== null).length,
+      cicli_con_buchi_oltre_24h: d.cicli.filter(c => c.autonomia_ore_100_20 !== null && c.max_buco_ore > 24).length,
+      autonomia_mediana_ore: quantile(v, 0.5), autonomia_mediana_giorni: v.length ? r1((quantile(v, 0.5) as number) / 24) : null, autonomia_min_ore: v.length ? Math.min(...v) : null, autonomia_max_ore: v.length ? Math.max(...v) : null }
+  })
+  return {
+    esito: 'ok', sola_lettura: true, chiamate: stato.chiamate, interrotto_per_429: stato.bloccato429,
+    completo: dati.every(d => d.stato === 'ok' || d.stato === 'nessun punto batteria'),
+    criteri: { salto_ricarica_punti: SALTO_RICARICA, caduta_minima_ciclo_punti: CADUTA_MIN_CICLO, autonomia: 'ore per scendere da 100% a 20% (80 punti), proporzionale alla caduta osservata nel ciclo', mese: 'mese in cui il ciclo finisce', ciclo_in_corso_escluso: true },
+    dispositivi, mensile: mensileCicli(dati), dati, grezzo: o.grezzo ? grezzo : undefined,
+  }
+}
+
+const iso = (s: number) => new Date(s * 1000).toISOString()
+/** batteria_storico.csv: ts_utc, imei, assistito_id, batt_percent, batt_mv (SiDLY /stats espone solo la percentuale: batt_mv resta vuoto). */
+export const storicoCsv = (dati: DatiStorico[]) =>
+  ['ts_utc,imei,assistito_id,batt_percent,batt_mv', ...dati.flatMap(d => d.punti.map(p => `${iso(p.ts)},${d.imei},${d.assistito_id},${p.pct},`))].join('\n') + '\n'
+export const cicliCsv = (dati: DatiStorico[]) =>
+  ['imei,assistito_id,n_ciclo,inizio_utc,fine_utc,pct_inizio,pct_fine,durata_ore,caduta_punti,autonomia_ore_100_20,ciclo_completo,ricarica_iniziale_osservata,in_corso,max_buco_ore',
+    ...dati.flatMap(d => d.cicli.map(c => [d.imei, d.assistito_id, c.n, iso(c.ts_inizio), iso(c.ts_fine), c.pct_inizio, c.pct_fine, c.durata_ore, c.caduta, c.autonomia_ore_100_20 ?? '', c.completo ? 1 : 0, c.ricarica_iniziale_osservata ? 1 : 0, c.in_corso ? 1 : 0, c.max_buco_ore].join(',')))].join('\n') + '\n'
+export const mensileCsv = (m: ReturnType<typeof mensileCicli>) =>
+  ['imei,assistito_id,mese,n_cicli,mediana_ore,mediana_giorni,min_ore,max_ore', ...m.per_dispositivo.map(e => [e.imei, e.assistito_id, e.mese, e.n_cicli, e.mediana_ore, e.mediana_giorni, e.min_ore, e.max_ore].join(','))].join('\n') + '\n'

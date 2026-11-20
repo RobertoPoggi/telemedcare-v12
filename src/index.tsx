@@ -22146,23 +22146,44 @@ app.get('/api/analisi/spo2-mensili', async (c) => {
   return c.json(r)
 })
 
-// GET /api/sidly/batteria?fase=probe|snapshot[&imei=a,b,c][&formato=csv] - sonda SOLA LETTURA sulla batteria dei braccialetti Care Pro (autonomia). Solo GET verso SiDLY, nessuna scrittura.
+// GET /api/sidly/batteria?fase=probe|snapshot|storico[&imei=a,b,c][&extra=imei:assistito_id,...][&formato=csv|cicli_csv|mensile_csv|raw] - SOLA LETTURA sulla batteria dei braccialetti Care Pro (autonomia).
+// Solo GET verso SiDLY (1 richiesta al secondo), nessuna scrittura su SiDLY ne' su D1. `extra` aggiunge a mano dispositivi non riconosciuti come Care Pro dal CRM (es. IMEI errato in anagrafica).
 app.get('/api/sidly/batteria', async (c) => {
   const guard = checkSessionOrKey(c.req.header('Cookie'), c.req.header('Authorization'), [c.env?.API_KEY, c.env?.ADMIN_SECRET_TOKEN])
   if (!guard.ok) return c.json({ esito: 'errore', errore: guard.error }, guard.status)
   if (!c.env?.DB) return c.json({ esito: 'errore', errore: 'Database non configurato' }, 500)
   const fase = String(c.req.query('fase') ?? 'probe')
-  if (fase !== 'probe' && fase !== 'snapshot') return c.json({ esito: 'errore', errore: 'fase deve essere probe o snapshot' }, 400)
+  if (fase !== 'probe' && fase !== 'snapshot' && fase !== 'storico') return c.json({ esito: 'errore', errore: 'fase deve essere probe, snapshot o storico' }, 400)
+  const formato = String(c.req.query('formato') ?? 'json')
+  if (!['json', 'csv', 'cicli_csv', 'mensile_csv', 'raw'].includes(formato)) return c.json({ esito: 'errore', errore: 'formato: json, csv, cicli_csv, mensile_csv o raw' }, 400)
   const imeiQ = String(c.req.query('imei') ?? '').split(',').map(x => x.trim()).filter(Boolean)
   if (imeiQ.some(x => !/^\d{14,17}$/.test(x))) return c.json({ esito: 'errore', errore: 'imei: elenco di IMEI (14-17 cifre) separati da virgola' }, 400)
-  const { bersagliCarePro, faseProbe, faseSnapshot, snapshotCsv } = await import('./modules/sidly-batteria')
-  const tutti = await bersagliCarePro(c.env.DB)
+  const extraQ = String(c.req.query('extra') ?? '').split(',').map(x => x.trim()).filter(Boolean)
+  if (extraQ.some(x => !/^\d{14,17}:\d{1,9}$/.test(x))) return c.json({ esito: 'errore', errore: 'extra: elenco imei:assistito_id separati da virgola' }, 400)
+  const { bersagliCarePro, faseProbe, faseSnapshot, snapshotCsv, faseStorico, storicoCsv, cicliCsv, mensileCsv } = await import('./modules/sidly-batteria')
+  const crm = await bersagliCarePro(c.env.DB)
+  // `extra` con lo stesso assistito_id SOSTITUISCE l'IMEI registrato nel CRM (anagrafica con IMEI errato); altrimenti aggiunge il dispositivo.
+  const extraB = extraQ.map(x => { const [imei, id] = x.split(':'); return { imei, assistito_id: Number(id) } })
+  const tutti = [...crm.filter(b => !extraB.some(e => e.assistito_id === b.assistito_id && e.imei !== b.imei)), ...extraB.filter(e => !crm.some(b => b.imei === e.imei))]
   const scelti = imeiQ.length ? tutti.filter(b => imeiQ.includes(b.imei)) : tutti
-  if (!scelti.length) return c.json({ esito: 'errore', errore: 'Nessun assistito attivo con braccialetto Care Pro per questa richiesta', care_pro_attivi: tutti.length }, 404)
-  if (fase === 'probe') return c.json({ ...(await faseProbe(c.env, scelti)), care_pro_attivi: tutti.length })
+  if (!scelti.length) return c.json({ esito: 'errore', errore: 'Nessun assistito attivo con braccialetto Care Pro per questa richiesta', care_pro_attivi: crm.length }, 404)
+  const extraUsati = extraB.filter(e => !crm.some(b => b.imei === e.imei)).map(e => e.imei)
+  if (fase === 'probe') return c.json({ ...(await faseProbe(c.env, scelti)), care_pro_attivi: crm.length })
+  if (fase === 'storico') {
+    if (formato === 'raw' && scelti.length > 3) return c.json({ esito: 'errore', errore: 'formato=raw: al massimo 3 IMEI (imei=a,b,c)' }, 400)
+    const r = await faseStorico(c.env, scelti, { grezzo: formato === 'raw' })
+    if (r.esito !== 'ok') return c.json(r, 500)
+    const csv = (txt: string, nome: string) => new Response(txt, { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="${nome}"` } })
+    if (formato === 'csv') return csv(storicoCsv(r.dati), 'batteria_storico.csv')
+    if (formato === 'cicli_csv') return csv(cicliCsv(r.dati), 'batteria_cicli.csv')
+    if (formato === 'mensile_csv') return csv(mensileCsv(r.mensile), 'batteria_autonomia_mensile.csv')
+    if (formato === 'raw') return new Response(JSON.stringify(r.grezzo), { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': `attachment; filename="${scelti.length === 1 ? 'test_stats_' + scelti[0].imei : 'test_stats'}.json"` } })
+    const { dati, grezzo, ...resto } = r
+    return c.json({ ...resto, care_pro_attivi: crm.length, inclusi_a_mano: extraUsati })
+  }
   const r = await faseSnapshot(c.env, scelti)
-  if (r.esito === 'ok' && String(c.req.query('formato') ?? '') === 'csv') return new Response(snapshotCsv(r.righe), { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="batteria_snapshot.csv"' } })
-  return c.json({ ...r, care_pro_attivi: tutti.length })
+  if (r.esito === 'ok' && formato === 'csv') return new Response(snapshotCsv(r.righe), { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="batteria_snapshot.csv"' } })
+  return c.json({ ...r, care_pro_attivi: crm.length })
 })
 
 // GET /api/sidly/telemetria/imei-precedenti?assistito_id= - braccialetti PRECEDENTI registrati (cambio di IMEI). Sola lettura.

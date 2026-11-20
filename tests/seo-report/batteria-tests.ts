@@ -1,6 +1,6 @@
 // Test della sonda batteria SiDLY (autonomia Care Pro): SiDLY simulata, D1 sql.js. Solo GET, nessuna scrittura, nessun set/delete-url-for-band.
 import { readFileSync } from 'node:fs'
-import { bersagliCarePro, faseProbe, faseSnapshot, snapshotCsv, campiBatteria, riepilogoStats, chiamante, serieBatteria } from '../../src/modules/sidly-batteria'
+import { bersagliCarePro, faseProbe, faseSnapshot, snapshotCsv, campiBatteria, riepilogoStats, chiamante, serieBatteria, puntiBatteria, cicliScarica, mensileCicli, faseStorico, storicoCsv, cicliCsv, mensileCsv } from '../../src/modules/sidly-batteria'
 import { SidlyClient, resetSidlyTokenCache, type Fetch } from '../../src/modules/sidly-sync'
 import { makeD1 } from './sidly-telemetria-tests'
 
@@ -125,6 +125,55 @@ export async function runBatteriaTests(ok: Ok, section: Section) {
     ok(serieBatteria({ battery: { chart: [{ x: 200, y: 50 }, { x: 100, y: 90 }] }, pulse: { chart: [{ x: 1, y: 1 }] } }).length === 1 && serieBatteria({ battery: { chart: [{ x: 200, y: 50 }, { x: 100, y: 90 }] } })[0].primi_punti[0].x === 100 && serieBatteria({ battery: 5 }).length === 0 && serieBatteria(null).length === 0, 'serieBatteria: solo metriche batteria con chart, punti ordinati nel tempo, input anomali senza errori')
     ok(campiBatteria({ a: { batt_mv: 3700, b: [{ batteryLevel: 40 }, { batteryLevel: 41 }] }, nulla: 1 }).map(x => `${x.percorso}:${x.n}`).sort().join() === 'a.b[].batteryLevel:2,a.batt_mv:1', 'campiBatteria: percorsi senza indici, con conteggio')
     ok(riepilogoStats({}, NOW - 100, NOW).lastMeasurements.n === 0 && riepilogoStats(null, NOW - 100, NOW).eventi_carica === 0, 'riepilogoStats: risposta vuota/nulla senza errori')
+  }
+  // FASE 2: punti, ricariche, cicli, autonomia mensile
+  {
+    const H = 3600
+    const T0 = Date.UTC(2026, 0, 1) / 1000
+    // scarica 100->20 in 10 giorni (1 punto ogni 6 ore), ricarica, poi scarica 100->20 in 8 giorni
+    const pts = (ini: number, dalP: number, alP: number, giorni: number) => { const o: any[] = []; const n = giorni * 4; for (let i = 0; i <= n; i++) o.push({ ts: ini + i * 6 * H, pct: Math.round(dalP - ((dalP - alP) * i) / n) }); return o }
+    const a = pts(T0, 100, 20, 10), b = pts(a[a.length - 1].ts + 3 * H, 100, 20, 8)
+    const r = cicliScarica([...a, ...b], T0 + 60 * 86400)
+    ok(r.ricariche.length === 1 && r.cicli.length === 2, 'cicli: una ricarica separa due scariche')
+    ok(r.cicli[0].autonomia_ore_100_20 === 240 && r.cicli[0].completo && !r.cicli[0].ricarica_iniziale_osservata && r.cicli[1].autonomia_ore_100_20 === 192 && r.cicli[1].ricarica_iniziale_osservata, 'cicli: autonomia 100→20 = 240 h e 192 h; il primo ciclo non ha la ricarica osservata')
+    // un ciclo che copre solo 100->60 viene riportato alla scala 100->20
+    const c = cicliScarica(pts(T0, 100, 60, 5), T0 + 90 * 86400).cicli[0]
+    ok(c.caduta === 40 && c.autonomia_ore_100_20 === 240 && !c.completo, 'cicli: caduta parziale (40 punti) riportata a 80 punti in proporzione, ciclo non «completo»')
+    // caduta troppo piccola o ciclo in corso: nessuna autonomia
+    ok(cicliScarica(pts(T0, 100, 80, 3), T0 + 90 * 86400).cicli[0].autonomia_ore_100_20 === null, 'cicli: caduta sotto i 40 punti non entra nelle statistiche')
+    const inCorso = cicliScarica(pts(T0, 100, 30, 7), T0 + 7 * 86400 + 6 * H).cicli[0]
+    ok(inCorso.in_corso && inCorso.autonomia_ore_100_20 === null, 'cicli: ultimo ciclo con dato recente = in corso, escluso')
+    // rumore: risalita di pochi punti non e' una ricarica
+    const rum = cicliScarica([{ ts: 0, pct: 90 }, { ts: 6 * H, pct: 80 }, { ts: 12 * H, pct: 86 }, { ts: 18 * H, pct: 70 }, { ts: 24 * H, pct: 50 }], 400 * 86400)
+    ok(rum.ricariche.length === 0 && rum.cicli.length === 1, 'cicli: una risalita di 6 punti e\' rumore, non una ricarica')
+    // ricarica in piu' passi (50 -> 70 -> 65 -> 100)
+    const piu = cicliScarica([{ ts: 0, pct: 100 }, { ts: 10 * H, pct: 50 }, { ts: 12 * H, pct: 70 }, { ts: 13 * H, pct: 65 }, { ts: 14 * H, pct: 100 }, { ts: 60 * H, pct: 40 }], 400 * 86400)
+    ok(piu.ricariche.length === 1 && piu.ricariche[0].pct_da === 50 && piu.ricariche[0].pct_a === 100, 'cicli: salite separate da un calo piccolo = una sola ricarica')
+    ok(cicliScarica([], 0).cicli.length === 0 && cicliScarica([{ ts: 1, pct: 5 }], 0).cicli.length === 0, 'cicli: serie vuota o di un punto senza errori')
+    ok(puntiBatteria({ battery: { chart: [{ x: 5, y: 50 }, { x: 5, y: 51 }, { x: 3, y: 60 }, { x: 4, y: null }, { x: 6, y: 140 }, { x: 'a', y: 1 }] } }).map(p => `${p.ts}:${p.pct}`).join() === '3:60,5:51', 'puntiBatteria: ordina, toglie duplicati, null, valori fuori 0-100 e x non numerici')
+    const m = mensileCicli([{ imei: '1', assistito_id: 1, cicli: r.cicli }, { imei: '2', assistito_id: 2, cicli: r.cicli }])
+    ok(m.per_dispositivo.length === 2 && m.per_dispositivo[0].mese === '2026-01' && m.per_dispositivo[0].n_cicli === 2 && m.per_dispositivo[0].mediana_ore === 216 && m.complessivo[0].n_dispositivi === 2 && m.complessivo[0].n_cicli === 4, 'mensile: mediana per dispositivo e complessiva, mese = quello di fine ciclo')
+    // faseStorico con SiDLY simulata: una sola GET per IMEI, 1 al secondo, CSV
+    const BASE2 = BASE
+    const calls: string[] = []
+    const f: Fetch = async (url, init) => {
+      const path = url.replace(BASE2, ''); const reply = (st: number, j?: any) => ({ status: st, text: async () => (j === undefined ? '' : JSON.stringify(j)), headers: { get: () => null } })
+      if (path === '/user/login') return reply(200, { data: { authentication_token: 'tok' } })
+      calls.push((init?.method || 'GET') + ' ' + path)
+      if (path.includes('/860000000000009/')) return reply(500, {})
+      return reply(200, { pulse: { chart: [] }, battery: { chart: [...a, ...b].map(p => ({ x: p.ts, y: p.pct })) } })
+    }
+    const P = pausaFinta(); resetSidlyTokenCache()
+    const R = await faseStorico(ENV, [{ imei: '860000000000001', assistito_id: 1 }, { imei: '860000000000009', assistito_id: 9 }, { imei: '860000000000002', assistito_id: 2 }], { nowSec: T0 + 60 * 86400, fetchImpl: f, pausa: P.pausa })
+    ok(R.esito === 'ok' && R.sola_lettura && calls.length === 3 && calls.every(x => x.startsWith('GET /patient/') && x.includes('fromDate=2025-05-01')), 'storico: una GET /stats per dispositivo dal 2025-05-01, solo lettura')
+    ok(P.ms.length === 2 && P.ms.every(x => x === 1000), 'storico: 1 richiesta al secondo')
+    ok(R.completo === false && R.dispositivi[1].stato.startsWith('HTTP 500') && R.dispositivi[0].cicli_validi === 2 && R.dispositivi[0].autonomia_mediana_ore === 216, 'storico: un dispositivo in errore e\' dichiarato (completo=false) senza fermare gli altri')
+    const csv = storicoCsv(R.dati).split('\n')
+    ok(csv[0] === 'ts_utc,imei,assistito_id,batt_percent,batt_mv' && csv[1] === '2026-01-01T00:00:00.000Z,860000000000001,1,100,' && csv.length === a.length * 2 + b.length * 2 + 2, 'batteria_storico.csv: intestazione richiesta, una riga per punto, batt_mv vuoto')
+    ok(cicliCsv(R.dati).split('\n')[1].startsWith('860000000000001,1,1,2026-01-01T00:00:00.000Z,') && mensileCsv(R.mensile).split('\n')[0].startsWith('imei,assistito_id,mese,n_cicli'), 'CSV cicli e autonomia mensile con intestazioni')
+    const G = await faseStorico(ENV, [{ imei: '860000000000001', assistito_id: 1 }], { nowSec: T0 + 60 * 86400, fetchImpl: f, pausa: P.pausa, grezzo: true })
+    ok(Object.keys(G.grezzo)[0] === '860000000000001' && Array.isArray(G.grezzo['860000000000001'].battery.chart), 'storico formato=raw: risposta /stats intera conservata (test_stats_<imei>.json)')
+    ok((await faseStorico({}, [{ imei: '860000000000001', assistito_id: 1 }], { fetchImpl: f })).esito === 'errore', 'storico senza credenziali: errore chiaro')
   }
   // Sorgente: sola lettura
   {
