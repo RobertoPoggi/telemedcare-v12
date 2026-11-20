@@ -19,7 +19,7 @@ interface Cella { misure: number; assistiti_con_misure: number; media_per_assist
 const cella = (misure: number, assistiti: number): Cella => ({ misure, assistiti_con_misure: assistiti, media_per_assistito: assistiti > 0 ? r2(misure / assistiti) : null })
 
 /** Colonne di `dispositivi` che possono contenere l'IMEI (a seconda della versione dello schema: imei e/o serial_number). */
-async function colonneImei(db: any): Promise<string[]> {
+export async function colonneImei(db: any): Promise<string[]> {
   const rows = await safeAll(db, `SELECT name FROM pragma_table_info('dispositivi') WHERE name IN ('imei','serial_number')`)
   return rows.map(r => String(r.name))
 }

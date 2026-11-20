@@ -92,3 +92,12 @@ calibrata sul report dell'app SiDLY (RMSSD medio 64 ms → indice 10, «Basso»)
 - Assistiti ATTIVI, con tutti i braccialetti (attuale + precedenti). Il modello e' quello del braccialetto attuale in `dispositivi` (con «VITAL» = Vital Care, altro = Care Pro; senza modello registrato = «non registrato», contato a parte).
 - `media_per_assistito` = misure del mese / assistiti del gruppo con almeno una misura SpO2 in quel mese. I totali usano solo i mesi completi (esclusi mese corrente e primo mese se iniziato a meta').
 - Test: `tests/seo-report/spo2-tests.ts` (dati sintetici).
+
+## Sonda batteria (autonomia Care Pro) - sola lettura
+
+`GET /api/sidly/batteria?fase=probe|snapshot[&imei=a,b,c][&formato=csv]` (sessione o chiave API). Legge i braccialetti Care Pro degli assistiti ATTIVI.
+
+- **probe** (fase 1): per 3 IMEI campione chiama `GET /patient/{imei}/stats` sugli ultimi 14 giorni e riporta i campi batteria presenti, i testi `info` di `lastMeasurements` («Band charging», «Band fullcharged», «Band discharged») e, se trova batteria o carica, rilegge dal 2025-05-01 per vedere quanto indietro arrivano. Risponde con `esito_fase1` (batteria in /stats SI/NO, eventi di carica nello storico SI/NO).
+- **snapshot** (caso B): una `GET /patientIntegrate/{imei}` per dispositivo con `batteryLevel`; con `formato=csv` scarica `batteria_snapshot.csv`.
+- Solo GET, 1 richiesta al secondo, su HTTP 429 una pausa di 60 s e poi stop. Nessuna scrittura su SiDLY, nessun `set-url-for-band` / `delete-url-for-band`, nessuna scrittura su D1.
+- Test: `tests/seo-report/batteria-tests.ts` (SiDLY simulata).

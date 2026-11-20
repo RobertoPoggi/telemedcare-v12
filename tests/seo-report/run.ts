@@ -20,6 +20,7 @@ import { runSidlyTests } from './sidly-tests'
 import { runTelemetriaTests } from './sidly-telemetria-tests'
 import { runStressTests } from './stress-tests'
 import { runSpo2Tests } from './spo2-tests'
+import { runBatteriaTests } from './batteria-tests'
 import { FIXTURES, fixtureJson, writeFixtures } from './gen-fixtures'
 
 if (process.argv.includes('--write-fixtures')) { writeFixtures(); process.exit(0) }
@@ -585,6 +586,7 @@ await runSidlyTests(ok, section)
 await runTelemetriaTests(ok, section)
 await runStressTests(ok, section)
 await runSpo2Tests(ok, section)
+await runBatteriaTests(ok, section)
 
 // ── 7) Lint sul sorgente del generatore ──────────────────────────────────────
 section('7. Sorgente del generatore: niente percentuali né divisori letterali')

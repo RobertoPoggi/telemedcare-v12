@@ -22146,6 +22146,25 @@ app.get('/api/analisi/spo2-mensili', async (c) => {
   return c.json(r)
 })
 
+// GET /api/sidly/batteria?fase=probe|snapshot[&imei=a,b,c][&formato=csv] - sonda SOLA LETTURA sulla batteria dei braccialetti Care Pro (autonomia). Solo GET verso SiDLY, nessuna scrittura.
+app.get('/api/sidly/batteria', async (c) => {
+  const guard = checkSessionOrKey(c.req.header('Cookie'), c.req.header('Authorization'), [c.env?.API_KEY, c.env?.ADMIN_SECRET_TOKEN])
+  if (!guard.ok) return c.json({ esito: 'errore', errore: guard.error }, guard.status)
+  if (!c.env?.DB) return c.json({ esito: 'errore', errore: 'Database non configurato' }, 500)
+  const fase = String(c.req.query('fase') ?? 'probe')
+  if (fase !== 'probe' && fase !== 'snapshot') return c.json({ esito: 'errore', errore: 'fase deve essere probe o snapshot' }, 400)
+  const imeiQ = String(c.req.query('imei') ?? '').split(',').map(x => x.trim()).filter(Boolean)
+  if (imeiQ.some(x => !/^\d{14,17}$/.test(x))) return c.json({ esito: 'errore', errore: 'imei: elenco di IMEI (14-17 cifre) separati da virgola' }, 400)
+  const { bersagliCarePro, faseProbe, faseSnapshot, snapshotCsv } = await import('./modules/sidly-batteria')
+  const tutti = await bersagliCarePro(c.env.DB)
+  const scelti = imeiQ.length ? tutti.filter(b => imeiQ.includes(b.imei)) : tutti
+  if (!scelti.length) return c.json({ esito: 'errore', errore: 'Nessun assistito attivo con braccialetto Care Pro per questa richiesta', care_pro_attivi: tutti.length }, 404)
+  if (fase === 'probe') return c.json({ ...(await faseProbe(c.env, scelti)), care_pro_attivi: tutti.length })
+  const r = await faseSnapshot(c.env, scelti)
+  if (r.esito === 'ok' && String(c.req.query('formato') ?? '') === 'csv') return new Response(snapshotCsv(r.righe), { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="batteria_snapshot.csv"' } })
+  return c.json({ ...r, care_pro_attivi: tutti.length })
+})
+
 // GET /api/sidly/telemetria/imei-precedenti?assistito_id= - braccialetti PRECEDENTI registrati (cambio di IMEI). Sola lettura.
 // POST (assistito_id, imei, rimuovi?) - registra o toglie un braccialetto precedente: non tocca le misure ne' SiDLY, serve solo ad attribuire le misure al giusto assistito.
 app.get('/api/sidly/telemetria/imei-precedenti', async (c) => {
