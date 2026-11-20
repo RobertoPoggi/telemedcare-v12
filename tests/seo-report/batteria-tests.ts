@@ -1,6 +1,6 @@
 // Test della sonda batteria SiDLY (autonomia Care Pro): SiDLY simulata, D1 sql.js. Solo GET, nessuna scrittura, nessun set/delete-url-for-band.
 import { readFileSync } from 'node:fs'
-import { bersagliCarePro, faseProbe, faseSnapshot, snapshotCsv, campiBatteria, riepilogoStats, chiamante } from '../../src/modules/sidly-batteria'
+import { bersagliCarePro, faseProbe, faseSnapshot, snapshotCsv, campiBatteria, riepilogoStats, chiamante, serieBatteria } from '../../src/modules/sidly-batteria'
 import { SidlyClient, resetSidlyTokenCache, type Fetch } from '../../src/modules/sidly-sync'
 import { makeD1 } from './sidly-telemetria-tests'
 
@@ -10,7 +10,7 @@ const BASE = 'https://api.sidly-platform-dev.com/api'
 const ENV = { SIDLY_USER: 'u@example.com', SIDLY_PASSWORD: 'x', SIDLY_BASE_URL: BASE }
 const NOW = Date.UTC(2026, 10, 20, 12, 0, 0) / 1000
 
-interface Opz { conBatteria?: boolean; conCarica?: boolean; storicoLungo?: boolean; r429?: number; sempre429?: boolean; levelWrap?: boolean }
+interface Opz { serieBatteria?: 'corta' | 'lunga'; conBatteria?: boolean; conCarica?: boolean; storicoLungo?: boolean; r429?: number; sempre429?: boolean; levelWrap?: boolean }
 function finta(o: Opz = {}) {
   const calls: { method: string; path: string }[] = []
   let n429 = o.r429 || 0
@@ -28,7 +28,15 @@ function finta(o: Opz = {}) {
       const lm: any[] = [{ timestamp: lungo && o.storicoLungo ? NOW - 300 * 86400 : NOW - 3600, pulse: 70, sat: 97, info: '' }]
       if (o.conCarica) { lm.push({ timestamp: NOW - 7200, info: 'Band charging' }, { timestamp: NOW - 5400, info: 'Band fullcharged' }) }
       if (o.conBatteria) lm.forEach(x => { (x as any).batt_percent = 55 })
-      return reply(200, { pulse: { chart: [{ x: NOW - 3600, y: 70 }], stats: {} }, lastMeasurements: lm })
+      const body: any = { pulse: { chart: [{ x: NOW - 3600, y: 70 }], stats: {} }, lastMeasurements: lm }
+      if (o.serieBatteria) {
+        // serie «battery» come pulse/sat: la finestra richiesta parte da `da`; se lo storico e' corto parte comunque al massimo 20 giorni fa
+        const inizio = o.serieBatteria === 'lunga' ? Math.max(da, NOW - 400 * 86400) : Math.max(da, NOW - 20 * 86400)
+        const chart: any[] = []
+        for (let t = inizio, i = 0; t < NOW; t += 86400 * 2, i++) chart.push({ x: t, y: 100 - ((i * 13) % 80) })
+        body.battery = { chart, stats: { min: 20, max: 100, mean: 60 }, newest: chart[chart.length - 1] }
+      }
+      return reply(200, body)
     }
     m = path.match(/^\/patientIntegrate\/(\d+)$/)
     if (m) { const j = { imei: m[1], batteryLevel: Number(m[1].slice(-2)), lastMeasurement: String(NOW - 600) }; return reply(200, o.levelWrap ? { data: j } : j) }
@@ -65,6 +73,21 @@ export async function runBatteriaTests(ok: Ok, section: Section) {
     ok(F.calls.some(c => c.path.includes('fromDate=2025-05-01')), 'probe: se c\'e\' batteria/carica rilegge dal 2025-05-01 per verificare la copertura')
     ok(R.imei[0].recente.campi_batteria.some((c: any) => c.percorso === 'lastMeasurements[].batt_percent') && R.imei[0].recente.info_distinti.some((x: any) => x.testo === 'Band charging'), 'probe: elenca i percorsi dei campi batteria e i testi «info» distinti')
   }
+  // Fase 1: serie «battery» in /stats (come pulse/sat), storico lungo -> caso A, rilettura dal 2025-05-01
+  {
+    const F = finta({ serieBatteria: 'lunga' }); const P = pausaFinta(); resetSidlyTokenCache()
+    const R = await faseProbe(ENV, [{ imei: '860000000000001', assistito_id: 1 }], { nowSec: NOW, fetchImpl: F.f, pausa: P.pausa })
+    ok(R.esito_fase1.batteria_in_stats === 'SI', 'probe: la serie «battery» (chart come pulse/sat) in /stats viene riconosciuta → batteria_in_stats SI')
+    ok(F.calls.some(c => c.path.includes('fromDate=2025-05-01')), 'probe: con la serie «battery» rilegge dal 2025-05-01')
+    ok(R.esito_fase1.batteria_copre_oltre_60_giorni === true && R.esito_fase1.batteria_storico_giorni >= 300 && /^A \(serie/.test(R.esito_fase1.caso), 'probe: storico lungo della serie battery → caso A, giorni di storico indicati')
+    ok(R.imei[0].esteso.serie_batteria[0].chiave === 'battery' && Object.keys(R.imei[0].esteso.serie_batteria[0].per_mese).length >= 10 && R.imei[0].esteso.serie_batteria[0].primi_punti.length === 5, 'probe: riepilogo della serie battery con punti per mese e primi punti')
+    ok(F.calls.every(c => c.method === 'GET') && R.sola_lettura === true, 'probe serie battery: solo GET')
+  }
+  {
+    const F = finta({ serieBatteria: 'corta' }); const P = pausaFinta(); resetSidlyTokenCache()
+    const R = await faseProbe(ENV, [{ imei: '860000000000001', assistito_id: 1 }], { nowSec: NOW, fetchImpl: F.f, pausa: P.pausa })
+    ok(R.esito_fase1.batteria_in_stats === 'SI' && R.esito_fase1.batteria_copre_oltre_60_giorni === false && /^A parziale/.test(R.esito_fase1.caso), 'probe: serie battery presente ma storico breve (<60 giorni) → «A parziale», non B')
+  }
   // Fase 1 senza nulla
   {
     const F = finta({}); const P = pausaFinta(); resetSidlyTokenCache()
@@ -99,6 +122,7 @@ export async function runBatteriaTests(ok: Ok, section: Section) {
   }
   // Utilita' pure
   {
+    ok(serieBatteria({ battery: { chart: [{ x: 200, y: 50 }, { x: 100, y: 90 }] }, pulse: { chart: [{ x: 1, y: 1 }] } }).length === 1 && serieBatteria({ battery: { chart: [{ x: 200, y: 50 }, { x: 100, y: 90 }] } })[0].primi_punti[0].x === 100 && serieBatteria({ battery: 5 }).length === 0 && serieBatteria(null).length === 0, 'serieBatteria: solo metriche batteria con chart, punti ordinati nel tempo, input anomali senza errori')
     ok(campiBatteria({ a: { batt_mv: 3700, b: [{ batteryLevel: 40 }, { batteryLevel: 41 }] }, nulla: 1 }).map(x => `${x.percorso}:${x.n}`).sort().join() === 'a.b[].batteryLevel:2,a.batt_mv:1', 'campiBatteria: percorsi senza indici, con conteggio')
     ok(riepilogoStats({}, NOW - 100, NOW).lastMeasurements.n === 0 && riepilogoStats(null, NOW - 100, NOW).eventi_carica === 0, 'riepilogoStats: risposta vuota/nulla senza errori')
   }

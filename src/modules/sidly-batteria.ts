@@ -59,6 +59,26 @@ export function campiBatteria(json: any): Array<{ percorso: string; esempio: unk
   return [...m.entries()].map(([percorso, v]) => ({ percorso, ...v })).slice(0, 15)
 }
 
+/** Serie di /stats il cui nome parla di batteria (es. «battery»): metrica con `chart` [{x: secondi UTC, y: valore}], come pulse/sat. */
+export function serieBatteria(json: any): any[] {
+  const out: any[] = []
+  for (const [k, v] of Object.entries(json || {}) as Array<[string, any]>) {
+    if (!/batt|charge/i.test(k) || !Array.isArray(v?.chart)) continue
+    const pts = v.chart.map((p: any) => ({ x: Number(p?.x), y: p?.y === null || p?.y === undefined ? null : Number(p.y) })).filter((p: any) => Number.isFinite(p.x)).sort((a: any, b: any) => a.x - b.x)
+    const ys: number[] = pts.map((p: any) => p.y).filter((y: any) => y !== null && Number.isFinite(y))
+    const perMese: Record<string, number> = {}
+    for (const p of pts) { const m = new Date(p.x * 1000).toISOString().slice(0, 7); perMese[m] = (perMese[m] || 0) + 1 }
+    out.push({
+      chiave: k, n: pts.length, con_valore: ys.length,
+      dal_ts: pts.length ? pts[0].x : null, al_ts: pts.length ? pts[pts.length - 1].x : null,
+      dal: pts.length ? fmtSidlyData(pts[0].x) : null, al: pts.length ? fmtSidlyData(pts[pts.length - 1].x) : null,
+      min: ys.length ? Math.min(...ys) : null, max: ys.length ? Math.max(...ys) : null, media: ys.length ? Math.round((ys.reduce((t, y) => t + y, 0) / ys.length) * 10) / 10 : null,
+      per_mese: perMese, primi_punti: pts.slice(0, 5), ultimi_punti: pts.slice(-5), stats: v.stats ?? null, newest: v.newest ?? null,
+    })
+  }
+  return out
+}
+
 export function riepilogoStats(json: any, da: number, a: number) {
   const lm: any[] = Array.isArray(json?.lastMeasurements) ? json.lastMeasurements : []
   const ts = lm.map(x => Number(x?.timestamp)).filter(Number.isFinite)
@@ -69,6 +89,7 @@ export function riepilogoStats(json: any, da: number, a: number) {
   return {
     richiesto: { da: fmtSidlyData(da), a: fmtSidlyData(a) },
     metriche_con_serie: Object.keys(punti), punti_per_metrica: punti,
+    serie_batteria: serieBatteria(json),
     campi_batteria: campiBatteria(json),
     lastMeasurements: { n: lm.length, chiavi: [...new Set(lm.flatMap(x => (x && typeof x === 'object' ? Object.keys(x) : [])))].slice(0, 30),
       dal: ts.length ? fmtSidlyData(Math.min(...ts)) : null, al: ts.length ? fmtSidlyData(Math.max(...ts)) : null },
@@ -95,20 +116,26 @@ export async function faseProbe(env: SidlyEnv, bersagli: Bersaglio[], o: { nowSe
     if (r.status < 200 || r.status >= 300) { out.push({ imei: b.imei, assistito_id: b.assistito_id, errore: `HTTP ${r.status}${r.motivo ? ' ' + r.motivo : ''}` }); continue }
     const recente = riepilogoStats(r.json, da, nowSec - 1)
     let esteso: any = null
-    if (recente.campi_batteria.length > 0 || recente.eventi_carica > 0) {
+    if (recente.serie_batteria.length > 0 || recente.campi_batteria.length > 0 || recente.eventi_carica > 0) {
       const r2 = await get(`/patient/${b.imei}/stats?fromDate=${encodeURIComponent(fmtSidlyData(inizioSec))}&toDate=${encodeURIComponent(fmtSidlyData(nowSec - 1))}`)
       esteso = r2.status >= 200 && r2.status < 300 ? riepilogoStats(r2.json, inizioSec, nowSec - 1) : { errore: `HTTP ${r2.status}${r2.motivo ? ' ' + r2.motivo : ''}` }
     }
     out.push({ imei: b.imei, assistito_id: b.assistito_id, recente, esteso })
   }
   const valutati = out.filter(x => x.recente)
-  const batt = valutati.length ? valutati.some(x => x.recente.campi_batteria.length > 0 || (x.esteso?.campi_batteria?.length ?? 0) > 0) : null
+  const haSerie = (x: any) => (x.recente.serie_batteria || []).some((b: any) => b.n > 0) || (x.esteso?.serie_batteria || []).some((b: any) => b.n > 0)
+  const batt = valutati.length ? valutati.some(x => haSerie(x) || x.recente.campi_batteria.length > 0 || (x.esteso?.campi_batteria?.length ?? 0) > 0) : null
   const carica = valutati.length ? valutati.some(x => x.recente.eventi_carica > 0 || (x.esteso?.eventi_carica ?? 0) > 0) : null
-  const coperturaStorica = valutati.some(x => x.esteso?.lastMeasurements?.dal && Date.parse(x.esteso.lastMeasurements.dal.replace(' ', 'T') + 'Z') / 1000 < nowSec - 60 * 86400)
+  const dalMin = (x: any) => { const t = (x.esteso?.serie_batteria || []).map((b: any) => b.dal_ts).filter((v: any) => Number.isFinite(v)); return t.length ? Math.min(...t) : null }
+  const dalPrimo = valutati.map(dalMin).filter((v: any) => v !== null) as number[]
+  const storicoBatteriaGiorni = dalPrimo.length ? Math.floor((nowSec - Math.min(...dalPrimo)) / 86400) : null
+  const batteriaOltre60 = storicoBatteriaGiorni === null ? (valutati.some(x => x.esteso) ? false : null) : storicoBatteriaGiorni > 60
+  const coperturaCarica = valutati.some(x => x.esteso?.lastMeasurements?.dal && Date.parse(x.esteso.lastMeasurements.dal.replace(' ', 'T') + 'Z') / 1000 < nowSec - 60 * 86400)
+  const caso = batt === null ? '?' : batt && batteriaOltre60 ? 'A (serie «battery» di /stats con storico lungo)' : batt ? 'A parziale (batteria in /stats ma storico breve o non verificato)' : carica && coperturaCarica ? 'A (eventi di carica nello storico)' : 'B'
   return {
     esito: 'ok', sola_lettura: true, chiamate: stato.chiamate, interrotto_per_429: stato.bloccato429,
-    esito_fase1: { batteria_in_stats: sino(batt), eventi_carica_nello_storico: sino(carica), eventi_carica_coprono_oltre_60_giorni: carica ? coperturaStorica : null,
-      caso: batt === null ? '?' : (batt || carica) && (coperturaStorica || batt) ? 'A (verificare copertura)' : 'B' },
+    esito_fase1: { batteria_in_stats: sino(batt), eventi_carica_nello_storico: sino(carica), batteria_storico_giorni: storicoBatteriaGiorni, batteria_copre_oltre_60_giorni: batteriaOltre60,
+      eventi_carica_coprono_oltre_60_giorni: carica ? coperturaCarica : null, caso },
     imei: out,
   }
 }
