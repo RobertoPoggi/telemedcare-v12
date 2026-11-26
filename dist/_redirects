@@ -2,8 +2,15 @@
 # Rewrite URL senza estensione a .html preservando query parameters
 # IMPORTANTE: NO redirect su pagamento per evitare loop
 
-# FIRMA CONTRATTO - Solo base path, query params passano through
-/firma-contratto /firma-contratto.html 200
+# FIRMA CONTRATTO - NESSUNA regola di rewrite.
+# Cloudflare Pages serve /firma-contratto nativamente da firma-contratto.html
+# (punto 308 su /firma-contratto.html). La vecchia regola
+#   /firma-contratto /firma-contratto.html 200
+# ricreava il ciclo /firma-contratto.html -> 308 -> /firma-contratto -> rewrite
+# -> .html -> 308, chiuso da Cloudflare con 400 e con conseguente 503 su
+# /api/health (il check usa ASSETS.fetch('/firma-contratto.html')).
+# Stesso principio della nota "rimuovere la regola evita il loop 308" per
+# form-configurazione piu' sotto in questo file.
 
 # CONTRACT SIGNATURE (alias)
 /contract-signature /contract-signature.html 200
