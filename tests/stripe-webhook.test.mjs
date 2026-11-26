@@ -76,3 +76,65 @@ test('firma valida ma payload non JSON → 400 "Payload non valido"', async () =
   assert.equal(r.status, 400)
   assert.equal(r.body.error, 'Payload non valido')
 })
+
+// ── Registro stripe_webhook_events (migration 0109) ──────────────────────────
+function fakeDbLog() {
+  const inserimenti = []
+  return {
+    inserimenti,
+    prepare(sql) {
+      return {
+        bind(...a) {
+          return { run: async () => { inserimenti.push({ sql, args: a }); return { success: true } } }
+        }
+      }
+    }
+  }
+}
+
+test('firma valida → riga di log con esito ok, event_id, type e 200', async () => {
+  const db = fakeDbLog()
+  const r = await handleStripeWebhook(payload, firmaValida(), { STRIPE_WEBHOOK_SECRET: SEGRETO }, db, {
+    verifySignature,
+    processEvent: async () => ({ success: true, message: 'gestito' })
+  })
+  assert.equal(r.status, 200)
+  assert.equal(db.inserimenti.length, 1)
+  const [riga] = db.inserimenti
+  assert.match(riga.sql, /INSERT INTO stripe_webhook_events/)
+  const [eventId, eventType, esito, httpStatus, sigPresent] = riga.args
+  assert.equal(eventId, 'evt_test_1')
+  assert.equal(eventType, 'payment_intent.succeeded')
+  assert.equal(esito, 'ok')
+  assert.equal(httpStatus, 200)
+  assert.equal(sigPresent, 1)
+})
+
+test('firma non valida → log esito firma_non_valida con 400', async () => {
+  const db = fakeDbLog()
+  await handleStripeWebhook(payload, null, { STRIPE_WEBHOOK_SECRET: SEGRETO }, db, { verifySignature })
+  const [riga] = db.inserimenti
+  assert.equal(riga.args[2], 'firma_non_valida')
+  assert.equal(riga.args[3], 400)
+  assert.equal(riga.args[4], 0)
+})
+
+test('segreti mai nel log: nessun argomento contiene payload o secret', async () => {
+  const db = fakeDbLog()
+  await handleStripeWebhook(payload, firmaValida(), { STRIPE_WEBHOOK_SECRET: SEGRETO }, db, {
+    verifySignature,
+    processEvent: async () => ({ success: true, message: 'gestito' })
+  })
+  const serializzato = JSON.stringify(db.inserimenti.map(r => r.args))
+  assert.ok(!serializzato.includes(SEGRETO), 'il secret non deve finire nel log')
+  assert.ok(!serializzato.includes('pi_test_1'), 'il payload non deve finire nel log')
+})
+
+test('DB che esplode non fa fallire il webhook (log best-effort)', async () => {
+  const dbRotto = { prepare() { throw new Error('no such table') } }
+  const r = await handleStripeWebhook(payload, firmaValida(), { STRIPE_WEBHOOK_SECRET: SEGRETO }, dbRotto, {
+    verifySignature,
+    processEvent: async () => ({ success: true, message: 'gestito' })
+  })
+  assert.equal(r.status, 200)
+})

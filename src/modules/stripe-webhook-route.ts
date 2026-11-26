@@ -2,6 +2,10 @@
  * STRIPE-WEBHOOK-ROUTE.TS
  * Logica della rotta POST /api/webhooks/stripe, isolata dal router per poterla testare
  * senza avviare un worker: nessuna modifica a stripe-service.ts / stripe-webhook-handler.ts.
+ *
+ * Ogni richiesta lascia una riga in stripe_webhook_events (migration 0109): event_id,
+ * event_type, esito, http_status, message. La scrittura del log non puo' mai far fallire
+ * il webhook (try/catch interno) e non salva mai il payload né dati di pagamento.
  */
 export type StripeWebhookResponse = { status: number; body: Record<string, any> }
 
@@ -21,6 +25,43 @@ export interface StripeWebhookDeps {
   processEvent?: ProcessaFn
 }
 
+interface RigaLog {
+  event_id: string | null
+  event_type: string | null
+  esito: string
+  http_status: number
+  signature_present: number
+  message: string | null
+  livemode: number | null
+  payload_bytes: number
+}
+
+/** Scrive l'esito nel registro. Silenziosa per progetto: un log mancante non blocca Stripe. */
+async function registraEsito(db: any, riga: RigaLog): Promise<void> {
+  if (!db || typeof db.prepare !== 'function') return
+  try {
+    await db
+      .prepare(
+        `INSERT INTO stripe_webhook_events
+           (event_id, event_type, esito, http_status, signature_present, message, livemode, payload_bytes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .bind(
+        riga.event_id,
+        riga.event_type,
+        riga.esito,
+        riga.http_status,
+        riga.signature_present,
+        riga.message,
+        riga.livemode,
+        riga.payload_bytes
+      )
+      .run()
+  } catch (errore) {
+    console.warn('⚠️ [WEBHOOK] Registro stripe_webhook_events non scritto:', String(errore))
+  }
+}
+
 /**
  * Esegue il webhook Stripe: 503 senza segreto, 400 firma mancante/non valida,
  * 400 payload non JSON, 200 quando l'evento è processato.
@@ -32,10 +73,35 @@ export async function handleStripeWebhook(
   db: any,
   deps: StripeWebhookDeps = {}
 ): Promise<StripeWebhookResponse> {
+  const payloadBytes = typeof rawBody === 'string' ? new TextEncoder().encode(rawBody).length : 0
+  const signaturePresent = signature ? 1 : 0
+  let eventId: string | null = null
+  let eventType: string | null = null
+  let livemode: number | null = null
+
+  // Unico punto di uscita: risponde e registra (senza payload) cosa è successo.
+  const esci = async (
+    status: number,
+    body: Record<string, any>,
+    esito: string
+  ): Promise<StripeWebhookResponse> => {
+    await registraEsito(db, {
+      event_id: eventId,
+      event_type: eventType,
+      esito,
+      http_status: status,
+      signature_present: signaturePresent,
+      message: typeof body.error === 'string' ? body.error : typeof body.message === 'string' ? body.message : null,
+      livemode,
+      payload_bytes: payloadBytes
+    })
+    return { status, body }
+  }
+
   const secret = env?.STRIPE_WEBHOOK_SECRET
   if (!secret) {
     console.error('❌ [WEBHOOK] STRIPE_WEBHOOK_SECRET non configurato: webhook rifiutato')
-    return { status: 503, body: { success: false, error: 'Webhook non configurato' } }
+    return esci(503, { success: false, error: 'Webhook non configurato' }, 'non_configurato')
   }
 
   let verify = deps.verifySignature
@@ -45,31 +111,46 @@ export async function handleStripeWebhook(
   }
   const verifica = await verify(rawBody, signature, secret)
   if (!verifica.ok) {
-    console.warn('⚠️ [WEBHOOK] Firma Stripe rifiutata:', verifica.error)
-    return { status: 400, body: { success: false, error: 'Firma non valida' } }
+    console.warn('⚠️ [WEBHOOK] Firma Stripe rifiutata:', String(verifica.error ?? ''))
+    return esci(400, { success: false, error: 'Firma non valida' }, 'firma_non_valida')
   }
 
   let event: any
   try {
     event = JSON.parse(rawBody)
   } catch {
-    return { status: 400, body: { success: false, error: 'Payload non valido' } }
+    return esci(400, { success: false, error: 'Payload non valido' }, 'payload_non_valido')
   }
   if (!event || typeof event.type !== 'string') {
-    return { status: 400, body: { success: false, error: 'Payload non valido' } }
+    return esci(400, { success: false, error: 'Payload non valido' }, 'payload_non_valido')
   }
+  if (typeof event.id === 'string') eventId = event.id
+  eventType = event.type
+  if (typeof event.livemode === 'boolean') livemode = event.livemode ? 1 : 0
 
   let processEvent = deps.processEvent
   if (!processEvent) {
     const { StripeWebhookHandler } = await import('./stripe-webhook-handler')
     processEvent = (ev, d) => StripeWebhookHandler.processWebhook(ev, d)
   }
-  const result = await processEvent(event, db)
 
-  console.log('✅ [WEBHOOK] Stripe processato:', result)
-
-  return {
-    status: 200,
-    body: { success: result.success, message: result.message, eventType: event.type }
+  let result: { success: boolean; message: string }
+  try {
+    result = await processEvent(event, db)
+  } catch (errore) {
+    console.error('❌ [WEBHOOK] Errore handler Stripe:', String(errore))
+    return esci(
+      500,
+      { success: false, error: errore instanceof Error ? errore.message : 'Errore webhook Stripe' },
+      'errore_handler'
+    )
   }
+
+  console.log('✅ [WEBHOOK] Stripe processato: ' + String(result?.message ?? '') + ' success=' + String(result?.success))
+
+  return esci(
+    200,
+    { success: result.success, message: result.message, eventType: event.type },
+    result.success ? 'ok' : 'errore_handler'
+  )
 }
