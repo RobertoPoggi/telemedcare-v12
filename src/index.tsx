@@ -15,6 +15,9 @@ import { sendNewLeadNotification } from './utils/lead-notifications'
 // Import Settings API
 import { getSettings, updateSetting, getSetting } from './modules/settings-api'
 
+// Import logica webhook Stripe (rotta isolata e testabile)
+import { handleStripeWebhook } from './modules/stripe-webhook-route'
+
 // Import TeleMedCare V12.1 Modular Enterprise System - Deploy 2026-01-05 20:05 (Fix Puppeteer + CRUD completo)
 import * as LeadConfig from './modules/lead-config'
 import * as LeadCore from './modules/lead-core'
@@ -12207,41 +12210,58 @@ app.post('/api/webhooks/hubspot', async (c) => {
 app.post('/api/webhooks/docusign', async (c) => {
   try {
     console.log('📥 [WEBHOOK] DocuSign evento ricevuto')
-    
-    const rawBody = await c.req.text()
-    const db = c.env.DB
-    const signature = c.req.header('stripe-signature')
-    const webhookSecret = (c.env as any).STRIPE_WEBHOOK_SECRET
-    if (!webhookSecret) {
-      console.error('❌ [WEBHOOK] STRIPE_WEBHOOK_SECRET non configurato: webhook rifiutato')
-      return c.json({ success: false, error: 'Webhook non configurato' }, 503)
-    }
-    const { StripeService: StripeSvc } = await import('./modules/stripe-service')
-    const verifica = await StripeSvc.verifyWebhookSignature(rawBody, signature, webhookSecret)
-    if (!verifica.ok) {
-      console.warn('⚠️ [WEBHOOK] Firma Stripe rifiutata:', verifica.error)
-      return c.json({ success: false, error: 'Firma non valida' }, 400)
-    }
+
+    const db = (c.env as any).DB
     let event: any
-    try { event = JSON.parse(rawBody) } catch { return c.json({ success: false, error: 'Payload non valido' }, 400) }
-    const { StripeWebhookHandler } = await import('./modules/stripe-webhook-handler')
-    
-    // Processa evento pagamento
-    const result = await StripeWebhookHandler.processWebhook(event, db)
-    
-    console.log(`✅ [WEBHOOK] Stripe processato:`, result)
-    
+    try {
+      event = await c.req.json()
+    } catch {
+      return c.json({ success: false, error: 'Payload non valido' }, 400)
+    }
+
+    // Importa handler
+    const { DocuSignWebhookHandler } = await import('./modules/docusign-webhook-handler')
+
+    // Processa evento
+    const result = await DocuSignWebhookHandler.handleWebhook(event, db, c.env)
+
+    console.log(`✅ [WEBHOOK] DocuSign processato:`, result)
+
     return c.json({
       success: result.success,
       message: result.message,
-      eventType: event.type
+      envelopeId: result.envelopeId,
+      status: result.status,
+      actions: result.actions
     })
-    
+
+  } catch (error) {
+    console.error('❌ [WEBHOOK] Errore DocuSign:', error)
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Errore webhook DocuSign'
+    }, 500)
+  }
+})
+
+// POST /api/webhooks/stripe - Webhook Stripe per eventi pagamento
+// Logica in modules/stripe-webhook-route.ts (testata da tests/stripe-webhook.test.mjs)
+app.post('/api/webhooks/stripe', async (c) => {
+  try {
+    console.log('📥 [WEBHOOK] Stripe evento ricevuto')
+    const rawBody = await c.req.text()
+    const esito = await handleStripeWebhook(
+      rawBody,
+      c.req.header('stripe-signature') ?? null,
+      c.env as any,
+      (c.env as any).DB
+    )
+    return c.json(esito.body, esito.status as any)
   } catch (error) {
     console.error('❌ [WEBHOOK] Errore Stripe:', error)
-    return c.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Errore webhook Stripe' 
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Errore webhook Stripe'
     }, 500)
   }
 })
