@@ -122,51 +122,54 @@ export class StripePaymentService {
   /**
    * Crea Payment Intent Stripe
    */
-  static async createStripePayment(request: Omit<PaymentRequest, 'id' | 'status' | 'createdAt'>): Promise<PaymentResult> {
+  static async createStripePayment(
+    request: Omit<PaymentRequest, 'id' | 'status' | 'createdAt'>,
+    env?: any
+  ): Promise<PaymentResult> {
+    // Nessun mock: senza STRIPE_SECRET_KEY il pagamento reale non e' possibile e va segnalato.
     try {
-      const paymentId = `PAY_STRIPE_${Date.now()}_${Math.random().toString(36).substring(2)}`
-      
-      console.log('💳 Creazione pagamento Stripe:', {
-        customer: request.customerName,
-        amount: `€${request.amount}`,
-        type: request.orderType
-      })
-
-      // Simula creazione Payment Intent Stripe
-      // In produzione: usare Stripe SDK
-      const mockPaymentIntent = {
-        id: `pi_${Date.now()}${Math.random().toString(36).substring(2)}`,
-        client_secret: `pi_${Date.now()}_secret_${Math.random().toString(36).substring(2)}`,
-        amount: Math.round(request.amount * 100), // Centesimi
-        currency: request.currency.toLowerCase(),
-        status: 'requires_payment_method',
-        payment_method_types: ['card', 'sepa_debit', 'bancontact'],
-        metadata: request.metadata || {} // Include metadata per webhook
+      if (!env || !env.STRIPE_SECRET_KEY) {
+        return {
+          success: false,
+          error: 'Stripe non configurato: STRIPE_SECRET_KEY mancante',
+          timestamp: new Date().toISOString()
+        }
       }
-
-      // URL checkout Stripe
-      const checkoutUrl = `https://checkout.stripe.com/pay/${mockPaymentIntent.client_secret}`
-
+      const { createStripeService, euroToCents } = await import('./stripe-service')
+      const stripe = createStripeService(env)
+      const link = await stripe.createPaymentLink({
+        amount: euroToCents(request.amount),
+        currency: (request.currency || 'EUR').toLowerCase(),
+        description: request.description,
+        metadata: {
+          order_type: request.orderType,
+          customer_id: String(request.customerId),
+          customer_email: request.customerEmail,
+          customer_name: request.customerName,
+          ...(request.metadata ? Object.fromEntries(Object.entries(request.metadata).map(([k, v]) => [k, String(v)])) : {})
+        }
+      })
+      if (!link.active) {
+        return { success: false, error: 'Payment Link Stripe non attivo', timestamp: new Date().toISOString() }
+      }
       return {
         success: true,
-        paymentId: paymentId,
-        paymentUrl: checkoutUrl,
-        transactionId: mockPaymentIntent.id,
+        paymentId: `PAY_STRIPE_${Date.now()}`,
+        paymentUrl: link.url,
+        transactionId: link.id,
         timestamp: new Date().toISOString(),
         nextSteps: [
-          '1. Cliente reindirizzato a checkout Stripe',
-          '2. Inserimento dati carta di credito',
-          '3. Autorizzazione 3D Secure se richiesta',
-          '4. Conferma pagamento e ritorno al sito',
-          '5. Attivazione automatica servizi TeleMedCare'
+          '1. Cliente reindirizzato al Payment Link Stripe',
+          '2. Inserimento dati carta e 3D Secure se richiesto',
+          '3. Webhook payment_intent.succeeded aggiorna proforma e lead',
+          '4. Invio email di configurazione e attivazione servizio'
         ]
       }
-
     } catch (error) {
-      console.error('❌ Errore Stripe:', error)
+      console.error('❌ [STRIPE] Creazione pagamento fallita:', error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Errore pagamento Stripe',
+        error: error instanceof Error ? error.message : 'Errore creazione pagamento Stripe',
         timestamp: new Date().toISOString()
       }
     }
@@ -518,7 +521,7 @@ export class PaymentService {
 
       switch (paymentMethod) {
         case 'STRIPE':
-          return await StripePaymentService.createStripePayment(request)
+          return await StripePaymentService.createStripePayment(request, env)
         
         case 'BANK_TRANSFER':
           return await BankTransferService.createBankTransfer(request)

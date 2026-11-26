@@ -20,7 +20,8 @@ export async function getSettings(c: Context) {
       { key: 'reminder_completion_enabled', value: 'false', description: 'Abilita reminder automatici completamento dati lead' },
       { key: 'auto_completion_enabled', value: 'false', description: 'Abilita invio automatico email completamento dati' },
       { key: 'auto_payment_workflow_enabled', value: 'false', description: 'Abilita workflow automatico pagamenti' },
-      { key: 'auto_contract_workflow_enabled', value: 'false', description: 'Abilita workflow automatico contratti' }
+      { key: 'auto_contract_workflow_enabled', value: 'false', description: 'Abilita workflow automatico contratti' },
+      { key: 'claim_alert_email', value: '', description: 'Claim DM: email di alert per fallimenti consecutivi della riconciliazione (vuoto = alert disattivato)' }
     ]
 
     for (const setting of defaultSettings) {

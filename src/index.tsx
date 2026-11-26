@@ -64,6 +64,8 @@ import { calculatePrice } from './modules/pricing-calculator'
 import { isContractSigned, stripLockedIntestatario } from './modules/edit-lock'
 import { shouldSendConfigEmail } from './modules/rate-config-email'
 import { checkAdminOrApiKey, checkSessionOrKey } from './modules/admin-guard'
+import * as ClaimDM from './modules/claim-dm'
+import { renderClaimDmPage } from './modules/claim-dm-admin'
 
 type Bindings = {
   DB: D1Database // Database (automaticamente production o preview tramite .pages.yaml)
@@ -12206,98 +12208,22 @@ app.post('/api/webhooks/docusign', async (c) => {
   try {
     console.log('📥 [WEBHOOK] DocuSign evento ricevuto')
     
-    const event = await c.req.json()
+    const rawBody = await c.req.text()
     const db = c.env.DB
-    
-    // Importa handler
-    const { DocuSignWebhookHandler } = await import('./modules/docusign-webhook-handler')
-    
-    // Processa evento
-    const result = await DocuSignWebhookHandler.handleWebhook(event, db, c.env)
-    
-    console.log(`✅ [WEBHOOK] DocuSign processato:`, result)
-    
-    return c.json({
-      success: result.success,
-      message: result.message,
-      envelopeId: result.envelopeId,
-      status: result.status,
-      actions: result.actions
-    })
-    
-  } catch (error) {
-    console.error('❌ [WEBHOOK] Errore DocuSign:', error)
-    return c.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Errore webhook DocuSign' 
-    }, 500)
-  }
-})
-
-// 🧪 TEMP: Reset proforma status per testing (SOLO TEST-ENVIRONMENT)
-app.post('/api/test/reset-proforma/:numero', async (c) => {
-  try {
-    const numero = c.req.param('numero')
-    const db = c.env.DB
-    
-    if (!db) {
-      return c.json({ success: false, error: 'DB non configurato' }, 500)
+    const signature = c.req.header('stripe-signature')
+    const webhookSecret = (c.env as any).STRIPE_WEBHOOK_SECRET
+    if (!webhookSecret) {
+      console.error('❌ [WEBHOOK] STRIPE_WEBHOOK_SECRET non configurato: webhook rifiutato')
+      return c.json({ success: false, error: 'Webhook non configurato' }, 503)
     }
-    
-    // Verifica che sia test-environment
-    const branch = c.env.CF_PAGES_BRANCH || 'unknown'
-    if (branch !== 'test-environment' && branch !== 'preview') {
-      return c.json({ 
-        success: false, 
-        error: 'Endpoint disponibile SOLO su test-environment',
-        branch 
-      }, 403)
+    const { StripeService: StripeSvc } = await import('./modules/stripe-service')
+    const verifica = await StripeSvc.verifyWebhookSignature(rawBody, signature, webhookSecret)
+    if (!verifica.ok) {
+      console.warn('⚠️ [WEBHOOK] Firma Stripe rifiutata:', verifica.error)
+      return c.json({ success: false, error: 'Firma non valida' }, 400)
     }
-    
-    // Reset status a SENT
-    const updateResult = await db.prepare(`
-      UPDATE proforma 
-      SET status = 'SENT', updated_at = datetime('now')
-      WHERE numero_proforma = ?
-    `).bind(numero).run()
-    
-    // Verifica proforma aggiornata
-    const proforma = await db.prepare(`
-      SELECT numero_proforma, status, prezzo_totale, cliente_email 
-      FROM proforma 
-      WHERE numero_proforma = ?
-    `).bind(numero).first()
-    
-    if (!proforma) {
-      return c.json({ success: false, error: 'Proforma non trovata' }, 404)
-    }
-    
-    return c.json({ 
-      success: true, 
-      message: 'Proforma resettata a status SENT',
-      proforma,
-      updated: updateResult.meta.changes
-    })
-    
-  } catch (error: any) {
-    console.error('❌ [TEST] Errore reset proforma:', error)
-    return c.json({ success: false, error: error.message }, 500)
-  }
-})
-
-// POST /api/webhooks/stripe - Webhook Stripe per eventi pagamento (PASSO 4)
-app.post('/api/webhooks/stripe', async (c) => {
-  try {
-    console.log('📥 [WEBHOOK] Stripe evento ricevuto')
-    
-    const event = await c.req.json()
-    const db = c.env.DB
-    
-    // TODO: Verificare signature Stripe in produzione
-    // const signature = c.req.header('stripe-signature')
-    // const isValid = StripeService.verifyWebhookSignature(body, signature, webhookSecret)
-    
-    // Importa handler
+    let event: any
+    try { event = JSON.parse(rawBody) } catch { return c.json({ success: false, error: 'Payload non valido' }, 400) }
     const { StripeWebhookHandler } = await import('./modules/stripe-webhook-handler')
     
     // Processa evento pagamento
@@ -40508,6 +40434,105 @@ app.post('/api/oneshot-resend-contract-with-discount-8pz4q', async (c) => {
   } catch (e: any) {
     console.error('[ONESHOT-RESEND-DISCOUNT]', e)
     return c.json({ success: false, error: e.message }, 500)
+  }
+})
+
+
+// ============================================================================
+// FASE 2 — CLAIM DM (D.Lgs. 137/2022, art. 26): stato globale + scostamenti per blocco
+// ============================================================================
+
+// GET /api/claim-block-states — lettura stati per la riconciliazione della landing (server-to-server)
+app.get('/api/claim-block-states', async (c) => {
+  const auth = ClaimDM.checkClaimApiToken(c.req.header('Authorization'), (c.env as any).CLAIM_API_TOKEN)
+  if (!auth.ok) return c.json({ error: auth.error }, auth.status as any)
+  if (!c.env?.DB) return c.json({ error: 'D1 non disponibile' }, 503)
+  try {
+    const stato = await ClaimDM.getStato(c.env.DB)
+    // `states` è la forma consumata dalla landing (functions/internal/claim-blocks/riconcilia.js)
+    return c.json({
+      stato_globale: stato.stato_globale,
+      blocchi: stato.blocchi,
+      updated_at: stato.updated_at,
+      updated_by: stato.updated_by,
+      states: ClaimDM.eventiDaStato(stato, stato.updated_at),
+    })
+  } catch (e: any) {
+    console.error('[claim-dm] lettura stati fallita', e?.message || e)
+    return c.json({ error: 'Errore interno' }, 500)
+  }
+})
+
+// GET /admin/claim-dm — pannello amministrazione (solo utenti con sessione valida)
+app.get('/admin/claim-dm', requireAuth, async (c) => {
+  if (!c.env?.DB) return c.html('<h1>Database non configurato</h1>', 500)
+  try {
+    await ClaimDM.ensureSchema(c.env.DB)
+    const stato = await ClaimDM.getStato(c.env.DB)
+    const log = await ClaimDM.ultimiLog(c.env.DB, 25)
+    return c.html(renderClaimDmPage(stato, log))
+  } catch (e: any) {
+    console.error('[claim-dm] pagina admin fallita', e?.message || e)
+    return c.html('<h1>Errore nel caricamento del pannello Claim DM</h1>', 500)
+  }
+})
+
+// GET /api/claim-dm/stato — stato corrente (admin o API key)
+app.get('/api/claim-dm/stato', async (c) => {
+  const guard = checkAdminOrApiKey(c.req.header('Cookie'), c.req.header('Authorization'), (c.env as any).API_KEY)
+  if (!guard.ok) return c.json({ success: false, error: guard.error }, guard.status as any)
+  if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+  const stato = await ClaimDM.getStato(c.env.DB)
+  return c.json({ success: true, ...stato })
+})
+
+// POST /api/claim-dm/stato — salva stato globale + scostamenti, poi sincronizza la landing
+app.post('/api/claim-dm/stato', async (c) => {
+  const guard = checkAdminOrApiKey(c.req.header('Cookie'), c.req.header('Authorization'), (c.env as any).API_KEY)
+  if (!guard.ok) return c.json({ success: false, error: guard.error }, guard.status as any)
+  if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+  let body: any
+  try { body = await c.req.json() } catch { return c.json({ success: false, error: 'JSON non valido' }, 400) }
+  const valido = ClaimDM.validaPayload(body)
+  if (!valido.ok) return c.json({ success: false, error: valido.error }, 400)
+  try {
+    const session = c.get('user') as any
+    const user = session?.username || guard.via
+    const stato = await ClaimDM.setStato(c.env.DB, valido, user)
+    const eventi = ClaimDM.eventiDaStato(stato, stato.updated_at)
+    const sync = await ClaimDM.pushLanding(c.env, c.env.DB, eventi)
+    return c.json({ success: true, stato, sync })
+  } catch (e: any) {
+    console.error('[claim-dm] salvataggio fallito', e?.message || e)
+    return c.json({ success: false, error: e?.message || 'Errore interno' }, 500)
+  }
+})
+
+// POST /api/claim-dm/purge — invalida la cache landing (pulsante admin)
+app.post('/api/claim-dm/purge', async (c) => {
+  const guard = checkAdminOrApiKey(c.req.header('Cookie'), c.req.header('Authorization'), (c.env as any).API_KEY)
+  if (!guard.ok) return c.json({ success: false, error: guard.error }, guard.status as any)
+  if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+  const purge = await ClaimDM.purgeLanding(c.env, c.env.DB)
+  return c.json({ success: purge.ok, purge })
+})
+
+// POST /api/cron/claim-reconcile — job ogni 15 minuti (Cron Trigger Cloudflare Pages)
+// Allinea la landing, registra l'esito e invia alert dopo 3 fallimenti consecutivi.
+app.post('/api/cron/claim-reconcile', async (c) => {
+  const cronSecret = (c.env as any).CRON_SECRET
+  const authHeader = c.req.header('Authorization')
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    return c.json({ success: false, error: 'Non autorizzato' }, 401)
+  }
+  if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)
+  try {
+    await ClaimDM.ensureSchema(c.env.DB)
+    const r = await ClaimDM.riconcilia(c.env, c.env.DB)
+    return c.json({ success: r.ok, esito: r.esito, alert_inviato: r.alert })
+  } catch (e: any) {
+    console.error('[claim-dm] riconciliazione fallita', e?.message || e)
+    return c.json({ success: false, error: e?.message || 'Errore interno' }, 500)
   }
 })
 
