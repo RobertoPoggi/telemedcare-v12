@@ -85,6 +85,7 @@ export function renderClaimDmPage(stato: any, log: any[]): string {
         <div>
           <h2 class="text-lg font-bold text-gray-800">Stato globale del meccanismo</h2>
           <p class="text-sm text-gray-500 mt-1">ORIGINALE pubblica i contenuti statici dei template (comportamento attuale). TRANSITORIA e AUTORIZZATA attivano i testi gestiti in D1 sulla landing.</p>
+          <p class="text-sm text-gray-500 mt-2">ORIGINALE: al primo giro (o se i template cambiano) la sincronizzazione porta in D1 il contenuto reale del sito ('vince il sito'); da lì in poi il sito pubblicato segue D1: se D1 non cambia, il sito non cambia.</p>
         </div>
         <div class="text-right text-xs text-gray-500">
           <div>ultimo salvataggio: <span class="font-mono">${updated}</span></div>
@@ -170,8 +171,16 @@ document.getElementById('salva').addEventListener('click', async function () {
       const tot = d.sync && d.sync.risultati ? d.sync.risultati.length : 0;
       const purgeOk = d.sync && d.sync.purge && d.sync.purge.ok ? 'ok' : 'errore';
       const stato = d.sync && d.sync.ok ? 'sincronizzata' : 'CON ERRORI';
-      mostra('Salvato. Landing ' + stato + ' — blocchi sincronizzati ' + syncOk + '/' + tot + ', purge ' + purgeOk + '.', !(d.sync && d.sync.ok));
-      setTimeout(function () { location.reload(); }, 2500);
+      const c = d.sync && d.sync.cattura;
+      let cat = '';
+      if (c && c.eseguita) {
+        cat = c.blocchi && c.blocchi.length
+          ? ' Cattura ORIGINALE: ' + c.blocchi.map(function (b) { return b.block_id + ' ' + b.esito + (b.esito === 'aggiornato' ? ' (' + b.byte_prima + '→' + b.byte_dopo + ' byte)' : ''); }).join(', ') + '.'
+          : ' Cattura ORIGINALE NON riuscita' + (c.errore ? ' (' + c.errore + ')' : '') + '.';
+      }
+      const salt = d.sync && d.sync.saltati && d.sync.saltati.length ? ' Non pubblicati come ORIGINALE (cattura fallita): ' + d.sync.saltati.join(', ') + '.' : '';
+      mostra('Salvato. Landing ' + stato + ' — blocchi sincronizzati ' + syncOk + '/' + tot + ', purge ' + purgeOk + '.' + cat + salt, !(d.sync && d.sync.ok));
+      setTimeout(function () { location.reload(); }, c && c.eseguita ? 12000 : 2500);
     }
   } catch (e) { mostra('Errore di rete: ' + e.message, true); }
   btn.disabled = false;

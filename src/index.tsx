@@ -40520,7 +40520,7 @@ app.post('/api/claim-dm/stato', async (c) => {
     const user = session?.username || guard.via
     const stato = await ClaimDM.setStato(c.env.DB, valido, user)
     const eventi = ClaimDM.eventiDaStato(stato, stato.updated_at)
-    const sync = await ClaimDM.pushLanding(c.env, c.env.DB, eventi)
+    const sync = await ClaimDM.sincronizzaLanding(c.env, c.env.DB, eventi)
     return c.json({ success: true, stato, sync })
   } catch (e: any) {
     console.error('[claim-dm] salvataggio fallito', e?.message || e)

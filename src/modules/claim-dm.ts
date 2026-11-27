@@ -233,6 +233,55 @@ export async function pushLanding(env: any, db: any, eventi: EventoLanding[]) {
   return { ok: risultati.every(r => r.ok) && purge.ok, errore: null, risultati, purge }
 }
 
+export interface EsitoCatturaBlocco { block_id: string; esito: string; byte_prima?: number; byte_dopo?: number; errore?: string }
+export interface EsitoCattura { eseguita: boolean; ok: boolean; status: number; blocchi: EsitoCatturaBlocco[]; errore?: string | null }
+
+/**
+ * Principio ORIGINALE (Fase 2-ter): "al primo giro vince il sito, poi vince D1".
+ * Chiede alla landing di portare in D1 (versione_originale) il contenuto reale dei template, per i soli blocchi in stato ORIGINALE.
+ * Con TRANSITORIA/AUTORIZZATA non si chiama: quei testi vengono da D1, non dal sito.
+ */
+export async function catturaOriginaleLanding(env: any, db: any, eventi: EventoLanding[]): Promise<EsitoCattura> {
+  const ids = eventi.filter(e => e.stato === 'ORIGINALE').map(e => e.block_id)
+  if (!ids.length) return { eseguita: false, ok: true, status: 0, blocchi: [] }
+  const base = String(env.LANDING_BASE_URL || 'https://www.ecura.it').replace(/\/+$/, '')
+  const token = env.LANDING_CLAIM_TOKEN
+  if (!token || !String(token).trim()) {
+    const esito: EsitoChiamata = { ok: false, status: 503, durata_ms: 0, dettaglio: 'LANDING_CLAIM_TOKEN non configurato' }
+    await logChiamata(db, 'capture-original', esito, esito.dettaglio)
+    return { eseguita: true, ok: false, status: 503, blocchi: [], errore: 'LANDING_CLAIM_TOKEN non configurato' }
+  }
+  const esito = await chiamaJson(`${base}/internal/claim-blocks/capture-original`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ block_ids: ids }),
+  }, 15000)
+  const lista: any[] = Array.isArray(esito.body?.blocchi) ? esito.body.blocchi : []
+  const blocchi: EsitoCatturaBlocco[] = lista.map(b => ({
+    block_id: String(b.block_id), esito: String(b.esito), byte_prima: b.byte_prima, byte_dopo: b.byte_dopo,
+    ...(b.errore ? { errore: String(b.errore).slice(0, 200) } : {}),
+  }))
+  // nel log solo gli esiti per blocco: mai testi
+  await logChiamata(db, 'capture-original', esito, blocchi.length ? blocchi.map(b => `${b.block_id}:${b.esito}`).join(' ') : esito.dettaglio)
+  const ok = esito.ok && blocchi.length > 0 && !blocchi.some(b => b.esito === 'errore')
+  return { eseguita: true, ok, status: esito.status, blocchi, errore: ok ? null : (esito.ok ? 'cattura con errori' : `cattura non riuscita (HTTP ${esito.status})`) }
+}
+
+/**
+ * Salva-e-sincronizza: PRIMA la cattura ORIGINALE (se serve), poi sync + purge come sempre.
+ * Fail-safe: un blocco ORIGINALE la cui cattura non e' riuscita NON viene pubblicato come ORIGINALE (la landing resta nello stato
+ * precedente), perche' D1 potrebbe non coincidere col sito. I blocchi 'non_mappato' (es. EC-02) si pubblicano: restano al contenuto statico.
+ */
+export async function sincronizzaLanding(env: any, db: any, eventi: EventoLanding[]) {
+  const cattura = await catturaOriginaleLanding(env, db, eventi)
+  const esiti = new Map(cattura.blocchi.map(b => [b.block_id, b.esito]))
+  const sicuro = (ev: EventoLanding) => ev.stato !== 'ORIGINALE' || (cattura.status > 0 && cattura.blocchi.length > 0 && esiti.has(ev.block_id) && esiti.get(ev.block_id) !== 'errore')
+  const daPubblicare = eventi.filter(sicuro)
+  const saltati = eventi.filter(e => !sicuro(e)).map(e => e.block_id)
+  const sync = await pushLanding(env, db, daPubblicare)
+  return { ...sync, ok: sync.ok && saltati.length === 0, cattura, saltati }
+}
+
 /** Riconciliazione: chiama la landing, che a sua volta rilegge /api/claim-block-states. */
 export async function riconcilia(env: any, db: any) {
   const base = String(env.LANDING_BASE_URL || 'https://www.ecura.it').replace(/\/+$/, '')

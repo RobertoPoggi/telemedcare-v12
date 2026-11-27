@@ -216,3 +216,85 @@ test('cronAutorizzato: Bearer oppure x-cron-secret; segreto errato/assente -> fa
   // CRON_SECRET non configurato: comportamento storico delle rotte cron
   assert.equal(DM.cronAutorizzato(undefined, null, null), true)
 })
+
+// ── Fase 2-ter: cattura ORIGINALE prima del sync ─────────────────────────────
+function conFetch(risposte, fn) {
+  const originale = globalThis.fetch
+  const chiamate = []
+  globalThis.fetch = async (url, init) => {
+    chiamate.push({ url: String(url), init })
+    const chiave = Object.keys(risposte).find(k => String(url).endsWith(k))
+    const r = risposte[chiave] || { status: 404, body: {} }
+    return new Response(JSON.stringify(r.body), { status: r.status })
+  }
+  return fn(chiamate).finally(() => { globalThis.fetch = originale })
+}
+const ev = (stato, ids = ['EC-01', 'EC-02', 'EC-03']) => ids.map(b => ({ block_id: b, stato: typeof stato === 'object' ? stato[b] : stato, updated_at: '2026-11-27T10:00:00.000Z', motivo: null }))
+const ENV = { LANDING_CLAIM_TOKEN: 'tok', LANDING_BASE_URL: 'https://landing.test' }
+const CAP_OK = { status: 200, body: { ok: true, blocchi: [
+  { block_id: 'EC-01', esito: 'aggiornato', byte_prima: 100, byte_dopo: 120 },
+  { block_id: 'EC-02', esito: 'non_mappato', byte_prima: 0, byte_dopo: 0 },
+  { block_id: 'EC-03', esito: 'invariato', byte_prima: 50, byte_dopo: 50 } ] } }
+const SYNC_OK = { status: 200, body: { ok: true, esito: 'applicato' } }
+
+test('cattura: con stato ORIGINALE chiama capture-original (bearer LANDING_CLAIM_TOKEN) PRIMA di sync e purge', async () => {
+  await conFetch({ '/capture-original': CAP_OK, '/sync': SYNC_OK, '/purge': { status: 200, body: { ok: true } } }, async chiamate => {
+    const r = await DM.sincronizzaLanding(ENV, fakeDb(), ev('ORIGINALE'))
+    const ordine = chiamate.map(c => c.url.split('/').pop())
+    assert.deepEqual(ordine, ['capture-original', 'sync', 'sync', 'sync', 'purge'])
+    assert.equal(chiamate[0].init.headers.Authorization, 'Bearer tok')
+    assert.deepEqual(JSON.parse(chiamate[0].init.body).block_ids, ['EC-01', 'EC-02', 'EC-03'])
+    assert.equal(r.ok, true); assert.equal(r.cattura.eseguita, true)
+    assert.deepEqual(r.cattura.blocchi.map(b => b.esito), ['aggiornato', 'non_mappato', 'invariato'])
+    assert.deepEqual(r.saltati, [])
+  })
+})
+
+test('cattura: con TRANSITORIA/AUTORIZZATA NON viene chiamata (i testi vengono da D1, non dal sito)', async () => {
+  for (const stato of ['TRANSITORIA', 'AUTORIZZATA']) {
+    await conFetch({ '/capture-original': CAP_OK, '/sync': SYNC_OK, '/purge': { status: 200, body: {} } }, async chiamate => {
+      const r = await DM.sincronizzaLanding(ENV, fakeDb(), ev(stato))
+      assert.ok(!chiamate.some(c => c.url.endsWith('/capture-original')), stato)
+      assert.equal(r.cattura.eseguita, false); assert.equal(r.ok, true)
+    })
+  }
+})
+
+test('cattura: stato misto -> solo i blocchi ORIGINALE vengono catturati', async () => {
+  await conFetch({ '/capture-original': CAP_OK, '/sync': SYNC_OK, '/purge': { status: 200, body: {} } }, async chiamate => {
+    await DM.sincronizzaLanding(ENV, fakeDb(), ev({ 'EC-01': 'ORIGINALE', 'EC-02': 'TRANSITORIA', 'EC-03': 'AUTORIZZATA' }))
+    assert.deepEqual(JSON.parse(chiamate[0].init.body).block_ids, ['EC-01'])
+  })
+})
+
+test('cattura fallita: i blocchi ORIGINALE NON vengono pubblicati (fail-safe), gli altri si; esito ok=false con elenco saltati', async () => {
+  await conFetch({ '/capture-original': { status: 500, body: { error: 'Errore interno' } }, '/sync': SYNC_OK, '/purge': { status: 200, body: {} } }, async chiamate => {
+    const r = await DM.sincronizzaLanding(ENV, fakeDb(), ev({ 'EC-01': 'ORIGINALE', 'EC-02': 'TRANSITORIA', 'EC-03': 'ORIGINALE' }))
+    const sync = chiamate.filter(c => c.url.endsWith('/sync')).map(c => JSON.parse(c.init.body).block_id)
+    assert.deepEqual(sync, ['EC-02'])
+    assert.equal(r.ok, false); assert.deepEqual(r.saltati, ['EC-01', 'EC-03']); assert.equal(r.cattura.ok, false)
+  })
+  // errore su un solo blocco: solo quello viene saltato
+  const parziale = { status: 500, body: { ok: false, blocchi: [{ block_id: 'EC-01', esito: 'aggiornato' }, { block_id: 'EC-03', esito: 'errore', errore: 'marcatore mancante' }] } }
+  await conFetch({ '/capture-original': parziale, '/sync': SYNC_OK, '/purge': { status: 200, body: {} } }, async chiamate => {
+    const r = await DM.sincronizzaLanding(ENV, fakeDb(), ev({ 'EC-01': 'ORIGINALE', 'EC-02': 'ORIGINALE', 'EC-03': 'ORIGINALE' }))
+    assert.deepEqual(r.saltati, ['EC-02', 'EC-03'])
+  })
+})
+
+test('cattura: senza LANDING_CLAIM_TOKEN -> 503 senza chiamate di rete, nessun blocco ORIGINALE pubblicato', async () => {
+  await conFetch({}, async chiamate => {
+    const r = await DM.sincronizzaLanding({}, fakeDb(), ev('ORIGINALE'))
+    assert.equal(chiamate.length, 0); assert.equal(r.ok, false); assert.equal(r.cattura.status, 503)
+  })
+})
+
+test('cattura: il log scrive solo esiti per blocco (nessun testo), la nota nel pannello e\' presente', async () => {
+  const righe = []
+  const db = { prepare: sql => ({ bind: (...a) => ({ run: async () => { righe.push([sql, ...a]) }, first: async () => null, all: async () => ({ results: [] }) }) }) }
+  await conFetch({ '/capture-original': CAP_OK, '/sync': SYNC_OK, '/purge': { status: 200, body: {} } }, async () => { await DM.sincronizzaLanding(ENV, db, ev('ORIGINALE')) })
+  const cap = righe.find(r => r[1] === 'capture-original')
+  assert.ok(cap && /EC-01:aggiornato EC-02:non_mappato EC-03:invariato/.test(cap[5]))
+  const { readFileSync } = await import('node:fs')
+  assert.match(readFileSync('src/modules/claim-dm-admin.ts', 'utf8'), /al primo giro \(o se i template cambiano\) la sincronizzazione porta in D1 il contenuto reale del sito \('vince il sito'\); da lì in poi il sito pubblicato segue D1: se D1 non cambia, il sito non cambia\./)
+})
