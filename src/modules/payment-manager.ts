@@ -3,6 +3,8 @@
  * Gestisce pagamenti: bonifici e Stripe
  */
 
+import { statoCartaStripe } from './stripe-carta'
+
 export interface PaymentData {
   proformaId: string
   contractId: string
@@ -207,31 +209,15 @@ export async function createStripePaymentIntent(
   try {
     console.log(`💳 [STRIPE] Creazione Payment Intent per €${(amount / 100).toFixed(2)}`)
 
-    // ✅ Usa STRIPE_SECRET_KEY che contiene:
-    // - sk_test_... in Preview (Environment Variables Preview)
-    // - sk_live_... in Production (Environment Variables Production)
-    const stripeApiKey = env.STRIPE_SECRET_KEY
-    
-    if (!stripeApiKey) {
-      console.warn(`⚠️ [STRIPE] API Key non configurata, modalità test`)
-      return {
-        success: true,
-        stripeClientSecret: `test_client_secret_${Date.now()}`,
-        paymentId: `test_pi_${Date.now()}`
-      }
+    // Stessa regola della pagina (GET /api/stripe-public-key): senza chiavi coerenti, niente carta e NIENTE finto
+    // client secret (il vecchio ramo "modalita test" restituiva un segreto inventato e la pagina falliva piu' avanti).
+    const stato = statoCartaStripe(env)
+    if (!stato.abilitata) {
+      console.warn(`⚠️ [STRIPE] Carta non disponibile: ${stato.motivo}`)
+      return { success: false, error: 'Pagamento con carta non disponibile' }
     }
-    
-    const isTestMode = stripeApiKey.startsWith('sk_test')
-    console.log(`🔑 [STRIPE] Using ${isTestMode ? 'TEST' : 'LIVE'} mode`)
-    console.log(`🔑 [STRIPE] Key prefix: ${stripeApiKey.substring(0, 15)}...`)
-    
-    // Verifica che in produzione non si usi test key
-    if (env.ENVIRONMENT === 'production' && isTestMode) {
-      console.error(`🚨 [STRIPE] ERRORE: Stai usando TEST key in ambiente PRODUCTION!`)
-    }
-    if (env.ENVIRONMENT !== 'production' && !isTestMode) {
-      console.warn(`⚠️ [STRIPE] ATTENZIONE: Stai usando LIVE key in ambiente NON-production!`)
-    }
+    const stripeApiKey = String(env.STRIPE_SECRET_KEY).trim()
+    console.log(`🔑 [STRIPE] Using ${stato.modalita === 'test' ? 'TEST' : 'LIVE'} mode`)
 
     const response = await fetch('https://api.stripe.com/v1/payment_intents', {
       method: 'POST',
@@ -243,9 +229,13 @@ export async function createStripePaymentIntent(
         amount: amount.toString(),
         currency: 'eur',
         description: description,
-        'metadata[proforma_id]': metadata.proformaId || '',
-        'metadata[contract_id]': metadata.contractId || '',
-        'metadata[lead_id]': metadata.leadId || ''
+        // Nomi ESATTI letti da stripe-webhook-handler (paymentIntent.metadata.proforma_number / contract_code)
+        'metadata[proforma_number]': String(metadata.proforma_number || ''),
+        'metadata[contract_code]': String(metadata.contract_code || ''),
+        'metadata[proforma_id]': String(metadata.proformaId || ''),
+        'metadata[contract_id]': String(metadata.contractId || ''),
+        'metadata[lead_id]': String(metadata.leadId || metadata.lead_id || ''),
+        ...(metadata.numero_rata ? { 'metadata[numero_rata]': String(metadata.numero_rata) } : {})
       })
     })
 

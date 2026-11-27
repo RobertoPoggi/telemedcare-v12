@@ -10,6 +10,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
+import { createHmac } from 'node:crypto'
 import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -21,9 +22,15 @@ const build = (src, out) => execFileSync('npx', ['--yes', 'esbuild', src, '--bun
 build('src/modules/stripe-service.ts', 'stripe.mjs')
 build('src/modules/stripe-webhook-handler.ts', 'handler.mjs')
 build('src/modules/proforma-generator.ts', 'proforma.mjs')
+build('src/modules/stripe-carta.ts', 'carta.mjs')
+build('src/modules/payment-manager.ts', 'pm.mjs')
+build('src/modules/stripe-webhook-route.ts', 'route-bundle.mjs')
 const { createStripeService, createProformaPaymentLink } = await import(pathToFileURL(join(dir, 'stripe.mjs')).href)
 const { StripeWebhookHandler } = await import(pathToFileURL(join(dir, 'handler.mjs')).href)
 const { ProformaGenerator } = await import(pathToFileURL(join(dir, 'proforma.mjs')).href)
+const { statoCartaStripe, totaleProformaIvaInclusa } = await import(pathToFileURL(join(dir, 'carta.mjs')).href)
+const { createStripePaymentIntent } = await import(pathToFileURL(join(dir, 'pm.mjs')).href)
+const { handleStripeWebhook } = await import(pathToFileURL(join(dir, 'route-bundle.mjs')).href)
 
 function conFetchFinto(fn) {
   const originale = globalThis.fetch
@@ -180,4 +187,118 @@ test('ProformaGenerator: rispetta il numero riservato, scrive su `proforma`, e i
   const dopo = db.raw.prepare('SELECT status, payment_intent_id FROM proforma WHERE numero_proforma = ?').get(num)
   assert.equal(dopo.status, 'PAID'); assert.equal(dopo.payment_intent_id, 'pi_test_1')
   assert.equal(db.raw.prepare("SELECT name FROM sqlite_master WHERE name='proformas'").get(), undefined)
+})
+
+// ============================================================================
+// Pagamento con carta dalla pagina "Pagamento Proforma" (public/pagamento.html)
+// ============================================================================
+const SK_TEST = 'sk_test_finta_per_i_test'
+const PK_TEST = 'pk_test_finta_per_i_test'
+
+test('carta: con chiavi test coerenti parte da sola e la pagina riceve la chiave pubblica', () => {
+  const st = statoCartaStripe({ STRIPE_SECRET_KEY: SK_TEST, STRIPE_PUBLISHABLE_KEY: PK_TEST })
+  assert.equal(st.abilitata, true); assert.equal(st.modalita, 'test'); assert.equal(st.publishableKey, PK_TEST)
+})
+
+test('carta: la pubblica puo stare in STRIPE_PUBLIC_KEY (nome gia usato nei docs/Cloudflare) oltre che in STRIPE_PUBLISHABLE_KEY', () => {
+  assert.equal(statoCartaStripe({ STRIPE_SECRET_KEY: SK_TEST, STRIPE_PUBLIC_KEY: PK_TEST }).abilitata, true)
+  assert.equal(statoCartaStripe({ STRIPE_SECRET_KEY: SK_TEST, STRIPE_PUBLISHABLE_KEY: 'pk_test_a', STRIPE_PUBLIC_KEY: 'pk_test_b' }).publishableKey, 'pk_test_a')
+})
+
+test('carta: senza STRIPE_SECRET_KEY o senza chiave pubblica NON e abilitata (motivo nei log, mai alla pagina)', () => {
+  assert.equal(statoCartaStripe({ STRIPE_PUBLISHABLE_KEY: PK_TEST }).abilitata, false)
+  assert.match(statoCartaStripe({ STRIPE_SECRET_KEY: SK_TEST }).motivo, /pubblica mancante/)
+  assert.equal(statoCartaStripe({}).abilitata, false)
+  assert.equal(statoCartaStripe({ STRIPE_SECRET_KEY: 'qualcosa', STRIPE_PUBLISHABLE_KEY: PK_TEST }).abilitata, false)
+})
+
+test('carta: chiavi incoerenti (segreta test + pubblica live) -> NON abilitata', () => {
+  const st = statoCartaStripe({ STRIPE_SECRET_KEY: SK_TEST, STRIPE_PUBLISHABLE_KEY: 'pk_live_finta' })
+  assert.equal(st.abilitata, false); assert.match(st.motivo, /incoerenti/)
+})
+
+test('carta LIVE: serve STRIPE_CARTA_LIVE_ATTIVA (apertura ai clienti solo dopo il pagamento reale con rimborso)', () => {
+  const live = { STRIPE_SECRET_KEY: 'sk_live_finta', STRIPE_PUBLISHABLE_KEY: 'pk_live_finta' }
+  assert.equal(statoCartaStripe(live).abilitata, false)
+  assert.match(statoCartaStripe(live).motivo, /live non ancora attivata/)
+  assert.equal(statoCartaStripe({ ...live, STRIPE_CARTA_LIVE_ATTIVA: '0' }).abilitata, false)
+  assert.equal(statoCartaStripe({ ...live, STRIPE_CARTA_LIVE_ATTIVA: '1' }).abilitata, true)
+})
+
+test('importo: la carta addebita il totale IVA INCLUSA che vede il cliente (prezzo_totale e IVA esclusa)', () => {
+  assert.equal(totaleProformaIvaInclusa({ prezzo_totale: 840, iva_esente: 1 }), 840)          // il caso della schermata: 840,00
+  assert.equal(totaleProformaIvaInclusa({ prezzo_totale: 480 }), 585.6)                          // 22%
+  assert.equal(totaleProformaIvaInclusa({ prezzo_totale: 1000, iva_agevolata: 1 }), 1040)        // 4%
+  assert.equal(totaleProformaIvaInclusa({ prezzo_totale: 480 }, { iva_esente: 1 }), 480)         // flag dal lead
+  assert.equal(totaleProformaIvaInclusa({ prezzo_totale: 'x' }), 0)
+})
+
+function conStripeFinto(rispondi, fn) {
+  const originale = globalThis.fetch
+  const chiamate = []
+  globalThis.fetch = async (url, init) => { chiamate.push({ url: String(url), init }); return rispondi(String(url), init) }
+  return fn(chiamate).finally(() => { globalThis.fetch = originale })
+}
+
+test('Payment Intent: metadata proforma_number e contract_code (nomi attesi dal webhook) + nessun finto client secret senza chiavi', () =>
+  conStripeFinto((u, init) => new Response(JSON.stringify({ id: 'pi_test_9', client_secret: 'pi_test_9_secret_x' }), { status: 200 }), async chiamate => {
+    const r = await createStripePaymentIntent({ STRIPE_SECRET_KEY: SK_TEST, STRIPE_PUBLISHABLE_KEY: PK_TEST }, 84000, 'Pagamento Proforma PRF202611-57YV',
+      { proformaId: 7, proforma_number: 'PRF202611-57YV', contract_code: 'CTR-2026-001', leadId: 'L1' })
+    assert.equal(r.success, true); assert.equal(r.paymentId, 'pi_test_9')
+    assert.match(chiamate[0].url, /\/v1\/payment_intents$/)
+    const p = new URLSearchParams(chiamate[0].init.body)
+    assert.equal(p.get('metadata[proforma_number]'), 'PRF202611-57YV')
+    assert.equal(p.get('metadata[contract_code]'), 'CTR-2026-001')
+    assert.equal(p.get('amount'), '84000')
+    assert.equal(p.get('metadata[lead_id]'), 'L1')
+    const senza = await createStripePaymentIntent({}, 100, 'x', { proforma_number: 'PRF1' })
+    assert.equal(senza.success, false); assert.equal(senza.stripeClientSecret, undefined)
+    assert.equal(chiamate.length, 1, 'senza chiavi non si deve chiamare Stripe')
+  }))
+
+test('webhook: contract_code vuoto -> il lead si trova comunque dalla proforma (leadId) e il pagamento si chiude', async () => {
+  const db = dbSqlite({ conColonne: true })
+  db.raw.exec(`INSERT INTO proforma (contract_id, leadId, numero_proforma, status) VALUES ('', 'L1', 'PRF202611-57YV', 'SENT')`)
+  const r = await StripeWebhookHandler.processWebhook(evento({ proforma_number: 'PRF202611-57YV', contract_code: '' }), db)
+  assert.equal(r.success, true, r.error)
+  assert.equal(db.raw.prepare("SELECT status FROM proforma WHERE numero_proforma='PRF202611-57YV'").get().status, 'PAID')
+  assert.equal(db.raw.prepare("SELECT status FROM leads WHERE id='L1'").get().status, 'PAYMENT_COMPLETED')
+})
+
+// --- Giro completo in locale: Payment Intent -> evento Stripe firmato -> rotta webhook REALE -> D1 ---
+test('GIRO COMPLETO: Payment Intent -> webhook firmato HMAC -> 200 -> proforma PAID, lead PAYMENT_COMPLETED, riga in stripe_webhook_events', async () => {
+  const SEGRETO = 'whsec_finto_per_i_test'
+  const db = dbSqlite({ conColonne: false })
+  db.raw.exec(readFileSync('migrations/0109_create_stripe_webhook_events.sql', 'utf8'))
+  db.raw.exec(`INSERT INTO proforma (contract_id, leadId, numero_proforma, status, prezzo_totale) VALUES ('C1', 'L1', 'PRF202611-57YV', 'SENT', 840)`)
+  // 1) la pagina chiede il Payment Intent: Stripe (finto) lo crea e restituisce i metadata ricevuti
+  let metadataInviati = {}
+  await conStripeFinto((u, init) => {
+    const p = new URLSearchParams(init.body)
+    metadataInviati = { proforma_number: p.get('metadata[proforma_number]'), contract_code: p.get('metadata[contract_code]') }
+    return new Response(JSON.stringify({ id: 'pi_test_e2e', client_secret: 'pi_test_e2e_secret' }), { status: 200 })
+  }, async () => {
+    const r = await createStripePaymentIntent({ STRIPE_SECRET_KEY: SK_TEST, STRIPE_PUBLISHABLE_KEY: PK_TEST }, 84000, 'Pagamento Proforma PRF202611-57YV',
+      { proformaId: 1, proforma_number: 'PRF202611-57YV', contract_code: 'CTR-2026-001', leadId: 'L1' })
+    assert.equal(r.success, true)
+  })
+  // 2) Stripe invia payment_intent.succeeded con quei metadata, firmato
+  const corpo = JSON.stringify({ id: 'evt_e2e_1', type: 'payment_intent.succeeded', livemode: false, created: 0,
+    data: { object: { id: 'pi_test_e2e', amount: 84000, metadata: metadataInviati } } })
+  const ts = Math.floor(Date.now() / 1000)
+  const firma = `t=${ts},v1=${createHmac('sha256', SEGRETO).update(`${ts}.${corpo}`).digest('hex')}`
+  const esito = await handleStripeWebhook(corpo, firma, { STRIPE_WEBHOOK_SECRET: SEGRETO }, db)
+  // 3) risultato
+  assert.equal(esito.status, 200, JSON.stringify(esito.body))
+  const pf = db.raw.prepare("SELECT status, payment_intent_id FROM proforma WHERE numero_proforma='PRF202611-57YV'").get()
+  assert.equal(pf.status, 'PAID'); assert.equal(pf.payment_intent_id, 'pi_test_e2e')
+  assert.equal(db.raw.prepare("SELECT status FROM leads WHERE id='L1'").get().status, 'PAYMENT_COMPLETED')
+  const ev = db.raw.prepare('SELECT event_id, event_type, esito, http_status FROM stripe_webhook_events ORDER BY id DESC LIMIT 1').get()
+  assert.deepEqual({ ...ev }, { event_id: 'evt_e2e_1', event_type: 'payment_intent.succeeded', esito: 'ok', http_status: 200 })
+  // 4) firma sbagliata -> 400 e nessun cambio
+  const db2 = dbSqlite({ conColonne: true }); db2.raw.exec(readFileSync('migrations/0109_create_stripe_webhook_events.sql', 'utf8'))
+  inserisciProforma(db2)
+  const rifiutato = await handleStripeWebhook(corpo, `t=${ts},v1=${'0'.repeat(64)}`, { STRIPE_WEBHOOK_SECRET: SEGRETO }, db2)
+  assert.equal(rifiutato.status, 400)
+  assert.equal(db2.raw.prepare("SELECT status FROM leads WHERE id='L1'").get().status, 'CONTRACT_SIGNED')
 })

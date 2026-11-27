@@ -109,19 +109,25 @@ export class StripeWebhookHandler {
       
       console.log(`✅ [STRIPE-WEBHOOK] Proforma ${proformaNumber} aggiornata: PAID`)
       
-      // 3. Recupera dati lead associati al contratto
+      // 3. Recupera il lead: prima dalla proforma appena aggiornata (leadId), poi dal contratto.
+      // Cosi' un contract_code vuoto o non trovato non blocca il pagamento gia' avvenuto.
       // Niente `l.*` nel JOIN: `leads` ha 100 colonne e D1 ne ammette al massimo 100 per risultato («too many columns»).
-      const leadRef = await db.prepare(`
-        SELECT l.id, c.codice_contratto
-        FROM leads l
-        INNER JOIN contracts c ON c.leadId = l.id
-        WHERE c.codice_contratto = ?
-      `).bind(contractCode).first() as any
+      let leadRef: any = null
+      const rigaProforma = await db.prepare('SELECT leadId FROM proforma WHERE numero_proforma = ? LIMIT 1').bind(proformaNumber).first() as any
+      if (rigaProforma?.leadId) leadRef = { id: rigaProforma.leadId, codice_contratto: contractCode || null }
+      if (!leadRef && contractCode) {
+        leadRef = await db.prepare(`
+          SELECT l.id, c.codice_contratto
+          FROM leads l
+          INNER JOIN contracts c ON c.leadId = l.id
+          WHERE c.codice_contratto = ?
+        `).bind(contractCode).first() as any
+      }
       const leadRow = leadRef ? await db.prepare('SELECT * FROM leads WHERE id = ? LIMIT 1').bind(leadRef.id).first() as any : null
       const lead = leadRow ? { ...leadRow, codice_contratto: leadRef.codice_contratto } : null
       
       if (!lead) {
-        throw new Error(`Lead non trovato per contratto ${contractCode}`)
+        throw new Error(`Lead non trovato per proforma ${proformaNumber} / contratto ${contractCode}`)
       }
       
       // 4. Aggiorna stato lead

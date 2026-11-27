@@ -17,6 +17,7 @@ import { getSettings, updateSetting, getSetting } from './modules/settings-api'
 
 // Import logica webhook Stripe (rotta isolata e testabile)
 import { handleStripeWebhook } from './modules/stripe-webhook-route'
+import { statoCartaStripe, totaleProformaIvaInclusa } from './modules/stripe-carta'
 
 // Import TeleMedCare V12.1 Modular Enterprise System - Deploy 2026-01-05 20:05 (Fix Puppeteer + CRUD completo)
 import * as LeadConfig from './modules/lead-config'
@@ -9746,41 +9747,23 @@ app.post('/api/proforma/send', async (c) => {
   }
 })
 
-// GET /api/stripe-public-key - Recupera la chiave pubblica Stripe
+// GET /api/stripe-public-key - Chiave pubblica Stripe, SOLO se la carta e' davvero utilizzabile.
+// La decisione e' in modules/stripe-carta.ts (stessa regola del server quando crea il Payment Intent):
+// serve STRIPE_SECRET_KEY + chiave pubblica coerente (STRIPE_PUBLISHABLE_KEY o STRIPE_PUBLIC_KEY);
+// in modalita' live serve anche STRIPE_CARTA_LIVE_ATTIVA=1. Il motivo del rifiuto va solo nei log.
 app.get('/api/stripe-public-key', async (c) => {
   try {
-    // ✅ Auto-detect environment: se URL contiene "test-environment", usa TEST mode
     const hostname = c.req.header('host') || ''
-    const isPreview = hostname.includes('test-environment') || hostname.includes('preview')
-    
-    let publicKey = c.env?.STRIPE_PUBLIC_KEY || ''
-    
-    // 🔧 OVERRIDE: Se siamo in preview ma c'è solo chiave LIVE, forza test key
-    if (isPreview && publicKey.startsWith('pk_live')) {
-      const testKey = c.env?.STRIPE_TEST_PUBLIC_KEY
-      if (testKey) {
-        console.log('🔧 [STRIPE] Preview detected - using TEST key')
-        publicKey = testKey
-      } else {
-        console.warn('⚠️ [STRIPE] Preview ma STRIPE_TEST_PUBLIC_KEY non configurata')
-      }
+    const stato = statoCartaStripe(c.env, hostname)
+    if (!stato.abilitata) {
+      console.warn(`⚠️ [STRIPE] Carta non disponibile: ${stato.motivo}`)
+      return c.json({ success: false, error: 'Stripe non configurato', testMode: stato.modalita !== 'live' })
     }
-    
-    if (!publicKey) {
-      console.warn('⚠️ [STRIPE] Public Key non configurata')
-      return c.json({ 
-        success: false, 
-        error: 'Stripe non configurato',
-        testMode: true 
-      })
-    }
-    
     return c.json({
       success: true,
-      publishableKey: publicKey,
-      testMode: isPreview || publicKey.startsWith('pk_test')
+      publishableKey: stato.publishableKey,
+      testMode: stato.modalita === 'test'
     })
-    
   } catch (error) {
     console.error('❌ Errore recupero Stripe public key:', error)
     return c.json({ success: false, error: error.message }, 500)
@@ -9961,7 +9944,15 @@ app.post('/api/create-payment-intent', async (c) => {
         console.log(`✅ [PAYMENT] Uso importo_totale: €${totalAmount.toFixed(2)}`)
       } else {
         // Fallback su prezzo_totale (campo legacy)
-        totalAmount = parseFloat(proforma.prezzo_totale || '0')
+        // `prezzo_totale` e' IVA ESCLUSA: la pagina mostra il totale IVA inclusa (GET /api/proforma/:id),
+        // quindi si addebita lo stesso importo, con aliquota da proforma e, in subordine, dal lead.
+        let leadIva: any = null
+        if (proformaLeadId) {
+          try {
+            leadIva = await c.env.DB.prepare('SELECT iva_agevolata, iva_esente FROM leads WHERE id = ? LIMIT 1').bind(proformaLeadId).first()
+          } catch (err) { console.warn('[PAYMENT] Flag IVA del lead non letti:', err) }
+        }
+        totalAmount = totaleProformaIvaInclusa(proforma, leadIva)
         console.log(`📦 [PAYMENT] Fallback prezzo_totale: €${totalAmount.toFixed(2)}`)
       }
     }

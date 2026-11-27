@@ -175,6 +175,10 @@ export class DocuSignWebhookHandler {
       result.actions?.push(`Lead ${leadIdContratto} aggiornato: CONTRACT_SIGNED`)
     }
     
+    // ⚠️ PROMEMORIA (Fase 2-bis): questo percorso crea un Payment Link Stripe e lo manda al cliente per email.
+    // Oggi NON e' raggiunto (nessun punto del CRM scrive contracts.docusign_envelope_id). Se mai si attivera' DocuSign,
+    // i clienti che pagano con BONIFICO non devono ricevere link Stripe automatici: prima di attivarlo va deciso
+    // chi riceve il link carta (es. solo chi lo sceglie dalla pagina di pagamento) e questo ramo va adeguato.
     // 3. NUOVO: Genera e invia Proforma automaticamente
     try {
       if (lead) {
