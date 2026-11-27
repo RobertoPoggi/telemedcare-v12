@@ -42,6 +42,9 @@ export interface ProformaData {
   
   // Contratto collegato
   codiceContratto: string
+  /** id del contratto (contracts.id) e del lead: servono alla tabella reale `proforma` */
+  contractId?: string
+  leadId?: string
   
   // Pagamento
   linkPagamentoStripe?: string
@@ -87,7 +90,6 @@ export class ProformaGenerator {
       // 1. Genera numero proforma univoco
       // Se il chiamante ha gia' riservato un numero (es. per il metadata del Payment Link Stripe) lo si rispetta.
       const numeroProforma = (data.numeroProforma && data.numeroProforma.trim()) ? data.numeroProforma.trim() : this.generateProformaNumber()
-      const proformaId = `PROF_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
       
       // 2. Prepara dati completi
       const proformaData: ProformaData = {
@@ -104,26 +106,41 @@ export class ProformaGenerator {
       // TODO: Usare Puppeteer/Chromium in produzione
       const pdfBase64 = Buffer.from(proformaHtml).toString('base64')
       
-      // 5. Salva in database
-      await db.prepare(`
-        INSERT INTO proformas (
-          id, numero_proforma, contract_code, servizio, piano,
-          importo_base, iva, totale, status,
-          pdf_url, stripe_payment_link, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      // 5. Salva in database: tabella reale `proforma` (singolare, id autoincrement).
+      // `proformas` (migration 0003) non esiste in D1 di produzione.
+      const oggi = new Date()
+      const isoOggi = oggi.toISOString().split('T')[0]
+      const scad = new Date(oggi.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const nowIso = oggi.toISOString()
+      const insert = await db.prepare(`
+        INSERT INTO proforma (
+          contract_id, leadId, numero_proforma, data_emissione, data_scadenza,
+          cliente_nome, cliente_cognome, cliente_email, cliente_telefono, cliente_indirizzo, cliente_codice_fiscale,
+          tipo_servizio, prezzo_mensile, durata_mesi, prezzo_totale,
+          status, email_sent, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
-        proformaId,
+        data.contractId || data.codiceContratto || '',
+        data.leadId || '',
         numeroProforma,
-        data.codiceContratto,
+        isoOggi,
+        scad,
+        data.nomeCliente,
+        data.cognomeCliente,
+        data.emailCliente,
+        data.telefonoCliente || '',
+        data.indirizzoCliente || '',
+        data.codiceFiscaleCliente || '',
         data.servizio,
-        data.piano,
-        data.importoBase,
-        data.iva,
+        Number((data.totale / 12).toFixed(2)),
+        12,
         data.totale,
-        'pending',
-        `/proformas/${numeroProforma}.pdf`,
-        data.linkPagamentoStripe || null
+        'DRAFT',
+        0,
+        nowIso,
+        nowIso
       ).run()
+      const proformaId = String(insert?.meta?.last_row_id ?? numeroProforma)
       
       console.log(`✅ [PROFORMA] Proforma generata: ${numeroProforma} (${data.piano})`)
       

@@ -95,7 +95,7 @@ export class DocuSignWebhookHandler {
         return result
       }
       
-      console.log(`✅ [DOCUSIGN_WEBHOOK] Contratto trovato: ${contract.contract_code}`)
+      console.log(`✅ [DOCUSIGN_WEBHOOK] Contratto trovato: ${contract.codice_contratto ?? contract.contract_code}`)
       
       // 2. Processa evento in base allo status
       switch (status.toLowerCase()) {
@@ -137,7 +137,11 @@ export class DocuSignWebhookHandler {
     result: DocuSignWebhookResult
   ): Promise<void> {
     
-    console.log(`✅ [DOCUSIGN_WEBHOOK] Firma completata per contratto: ${contract.contract_code}`)
+    // Colonne reali di `contracts` in produzione: leadId, codice_contratto (fallback ai nomi storici)
+    const leadIdContratto = contract.leadId ?? contract.lead_id
+    const codiceContratto = contract.codice_contratto ?? contract.contract_code
+    
+    console.log(`✅ [DOCUSIGN_WEBHOOK] Firma completata per contratto: ${codiceContratto}`)
     
     const signedDateTime = event.data.envelopeSummary.statusDateTime
     const signerInfo = event.data.envelopeSummary.recipients?.signers?.[0]
@@ -151,24 +155,24 @@ export class DocuSignWebhookHandler {
       WHERE id = ?
     `).bind(signedDateTime, contract.id).run()
     
-    result.actions?.push(`Contratto ${contract.contract_code} marcato come SIGNED`)
+    result.actions?.push(`Contratto ${codiceContratto} marcato come SIGNED`)
     console.log(`✅ [DOCUSIGN_WEBHOOK] Status contratto aggiornato: SIGNED`)
     
     // 2. Aggiorna lead associato
     let lead = null
-    if (contract.lead_id) {
+    if (leadIdContratto) {
       await db.prepare(`
         UPDATE leads 
         SET status = 'CONTRACT_SIGNED'
         WHERE id = ?
-      `).bind(contract.lead_id).run()
+      `).bind(leadIdContratto).run()
       
       // Recupera dati lead per proforma
       lead = await db.prepare(`
         SELECT * FROM leads WHERE id = ?
-      `).bind(contract.lead_id).first()
+      `).bind(leadIdContratto).first()
       
-      result.actions?.push(`Lead ${contract.lead_id} aggiornato: CONTRACT_SIGNED`)
+      result.actions?.push(`Lead ${leadIdContratto} aggiornato: CONTRACT_SIGNED`)
     }
     
     // 3. NUOVO: Genera e invia Proforma automaticamente
@@ -188,7 +192,7 @@ export class DocuSignWebhookHandler {
         
         // Prepara dati proforma
         const proformaData = await createProformaFromContract(
-          contract.contract_code,
+          codiceContratto,
           lead.nome_richiedente || lead.nomeRichiedente || 'Cliente',
           lead.cognome_richiedente || lead.cognomeRichiedente || '',
           lead.email_richiedente || lead.email || '',
@@ -197,14 +201,16 @@ export class DocuSignWebhookHandler {
         )
         
         // Il numero proforma va riservato PRIMA del link: finisce nei metadata del payment_intent
-        // e il webhook Stripe aggiorna `proformas` per numero_proforma.
+        // e il webhook Stripe aggiorna `proforma` per numero_proforma.
         proformaData.numeroProforma = ProformaGenerator.generateProformaNumber()
+        proformaData.contractId = String(contract.id ?? '')
+        proformaData.leadId = String(leadIdContratto ?? '')
         
         // Genera Payment Link Stripe
         const paymentLink = await createProformaPaymentLink(
           stripeService,
           proformaData.numeroProforma,
-          contract.contract_code,
+          codiceContratto,
           proformaData.servizio,
           proformaData.piano,
           proformaData.totale,
@@ -222,7 +228,7 @@ export class DocuSignWebhookHandler {
           
           // Aggiorna con Stripe link
           await db.prepare(`
-            UPDATE proformas 
+            UPDATE proforma 
             SET stripe_payment_link = ?
             WHERE id = ?
           `).bind(paymentLink.url, proforma.proformaId).run()
@@ -254,7 +260,7 @@ export class DocuSignWebhookHandler {
               DISPOSITIVO: proformaData.dispositivo,
               SCADENZA_PAGAMENTO: proformaData.scadenzaPagamento,
               DATA_EMISSIONE: proformaData.dataEmissione,
-              CODICE_CONTRATTO: contract.contract_code,
+              CODICE_CONTRATTO: codiceContratto,
               DETRAZIONE_FISCALE: pricing ? (pricing.detrazioneFiscale19 / 12).toFixed(2) : '0.00'
             }
             
@@ -300,7 +306,7 @@ export class DocuSignWebhookHandler {
       result.actions?.push(`Errore workflow proforma: ${proformaError}`)
     }
     
-    result.message = `Firma completata con successo per ${contract.contract_code}`
+    result.message = `Firma completata con successo per ${codiceContratto}`
   }
   
   /**
@@ -314,7 +320,7 @@ export class DocuSignWebhookHandler {
     result: DocuSignWebhookResult
   ): Promise<void> {
     
-    console.log(`❌ [DOCUSIGN_WEBHOOK] Firma declinata per contratto: ${contract.contract_code}`)
+    console.log(`❌ [DOCUSIGN_WEBHOOK] Firma declinata per contratto: ${(contract.codice_contratto ?? contract.contract_code)}`)
     
     // 1. Aggiorna status contratto
     await db.prepare(`
@@ -324,24 +330,24 @@ export class DocuSignWebhookHandler {
       WHERE id = ?
     `).bind(contract.id).run()
     
-    result.actions?.push(`Contratto ${contract.contract_code} marcato come DECLINED`)
+    result.actions?.push(`Contratto ${(contract.codice_contratto ?? contract.contract_code)} marcato come DECLINED`)
     
     // 2. Aggiorna lead
-    if (contract.lead_id) {
+    if ((contract.leadId ?? contract.lead_id)) {
       await db.prepare(`
         UPDATE leads 
         SET status = 'CONTRACT_DECLINED'
         WHERE id = ?
-      `).bind(contract.lead_id).run()
+      `).bind((contract.leadId ?? contract.lead_id)).run()
       
-      result.actions?.push(`Lead ${contract.lead_id} aggiornato: CONTRACT_DECLINED`)
+      result.actions?.push(`Lead ${(contract.leadId ?? contract.lead_id)} aggiornato: CONTRACT_DECLINED`)
     }
     
     // 3. Notifica team interno
     result.actions?.push('TODO: Notifica team - firma declinata')
     console.log(`📧 [DOCUSIGN_WEBHOOK] TODO: Notifica team firma declinata`)
     
-    result.message = `Firma declinata per ${contract.contract_code}`
+    result.message = `Firma declinata per ${(contract.codice_contratto ?? contract.contract_code)}`
   }
   
   /**
@@ -355,7 +361,7 @@ export class DocuSignWebhookHandler {
     result: DocuSignWebhookResult
   ): Promise<void> {
     
-    console.log(`🚫 [DOCUSIGN_WEBHOOK] Envelope annullato per contratto: ${contract.contract_code}`)
+    console.log(`🚫 [DOCUSIGN_WEBHOOK] Envelope annullato per contratto: ${(contract.codice_contratto ?? contract.contract_code)}`)
     
     // 1. Aggiorna status contratto
     await db.prepare(`
@@ -365,18 +371,18 @@ export class DocuSignWebhookHandler {
       WHERE id = ?
     `).bind(contract.id).run()
     
-    result.actions?.push(`Contratto ${contract.contract_code} marcato come VOIDED`)
+    result.actions?.push(`Contratto ${(contract.codice_contratto ?? contract.contract_code)} marcato come VOIDED`)
     
     // 2. Aggiorna lead
-    if (contract.lead_id) {
+    if ((contract.leadId ?? contract.lead_id)) {
       await db.prepare(`
         UPDATE leads 
         SET status = 'CONTRACT_VOIDED'
         WHERE id = ?
-      `).bind(contract.lead_id).run()
+      `).bind((contract.leadId ?? contract.lead_id)).run()
     }
     
-    result.message = `Envelope annullato per ${contract.contract_code}`
+    result.message = `Envelope annullato per ${(contract.codice_contratto ?? contract.contract_code)}`
   }
   
   /**

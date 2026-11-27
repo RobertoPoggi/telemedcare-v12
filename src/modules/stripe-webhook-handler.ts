@@ -97,23 +97,24 @@ export class StripeWebhookHandler {
       console.log(`📄 [STRIPE-WEBHOOK] Proforma: ${proformaNumber} | Contratto: ${contractCode}`)
       
       // 2. Aggiorna stato proforma
+      // Tabella reale in produzione: `proforma` (singolare). `proformas` (migration 0003) non esiste in D1.
       await db.prepare(`
-        UPDATE proformas 
-        SET status = 'paid', 
+        UPDATE proforma 
+        SET status = 'PAID', 
             paid_at = datetime('now'),
             payment_intent_id = ?,
             updated_at = datetime('now')
         WHERE numero_proforma = ?
       `).bind(paymentIntentId, proformaNumber).run()
       
-      console.log(`✅ [STRIPE-WEBHOOK] Proforma ${proformaNumber} aggiornata: paid`)
+      console.log(`✅ [STRIPE-WEBHOOK] Proforma ${proformaNumber} aggiornata: PAID`)
       
       // 3. Recupera dati lead associati al contratto
       // Niente `l.*` nel JOIN: `leads` ha 100 colonne e D1 ne ammette al massimo 100 per risultato («too many columns»).
       const leadRef = await db.prepare(`
         SELECT l.id, c.codice_contratto
         FROM leads l
-        INNER JOIN contracts c ON c.lead_id = l.id
+        INNER JOIN contracts c ON c.leadId = l.id
         WHERE c.codice_contratto = ?
       `).bind(contractCode).first() as any
       const leadRow = leadRef ? await db.prepare('SELECT * FROM leads WHERE id = ? LIMIT 1').bind(leadRef.id).first() as any : null
@@ -255,8 +256,8 @@ export class StripeWebhookHandler {
     
     // Aggiorna stato proforma
     await db.prepare(`
-      UPDATE proformas 
-      SET status = 'failed',
+      UPDATE proforma 
+      SET status = 'FAILED',
           updated_at = datetime('now')
       WHERE numero_proforma = ?
     `).bind(proformaNumber).run()
@@ -291,8 +292,8 @@ export class StripeWebhookHandler {
     
     // Aggiorna stato proforma
     await db.prepare(`
-      UPDATE proformas 
-      SET status = 'canceled',
+      UPDATE proforma 
+      SET status = 'CANCELED',
           updated_at = datetime('now')
       WHERE numero_proforma = ?
     `).bind(proformaNumber).run()

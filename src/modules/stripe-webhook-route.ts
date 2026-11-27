@@ -63,22 +63,33 @@ async function registraEsito(db: any, riga: RigaLog): Promise<void> {
 }
 
 /**
- * Lo handler (non modificabile) scrive `proformas.payment_intent_id`, ma la migration 0003 crea solo
- * `stripe_payment_intent_id`. Se la colonna manca l'UPDATE fallisce e proforma/lead restano non aggiornati.
- * Aggiunge la colonna (nullable) SOLO se assente (PRAGMA table_info): idempotente, mai su colonne esistenti.
- * Il deploy non applica le migration D1, quindi una migration non raggiungerebbe la produzione.
+ * Colonne che il webhook scrive su `proforma` (tabella reale di produzione) e che lo schema storico non ha.
+ * Il deploy non applica le migration D1, quindi una migration non raggiungerebbe la produzione:
+ * le colonne (nullable) si aggiungono qui, SOLO se assenti (PRAGMA table_info), mai su colonne esistenti.
  */
+export const COLONNE_PAGAMENTO_PROFORMA: ReadonlyArray<{ nome: string; def: string }> = [
+  { nome: 'payment_intent_id', def: 'TEXT' },
+  { nome: 'paid_at', def: 'TEXT' },
+  { nome: 'stripe_payment_link', def: 'TEXT' },
+]
+
 export async function assicuraColonnaPaymentIntent(db: any): Promise<void> {
   if (!db || typeof db.prepare !== 'function') return
   try {
-    const info = await db.prepare('PRAGMA table_info(proformas)').all()
+    const info = await db.prepare('PRAGMA table_info(proforma)').all()
     const colonne: any[] = info?.results || []
-    if (!colonne.length) return
-    if (colonne.some(c => c && c.name === 'payment_intent_id')) return
-    await db.prepare('ALTER TABLE proformas ADD COLUMN payment_intent_id TEXT').run()
-    console.warn('⚠️ [WEBHOOK] Aggiunta colonna mancante proformas.payment_intent_id')
+    if (!colonne.length) return // tabella assente: non la si crea qui
+    for (const { nome, def } of COLONNE_PAGAMENTO_PROFORMA) {
+      if (colonne.some(c => c && c.name === nome)) continue
+      try {
+        await db.prepare(`ALTER TABLE proforma ADD COLUMN ${nome} ${def}`).run()
+        console.warn(`⚠️ [WEBHOOK] Aggiunta colonna mancante proforma.${nome}`)
+      } catch (errore) {
+        console.warn(`⚠️ [WEBHOOK] Colonna proforma.${nome} non aggiunta:`, String(errore))
+      }
+    }
   } catch (errore) {
-    console.warn('⚠️ [WEBHOOK] Verifica colonna proformas.payment_intent_id non riuscita:', String(errore))
+    console.warn('⚠️ [WEBHOOK] Verifica colonne proforma non riuscita:', String(errore))
   }
 }
 
