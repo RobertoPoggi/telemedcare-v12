@@ -1,0 +1,52 @@
+name: Claim DM - Riconciliazione (ogni 15 minuti)
+# Cloudflare Pages NON ha Cron Trigger nativi (esistono solo per i Workers): lo scheduler e' GitHub Actions.
+# Chiama POST /api/cron/claim-reconcile del CRM, che a sua volta riallinea la landing eCura
+# (POST /internal/claim-blocks/riconcilia) e scrive l'esito in claim_dm_sync_log.
+# Nota: GitHub puo' ritardare o saltare singole esecuzioni schedulate (soprattutto a inizio ora);
+# la landing e' fail-closed oltre 24 h di replica non fresca, quindi un ritardo di minuti e' innocuo.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: claim-reconcile
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    name: Riconcilia Claim DM
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Chiama /api/cron/claim-reconcile
+        env:
+          CRON_SECRET_VALUE: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET_VALUE" ]; then
+            echo "::error::CRON_SECRET non configurato nei GitHub Secrets (Settings -> Secrets and variables -> Actions)"
+            exit 1
+          fi
+          # Il segreto passa solo da variabile d'ambiente; non viene mai stampato.
+          HTTP_CODE=$(curl -sS -m 60 -o body.json -w "%{http_code}" -X POST \
+            "https://telemedcare-v12.pages.dev/api/cron/claim-reconcile" \
+            -H "x-cron-secret: ${CRON_SECRET_VALUE}" \
+            -H "Authorization: Bearer ${CRON_SECRET_VALUE}" \
+            -H "Content-Type: application/json" \
+            -d '{}') || { echo "::error::curl fallito"; exit 1; }
+          echo "HTTP $HTTP_CODE"
+          cat body.json; echo
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Risposta HTTP $HTTP_CODE (atteso 200)"
+            exit 1
+          fi
+          # La rotta risponde 200 anche se la landing non e' raggiungibile: conta il campo success.
+          if ! grep -q '"success":true' body.json; then
+            echo "::error::Riconciliazione eseguita ma NON riuscita (success != true): vedere claim_dm_sync_log"
+            exit 1
+          fi
+          echo "Riconciliazione OK"

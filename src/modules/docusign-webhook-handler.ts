@@ -196,10 +196,14 @@ export class DocuSignWebhookHandler {
           contract.tipo_servizio || lead.pacchetto || 'BASE'
         )
         
+        // Il numero proforma va riservato PRIMA del link: finisce nei metadata del payment_intent
+        // e il webhook Stripe aggiorna `proformas` per numero_proforma.
+        proformaData.numeroProforma = ProformaGenerator.generateProformaNumber()
+        
         // Genera Payment Link Stripe
         const paymentLink = await createProformaPaymentLink(
           stripeService,
-          '', // Verrà generato automaticamente
+          proformaData.numeroProforma,
           contract.contract_code,
           proformaData.servizio,
           proformaData.piano,

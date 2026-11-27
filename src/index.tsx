@@ -40537,12 +40537,11 @@ app.post('/api/claim-dm/purge', async (c) => {
   return c.json({ success: purge.ok, purge })
 })
 
-// POST /api/cron/claim-reconcile — job ogni 15 minuti (Cron Trigger Cloudflare Pages)
+// POST /api/cron/claim-reconcile — job ogni 15 minuti (GitHub Actions claim-reconcile.yml; Pages non ha Cron Trigger nativi). Header: Authorization Bearer o x-cron-secret
 // Allinea la landing, registra l'esito e invia alert dopo 3 fallimenti consecutivi.
 app.post('/api/cron/claim-reconcile', async (c) => {
   const cronSecret = (c.env as any).CRON_SECRET
-  const authHeader = c.req.header('Authorization')
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!ClaimDM.cronAutorizzato(cronSecret, c.req.header('Authorization'), c.req.header('x-cron-secret'))) {
     return c.json({ success: false, error: 'Non autorizzato' }, 401)
   }
   if (!c.env?.DB) return c.json({ success: false, error: 'Database non configurato' }, 500)

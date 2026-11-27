@@ -206,3 +206,13 @@ test('stripe: usa il primo v1 valido tra più firme (rotazione del segreto)', as
   const header = 't=' + ts + ',v1=' + 'a'.repeat(64) + ',v1=' + createHmac('sha256', SECRET).update(ts + '.' + payload).digest('hex')
   assert.equal((await Stripe.StripeService.verifyWebhookSignature(payload, header, SECRET)).ok, true)
 })
+
+test('cronAutorizzato: Bearer oppure x-cron-secret; segreto errato/assente -> false', () => {
+  assert.equal(DM.cronAutorizzato('s3', 'Bearer s3', null), true)
+  assert.equal(DM.cronAutorizzato('s3', null, 's3'), true)
+  assert.equal(DM.cronAutorizzato('s3', 'Bearer sbagliato', 'altro'), false)
+  assert.equal(DM.cronAutorizzato('s3', null, null), false)
+  assert.equal(DM.cronAutorizzato('s3', 'Basic s3', ''), false)
+  // CRON_SECRET non configurato: comportamento storico delle rotte cron
+  assert.equal(DM.cronAutorizzato(undefined, null, null), true)
+})

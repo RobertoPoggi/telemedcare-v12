@@ -63,6 +63,26 @@ async function registraEsito(db: any, riga: RigaLog): Promise<void> {
 }
 
 /**
+ * Lo handler (non modificabile) scrive `proformas.payment_intent_id`, ma la migration 0003 crea solo
+ * `stripe_payment_intent_id`. Se la colonna manca l'UPDATE fallisce e proforma/lead restano non aggiornati.
+ * Aggiunge la colonna (nullable) SOLO se assente (PRAGMA table_info): idempotente, mai su colonne esistenti.
+ * Il deploy non applica le migration D1, quindi una migration non raggiungerebbe la produzione.
+ */
+export async function assicuraColonnaPaymentIntent(db: any): Promise<void> {
+  if (!db || typeof db.prepare !== 'function') return
+  try {
+    const info = await db.prepare('PRAGMA table_info(proformas)').all()
+    const colonne: any[] = info?.results || []
+    if (!colonne.length) return
+    if (colonne.some(c => c && c.name === 'payment_intent_id')) return
+    await db.prepare('ALTER TABLE proformas ADD COLUMN payment_intent_id TEXT').run()
+    console.warn('⚠️ [WEBHOOK] Aggiunta colonna mancante proformas.payment_intent_id')
+  } catch (errore) {
+    console.warn('⚠️ [WEBHOOK] Verifica colonna proformas.payment_intent_id non riuscita:', String(errore))
+  }
+}
+
+/**
  * Esegue il webhook Stripe: 503 senza segreto, 400 firma mancante/non valida,
  * 400 payload non JSON, 200 quando l'evento è processato.
  */
@@ -136,6 +156,7 @@ export async function handleStripeWebhook(
 
   let result: { success: boolean; message: string }
   try {
+    if (event.type === 'payment_intent.succeeded') await assicuraColonnaPaymentIntent(db)
     result = await processEvent(event, db)
   } catch (errore) {
     console.error('❌ [WEBHOOK] Errore handler Stripe:', String(errore))

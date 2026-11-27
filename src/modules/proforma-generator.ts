@@ -85,7 +85,8 @@ export class ProformaGenerator {
       console.log('📄 [PROFORMA] Piano:', data.piano, '| Servizio:', data.servizio)
       
       // 1. Genera numero proforma univoco
-      const numeroProforma = this.generateProformaNumber()
+      // Se il chiamante ha gia' riservato un numero (es. per il metadata del Payment Link Stripe) lo si rispetta.
+      const numeroProforma = (data.numeroProforma && data.numeroProforma.trim()) ? data.numeroProforma.trim() : this.generateProformaNumber()
       const proformaId = `PROF_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
       
       // 2. Prepara dati completi
@@ -149,7 +150,7 @@ export class ProformaGenerator {
    * Genera numero proforma univoco
    * Formato: PF-YYYYMM-XXXXXX (es. PF-202512-ABC123)
    */
-  private static generateProformaNumber(): string {
+  static generateProformaNumber(): string {
     const now = new Date()
     const year = now.getFullYear()
     const month = String(now.getMonth() + 1).padStart(2, '0')

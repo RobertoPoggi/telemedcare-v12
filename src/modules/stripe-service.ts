@@ -22,6 +22,7 @@ export interface PaymentLinkRequest {
   description: string
   metadata?: Record<string, string>
   successUrl?: string
+  /** @deprecated non supportato da /v1/payment_links, non viene inviato a Stripe */
   cancelUrl?: string
 }
 
@@ -118,11 +119,16 @@ export class StripeService {
       'after_completion[type]': 'redirect',
       'after_completion[redirect][url]': request.successUrl || DEFAULT_SUCCESS_URL,
     }
+    // I metadata del Payment Link NON vengono copiati sul payment_intent: il webhook
+    // (payment_intent.succeeded) li legge dal payment_intent, quindi vanno passati anche in
+    // payment_intent_data[metadata]. `metadata[...]` resta per ritrovarli sul link/checkout session.
+    // `cancelUrl` non e' un parametro di /v1/payment_links (Stripe rifiuta i parametri sconosciuti): ignorato.
     for (const [k, v] of Object.entries(request.metadata || {})) {
       if (v === undefined || v === null) continue
-      body[`metadata[${k}]`] = String(v).slice(0, 500)
+      const valore = String(v).slice(0, 500)
+      body[`metadata[${k}]`] = valore
+      body[`payment_intent_data[metadata][${k}]`] = valore
     }
-    if (request.cancelUrl) body['cancel_url'] = request.cancelUrl
 
     const data = await this.request('/payment_links', { method: 'POST', body: encodeForm(body) })
     if (!data?.url) throw new Error('Stripe: risposta senza URL del Payment Link')
@@ -249,6 +255,13 @@ export async function createProformaPaymentLink(
   nomeCliente: string,
   emailCliente: string
 ): Promise<PaymentLinkResponse> {
+  // Il webhook aggiorna `proformas` per numero_proforma: senza numero il pagamento non e' riconciliabile.
+  if (!proformaNumber || !String(proformaNumber).trim()) {
+    throw new Error('createProformaPaymentLink: proformaNumber obbligatorio (metadata.proforma_number)')
+  }
+  if (!contractCode || !String(contractCode).trim()) {
+    throw new Error('createProformaPaymentLink: contractCode obbligatorio (metadata.contract_code)')
+  }
   const description = `Proforma ${proformaNumber} - eCura ${servizio} ${piano}`
 
   return await stripe.createPaymentLink({
@@ -264,7 +277,6 @@ export async function createProformaPaymentLink(
       cliente_email: emailCliente,
     },
     successUrl: `https://www.ecura.it/pagamento-confermato?proforma=${proformaNumber}`,
-    cancelUrl: `https://www.ecura.it/pagamento-annullato?proforma=${proformaNumber}`,
   })
 }
 

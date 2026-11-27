@@ -294,3 +294,13 @@ export async function ultimiLog(db: any, limite = 20): Promise<any[]> {
     return r.results || []
   } catch { return [] }
 }
+
+
+/**
+ * Autorizzazione dei job cron: accetta `Authorization: Bearer <CRON_SECRET>` oppure `x-cron-secret: <CRON_SECRET>`.
+ * Se CRON_SECRET non e' configurato resta il comportamento storico delle altre rotte cron (non protetta).
+ */
+export function cronAutorizzato(cronSecret: string | undefined | null, authorization: string | undefined | null, xCronSecret: string | undefined | null): boolean {
+  if (!cronSecret) return true
+  return authorization === `Bearer ${cronSecret}` || xCronSecret === cronSecret
+}
